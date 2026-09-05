@@ -1,5 +1,45 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (soir) — la surveillance du domaine était éteinte depuis 22 jours
+
+**Demande Kevin** : *« Fais ton audit du domaine, chaque app, pages, tout ce que nous avons créé »*
+puis *« Enchaîne 1-2-3 en parallèle. Pipeline toutes tes branches. »*
+
+**Trouvé par l'audit** (mesuré sur le dépôt, pas supposé) : le routeur déclare **26 sous-domaines**,
+tous cohérents (26/26 cibles existantes, 0 orphelin) — mais **plus rien ne les surveillait depuis le
+14/08 18h52**, soit 22 jours. Les 7 workflows de contrôle avaient été rangés le 15/08 pour retirer
+les crons, et **personne ne les avait remis ailleurs**. Pire : même avant, la sonde ne couvrait que
+**13 des 26** adresses — l'arbre (111 pages), les boutiques (22 pages), cuisine, lingua, studio,
+autorisations n'avaient **jamais** été contrôlés.
+
+**Fait — 3 chantiers** :
+1. **`services/kdmc-uptime`** — worker Cloudflare, cron horaire, **26 sous-domaines + 6 workers**.
+   Zéro binding (DO → error 1042 sur ce compte ; KV à id placeholder cassent `wrangler deploy`) :
+   l'état vit dans le Cache API. Alerte iPhone via `apex-push-worker`, **fail-open** sans jeton.
+   401/403 sur une page admin = verrou qui marche, pas une panne (sinon alerte permanente ignorée).
+2. **Garde `tests/uptime-couverture.test.mjs`** (câblée `test:ci`) — la liste surveillée doit être
+   le miroir de `ROUTES`. **Prouvée discriminante** : retirer `arbre` → échec immédiat. C'est la
+   leçon #142 : deux listes qui décrivent la même réalité divergent toujours sans garde.
+3. **27 adresses canoniques** basculées de `github.io` vers kd-mc.com dans 11 pages servies
+   (`canonical`, `og:url`, `twitter:url`, JSON-LD) — on déclarait à Google que la version de
+   référence était GitHub. Remappées via la table du routeur, pas à la main : `shops/la-detente`
+   → `shops.kd-mc.com/la-detente/` (**pas** `la-detente.kd-mc.com`, qui est une AUTRE app).
+
+**Destination corrigée** : `uptime-monitor.yml` et `workers-health-check.yml` passent de
+`gitlab` à `worker` dans `DESTINATIONS.json`. Raison chiffrée : une sonde horaire sur GitLab =
+**~360 min/mois sur les 400** (175 déjà prises en 4 jours) → impossible ; le cron Cloudflare est
+hors quota. Garde `test:destinations-workflows` verte après changement.
+
+**Diagnostic `kdmc-rag` (404 au dernier relevé)** : `/health` **existe** dans la source
+(`worker.js:83`). `deploy-kdmc-rag.yml` est en **dispatch manuel** et aucun workflow n'a tourné
+entre le 14/08 et le 04/09 → la version déployée est antérieure à la route. **1 clic Kevin**
+pour lancer le déploiement (le smoke dira en clair si le binding Vectorize passe — leçon #132).
+
+**Reste dit franchement** : je n'ai chargé **aucune page réelle** (egress bloqué sur kd-mc.com) —
+tout vient de la lecture de la source et des relevés enregistrés. Pas de second avis non-Claude,
+pas de passe stabilité, pas de mesure de perf sur ces changements. Le worker n'est **pas encore
+déployé** : son premier passage donnera le premier relevé réel des 26 adresses depuis le 14/08.
+
 ## 5 septembre 2026 (fin d'après-midi) — le code admin était PUBLIC : pages corrigées, docs nettoyées, Kevin doit le changer
 
 **Trouvé** (tri des 188 signalements gitleaks, fait n°15 d'ETAT-INFRA) : l'empreinte SHA-256 du code
