@@ -87,9 +87,14 @@ jobs:
           set -e
           if [ "$RC" != "0" ]; then
             { echo "## ❌ \`wrangler deploy\` a échoué (code $RC)"; echo; echo '```'; tail -80 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::wrangler deploy a échoué (code $RC) — journal dans le résumé du run"
+            # Le résumé n'est PAS lisible sans connexion GitHub ; les ANNOTATIONS le sont
+            # (10 par type et par étape) → lignes d'erreur en ::error::, fin du journal en ::notice::.
+            grep -iE 'error|✘|failed|code:' /tmp/deploy.log | tail -10 | while IFS= read -r L; do echo "::error::wrangler ▸ $L"; done
+            tail -10 /tmp/deploy.log | while IFS= read -r L; do echo "::notice::wrangler ▸ $L"; done
+            echo "::error::wrangler deploy a échoué (code $RC) — lignes ci-dessus"
             exit "$RC"
           fi
+          grep -E 'Uploaded|Deployed|Current Version|workers.dev|binding|Vectorize' /tmp/deploy.log | head -6 | while IFS= read -r L; do echo "::notice::wrangler ▸ $L"; done
           grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt || true
           echo "URL déployée : $(cat /tmp/url.txt 2>/dev/null)"
           { echo "## ✅ \`wrangler deploy\` OK"; echo; echo '```'; tail -40 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
