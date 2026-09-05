@@ -31,7 +31,7 @@ mkdirSync(SORTIE, { recursive: true });
 
 const PAGES = [
   { id: 'github-produit', plateforme: 'GitHub', titre: 'Additional Product Terms (section Actions)',
-    url: 'https://docs.github.com/en/site-policy/github-terms/github-additional-product-terms' },
+    url: 'https://docs.github.com/en/site-policy/github-terms/github-terms-for-additional-products-and-features' },
   { id: 'github-usage', plateforme: 'GitHub', titre: 'Acceptable Use Policies',
     url: 'https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies' },
   { id: 'github-limites', plateforme: 'GitHub', titre: 'Actions — limites d\'utilisation et facturation',
@@ -39,16 +39,17 @@ const PAGES = [
   { id: 'github-schedule', plateforme: 'GitHub', titre: 'Actions — évènements déclencheurs (schedule)',
     url: 'https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows' },
   { id: 'gitlab-conditions', plateforme: 'GitLab', titre: 'Conditions d\'utilisation',
-    url: 'https://handbook.gitlab.com/handbook/legal/policies/product-usage-policy/' },
+    url: 'https://about.gitlab.com/terms/' },
   { id: 'gitlab-minutes', plateforme: 'GitLab', titre: 'Minutes de calcul CI/CD',
     url: 'https://docs.gitlab.com/ee/ci/pipelines/compute_minutes.html' },
   { id: 'gitlab-runners', plateforme: 'GitLab', titre: 'Runners partagés — ce qui est autorisé',
     url: 'https://docs.gitlab.com/ee/ci/runners/hosted_runners/linux.html' },
   { id: 'gitlab-abus', plateforme: 'GitLab', titre: 'Politique d\'usage acceptable',
-    url: 'https://about.gitlab.com/handbook/legal/acceptable-use-policy/' },
+    url: 'https://handbook.gitlab.com/handbook/legal/acceptable-use-policy/' },
 ];
 
 /* Ce qu'on cherche : les phrases qui parlent de ce qui nous a coûté cher. */
+const MOTS_CLES = /(solely to interact|third[- ]party website|3rd party|general computing|cryptocurrenc|mining|incentivized|excessive|abuse|400 compute minutes|compute quota|scheduled pipeline|fair usage|acceptable use)/i;
 const SUJETS = [
   { nom: 'usage interdit d\'Actions/CI', re: /(solely to|primarily for|not (?:be )?use[d]?|prohibit|must not|may not)[^.]{0,200}\.(?=\s|$)/gi,
     filtre: /action|pipeline|runner|ci\/cd|compute|mining|crypto|third[- ]party|3rd party|general computing/i },
@@ -76,6 +77,11 @@ for (const p of PAGES) {
       const t = texteDe(await r.text());
       ligne.taille = t.length;
       writeFileSync(join(SORTIE, p.id + '.txt'), t);
+      /* Passage CIBLÉ : la phrase qui contient un mot-clé, avec son contexte.
+         Plus fiable qu'un balayage de la page entière, qui ramenait surtout
+         le menu de navigation (mesuré au 1er passage). */
+      const cible = t.split(/(?<=\.)\s+/).filter((ph) => MOTS_CLES.test(ph) && ph.length > 50 && ph.length < 900);
+      if (cible.length) ligne.extraits.push({ sujet: 'PASSAGES QUI NOUS CONCERNENT', phrases: [...new Set(cible)].slice(0, 12) });
       for (const s of SUJETS) {
         const trouves = [...t.matchAll(s.re)].map((m) => m[0].trim())
           .filter((x) => s.filtre.test(x) && x.length > 40 && x.length < 700);
