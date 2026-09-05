@@ -35,3 +35,23 @@ Ce qui a besoin de tourner régulièrement doit vivre **ailleurs** : un Cloudfla
 Worker avec son propre déclencheur horaire, ou une machine à soi.
 
 **Ne remettez pas de `cron:` dans ce dépôt.** Un test l'empêche désormais.
+
+---
+
+## 5.09.2026 — les 6 workflows du bot crypto sont rangés ici, pas perdus
+
+En unifiant les deux lignées, j'ai constaté que `crypto-bot-analysis`,
+`crypto-bot-deploy`, `crypto-bot-fleet-deploy`, `crypto-bot-research`,
+`crypto-bot-status` et `crypto-bot-verify` avaient été **supprimés** de GitHub le
+2.09 pour la conformité — et que leur **seule copie survivante** était la branche
+`main` de GitLab, restée à l'état d'avant la suspension.
+
+Les effacer en synchronisant les deux dépôts les aurait perdus définitivement.
+Ils sont donc rangés ici, **intacts et inertes** : GitHub n'exécute que
+`.github/workflows/`, et la garde `test:actions-conformes` n'inspecte que ce
+dossier-là. Le projet `crypto-bot/` lui-même vit toujours dans le dépôt.
+
+**Ils ne doivent PAS revenir dans `.github/workflows/`** : les conditions
+d'utilisation de GitHub nomment explicitement le « Cryptomining » parmi les
+usages interdits d'Actions. Leur foyer, si le bot doit être redéployé un jour,
+est **GitLab CI** ou un **Cloudflare Worker** (voir `ORGANISATION.md`).
