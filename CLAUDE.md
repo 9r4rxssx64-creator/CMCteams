@@ -2683,7 +2683,8 @@ Un vrai mur (rare) se déclare en listant **les 4 canaux essayés**, jamais un �
 ```bash
 node tools/audit/liens-check.mjs --lister      # hors ligne : liste ce qui sera testé
 ```
-→ workflow **« Liens — vérification RÉELLE »** (`liens-check.yml`, bouton + 1×/mois) : ping
+→ job GitLab **`liens-reels`** (stage `veille`, à la demande — il a quitté GitHub le 5.09,
+son travail est de pinguer des sites tiers) : ping
 réel de **chaque** lien du domaine depuis le runner. Classement honnête : **vivant** /
 **protégé** (401/403 = anti-robot, pas un lien mort) / **MORT** (404, DNS, délai).
 
