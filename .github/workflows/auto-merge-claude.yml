@@ -121,6 +121,38 @@ jobs:
           done
           echo "OK: no merge markers"
 
+      - name: Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+        # 2026-09-05 (leçon #216) : deux sessions écrivent en tête de MEMO_RESUME.md en même
+        # temps → GitHub ne sait pas fusionner → `gh pr merge` échoue → la branche reste dehors,
+        # et chaque nouvelle fusion sur main recrée le conflit (course perdue d'avance, vécue 2×
+        # de suite sur claude/lingua-connexion-honnete). Sur le runner, git SAIT le faire :
+        # le pilote « union » (.gitattributes + .git/info/attributes en ceinture-bretelles pour
+        # les branches nées avant le réglage) garde les deux côtés du journal. On fusionne main
+        # dans la branche ICI, on pousse le résultat SANS forcer, puis la PR se fusionne proprement.
+        # Un conflit sur du VRAI code n'est jamais résolu à l'aveugle : on annule et on prévient.
+        # Le push par GITHUB_TOKEN ne redéclenche pas ce workflow (pas de boucle).
+        run: |
+          set -e
+          BRANCH="${{ steps.src.outputs.branch }}"
+          git fetch origin main "$BRANCH"
+          git checkout -q -B "$BRANCH" "origin/$BRANCH"
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "OK: $BRANCH contient déjà main, rien à rattraper"
+            exit 0
+          fi
+          mkdir -p .git/info
+          printf 'MEMO_RESUME.md merge=union\nKEVIN_INVENTORY.md merge=union\nLESSONS.md merge=union\n' > .git/info/attributes
+          if git merge --no-ff --no-edit -m "Fusion de main dans $BRANCH (journaux : les deux côtés gardés) [skip ci]" origin/main; then
+            if git push origin "HEAD:refs/heads/$BRANCH"; then
+              echo "OK: main rattrapé et poussé sur $BRANCH ($(git rev-parse --short HEAD))"
+            else
+              echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."
+            fi
+          else
+            echo "::warning::Conflit sur du CODE, pas seulement le journal : $(git diff --name-only --diff-filter=U | tr '\n' ' ')— à résoudre par la session ; la PR restera ouverte."
+            git merge --abort
+          fi
+
       - name: Create & merge PR into main
         id: mergepr
         # FIX (GH013 2026-06) : la protection de branche main exige désormais que

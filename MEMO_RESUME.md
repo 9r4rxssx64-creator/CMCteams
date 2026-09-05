@@ -1,5 +1,30 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (nuit) — le journal ne bloque plus les fusions automatiques (pilote « union »)
+
+**Ce qui s'est passé** : Kevin a prévenu « d'autres branches travaillent sur le domaine ». Vérifié sur
+les 133 branches ouvertes : personne ne touchait le livre de cuisine, mais **9 chevauchements sur 10**
+entre branches venaient d'un seul fichier, `MEMO_RESUME.md` — toutes les sessions écrivent une section
+en tête, au même endroit. Résultat mesuré : la branche Lingua (`claude/lingua-connexion-honnete`,
+poussée à 12h00, 8 min après ma fusion de 11h52) avait un conflit sur le journal et la fusion
+automatique la laissait dehors. Je l'ai réparée à la main (main fusionné, les deux journaux gardés,
+le test Lingua lit le code depuis `KDMC_ADMIN_CODE` comme sur main)… et **8 minutes plus tard une
+autre fusion (#3670, arbre) recréait le conflit**. Une course perdue d'avance tant que la cause reste.
+
+**La cause, et la correction de fond** :
+- `.gitattributes` : `MEMO_RESUME.md`, `KEVIN_INVENTORY.md`, `LESSONS.md` en `merge=union` = git garde
+  les deux côtés, sans marqueur. Prouvé sur la vraie branche Lingua : le journal se fusionne seul,
+  **seul le vrai conflit de code reste** (jamais résolu à l'aveugle).
+- `auto-merge-claude.yml` : nouvelle étape **« Rattraper main avant la PR »** — sur le runner, git
+  fusionne main dans la branche (union sur les journaux, `.git/info/attributes` en ceinture pour les
+  branches nées avant le réglage), pousse le résultat sans forcer, puis la PR se fusionne proprement.
+  Conflit sur du code → on annule, on prévient, la PR reste ouverte. Push par `GITHUB_TOKEN` = pas
+  de boucle.
+- Doublon repéré : `claude/lingua-prenom-nom` = copie en 1 commit de `lingua-connexion-honnete`
+  (0 ligne de différence) **plus un lien `node_modules` vers un chemin de machine** — à ne pas fusionner.
+
+**Leçon** : #216 dans `LESSONS.md`. Règle : un fichier où tout le monde écrit au même endroit doit
+être déclaré en `union` le jour où on le crée, pas après la 10ᵉ collision.
 ## 5 septembre 2026 (17h20) — « Où en est l'audit ? » : ultra-review indépendante appliquée, livrables écrits
 
 **Kevin** : *« Où en est le "fais ton audit" ? Lance un ultra-review indépendant maximal. Vérifie et
