@@ -93,9 +93,16 @@ jobs:
           set -e
           if [ "$RC" != "0" ]; then
             { echo "## ❌ \`wrangler deploy\` a échoué (code $RC)"; echo; echo '```'; tail -80 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-            echo "::error::wrangler deploy a échoué (code $RC) — journal dans le résumé du run"
+            # Le résumé n'est PAS lisible sans être connecté à GitHub ; les ANNOTATIONS le sont.
+            # Vérifié le 05/09 : run 33978145725 → le résumé était invisible, l'annotation lue.
+            # GitHub garde 10 annotations par type et par étape → les lignes d'erreur en
+            # ::error::, les 10 dernières lignes brutes en ::notice::.
+            grep -iE 'error|✘|failed|code:' /tmp/deploy.log | tail -10 | while IFS= read -r L; do echo "::error::wrangler ▸ $L"; done
+            tail -10 /tmp/deploy.log | while IFS= read -r L; do echo "::notice::wrangler ▸ $L"; done
+            echo "::error::wrangler deploy a échoué (code $RC) — lignes ci-dessus"
             exit "$RC"
           fi
+          grep -E 'Uploaded|Deployed|Current Version|workers.dev|Cron' /tmp/deploy.log | head -6 | while IFS= read -r L; do echo "::notice::wrangler ▸ $L"; done
           # Pas d'URL dans la sortie ≠ échec : on retombe sur l'adresse connue.
           grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt || true
           echo "URL déployée : $(cat /tmp/url.txt)"
