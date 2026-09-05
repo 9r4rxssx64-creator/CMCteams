@@ -11,6 +11,10 @@
 - Le droit manquant du jeton Cloudflare est « Vectorize : Edit » (message `code 10000` + chemin `/vectorize/v2/indexes`).
 - `KDMC_SSO_SECRET` et d'autres noms « non documentés » existent bien côté GitHub (le routeur SSO fonctionne) : la liste de CLAUDE.md est incomplète, pas les secrets.
 
+## Lu après coup (19h20)
+- **Audit LIVE (run 33980752852, 3 min 45, vrai navigateur, 28 surfaces)** : **27 OK, 1 ❌ : `arbre.kd-mc.com`** (contrôle profond : déverrouillage + cartes ; l'arbre v3.17 sert désormais ses données par le domaine — le contrôle anonyme au code par défaut ne tient plus, ou la page ne rend pas de cartes : à trancher par la session arbre, message m034). Les 10 notices visibles : boutiques, outils, Lingua, Créa Studio, World Monitor, OSINT, les 4 variantes cuisine ✅.
+- **Vercel** : voir `06-SECRETS-CONNECTEURS.md` — 40 déploiements inutiles par jour, corrigé.
+
 ## Non vérifié
 - Le **premier passage réel via Outlook** (prochain `0 */2` après le déploiement d'Outlook sur main) : à lire via `modified_on`/`/` du worker au prochain tour.
 - Les résultats de `audit-live.yml` (déclenché par 4c4a469) : à lire en annotations.

@@ -52,6 +52,12 @@ RAG : `code 10000` = **le jeton Cloudflare n'a pas le droit Vectorize** → 1 cl
 Netlify 0, GitHub ❌ absent. **Secrets** : 101 noms consommés par les workflows, **47 absents de la
 liste documentée**, dont **3 jeux de noms différents pour App Store Connect** → `06-SECRETS-CONNECTEURS.md`.
 
+**Lu ensuite (19h20)** : audit LIVE réel = **27/28 surfaces OK**, seule `arbre.kd-mc.com` échoue au
+contrôle profond (v3.17 sert ses données par le domaine — session arbre prévenue, m034). Tout est
+fusionné dans `main` (#3667). **Vercel** (mail d'échec reçu par Kevin) : le projet `kdmc-agent-monaco`
+faisait un déploiement par push de chaque branche (40 aujourd'hui, tous annulés/erreur, production
+annulée à chaque fois, mail à chaque échec) → `tools/agent/vercel.json` : rien hors `main`.
+
 **Reste** : lire `audit-live` (annotations) et le prochain passage de la sonde via Outlook
 (`modified_on`) ; Vectorize (Kevin) ; 6 workers « en panne » à qualifier ; Semgrep à lire.
 
