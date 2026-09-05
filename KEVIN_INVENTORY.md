@@ -1,7 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (Départs light v1.39 : MON équipe et MON miroir à l'ouverture · poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05** (surveillance du domaine remise en route · Départs light v1.39 · poster de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+
+## 🛰️ Surveillance du domaine remise en route — session 2026-09-05 (soir)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/kdmc-uptime/worker.js` | **La sonde** : toutes les heures, les **26 sous-domaines + 6 workers**. Alerte l'iPhone quand une adresse tombe et quand elle revient. L'ancienne n'en voyait que 13, et elle est éteinte depuis le 14/08 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/worker.js) |
+| `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
+| `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
+| `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
 
 ## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
 

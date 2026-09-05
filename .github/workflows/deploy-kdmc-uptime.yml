@@ -1,0 +1,144 @@
+# Déploie kdmc-uptime — la surveillance des 26 sous-domaines de kd-mc.com.
+#
+# CONTEXTE : le 15/08/2026 les 7 workflows de surveillance ont été rangés dans
+# .github/workflows-desactives/ pour retirer les crons à l'origine de la suspension
+# du compte. Personne ne les a remis ailleurs → 22 jours sans aucun contrôle
+# (dernier relevé : 14/08 18h52). Ce worker les remplace, du bon côté : le cron
+# vit dans Cloudflare (wrangler.toml [triggers]), JAMAIS ici.
+#
+# ⚠️ NE JAMAIS ajouter de `schedule:` à ce fichier. C'est exactement ce qui a fait
+# suspendre le compte. La garde npm run test:actions-conformes échoue si un cron
+# réapparaît. Le périodique appartient à Cloudflare, pas à GitHub Actions.
+#
+# Secrets requis : CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.
+# Optionnel : PUSH_ADMIN_TOKEN (notifications iPhone). Sans lui → fail-open.
+#
+# DÉCLENCHEMENT : bouton (workflow_dispatch) + AUTO à chaque push qui touche le
+# worker — sur main ET sur claude/** (même schéma que deploy-apex-chat.yml v1.1.125).
+# Pourquoi claude/** : la fusion dans main est faite par le robot avec GITHUB_TOKEN,
+# et GitHub ne déclenche PAS les workflows `push` pour ces commits-là ; sans
+# claude/**, ce déploiement resterait à attendre un clic pour toujours (règle
+# « jamais demander un clic », leçon #213). Un push = un déploiement, zéro cron :
+# ce n'est pas du volume automatique, c'est l'usage prévu d'Actions (règle 2 de
+# verify-actions-conformes). Le worker est fail-open : déployer sans jeton push
+# est sûr (il surveille, il n'alerte pas).
+name: Deploy KDMC Uptime (surveillance domaine)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - 'services/kdmc-uptime/**'
+      - 'tests/uptime-couverture.test.mjs'
+      - '.github/workflows/deploy-kdmc-uptime.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # un déploiement ne se coupe jamais en plein vol
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    defaults:
+      run:
+        working-directory: services/kdmc-uptime
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Vérifier les secrets (erreur exacte, pas silencieuse)
+        env:
+          PUSHT: ${{ secrets.PUSH_ADMIN_TOKEN }}
+        run: |
+          MISSING=""
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && MISSING="$MISSING CLOUDFLARE_API_TOKEN"
+          [ -z "$CLOUDFLARE_ACCOUNT_ID" ] && MISSING="$MISSING CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$MISSING" ]; then echo "::error::Secrets Cloudflare manquants :$MISSING"; exit 1; fi
+          [ -z "$PUSHT" ] && echo "::warning::PUSH_ADMIN_TOKEN absent → le worker surveillera et servira son état, mais n'enverra AUCUNE notification (fail-open). Ajoute le secret pour être prévenu sur l'iPhone."
+          echo "Secrets Cloudflare OK"
+
+      - name: Syntax check worker
+        run: node --check worker.js
+
+      - name: Vérifier la couverture (aucun sous-domaine du routeur oublié)
+        working-directory: .
+        run: node tests/uptime-couverture.test.mjs
+
+      - name: Installer wrangler
+        run: npm i -g wrangler && wrangler --version
+
+      - name: Déployer le worker
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT. Cf. tests/workflows-pipefail.test.mjs.
+        shell: bash -eo pipefail {0}
+        run: |
+          set -e
+          # Le journal de wrangler est recopié dans le RÉSUMÉ du run : c'est la
+          # seule partie lisible sans être connecté (les logs bruts ne le sont pas).
+          # Règle « toujours détailler les erreurs » : un échec doit dire POURQUOI.
+          set +e
+          wrangler deploy 2>&1 | tee /tmp/deploy.log
+          RC=${PIPESTATUS[0]}
+          set -e
+          if [ "$RC" != "0" ]; then
+            { echo "## ❌ \`wrangler deploy\` a échoué (code $RC)"; echo; echo '```'; tail -80 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::wrangler deploy a échoué (code $RC) — journal dans le résumé du run"
+            exit "$RC"
+          fi
+          # Pas d'URL dans la sortie ≠ échec : on retombe sur l'adresse connue.
+          grep -Eo 'https://[a-z0-9.-]+workers.dev' /tmp/deploy.log | head -1 > /tmp/url.txt || true
+          echo "URL déployée : $(cat /tmp/url.txt)"
+          { echo "## ✅ \`wrangler deploy\` OK"; echo; echo '```'; tail -40 /tmp/deploy.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Pousser KDMC_PUSH_TOKEN (notifications iPhone — best-effort)
+        env:
+          PUSHT: ${{ secrets.PUSH_ADMIN_TOKEN }}
+        run: |
+          if [ -n "$PUSHT" ]; then
+            printf '%s' "$PUSHT" | wrangler secret put KDMC_PUSH_TOKEN
+            echo "KDMC_PUSH_TOKEN posé"
+          else
+            echo "Pas de PUSH_ADMIN_TOKEN → surveillance active, notifications désactivées. Skip propre."
+          fi
+
+      - name: Smoke test réel (leçon #95 — un deploy vert sans test live ne prouve rien)
+        shell: bash -eo pipefail {0}
+        run: |
+          URL=$(cat /tmp/url.txt); [ -z "$URL" ] && URL="https://kdmc-uptime.9r4rxssx64.workers.dev"
+          sleep 8
+
+          echo "--- /health ---"
+          curl -sS "$URL/health" | tee /tmp/h.json; echo
+          grep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }
+
+          echo "--- /run : PREMIER relevé réel des 26 sous-domaines depuis le 14/08 ---"
+          curl -sS --max-time 120 "$URL/run" | tee /tmp/run.json; echo
+          grep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }
+
+          TOTAL=$(node -e "const d=require('/tmp/run.json');console.log(d.total)")
+          OK=$(node -e "const d=require('/tmp/run.json');console.log(d.ok)")
+          echo "Cibles sondées : $TOTAL · en bonne santé : $OK"
+
+          # On n'échoue PAS si une adresse est en panne : le rôle de ce workflow est de
+          # déployer la surveillance, pas de juger l'état du domaine. Les pannes
+          # trouvées sont listées en avertissement, bien visibles.
+          node -e "
+            const d=require('/tmp/run.json');
+            if(!d.down || !d.down.length){ console.log('✅ Toutes les cibles répondent'); process.exit(0); }
+            console.log('::warning::' + d.down.length + ' cible(s) en panne : ' + d.down.join(', '));
+            for(const r of d.results.filter(x=>!x.ok)){
+              console.log('  ' + r.id + ' → ' + r.code + (r.detail ? ' (' + r.detail + ')' : ''));
+            }
+          "
+          echo "✅ kdmc-uptime déployé et opérationnel — cron horaire actif côté Cloudflare"
