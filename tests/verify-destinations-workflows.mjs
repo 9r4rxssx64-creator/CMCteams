@@ -106,6 +106,23 @@ if (cryptoMalMarque.length) {
     + ' — « Cryptomining » est nommé mot pour mot dans les conditions GitHub');
 } else ok('tout ce qui est crypto est marqué « jamais »');
 
+/* ── Combien sont VRAIMENT portées côté GitLab ? ─────────────────────────
+   Décider d'une destination ne suffit pas : tant que le job n'existe pas dans
+   .gitlab-ci.yml, l'automatisation ne tourne nulle part. On ne fait PAS échouer
+   pour ça (c'est un reste à faire, pas une panne), mais on l'AFFICHE à chaque
+   exécution — sinon ce reste à faire disparaît doucement des mémoires. */
+const versGitlab = entrees.filter((e) => e.vers === 'gitlab');
+const ciGitlab = existsSync('.gitlab-ci.yml') ? readFileSync('.gitlab-ci.yml', 'utf8') : '';
+const portees = versGitlab.filter((e) => e.job_gitlab && new RegExp(`^${e.job_gitlab}:`, 'm').test(ciGitlab));
+const annoncesAbsents = versGitlab.filter((e) => e.job_gitlab && !new RegExp(`^${e.job_gitlab}:`, 'm').test(ciGitlab));
+if (annoncesAbsents.length) {
+  echec(`le registre annonce un job GitLab qui n'existe pas dans .gitlab-ci.yml : ${annoncesAbsents.map((e) => `${e.f} → ${e.job_gitlab}`).join(', ')}`
+    + ' — se croire couvert sans l\'être est le pire des cas');
+} else if (versGitlab.length) {
+  ok(`${portees.length}/${versGitlab.length} destination(s) GitLab réellement portées dans .gitlab-ci.yml`
+    + (portees.length < versGitlab.length ? ` — reste ${versGitlab.length - portees.length} à porter (la plupart attendent une clé, cf. ETAT-INFRA.md fait n°13)` : ''));
+}
+
 /* ── Le tableau, pour qu'on voie d'un coup d'œil ─────────────────────────── */
 const par = {};
 for (const e of entrees) par[e.vers] = (par[e.vers] || 0) + 1;
