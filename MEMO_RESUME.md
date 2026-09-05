@@ -50,11 +50,48 @@ Le commentaire du test — et ma première version de ce mémo — affirmaient q
 Je ne peux pas atteindre le domaine depuis cette session (politique réseau), mais
 c'est **ma** limite — pas une panne prouvée. Le commentaire du test a été corrigé.
 
-### Piste rouverte pour le compte de Kevin
-La clé du compte en ligne est `sha256(norm(prénom) + ":" + code)` (`lingua/app.js`,
-`cloudKeyFor`). La casse et les accents sont normalisés, **mais pas les mots** :
-`kevin` et `kevin desarzens` produisent **deux clés différentes**. Sa sauvegarde
-peut donc exister sous un autre libellé. À tester : le prénom seul + le code.
+### Piste du compte de Kevin → confirmée, et c'est devenu le correctif suivant
+La clé du compte en ligne était `sha256(norm(saisie) + ":" + code)` (`cloudKeyFor`) :
+la casse et les accents étaient normalisés, **mais pas les mots**. `kevin` et
+`kevin desarzens` produisaient donc **deux clés différentes** — sa sauvegarde
+pouvait exister sous un autre libellé. Traité ci-dessous.
+
+---
+
+## 5 septembre 2026 (suite) — Lingua : la connexion demande PRÉNOM + NOM
+
+**Kevin** : *« Ajoute nom et prénom pour la connexion, si 2 personnes ont le même
+prénom ça va poser problème. »* Il a raison, et c'est déjà une **règle absolue du
+dépôt** (« LOGIN TOUJOURS PRÉNOM + NOM ») que Lingua était seule à ne pas suivre :
+deux « Kevin » avec le même code tombaient sur **le même compte**.
+
+### Ce qui change
+- L'écran de connexion et celui de création ont **deux champs** (prénom, nom).
+  Un seul mot est refusé, avec un message clair : *« Entre ton prénom ET ton nom »*.
+- La clé du compte en ligne devient `sha256(prénom+nom triés : code)`. Les mots
+  sont **triés** → « Kevin Desarzens » et « Desarzens Kevin » ouvrent le **même**
+  compte : on n'impose pas l'ordre à l'utilisateur.
+
+### Jamais régresser : les anciens comptes restent retrouvables
+Tous les comptes créés **avant** cette règle sont enregistrés sous l'ancienne clé
+(souvent le prénom seul). Ils seraient devenus introuvables du jour au lendemain.
+La connexion interroge donc les clés **dans l'ordre** — nouvelle, puis anciennes —
+et s'arrête à la première sauvegarde trouvée. Une fois retrouvée, elle est
+**réécrite sous la clé prénom + nom** : la connexion suivante tombe directement
+dessus. « Serveur injoignable » n'est retenu que si **aucune** clé n'a pu être lue.
+
+### Un bug trouvé par le test lui-même
+Le nom contenu dans la sauvegarde restaurée (souvent un prénom seul, d'avant la
+règle) **écrasait** le nom complet qu'on venait de saisir : le compte repartait
+donc sous l'ancienne clé et **ne migrait jamais**. Corrigé à la racine dans
+`_applySnapshot` — on ne remplace plus jamais un prénom+nom par un mot unique.
+
+### Preuve
+`tests/verify-lingua-connexion-honnete.mjs`, vrai navigateur, serveur simulé :
+**20 OK / 0 FAIL** (6 cas, dont « ancienne clé retrouvée + migrée » et « prénom
+seul refusé avant tout appel réseau »). **Discriminant prouvé** : les trois
+comportements retirés → **7 FAIL**, et le test reproduit la faille exacte
+(« Bienvenue kevin ! » alors que le nom manque). Restauré → 20/20.
 
 ---
 

@@ -136,7 +136,18 @@ function deleteAccount(id){
 }
 function accMeta(id){ return accounts().filter(function(a){return a.id===id;})[0]; }
 function setAccountCode(id,code){ var accs=accounts(); for(var i=0;i<accs.length;i++){ if(accs[i].id===id){ accs[i].code=String(code||""); } } gs("accounts",accs); }
-function findLocalAccount(name,code){ var n=norm(name); var accs=accounts(); for(var i=0;i<accs.length;i++){ if(norm(accs[i].name)===n && String(accs[i].code||"")===String(code)) return accs[i].id; } return null; }
+function findLocalAccount(name,code){
+  var k=nameKey(name),raw=norm(name),toks=nameTokens(name),accs=accounts();
+  for(var i=0;i<accs.length;i++){
+    if(String(accs[i].code||"")!==String(code)) continue;
+    var an=accs[i].name;
+    if(nameKey(an)===k || norm(an)===raw) return accs[i].id;
+    /* compte HISTORIQUE enregistré sous un seul mot (prénom seul) : le code doit
+       correspondre, donc pas de risque de tomber sur l'homonyme d'un autre. */
+    if(nameTokens(an).length<2 && norm(an) && toks.indexOf(norm(an))>=0) return accs[i].id;
+  }
+  return null;
+}
 
 /* ===== Mémoire cloud (ne rien perdre — tous comptes, tous appareils) =====
    Chaque compte a un CODE. La progression est sauvegardée dans le cloud sous
@@ -185,10 +196,47 @@ function setMascot(id){ S.mascot=id; save(); vibrate(10);
 var SYNC_KEYS=["course","hearts","heartTs","gems","xp","streak","lastDay","freeze","dailyXP","dailyDay","goal","prog","srs","sound","league","leagueWeek","achv","words","today","qClaim","qDay","hadPerfect","syncTs","diff","coachMsgs","coachProfile","beeVoice","coachScene","storiesDone","hist","blitzBest","pairsBest","pronGoodTotal","turtle","mascot","beeArt"];
 var _cloudState="";        // "ok" | "off" | ""
 function _sha256hex(str){ return crypto.subtle.digest("SHA-256", new TextEncoder().encode(str)).then(function(buf){ return Array.prototype.map.call(new Uint8Array(buf),function(b){return ("0"+b.toString(16)).slice(-2);}).join(""); }); }
-function cloudKeyFor(name,code){ return _sha256hex(norm(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
+/* ===== Identité = PRÉNOM + NOM (Kevin 2026-09-05 : « si 2 personnes ont le même
+   prénom ça va poser problème ») — c'est aussi la règle absolue du dépôt.
+   Les mots sont TRIÉS pour la clé : « Kevin Desarzens » et « Desarzens Kevin »
+   ouvrent donc le MÊME compte (on n'impose pas l'ordre à l'utilisateur). */
+function nameTokens(s){ return norm(s).split(/\s+/).filter(function(t){ return t.length>=2; }); }
+function fullNameOk(s){ return nameTokens(s).length>=2; }
+function nameKey(s){ return nameTokens(s).slice().sort().join(" "); }
+function cloudKeyFor(name,code){ return _sha256hex(nameKey(name)+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }
+/* Clés HISTORIQUES : les comptes créés AVANT cette règle ont été enregistrés sous
+   norm(saisie) — souvent un prénom seul. On les cherche encore, sinon toute leur
+   progression deviendrait introuvable du jour au lendemain (jamais régresser).
+   Une fois retrouvée, la sauvegarde est réécrite sous la clé prénom+nom. */
+function legacyCloudKeys(name,code){
+  var out=[],seen={};
+  [norm(name)].concat(nameTokens(name)).forEach(function(v){ if(v&&!seen[v]){ seen[v]=1; out.push(v); } });
+  return Promise.all(out.map(function(v){ return _sha256hex(v+":"+String(code||"")).then(function(h){ return h.slice(0,40); }); }));
+}
+/* Interroge les clés dans l'ordre, s'arrête à la première sauvegarde trouvée.
+   « injoignable » n'est retenu que si AUCUNE clé n'a pu être lue. */
+function _cloudTryKeys(keys){
+  var i=0,unreachable=false;
+  function next(){
+    if(i>=keys.length) return Promise.resolve({data:null,injoignable:unreachable});
+    var k=keys[i++];
+    return fetch(SYNC_BASE+"/load?k="+encodeURIComponent(k)).then(function(r){ return r&&r.json(); }).then(function(j){
+      if(j&&j.ok===false&&j.reason==="kv_absent"){ unreachable=true; return next(); }
+      if(j&&j.ok&&j.data) return {data:j.data,injoignable:false};
+      return next();
+    });
+  }
+  return next();
+}
 function _rawGet(id,k){ try{ return localStorage.getItem("lingua_a_"+id+"_"+k); }catch(e){ return null; } }
 function _acctSnapshot(id){ var m=accMeta(id)||{}; var data={}; SYNC_KEYS.forEach(function(k){ var v=_rawGet(id,k); if(v!=null) data[k]=v; }); var ts=_rawGet(id,"syncTs"); return {v:2,name:m.name,avatar:m.avatar,syncTs:ts?JSON.parse(ts):0,data:data}; }
-function _applySnapshot(id,snap){ var d=(snap&&snap.data)||{}; Object.keys(d).forEach(function(k){ try{ localStorage.setItem("lingua_a_"+id+"_"+k, d[k]); }catch(e){} }); var accs=accounts(); for(var i=0;i<accs.length;i++){ if(accs[i].id===id){ if(snap.name)accs[i].name=snap.name; if(snap.avatar)accs[i].avatar=snap.avatar; } } gs("accounts",accs); }
+function _applySnapshot(id,snap){ var d=(snap&&snap.data)||{}; Object.keys(d).forEach(function(k){ try{ localStorage.setItem("lingua_a_"+id+"_"+k, d[k]); }catch(e){} }); var accs=accounts(); for(var i=0;i<accs.length;i++){ if(accs[i].id===id){
+      /* Le nom du blob peut dater d'AVANT la règle prénom+nom (souvent un prénom
+         seul). Le recopier écraserait le nom complet qu'on vient de saisir : le
+         compte repartirait sous l'ancienne clé et ne migrerait jamais. On ne
+         remplace donc jamais un prénom+nom par un mot unique. */
+      if(snap.name && (fullNameOk(snap.name) || !fullNameOk(accs[i].name))) accs[i].name=snap.name;
+      if(snap.avatar)accs[i].avatar=snap.avatar; } } gs("accounts",accs); }
 var _syncT=null;
 function scheduleCloudSave(){ if(!ACC)return; var m=accMeta(ACC); if(!m||!m.code)return; if(_syncT)clearTimeout(_syncT); _syncT=setTimeout(cloudSaveNow,1500); }
 function cloudSaveNow(){ if(!ACC)return; var m=accMeta(ACC); if(!m||!m.code)return; var id=ACC;
@@ -205,15 +253,27 @@ function cloudRestoreInto(id){ var m=accMeta(id); if(!m||!m.code) return Promise
 function enterWithCredentials(name,avatar,code,createIfMissing){
   var existing=findLocalAccount(name,code);
   if(existing){ switchAccount(existing); if(createIfMissing) cloudSaveNow(); return Promise.resolve({ok:true,local:true}); }
-  return cloudKeyFor(name,code).then(function(k){ return fetch(SYNC_BASE+"/load?k="+encodeURIComponent(k)); })
-    .then(function(r){ return r&&r.json(); }).then(function(j){
+  return cloudKeyFor(name,code).then(function(k){
+      return legacyCloudKeys(name,code).then(function(olds){
+        var keys=[k]; olds.forEach(function(o){ if(keys.indexOf(o)<0) keys.push(o); });
+        return _cloudTryKeys(keys);
+      });
+    }).then(function(res){
+      var cloud=res.data;
+      if(cloud){
+        /* On garde le nom COMPLET saisi (prénom + nom), pas celui du blob qui peut
+           dater d'avant la règle, puis on réenregistre : la prochaine connexion
+           tombera directement sur la bonne clé. */
+        var id=createAccount(name, cloud.avatar||avatar, String(code));
+        _applySnapshot(id,cloud); switchAccount(id);
+        try{ cloudSaveNow(); }catch(e){}
+        return {ok:true,restored:true};
+      }
+      if(createIfMissing){ var id2=createAccount(name,avatar,String(code)); switchAccount(id2); cloudSaveNow(); return {ok:true,created:true}; }
       /* Le serveur a répondu, mais SON stockage est indisponible (KV absent) : ce n'est
          PAS « tu n'as pas de compte ». L'annoncer comme une absence est le même mensonge
          que le serveur muet — on le traite pareil (côté injoignable). */
-      if(j && j.ok===false && j.reason==="kv_absent" && !createIfMissing) return {ok:false,injoignable:true};
-      var cloud=(j&&j.ok)?j.data:null;
-      if(cloud){ var id=createAccount(cloud.name||name, cloud.avatar||avatar, String(code)); _applySnapshot(id,cloud); switchAccount(id); return {ok:true,restored:true}; }
-      if(createIfMissing){ var id2=createAccount(name,avatar,String(code)); switchAccount(id2); cloudSaveNow(); return {ok:true,created:true}; }
+      if(res.injoignable) return {ok:false,injoignable:true};
       return {ok:false,none:true};
     }).catch(function(){ if(createIfMissing){ var id3=createAccount(name,avatar,String(code)); switchAccount(id3); return {ok:true,created:true,offline:true}; }
       /* Le serveur n'a PAS répondu. C'est très différent de « il a répondu : rien trouvé ».
@@ -831,30 +891,41 @@ function vAccounts(){
 function openCreate(){
   var m=modal(); var av=AVATARS[Math.floor(Math.random()*AVATARS.length)];
   m.body.innerHTML='<h3>Nouveau compte</h3>'+
-    '<input id="acName" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
+    '<input id="acPrenom" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
+    '<input id="acNom" class="txt" placeholder="Ton nom" maxlength="24" autocomplete="off">'+
     '<input id="acCode" class="txt" placeholder="Code secret (facultatif)" inputmode="numeric" maxlength="10" autocomplete="off">'+
-    '<p class="mini">🔒 <b>Facultatif</b> : un code sauvegarde ta progression <b>en ligne</b> (prénom + code = tout revient sur n\'importe quel téléphone). Tu peux commencer <b>sans</b>, et l\'ajouter plus tard.</p>'+
+    '<p class="mini">🔒 <b>Facultatif</b> : un code sauvegarde ta progression <b>en ligne</b> (prénom + nom + code = tout revient sur n\'importe quel téléphone). Tu peux commencer <b>sans</b>, et l\'ajouter plus tard.</p>'+
     '<p class="mini">Choisis ton avatar</p>';
   var g=el("div","av-pick");
   AVATARS.forEach(function(a){ var b=el("button","av-opt"+(a===av?" sel":"")); b.textContent=a; b.onclick=function(){ av=a; g.querySelectorAll(".av-opt").forEach(function(x){x.classList.remove("sel");}); b.classList.add("sel"); }; g.appendChild(b); });
   m.body.appendChild(g);
   var ok=el("button","btn-main"); ok.textContent="Créer mon compte";
-  ok.onclick=function(){ var n=(m.body.querySelector("#acName").value||"").trim()||"Joueur"; var c=(m.body.querySelector("#acCode").value||"").trim();
+  ok.onclick=function(){
+    var n=((m.body.querySelector("#acPrenom").value||"")+" "+(m.body.querySelector("#acNom").value||"")).trim().replace(/\s+/g," ");
+    var c=(m.body.querySelector("#acCode").value||"").trim();
+    /* Prénom + nom obligatoires dès la création : sans nom, deux homonymes se
+       partageraient le même compte en ligne (Kevin 2026-09-05). */
+    if(!fullNameOk(n)){ toast("Entre ton prénom ET ton nom 🙂"); return; }
     if(c && c.length<4){ toast("Le code doit faire au moins 4 chiffres (ou laisse-le vide) 🔒"); return; }
     ok.disabled=true; ok.textContent="…";
     if(!c){ var id=createAccount(n,av,""); switchAccount(id); m.close(); VIEW="home"; render(); return; } // sans code = on démarre direct (mémoire cloud = bonus optionnel)
     enterWithCredentials(n,av,c,true).then(function(res){ m.close(); VIEW="home"; render(); if(res&&res.restored) toast("👋 Compte retrouvé — bienvenue "+esc(n)+" !"); }); };
   m.body.appendChild(ok);
-  setTimeout(function(){ var i=m.body.querySelector("#acName"); if(i)i.focus(); },100);
+  setTimeout(function(){ var i=m.body.querySelector("#acPrenom"); if(i)i.focus(); },100);
 }
 function openLogin(){
   var m=modal();
-  m.body.innerHTML='<h3>🔑 Se connecter</h3><p class="mini">Entre le <b>prénom</b> et le <b>code</b> que tu avais choisis pour retrouver ta progression (même sur un nouveau téléphone).</p>'+
-    '<input id="lgName" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
+  m.body.innerHTML='<h3>🔑 Se connecter</h3><p class="mini">Entre ton <b>prénom</b>, ton <b>nom</b> et ton <b>code</b> pour retrouver ta progression (même sur un nouveau téléphone).</p>'+
+    '<input id="lgPrenom" class="txt" placeholder="Ton prénom" maxlength="18" autocomplete="off">'+
+    '<input id="lgNom" class="txt" placeholder="Ton nom" maxlength="24" autocomplete="off">'+
     '<input id="lgCode" class="txt" placeholder="Ton code" inputmode="numeric" maxlength="10" autocomplete="off">';
   var ok=el("button","btn-main"); ok.textContent="Retrouver mon compte";
-  ok.onclick=function(){ var n=(m.body.querySelector("#lgName").value||"").trim(); var c=(m.body.querySelector("#lgCode").value||"").trim();
-    if(!n||c.length<4){ toast("Entre ton prénom et ton code 🔑"); return; }
+  ok.onclick=function(){
+    var n=((m.body.querySelector("#lgPrenom").value||"")+" "+(m.body.querySelector("#lgNom").value||"")).trim().replace(/\s+/g," ");
+    var c=(m.body.querySelector("#lgCode").value||"").trim();
+    /* Prénom + nom obligatoires : deux personnes peuvent partager un prénom. */
+    if(!fullNameOk(n)){ toast("Entre ton prénom ET ton nom 🙂"); return; }
+    if(c.length<4){ toast("Entre ton code 🔑"); return; }
     ok.disabled=true; ok.textContent="…";
     enterWithCredentials(n,"🦊",c,false).then(function(res){
       if(res&&res.ok){ m.close(); VIEW="home"; render(); toast("👋 Bienvenue "+esc(n)+" !"); return; }
@@ -866,7 +937,7 @@ function openLogin(){
       toast("Aucune sauvegarde pour ce prénom + code 🤔"+(noms.length?" — sur ce téléphone : "+esc(noms.join(", ")):""));
     }); };
   m.body.appendChild(ok);
-  setTimeout(function(){ var i=m.body.querySelector("#lgName"); if(i)i.focus(); },100);
+  setTimeout(function(){ var i=m.body.querySelector("#lgPrenom"); if(i)i.focus(); },100);
 }
 function openEnableCloud(){
   var m=modal();
