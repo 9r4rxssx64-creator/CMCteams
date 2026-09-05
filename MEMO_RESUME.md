@@ -37,7 +37,9 @@ fait valoir « oui » à TOUTES les règles `changes:` → publier-site, recherc
 (~7 min brûlées, pipeline 2823049053), et `tests` échouait de toute façon (`npm ci` sans `package-lock.json`).
 Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, bouton manuel pour
 `tests` sur une branche nouvelle, repli `npm install`) — leçon **#216**. **Prouvé au push suivant** (pipeline 2823055271) : seul
-`conformite` part (22 s), 0 job à fichier-signal, 0 publication.
+`conformite` part (22 s), 0 job à fichier-signal, 0 publication. **Sondé en vrai depuis GitLab** (job `sonder-url`, pipeline 2823067545, 17h40) :
+`https://arbre.kd-mc.com/__arbre/status` → `{ok:true, code:true, seed:true, count:119, seedVersion:63, source:"d1"}` —
+le domaine sert bien l'arbre v3.14 depuis la base D1. (Le `HEAD` de la sonde répond 404 : normal, la route n'accepte que `GET`.)
 
 **Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été
 publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO).

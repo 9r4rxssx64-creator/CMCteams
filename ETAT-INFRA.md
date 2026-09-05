@@ -487,7 +487,8 @@ code famille** (l'ancienne empreinte est dans l'historique public).
 et `main` alignés (e9e52b1b, sans force). **Piège GitLab mesuré le même jour** : le premier push d'une branche fait
 valoir « oui » à toutes les règles `changes:` (publier-site, recherches-patrimoine, liens-reels sont partis pour un
 simple miroir, ~7 min) — corrigé dans `.gitlab-ci.yml` (`*pas-sur-nouvelle-branche`, `compare_to: main`, repli
-`npm install` car le dépôt n'a pas de `package-lock.json`). Leçon #216.
+`npm install` car le dépôt n'a pas de `package-lock.json`). Leçon #216. **Vérifié en production** (17h40, sonde GitLab `sonder-url`) :
+`GET https://arbre.kd-mc.com/__arbre/status` → `count:119, seedVersion:63, source:"d1"`.
 
 ---
 
