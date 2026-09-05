@@ -208,6 +208,46 @@ jobs:
           print("  fichiers les plus concernés :")
           for k, v in chemins.most_common(15): print("    - %s : %d" % (k, v))
           print("")
+          print("=== SEMGREP — 1155 signalements, mais dans QUOI ? ===")
+          try:
+              sg = (json.load(open('/tmp/sec/semgrep.json')) or {}).get('results', [])
+          except Exception:
+              sg = []
+          sev, regles_sg, dossiers = collections.Counter(), collections.Counter(), collections.Counter()
+          # Le code VENDORISÉ (bundles minifiés, copies de bibliothèques) n'est pas
+          # notre code : le compter avec le reste noie ce qu'on peut réellement corriger.
+          VENDOR = ('/chunks/', 'node_modules', '.min.js', 'pages-upload', '_archive', 'vendor/')
+          notre_code = 0
+          for r in sg:
+              p2 = r.get('path', '?')
+              sev[(r.get('extra') or {}).get('severity', '?')] += 1
+              regles_sg[r.get('check_id', '?').split('.')[-1]] += 1
+              dossiers[p2.split('/')[0]] += 1
+              if not any(v in p2 for v in VENDOR): notre_code += 1
+          print("  total : %d — dont %d dans NOTRE code (le reste est vendorisé/minifié)" % (len(sg), notre_code))
+          print("  par gravité : %s" % dict(sev))
+          print("  règles les plus fréquentes :")
+          for k, v in regles_sg.most_common(10): print("    - %s : %d" % (k, v))
+          print("  dossiers les plus concernés :")
+          for k, v in dossiers.most_common(10): print("    - %s : %d" % (k, v))
+
+          print("")
+          print("=== ZIZMOR — durcissement des workflows ===")
+          try:
+              zz = json.load(open('/tmp/sec/zizmor.json'))
+          except Exception:
+              zz = []
+          if isinstance(zz, dict): zz = zz.get('findings', [])
+          regles_zz, sev_zz = collections.Counter(), collections.Counter()
+          for f in (zz or []):
+              regles_zz[f.get('ident') or f.get('rule') or '?'] += 1
+              sev_zz[f.get('determinations', {}).get('severity') if isinstance(f.get('determinations'), dict) else f.get('severity', '?')] += 1
+          print("  total : %d" % len(zz or []))
+          print("  par gravité : %s" % dict(sev_zz))
+          print("  par règle :")
+          for k, v in regles_zz.most_common(12): print("    - %s : %d" % (k, v))
+
+          print("")
           print("Aucune valeur de secret n'est imprimée ici — ce dépôt est public.")
           PYEOF
 
