@@ -1,5 +1,50 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (après-midi) — tout rapatrié, et le dépôt public assaini
+
+**Demande Kevin** : *« Note tout. Public mais sécurisé normalement. Rapatrie tout sur GitHub
+intelligemment en respectant les règles, et sur GitLab ce qui ne va pas sur GitHub. Va plus
+loin. Sers-toi des deux. »*
+
+### Rapatriement — 49 automatisations, une destination chacune
+Elles avaient été rangées d'un coup le 15/08 **sans dire où elles devaient aller**. Six mois
+plus tard, personne ne savait plus lesquelles étaient légitimes : **14 l'étaient**.
+
+| Destination | Combien |
+|---|---|
+| **GitHub** (rapatriées, à la main, 0 cron) | **14** |
+| **GitLab CI** | 24 |
+| **Cloudflare Worker** | 5 |
+| **nulle part** (crypto) | 6 |
+
+`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+Le bouton, **c'est moi qui l'appuie** (API) — tu ne cliques rien.
+Destination + raison de chacune : `.github/workflows-desactives/DESTINATIONS.json`,
+tenue par `npm run test:destinations-workflows` (4 sabotages attrapés).
+
+### Côté GitLab — 4 jobs qui marchent SANS aucune clé nouvelle
+Stage `veille`, tout à la demande (**0 minute au repos**) : liens réels, dépendances CDN,
+sources Lingua, récolte LSF. *La veille CDN surveillait **3 adresses écrites à la main** ;
+elle les **lit** maintenant dans le code : **78**.* Les clés à ajouter côté GitLab pour les
+autres sont listées dans `ETAT-INFRA.md` fait n°13.
+
+### « Public mais sécurisé » — deux vraies failles trouvées et corrigées
+- **`qodo-ai/pr-agent@main`** : action tierce sur branche **mouvante**, avec la clé OpenAI de
+  Kevin → épinglée `@v0.44.0`.
+- **N'importe qui pouvait déclencher une revue IA payée** en commentant une PR → contrôle
+  `author_association`. Ce n'était pas une fuite : une **facture ouverte aux inconnus**.
+- `pull_request_target` : **0**. Vraie clé dans les fichiers suivis : **0** (les 16 chaînes
+  trouvées sont fausses, sauf la clé Firebase Web, **publique par conception**).
+- Garde `npm run test:depot-public-sain` (4 règles, 4 sabotages) + `SECURITY.md` à la racine.
+- Lancé sur l'historique (11 316 commits) : `security-suite.yml` (gitleaks + TruffleHog).
+
+### Noté
+CLAUDE.md : **2 règles absolues** de plus (dépôt public · destination écrite), chacune avec
+sa garde **déclarée au registre** — le compteur « règles sans garde » est resté à 19.
+LESSONS.md : **#207, #208, #209**.
+
+---
+
 ## 5 septembre 2026 — GitHub/GitLab rangés, et une fuite de documents fermée
 
 **Demande Kevin** : *« Organise tout intelligemment pour que tout refonctionne comme

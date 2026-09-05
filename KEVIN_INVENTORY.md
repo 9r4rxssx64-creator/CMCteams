@@ -1,7 +1,25 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (rangement GitHub/GitLab · documents de travail retirés du site)
+> Dernière mise à jour : **2026-09-05** (rapatriement des automatisations · dépôt public sécurisé)
+
+## 🔀 Où va chaque automatisation — session 2026-09-05
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.github/workflows-desactives/DESTINATIONS.json` | **La réponse pour les 49** : GitHub / GitLab / Worker / nulle part, avec la raison de chacune | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows-desactives/DESTINATIONS.json) |
+| `tests/verify-destinations-workflows.mjs` | La garde : rien de rangé sans destination, aucun cron sur un rapatrié, un bouton « Lancer » sur chacun | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-destinations-workflows.mjs) |
+| `tools/gitlab/cdn-check.sh` | Les bibliothèques CDN répondent-elles encore ? **Lit les 78 adresses dans le code** (l'ancienne en surveillait 3) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/cdn-check.sh) |
+| `.gitlab-ci.yml` (stage `veille`) | Les 4 jobs GitLab qui marchent sans clé nouvelle | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) |
+
+## 🌍 Dépôt public, mais sécurisé — session 2026-09-05
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `SECURITY.md` | Où signaler une faille, **ce qui est public exprès** (la clé Firebase Web), ce qui nous intéresse vraiment | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/SECURITY.md) |
+| `tests/verify-depot-public-sain.mjs` | La garde : pas de `pull_request_target`, pas d'action tierce sur `@main`, pas de clé payante déclenchable par un inconnu, cliquet sur les chaînes en forme de secret | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-depot-public-sain.mjs) |
+| `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
+| `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
 
 ## 🚨 Le site ne publie plus tes documents de travail — session 2026-09-05
 
