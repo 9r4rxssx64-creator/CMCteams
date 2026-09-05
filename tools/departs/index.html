@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.38</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.39</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.38";
+var APP_VER="v1.39";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -886,7 +886,18 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
    mois à l'autre (2026-08-1 = CMC Éq.5, 2026-09-1 = BJ Éq.1). On mémorisait cet identifiant tel
    quel : tant que le tableau d'août existait encore, la page rouvrait sur AOÛT indéfiniment.
    On mémorise donc l'ÉQUIPE (repère stable, lu dans le libellé) et on la retrouve dans le mois le
-   plus récent. Si l'équipe n'existe plus ce mois-ci → tableau par défaut. */
+   plus récent. Si l'équipe n'existe plus ce mois-ci → tableau par défaut.
+
+   v1.39 — « miroir aussi pour chaque » (Kevin 2026-09-05). Le repère « nom d'équipe » ne suffit
+   PAS : chacun CHANGE D'ÉQUIPE CHAQUE MOIS (règle métier absolue). Reporter « BJ Éq.7 » d'août sur
+   septembre posait Kevin sur une équipe où il n'est même pas — et donc sur le MAUVAIS MIROIR
+   (mesuré : affiché BJ Éq.7 / miroir BJ Éq.4, alors qu'il est en BJ Éq.6 / miroir BJ Éq.10).
+   Le seul repère stable d'un mois à l'autre, c'est LA PERSONNE. Ordre de priorité désormais :
+     1. ?me=… (lien profond)                    2. un tableau du mois EN COURS déjà mémorisé
+        (choix délibéré : « je regardais une autre équipe aujourd'hui »)
+     3. MON équipe de ce mois-ci (par mon nom)  4. l'équipe mémorisée reportée par son nom
+     5. tableau par défaut
+   Le miroir suit tout seul : il est calculé à partir du tableau affiché. */
 function _depTeamOf(id){ var b=BOARDS[id]; if(!b)return "";
   var p=String(b.label||"").split(" — "); return (p[1]||"").replace(/\s*\([^)]*\)\s*$/,"").trim(); }
 function _depRank(id){ var b=BOARDS[id]; return b?(b.year*12+b.monthIdx):-1; }
@@ -904,9 +915,27 @@ function _depRollForward(id){
     return b&&b.kind!=="abs"&&(b.year*12+b.monthIdx)===latest&&_depTeamOf(k)===team; });
   return hit[0]||null;
 }
+/* MON tableau du mois le plus récent, retrouvé par MON NOM (repère stable : le numéro
+   d'équipe, lui, change tous les mois). Renvoie null si je ne suis pas dans ce mois. */
+function _depBoardOfMeLatest(){
+  if(!ME)return null;
+  var latest=_depLatestRank();
+  var ks=Object.keys(BOARDS).filter(function(k){ var b=BOARDS[k];
+    return b&&b.kind!=="abs"&&(b.year*12+b.monthIdx)===latest; });
+  for(var i=0;i<ks.length;i++){
+    if((BOARDS[ks[i]].people||[]).some(function(p){return p.name===ME;}))return ks[i];
+  }
+  return null;
+}
 BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
   try{
     var s=localStorage.getItem("cmc_dep_board");
+    // un tableau du mois EN COURS déjà mémorisé = choix délibéré → on le respecte
+    if(s&&BOARDS[s]&&_depRank(s)>=_depLatestRank())return s;
+    // sinon on repart de MOI (mon équipe change chaque mois, mon nom non)
+    var moi=_depBoardOfMeLatest();
+    if(moi){ if(moi!==s){ try{localStorage.setItem("cmc_dep_board",moi);}catch(_){} } return moi; }
+    // pas de nom connu (ou absent du mois) → on reporte l'équipe mémorisée par son nom
     if(s&&BOARDS[s]){
       var f=_depRollForward(s);
       if(f){ if(f!==s){ try{localStorage.setItem("cmc_dep_board",f);}catch(_){} } return f; }

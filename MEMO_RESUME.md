@@ -1,5 +1,37 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 — « Miroir aussi pour chaque » : la page ouvrait sur la MAUVAISE ÉQUIPE (corrigé v1.39)
+
+**Retour Kevin** : « Miroir aussi pour chaque ». Le bon mois ne suffisait pas.
+
+### Le vrai bug (mesuré dans un vrai navigateur, pas déduit)
+Corriger le MOIS (v1.38) laissait un défaut plus grave : je reportais le **numéro d'équipe** du
+mois passé sur le mois courant. Or **chacun change d'équipe chaque mois** (règle métier absolue).
+Résultat pour Kevin, connecté : la page affichait **BJ Éq.7** (son équipe d'août) — une équipe où
+il **n'est même pas** en septembre — et donc le **mauvais miroir : BJ Éq.4** au lieu de **BJ Éq.10**.
+
+### Le correctif — le repère stable, c'est LA PERSONNE
+Ordre de priorité à l'ouverture : lien `?me=…` → tableau **du mois en cours** déjà mémorisé (choix
+délibéré : « je regardais une autre équipe ») → **mon équipe de ce mois-ci, retrouvée par mon nom**
+→ équipe mémorisée reportée par son nom → tableau par défaut. **Le miroir suit tout seul**, il se
+calcule à partir du tableau affiché.
+**Après correctif, Kevin ouvre sur BJ Éq.6, miroir BJ Éq.10** — identique à CMCteams.
+
+### CMCteams (app) : aucun bug — vérifié
+L'app recalcule l'équipe du mois par les jours de repos : Kevin y était déjà en BJ Éq.6 / miroir
+BJ Éq.10. Seule la page light reportait un numéro d'équipe. **Piège évité** : l'app résout les
+équipes **au rendu de la vue Départs** — sans ce rendu, le contrôle aurait été un faux vert.
+
+### Garde permanente élargie (`npm run test:mois-ouverture`, dans `test:ci`)
+Compte par compte, sur les deux surfaces : mon équipe **et mon miroir** du mois courant, le miroir
+non vide, réciproque (le miroir du miroir, c'est moi), le bouton « 🔁 Équipe miroir » visible, et
+**app ⇄ light identiques**. Plus un balayage complet : **38 équipes / 245 personnes**, 0 miroir sur
+un autre mois, 0 miroir vide, 0 non réciproque. Deux équipes n'ont pas de miroir en septembre
+(CMC Éq.13, Roul. Éq.3) : vérifié, **aucune autre équipe n'a leurs jours de repos** — c'est la
+réalité du planning, pas un bug ; le test le distingue explicitement d'un miroir manquant à tort.
+**Prouvée discriminante** : correctif retiré → **20 contrôles en échec** (dont « app ⇄ light
+divergents ») ; correctif remis → 0.
+
 ## 5 septembre 2026 — « mauvais mois à l'ouverture » (corrigé) + un garde aveugle depuis 1 mois
 
 **Retour Kevin** : « quand j'ouvre, pas sur la date du jour, mauvais mois. Vérifie pour chaque

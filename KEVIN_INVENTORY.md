@@ -1,7 +1,14 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05** (Départs light v1.39 : MON équipe et MON miroir à l'ouverture · poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+
+## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/departs/index.html` (v1.39) | La page s'ouvre sur **TON équipe du mois en cours** (retrouvée par ton nom, parce que le numéro d'équipe change chaque mois) — et donc sur **ton vrai miroir**. Avant : Kevin tombait sur BJ Éq.7 / miroir BJ Éq.4 au lieu de BJ Éq.6 / miroir BJ Éq.10. | [Ouvrir les Départs](https://cmcteams.kd-mc.com/tools/departs/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/departs/index.html) |
+| `tests/verify-mois-ouverture.mjs` | **La garde** (`npm run test:mois-ouverture`, dans `test:ci`) : compte par compte, sur CMCteams **et** la page light — bon mois, **mon** équipe, **mon** miroir (non vide, réciproque, bouton visible), et les deux surfaces d'accord. Balayage complet : 38 équipes / 245 personnes. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-mois-ouverture.mjs) |
 
 ## 🔐 L'arbre sans données dans le fichier public — session 2026-09-05 soir (arbre v3.16, branche `claude/sarzance-family-tree-3jxi7i`)
 
