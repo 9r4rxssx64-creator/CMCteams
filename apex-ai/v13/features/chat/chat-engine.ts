@@ -12,6 +12,7 @@ import { errors } from '../../core/errors.js';
 import { events } from '../../core/events.js';
 import { logger } from '../../core/logger.js';
 import { memory } from '../../core/memory.js';
+import { capSystemPrompt, remainingBudget } from '../../core/prompt-budget.js';
 import { store } from '../../core/store.js';
 import { aiRouter, type ChatMessage } from '../../services/ai/ai-router.js';
 import { customAssistants } from '../../services/ai/custom-assistants.js';
@@ -76,6 +77,14 @@ function buildSystemPrompt(): string {
 }
 
 async function buildSystemPromptDeep(): Promise<string> {
+  /* v13.4.365 (fix « system too long », Kevin 2026-09-05) : l'injection est
+   * calculée AVANT le corps, et son poids est RÉSERVÉ dans le budget.
+   *
+   * Avant : le corps se plafonnait tout seul à 32000, PUIS on lui collait
+   * l'injection (Projet actif + Assistant perso + effort) → total > 32000 →
+   * `ai-router` refusait tout message. Il a suffi que Kevin active un Projet
+   * pour que le total passe à 33635 et qu'Apex ne réponde plus du tout. */
+  const injection = customAssistantInjection();
   try {
     const user = store.get('user') as { id: string; name: string } | null;
     /* v13.4.7 fix Kevin "Apex redemande action admin" : timeout 1500ms → 3000ms.
@@ -83,13 +92,13 @@ async function buildSystemPromptDeep(): Promise<string> {
      * trop souvent → fallback minimal sans contexte profond → IA hallucine
      * "es-tu admin ?". 3000ms = budget plus safe. */
     const base = await Promise.race([
-      memory.buildSystemPromptDeep(user),
+      memory.buildSystemPromptDeep(user, injection.length),
       new Promise<string>((_, rej) => setTimeout(() => rej(new Error('deep prompt timeout')), 3000)),
     ]);
-    return base + customAssistantInjection();
+    return base + injection;
   } catch (err: unknown) {
     logger.warn('chat', 'buildSystemPromptDeep fallback (sync)', { err });
-    return buildSystemPrompt() + customAssistantInjection();
+    return buildSystemPrompt() + injection;
   }
 }
 
@@ -373,7 +382,11 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
   try {
     const { apexMemoryRag } = await import('../../services/ai/apex-memory-rag.js');
     const memBlock = await apexMemoryRag.recallBlock(text);
-    if (memBlock) sysPrompt = `${sysPrompt}\n\n${memBlock}`;
+    /* v13.4.365 : on n'ajoute QUE si ça tient. Un bloc qui ne rentre pas est
+     * omis proprement plutôt que d'envoyer un prompt que le routeur refusera. */
+    if (memBlock && memBlock.length + 2 <= remainingBudget(sysPrompt)) {
+      sysPrompt = `${sysPrompt}\n\n${memBlock}`;
+    }
   } catch { /* fail-open : prompt inchangé */ }
   /* 2026-07-10 (Kevin « augmente au max ta mémoire en consommant le minimum ») — mémoire
    * compacte : magasin illimité (GitHub raw, sans clé), on n'injecte que les faits durables
@@ -381,8 +394,14 @@ export async function processQueue(rootEl: HTMLElement): Promise<void> {
   try {
     const { compactMemory } = await import('../../services/ai/compact-memory.js');
     const cBlock = await compactMemory.recallBlock(text);
-    if (cBlock) sysPrompt = `${sysPrompt}\n\n${cBlock}`;
+    if (cBlock && cBlock.length + 2 <= remainingBudget(sysPrompt)) {
+      sysPrompt = `${sysPrompt}\n\n${cBlock}`;
+    }
   } catch { /* fail-open : prompt inchangé */ }
+  /* v13.4.365 — FILET FINAL, au dernier point de mutation avant l'envoi.
+   * C'est la garantie architecturale : peu importe ce qu'une future feature
+   * concaténera au prompt, « system too long » ne peut plus bloquer Apex. */
+  sysPrompt = capSystemPrompt(sysPrompt);
   /* v13.4.273 (Kevin "tout soit bien en place avec eco token") :
    * mesure latence client-side du premier au dernier chunk pour badge UI. */
   const streamT0 = Date.now();
