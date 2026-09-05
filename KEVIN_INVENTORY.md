@@ -3,6 +3,23 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-05** (Qwen gratuit en IA principale d'Apex v13.4.366 · surveillance du domaine remise en route · Départs light v1.39 · poster de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
 
+## 🆓 « Pareil dans mes autres projets » — IA gratuite en principal partout (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | **NOUVEAU — LE routage IA commun** : qui répond en premier selon la question (Qwen gratuit, Anthropic, Gemini, Perplexity…), secours en chaîne, réponse qui nomme toujours le moteur. Importé par chaque worker | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | **NOUVEAU** — la garde du module (9 tests, hors ligne). `npm run test:ia-route` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais **apis.kd-mc.com/ai** devient le hub commun (Qwen d'abord, bascule par question, ancienne chaîne en secours). Bug corrigé : le vrai hôte GitHub Pages passe enfin | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `index.html` (CMCteams v9.892) | Le chat IA envoie les questions courantes au relais gratuit ; planning/outils/actions restent à Anthropic ; **marche sans clé pour les employés** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `tests/verify-cmc-ia-gratuite.mjs` | **NOUVEAU** — la garde CMCteams (26 contrôles : la fonction de décision est extraite du vrai fichier et exécutée). `npm run test:cmc-ia-gratuite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cmc-ia-gratuite.mjs) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.284) | Qwen pour le chat, résumés, traductions, reformulations ; Anthropic pour agir et chercher | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) |
+| `messaging-app/tests/unit/api-worker-ia-qwen.test.js` | **NOUVEAU** — 8 tests Apex Chat (Qwen répond, action → Anthropic, secours, cause exacte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-ia-qwen.test.js) |
+| `services/kdmc-router/worker.js` + `wrangler.toml` | Coach Lingua sur Qwen (multilingue) d'abord ; binding Workers AI ajouté au routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/lingua-ia.test.mjs` | **NOUVEAU** — la garde du coach (Qwen nommé, secours, fail-open). `npm run test:lingua-ia` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/lingua-ia.test.mjs) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse World Monitor par Qwen, Anthropic en secours (clé devenue optionnelle) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-wm-brief.yml) |
+| `services/kdmc-crea-ai/worker.js` | Paroles / compositions : Qwen Workers AI en tête (Qwen3 récents), les 18 moteurs à clé en secours, toutes les causes de bascule visibles | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tools/finances/index.html` (v0.15.0) | Qwen en tête du « gratuit d'abord » | [ouvrir](https://finances.kd-mc.com) · [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/finances/index.html) |
+
 ## 🆓 Qwen gratuit en IA principale + bascule auto par question — Apex v13.4.366 (2026-09-05, nuit)
 
 | Fichier | À quoi ça sert | Liens |

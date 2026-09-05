@@ -66,6 +66,11 @@ run_worker_first = true
 binding = "ACCOUNTS"
 id = "8cfa33a28ac045adb7b7a9556ca8a073"
 
+# Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+# Workers AI (binding AI, 0 clé) sert le coach Lingua via services/_shared/ia-route.js.
+[ai]
+binding = "AI"
+
 # Alerte push « nouvel appareil » → worker de push existant (sous-domaine = le COMPTE
 # 9r4rxssx64, jamais un nom deviné — leçon #85). URL publique ici ; le JETON est un
 # secret (KDMC_PUSH_TOKEN, posé par le workflow depuis PUSH_ADMIN_TOKEN). Sans jeton,

@@ -139,7 +139,7 @@ test('secretName : noms EXACTS (leçon secrets)', () => {
   assert.equal(secretName('inconnu'), '');
 });
 
-test('AI_CHAIN : gemini en tête, providers connus', () => {
+test('AI_CHAIN (secours historique, ordre inchangé) : gemini en tête, providers connus', () => {
   assert.equal(AI_CHAIN[0], 'gemini');
   assert.ok(AI_CHAIN.includes('openrouter'));
 });
@@ -212,6 +212,46 @@ test('/ai : fallback Workers AI SANS clé externe (env.AI mock) → 200', async 
   });
   assert.equal(r.status, 200);
   const b = await r.json();
-  assert.equal(b.provider, 'workers-ai');
+  /* Kevin 2026-09-05 : sans aucune clé, c'est QWEN (Workers AI) qui répond — et il est nommé. */
+  assert.equal(b.provider, 'qwen');
+  assert.equal(b.model, '@cf/qwen/qwen3.8-27b');
+  assert.equal(b.domain, 'general');
   assert.ok(b.text.includes('Workers AI'));
+});
+
+test('/ai : une ACTION va à Anthropic (outils) même avec Qwen disponible ; réponse vide Qwen → secours', async () => {
+  const calls = [];
+  const fakeAI = { run: async (model) => { calls.push(model); return { response: '<think>hmm</think>Qwen répond' }; } };
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('api.anthropic.com')) return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Anthropic agit' }] }), { status: 200 });
+    return new Response('{}', { status: 500 });
+  };
+  try {
+    const r = await call('/ai', {
+      method: 'POST',
+      headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'déploie le worker maintenant' }] }),
+      env: { AI: fakeAI, ANTHROPIC_API_KEY: 'k' },
+    });
+    const b = await r.json();
+    assert.equal(r.status, 200);
+    assert.equal(b.provider, 'anthropic');
+    assert.equal(b.domain, 'admin');
+    assert.equal(calls.length, 0, 'Qwen pas appelé pour une action');
+
+    const g = await call('/ai', {
+      method: 'POST',
+      headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'quelle heure ouvre le casino ?' }] }),
+      env: { AI: fakeAI, ANTHROPIC_API_KEY: 'k' },
+    });
+    const gb = await g.json();
+    assert.equal(gb.provider, 'qwen', 'question courante → Qwen gratuit même si Anthropic est là');
+    assert.equal(gb.text, 'Qwen répond', '<think> jamais montré');
+  } finally { globalThis.fetch = orig; }
+});
+
+test('isTrustedOrigin : le VRAI hôte GitHub Pages (9r4rxssx64-creator) passe', () => {
+  assert.equal(isTrustedOrigin('https://9r4rxssx64-creator.github.io'), true);
 });

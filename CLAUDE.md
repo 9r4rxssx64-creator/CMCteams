@@ -55,12 +55,34 @@ dur : un oubli = fournisseur **silencieusement ignoré**, erreur #28) + `PROXY_P
   `qwen HTTP <code>` — l'agent ne peut atteindre ni workers.dev ni l'API GitHub, le journal CI est
   la preuve (leçon #135).
 
-### 6. Test mental obligatoire avant de toucher au routage IA
+### 6. « Pareil dans mes autres projets » (Kevin 2026-09-05) — UN module partagé, pas des copies
+`services/_shared/ia-route.js` porte la MÊME logique qu'Apex (préférences par domaine,
+`detectDomain`, `planChain`, `routeText` qui ne lève jamais et nomme provider + modèle). Chaque
+worker l'**importe** (wrangler embarque les imports relatifs : tous les workflows déploient le
+dossier) et déclare `[ai] binding = "AI"`. Garde : `npm run test:ia-route` (9 tests).
+
+| Projet | Où | Ce qui répond en premier |
+|---|---|---|
+| **apis.kd-mc.com** (`services/kdmc-apis`) | `/ai` = hub commun, origine de confiance obligatoire | Qwen (questions courantes) · Anthropic (code/raisonnement/actions) · chaîne historique `AI_CHAIN` en secours (ordre inchangé, garde `test:apis-paliers`) |
+| **CMCteams** (`index.html`) | `cmcIaFreeDomain` + `cmcIaFreeAsk` → hub | questions courantes → Qwen ; planning/équipe/congé/convention/actions/photo/code → Anthropic + outils ; relais KO → Anthropic si clé, sinon mode local. **Sans clé, un employé a une IA.** Garde `test:cmc-ia-gratuite` (26) |
+| **Apex Chat** (`messaging-app/workers/api-worker.js`) | `_iaOrdered(env, domaine, fns)` | chat : par type de question · résumé/traduction/reformulation → Qwen · réponses rapides → Groq puis Qwen · recherche sémantique → Anthropic. Test `api-worker-ia-qwen.test.js` (8) |
+| **Lingua** (`services/kdmc-router` `/__lingua/ai`) | `routeText(domain:'translation')` | Qwen multilingue, puis Gemini/Groq/Mistral, fail-open. Garde `test:lingua-ia` |
+| **World Monitor** (`tools/cloudflare/wm-brief`) | `routeText(domain:'summary')` | Qwen, Anthropic en secours (clé devenue optionnelle) |
+| **Créa AI** (`services/kdmc-crea-ai`) | `anyText` | Qwen Workers AI en tête (Qwen3 récents), puis 18 moteurs à clé, puis Llama CF ; `fallback` = TOUTES les causes |
+| **Finances** (`tools/finances`) | `AI_FREE_CHAIN` | Qwen via le relais Apex (texte seul), puis Groq/Mistral/Cerebras, Gemini, Claude |
+| La Détente (images), RAG (embeddings), Balances (soldes) | — | **aucun modèle texte** → hors périmètre, rien à changer |
+
+Interdits : recopier la logique dans un worker (elle diverge, #142) ; mettre un moteur devant
+sans garder l'ancien ordre en secours ; proposer Qwen pour une image ou pour une action.
+
+### 7. Test mental obligatoire avant de toucher au routage IA
 > *« Cette question va-t-elle à une IA gratuite quand une gratuite suffit ? Va-t-elle à l'IA la
 > plus PERTINENTE quand ça compte (outils, vision, raisonnement) ? Le fournisseur que j'ajoute
-> est-il dans les 5 listes ? Ai-je une preuve qu'il répond, sans réseau ET en vrai ? »*
+> est-il dans les 5 listes ? Le worker importe-t-il le module partagé au lieu de le recopier ?
+> Ai-je une preuve qu'il répond, sans réseau ET en vrai ? »*
 
-S'applique : Apex v13 (référence), CMCteams IA, tous projets présents et futurs. Leçon **#214**.
+S'applique : Apex v13 (référence), CMCteams, Apex Chat, Lingua, World Monitor, Créa, Finances,
+le relais du domaine, tous projets présents et futurs. Leçons **#214, #215**.
 
 ---
 

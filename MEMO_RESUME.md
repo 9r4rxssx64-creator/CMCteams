@@ -1,5 +1,41 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (nuit) — « Pareil dans mes autres projets » : IA gratuite en principal partout
+
+**Demande Kevin** : *« Pareil dans mes autres projets. »* (après Qwen dans Apex, ci-dessous)
+
+**Ce qui change pour Kevin** (un seul module partagé `services/_shared/ia-route.js`, même
+bascule qu'Apex : questions courantes → Qwen gratuit ; code / raisonnement / action → Anthropic ;
+image → Gemini ; recherche → Perplexity ; l'ancien ordre de chaque projet reste en secours) :
+- **CMCteams v9.892** : les questions courantes partent au relais du domaine (0 clé). Planning,
+  équipes, congés, convention, actions, photos → Anthropic et ses outils, comme avant. Si le
+  gratuit tombe → Anthropic quand il y a une clé, sinon le mode local. **Un employé sans clé a
+  maintenant une IA.**
+- **Apex Chat v1.1.284** : Qwen d'abord pour le chat, les résumés, les traductions, la
+  reformulation ; Anthropic pour agir et pour la recherche précise. Au passage, trois numéros de
+  version différents (badge 279, cache 279, source 283) sont réalignés.
+- **Lingua** (coach) : Qwen multilingue d'abord, puis Gemini/Groq/Mistral.
+- **World Monitor** (synthèse actu) : Qwen d'abord, Anthropic en secours (clé plus obligatoire).
+- **Créa AI** (paroles, compositions) : Qwen Workers AI en tête, 18 moteurs à clé en secours.
+- **Finances v0.15.0** : Qwen en tête du « gratuit d'abord » (texte seul, les documents vont
+  toujours aux moteurs qui lisent PDF/photos).
+- **Relais du domaine apis.kd-mc.com** : devient le hub commun, avec Anthropic en secours
+  pertinent. **Bug trouvé** : le vrai hôte GitHub Pages (`9r4rxssx64-creator.github.io`) n'était
+  pas dans ses origines de confiance → corrigé + test.
+- Rien à changer pour La Détente (images), RAG (embeddings), Balances (soldes) : aucun modèle texte.
+
+**Preuves** : module 9/9 · relais 29/29 + paliers 63/63 · CMCteams 26/26 (fonction extraite et
+exécutée) · Apex Chat 100/100 + 8/8 · Lingua 2/2 + coach 15/15 · Créa 71/71 · 6 workers
+`node --check` · gates dépôt public / destinations / pipefail / XSS / taille OK. Leçon **#215**.
+
+**Honnête** : `router-secours` échoue 6× sur `main` avant mes changements (copie de secours qui
+oublie cuisine/worldmonitor/osint/ia/outils/shops) — pas causé ici, à traiter à part. Les gardes
+Playwright (finances, ia-proxy-routing, lingua…) ne tournent pas dans ce bac à sable (pas de
+navigateur installable) : c'est la CI qui les joue. Les déploiements des 6 workers partent au
+merge dans `main` ; leurs étapes de vérification réelle prouvent qui répond (provider/model).
+
+---
+
 ## 5 septembre 2026 (nuit) — Qwen gratuit devient l'IA principale d'Apex, bascule auto par question (v13.4.366)
 
 **Demande Kevin** : *« Fait tourner Apex sur Qwen l'IA gratuite, privilégie les IA gratuites en tâche
