@@ -1,5 +1,33 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 — Messages : la photo ne s'ouvrait pas (corrigé)
+
+**Retour Kevin** : dans la page Messages, le bouton « 📷 Voir la photo » ne montrait rien.
+
+### Cause exacte (mesurée, pas supposée)
+`tools/messages/index.html` demandait la photo avec `_get("cmc_dep_img/"+imgId)`, et ce
+`_get` passait **toute la clé** dans `encodeURIComponent` → le `/` devenait `%2F`.
+Firebase lisait alors `cmc_dep_img%2Fkd_…` comme **une seule clé** portant un slash dans
+son nom, au lieu du chemin `cmc_dep_img/kd_…` → node inexistant → réponse vide → aucune image.
+L'app principale (`index.html:4604`) et l'expéditeur (`tools/departs`) construisaient déjà
+le chemin correctement : **seule la page Messages était touchée**.
+
+### Correctif
+- `_enc()` encode **chaque segment** du chemin séparément (les clés simples ne changent pas).
+- `viewImg` n'accepte plus qu'une vraie adresse d'image dans `src` (parité `_okImgUrl` de Départs).
+- Version bumpée **v1.2 → v1.3** aux **deux** endroits (badge HTML + `APP_VER`) → la page
+  se met à jour toute seule sur l'iPhone.
+
+### Le test existait et restait VERT malgré le bug (faux vert, leçon #103)
+`tests/smoke-apex-messages.mjs` avait bien une photo en fixture, mais son simulateur Firebase
+faisait `decodeURIComponent` sur **tout le chemin** → il retransformait `%2F` en `/` et
+**effaçait le bug** ; et aucune assertion ne vérifiait que l'image s'affiche (seulement que le
+bouton existe). Corrigé : le simulateur garde le chemin **brut** (comme le vrai Firebase),
++ assertion « la photo s'ouvre et son `src` commence par `data:image/` »,
++ garde « badge HTML == APP_VER » (sinon la sonde de mise à jour recharge la page en boucle).
+**Prouvé discriminant** : sur le code d'avant → 2 FAIL ; sur le code corrigé → 16 ok, 0 FAIL.
+
+
 ## 2 septembre 2026 — GitLab partout, sessions débloquées, miroirs vérifiés
 
 **Décision Kevin** : GitHub suspendu → **GitLab pour tout, jusqu'à nouvel ordre**.
