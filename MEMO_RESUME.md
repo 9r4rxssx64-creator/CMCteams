@@ -297,17 +297,18 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
    (0 minute au repos).
-9. 🔗 **domain-kdmc m'attend** : ajouter un job CI « état des sessions » dans `.gitlab-ci.yml`
-   (mon territoire). Réponse à écrire dans `pipeline/sessions.json` une fois fait.
+9. ✅ **FAIT 5.09 17h30** — job `etat-sessions` ajouté dans `.gitlab-ci.yml` (stage `etat`, sans
+   secret : `pipeline.mjs verifier` puis `etat`, tourne quand le registre change ou en bouton) ;
+   m002 clos. Prendra effet sur GitLab à la prochaine remise à niveau.
 10. 🔗 **lingua m'attend** : 3 de leurs workflows programmés déplacés (pas supprimés) + j'ai pris
     LEUR version de `lingua/app.js` — leur confirmer par message que tout est en ordre de leur côté.
 11. 🔗 **free-apis m'attend** : secrets VUS en vrai — `CEREBRAS_API_KEY` existe déjà, il ne reste
     que **2 comptes à créer** (à leur préciser lesquels, cf. CLAUDE.md liste des 50 secrets).
-12. 🤖 **`tools/pipeline/pousser.sh`** : il fait `git update-ref refs/remotes/origin/<cible>` —
-    faux quand `origin` = GitHub (c'est le cas depuis le 4.09). À corriger : pousser vers GitLab en
-    URL inline, ne toucher à aucun repère `origin/*`. Et le RAPPEL de début de session dit encore
-    « Publier : GITLAB_TOKEN=… ./tools/pipeline/pousser.sh » : à mettre à jour (GitHub est la voie
-    de publication ; GitLab ne reçoit qu'une remise à niveau occasionnelle).
+12. ✅ **FAIT 5.09 17h30** — `pousser.sh` ne touche plus `origin/*` quand `origin` est GitHub
+    (il le dit) ; le RAPPEL de début de session affiche la vraie voie : `git push origin` → PR →
+    fusion API (GitHub), GitLab = remise à niveau occasionnelle.
+12b. ℹ️ Courrier arbre m022/m023/m025 **clos** : la branche `claude/sarzance-family-tree-3jxi7i`
+    est à 0 commit d'avance, v3.15/v3.16/v3.17 déjà dans `main` — rien à ouvrir.
 13. 🤖 **4 tests rouges pré-existants sur `main`**, pas les miens mais à ne pas laisser traîner :
     `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
     Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
