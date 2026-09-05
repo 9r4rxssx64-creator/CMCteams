@@ -79,9 +79,9 @@
       ],
       "etat": "actif",
       "maj": "2026-09-05",
-      "attend_kevin": "1) Ouvrir arbre.kd-mc.com → Outils → « Publier l'arbre sur le domaine » (code admin) — 1 fois. 2) Changer le code famille (Outils → Changer le code) : l'ancienne empreinte a été publique. 3) Jeton GitLab lecture pour v3.7→v3.14 (optionnel).",
+      "attend_kevin": "changer le code famille (Outils → Changer le code) ; révoquer le jeton GitLab glpat-wD6Q…",
       "attend_session": null,
-      "note": "v3.16 : données et empreinte SORTIES du fichier public — code vérifié sur le domaine (/__arbre/unlock), publication admin depuis Outils, règles Firebase par empreinte. Vérifié en vrai navigateur (verify-domaine 21/21, verify-poster avec famille synthétique). Reste : Kevin publie 1× depuis son iPhone (Outils → Publier) puis change le code famille ; v3.7→v3.14 toujours à récupérer (jeton GitLab lecture)."
+      "note": "v3.17 : arbre v3.7→v3.14 rapatrié de GitLab (code porté, docs de recherche remis sur GitHub, branche publie-septembre poussée). Données (119 fiches) déposées dans D1 kdmc-arbre + repli D1 dans le routeur → le domaine sert l'arbre dès la fusion, sans publication. Navigateur 23/23, routeur 42/42, gates verts. PR à ouvrir (API GitHub bloquée ici)."
     },
     "lingua": {
       "titre": "Duolingo reverse-engineering",
@@ -439,6 +439,15 @@
       "sujet": "Arbre v3.16 poussée sur claude/sarzance-family-tree-3jxi7i — PR à ouvrir/fusionner (API GitHub bloquée depuis ma session)",
       "corps": "Branche = main + 4 commits (v3.15 poster + v3.16 données hors du fichier public + resync). Gates verts : test:ci sous-ensemble (no-conflicts, arbre-poster, arbre-prive, docs-frais, pipeline-sessions, no-pin-leak, secret-jamais-persiste, depot-public-sain, documents-travail, patrimoine-prive, xss-guard, file-size-guard), routeur arbre.test 34/34 + admin.test 41/41, navigateur verify-domaine 21/21. Lien 1 clic : https://github.com/9r4rxssx64-creator/CMCteams/compare/main...claude/sarzance-family-tree-3jxi7i?expand=1 . À la fusion : deploy-kdmc-router.yml (paths services/kdmc-router/**) et firebase-rules-auto-apply.yml (marqueur) partent seuls. Après fusion Kevin publie 1x depuis Outils puis change le code famille (KEVIN_ACTIONS_TODO).",
       "ts": "2026-09-05 13:11",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m026",
+      "de": "arbre",
+      "a": "toutes",
+      "sujet": "GitLab rapatrié sur GitHub + arbre v3.17 servi par le domaine (D1) — jeton GitLab à révoquer par Kevin",
+      "corps": "Avec le jeton GitLab de Kevin (lecture, jamais écrit sur disque, à révoquer par lui — déjà dans KEVIN_ACTIONS_TODO) : (1) tout ce qui n'existait que sur GitLab est sur GitHub : arbre v3.7→v3.14 (code porté dans v3.17 sur claude/sarzance-family-tree-3jxi7i), docs arbre/PASSATION-ARBRE.md + RECHERCHES-EN-COURS.md + 3 arbre/research/*.md, branche publie-septembre (55 commits) poussée telle quelle. NON rapatriés volontairement : ETAT_RECONSTRUCTION.md, exposition-demande.txt, publier-demande.txt (journal infra GitLab dépassé + fichiers-signaux CI GitLab). (2) Les DONNÉES de l'arbre (119 fiches) ne reviennent pas dans le fichier public : déposées dans la base Cloudflare D1 kdmc-arbre (a10e750d-…), lue en repli par le routeur (services/kdmc-router/worker.js : arbreD1/arbreCodehash/arbreSeedOut, KV prioritaire ; wrangler.toml [[d1_databases]] ARBRE_DB) → domain-kdmc : au prochain déploiement du routeur, la liaison D1 est requise (elle est dans wrangler.toml, rien à faire à la main). (3) Kevin n'a plus à publier : reste seulement « changer le code famille ». (4) PR à ouvrir/fusionner pour claude/sarzance-family-tree-3jxi7i (API GitHub bloquée depuis ma session) : https://github.com/9r4rxssx64-creator/CMCteams/compare/main...claude/sarzance-family-tree-3jxi7i?expand=1 . Leçon #213 : copie de données par le modèle = vérifier par somme de contrôle par morceau (6/8 morceaux étaient faux, JSON pourtant valide).",
+      "ts": "2026-09-05 17:11",
       "etat": "ouvert"
     }
   ]

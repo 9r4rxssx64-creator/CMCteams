@@ -1,7 +1,19 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05 nuit** (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · poster grand format · dépôt public sécurisé)
+
+## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.17) | Le code v3.14 est de retour (fiches fantômes purgées, plus de « vivant », familles BRICCO/MAGNANI/BEAUMELLE, liens Antenati/FranceArchives/Journal de Monaco/Gallica) **+** mise à niveau automatique depuis le domaine (`refreshFromDomain` : un appareil qui a l'ancien arbre récupère les fiches corrigées, garde ses photos). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| Base Cloudflare **D1 `kdmc-arbre`** (hors dépôt) | **Les 119 personnes** (v3.14) + l'empreinte du code, déposées et vérifiées fiche par fiche. Le domaine les sert à qui tape le code, sans que tu publies. | [Base D1 dans Cloudflare](https://dash.cloudflare.com/?to=/:account/workers/d1/databases/a10e750d-de49-47b5-b1d8-0e937eccbec8) |
+| `services/kdmc-router/worker.js` (repli D1) + `wrangler.toml` (liaison `ARBRE_DB`) | Le routeur lit le KV d'abord, la base D1 en repli (`source` visible dans `/__arbre/status`). Test 42/42 avec base simulée. | [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/worker.js) · [wrangler.toml](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/wrangler.toml) |
+| `arbre/PASSATION-ARBRE.md` · `arbre/RECHERCHES-EN-COURS.md` | Tes documents de passation et de recherches en cours, retrouvés sur GitLab et remis sur GitHub comme avant. | [Passation](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/PASSATION-ARBRE.md) · [Recherches](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/RECHERCHES-EN-COURS.md) |
+| `arbre/research/BRICCO-LEO-BRANCALASSO-2026-09-01.md` · `INSEE-DECES-21-NOMS-2026-09-01.md` · `VICTOR-SAUVAIGO-CITATIONS-2026-09-01.md` | Les 3 dossiers de recherche du 1.09 (branche BRICCO/LEO/Brancalasso, décès INSEE sur 21 noms, citations de Victor Sauvaigo), retrouvés sur GitLab. | [Dossier research](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/sarzance-family-tree-3jxi7i/arbre/research) |
+| Branche `publie-septembre` | Branche qui n'existait que sur GitLab (55 commits), maintenant aussi sur GitHub. | [Voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/publie-septembre) |
+| `tools/arbre/verify-domaine.mjs` (scénario 8) | Vérifie en vrai navigateur qu'un appareil existant récupère bien la version plus récente du domaine (23 contrôles). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-domaine.mjs) |
 
 ## 🔐 L'arbre sans données dans le fichier public — session 2026-09-05 soir (arbre v3.16, branche `claude/sarzance-family-tree-3jxi7i`)
 

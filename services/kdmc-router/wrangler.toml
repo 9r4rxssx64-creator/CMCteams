@@ -66,6 +66,15 @@ run_worker_first = true
 binding = "ACCOUNTS"
 id = "8cfa33a28ac045adb7b7a9556ca8a073"
 
+# Arbre généalogique — AMORCE des données (fait n°12) : base D1 `kdmc-arbre` créée le 5.09.2026,
+# table kv(k,v,saved_at) avec `codehash` (empreinte du code famille) et `seed` (l'arbre v3.14, texte).
+# Le routeur y lit SEULEMENT si KV ACCOUNTS (arbre:codehash / arbre:seed = publication depuis
+# l'iPhone) est vide. Aucune donnée personnelle dans le dépôt : elles sont dans cette base.
+[[d1_databases]]
+binding = "ARBRE_DB"
+database_name = "kdmc-arbre"
+database_id = "a10e750d-de49-47b5-b1d8-0e937eccbec8"
+
 # Alerte push « nouvel appareil » → worker de push existant (sous-domaine = le COMPTE
 # 9r4rxssx64, jamais un nom deviné — leçon #85). URL publique ici ; le JETON est un
 # secret (KDMC_PUSH_TOKEN, posé par le workflow depuis PUSH_ADMIN_TOKEN). Sans jeton,
