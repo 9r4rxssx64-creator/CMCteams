@@ -122,6 +122,9 @@ conformite:
 # et verifier-cloudflare sont TOUS partis pour un simple miroir de branche
 # (~7 min brûlées, une publication non demandée). Un job à fichier-signal ne
 # doit JAMAIS partir sur une branche nouvelle : cette règle se place en premier.
+# Et TOUT job qui `needs: [verifier-cloudflare]` la porte aussi : sinon, sur une
+# branche nouvelle, il réclame un job qui n'existe pas → le pipeline entier naît
+# « failed » avec 0 job (« error on the CI/CD configuration file », mesuré 17h31).
 .pas-sur-nouvelle-branche: &pas-sur-nouvelle-branche
   if: '$CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"'
   when: never
@@ -245,6 +248,7 @@ renaitre-workers:
   image: node:20
   needs: [verifier-cloudflare]
   rules:
+    - *pas-sur-nouvelle-branche   # needs: verifier-cloudflare, absent sur une branche nouvelle
     - if: '$DEPLOYER_WORKERS'
     - when: never
   script:
@@ -257,6 +261,7 @@ regarder-cloudflare:
   needs: [verifier-cloudflare]
   allow_failure: true
   rules:
+    - *pas-sur-nouvelle-branche   # needs: verifier-cloudflare, absent sur une branche nouvelle
     - if: '$REGARDER'
     - when: never
   script:
@@ -319,6 +324,7 @@ qui-sert:
   needs: [verifier-cloudflare]
   allow_failure: true
   rules:
+    - *pas-sur-nouvelle-branche   # needs: verifier-cloudflare, absent sur une branche nouvelle
     - if: '$QUI_SERT'
     - when: manual
       allow_failure: true
