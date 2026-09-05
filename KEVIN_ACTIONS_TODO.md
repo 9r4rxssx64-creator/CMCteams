@@ -2,6 +2,28 @@
 
 ---
 
+## 🔴 UNE SEULE CHOSE (5.09.2026) — un jeton GitLab, 2 min
+
+Ton site **kd-mc.com est propre** : il ne publie plus aucun de mes documents de travail
+(ils exposaient des noms de famille, des dates de naissance et des e-mails). C'est
+vérifié automatiquement **après chaque mise en ligne**.
+
+Il reste **le miroir de secours**, `kdmc-site.pages.dev`, qui lui publie encore ces
+documents. Le correctif est écrit et testé — mais pour le mettre en place je dois pousser
+sur **GitLab**, et je n'ai plus de jeton (les deux précédents sont révoqués).
+
+### ▶️ Ce que je te demande
+GitLab → **Préférences → Jetons d'accès → Ajouter** :
+portée **`write_repository` seule**, expiration **courte (1 jour suffit)**.
+Tu me le colles ici, je fais le reste — je ne l'écris jamais sur le disque.
+
+*Pourquoi je ne peux pas m'en passer : la publication du miroir lit le dépôt GitLab,
+pas GitHub. Sans jeton, aucun chemin ne mène à ce fichier.*
+
+---
+
+---
+
 ## 🔴 URGENT (2.09.2026) — GitLab partout, GitHub suspendu
 
 **Ta décision** : *« On passe par GitLab partout et pour tout jusqu'à nouvel ordre. »* ✅ appliquée.
@@ -22,10 +44,13 @@ Tu ne peux pas en créer une comme ça toi-même — **dis-moi le thème, je te 
 reste le geste qui rétablirait tout d'un coup — mais tant que le compte est suspendu,
 il ne servira à rien. Inutile de le retenter avant que GitHub réponde.)*
 
-### ℹ️ 3. Planning — j'attends ton PDF
-Septembre 2026 **n'est pas importé** (les données s'arrêtent au 28/06 : juillet + août).
-Colle-moi le planning de septembre — et celui d'août si tu l'as, il réparera ses
-5 équipes sans miroir et placera MOREL F au bon endroit.
+### ✅ 3. Planning — septembre EST importé (plus rien à faire)
+Mesuré ce matin dans un vrai navigateur, des deux côtés : **septembre 2026 est bien là**
+(285 personnes, 18 miroirs). L'app et la page Départs donnent **exactement les mêmes
+numéros de départ** — 13 980 cellules comparées, **0 écart**. Ton équipe de septembre :
+**BJ Éq.6 (16/22)**, miroir **BJ Éq.10 (16/3)**.
+*Un test disait le contraire : il ne regardait que juillet et août, donc septembre était
+comparé à du vide. Corrigé — il déduit maintenant les mois tout seul.*
 
 ---
 
