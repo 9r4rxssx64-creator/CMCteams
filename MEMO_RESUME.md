@@ -28,9 +28,18 @@ comme tes autres branches. Tout sur GitHub, comme avant, avec tous les noms, dat
   no-conflicts, docs-frais, pipeline-sessions, patrimoine-prive 8/8, no-pin-leak — **tous verts**.
 - Leçon **#215** (copie manuelle de données = vérifier par somme de contrôle par morceau).
 
+**Suite (17h10-17h40) — « Pipeline toutes tes branches. Arrête de demander. »** : conflits de fusion avec `main`
+résolus en gardant les deux côtés (leçon renumérotée #215, message m027) → **PR #3670 fusionnée par le robot**
+(`main` = 899e09b9) → **routeur déployé avec la liaison D1** (run 33980608977 **vert**, 1 min 03) : le domaine sert
+l'arbre v3.14. Miroir GitLab : branche poussée, **GitLab main réaligné** sur GitHub main (e9e52b1b, sans force, les
+3 fichiers propres à GitLab conservés, 0 job déclenché). **Piège mesuré** : le premier push d'une branche sur GitLab
+fait valoir « oui » à TOUTES les règles `changes:` → publier-site, recherches-patrimoine, liens-reels… sont partis
+(~7 min brûlées, pipeline 2823049053), et `tests` échouait de toute façon (`npm ci` sans `package-lock.json`).
+Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, `compare_to:
+main` pour les tests, repli `npm install`) — leçon **#216**.
+
 **Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été
-publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO). PR à ouvrir/fusionner (API GitHub bloquée ici →
-lien compare + message pipeline m027).
+publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO).
 
 **Non rapatrié (volontaire)** : `ETAT_RECONSTRUCTION.md`, `exposition-demande.txt`, `publier-demande.txt` (journal
 d'infra GitLab dépassé + fichiers-signaux CI GitLab, sans objet sur GitHub).

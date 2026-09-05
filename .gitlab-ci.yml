@@ -45,17 +45,21 @@ tests:
     key: npm-$CI_COMMIT_REF_SLUG
     paths: [node_modules/]
   script:
-    - npm ci --no-audit --no-fund
+    # Pas de package-lock.json dans le dépôt : `npm ci` seul échoue TOUJOURS (EUSAGE,
+    # mesuré 5.09 17h18). Même repli que les workflows GitHub.
+    - npm ci --no-audit --no-fund || npm install --no-audit --no-fund
     - npm run test:ci
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'   # miroir de publication, pas le code
       when: never
     - changes:
-        - "**/*.js"
-        - "**/*.mjs"
-        - "**/*.html"
-        - "**/*.json"
-        - "tests/**/*"
+        paths:
+          - "**/*.js"
+          - "**/*.mjs"
+          - "**/*.html"
+          - "**/*.json"
+          - "tests/**/*"
+        compare_to: "refs/heads/main"   # une NOUVELLE branche n'est pas « tout a changé »
       when: on_success
     - when: manual                # rien à voir dans le code → on ne brûle rien
       allow_failure: true
@@ -107,6 +111,16 @@ conformite:
 # Il ne part JAMAIS tout seul : ni « schedule » (interdit, cause de la
 # suspension GitHub), ni au fil des pushs. Il faut le lancer à la main.
 # =============================================================================
+# PIÈGE MESURÉ LE 5.09 (17h17, pipeline 2823049053) : sur le PREMIER push d'une
+# branche, GitLab n'a rien à quoi comparer → CHAQUE règle `changes:` vaut « oui ».
+# Résultat : publier-site, recherches-patrimoine, liens-reels, exposition-publique
+# et verifier-cloudflare sont TOUS partis pour un simple miroir de branche
+# (~7 min brûlées, une publication non demandée). Un job à fichier-signal ne
+# doit JAMAIS partir sur une branche nouvelle : cette règle se place en premier.
+.pas-sur-nouvelle-branche: &pas-sur-nouvelle-branche
+  if: '$CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"'
+  when: never
+
 recherches-patrimoine:
   stage: recherches
   image: mcr.microsoft.com/playwright:v1.50.0-noble
@@ -115,6 +129,7 @@ recherches-patrimoine:
   # c'est ce qui a fait suspendre GitHub) : c'est un push volontaire, comme un
   # bouton — sauf que le bouton, c'est moi qui l'appuie, pas Kevin.
   rules:
+    - *pas-sur-nouvelle-branche
     - changes: ["patrimoine-demande.txt"]
       when: on_success
     - when: manual                # au cas où Kevin veuille le relancer lui-même
@@ -153,6 +168,7 @@ verifier-cloudflare:
                                 # les tests : le jour où on en a besoin, c'est
                                 # justement que quelque chose ne va pas.
   rules:
+    - *pas-sur-nouvelle-branche
     - changes: ["publier-demande.txt"]
       when: on_success
     - if: '$CLOUDFLARE_API_TOKEN && ($PUBLIER || $DEPLOYER_WORKERS || $REGARDER || $QUI_SERT)'
@@ -192,6 +208,7 @@ publier-site:
   image: node:20
   needs: [verifier-cloudflare]  # et rien d'autre : indépendant des tests
   rules:
+    - *pas-sur-nouvelle-branche
     - changes: ["publier-demande.txt"]
       when: on_success
     - if: '$PUBLIER'
@@ -312,6 +329,7 @@ exposition-publique:
   needs: []                     # doit pouvoir mesurer SEUL, sans republier
   allow_failure: true
   rules:
+    - *pas-sur-nouvelle-branche
     - changes: ["publier-demande.txt", "exposition-demande.txt"]
       when: on_success
     - if: '$EXPOSITION'
@@ -355,6 +373,7 @@ liens-reels:
   <<: *veille-base
   image: node:20-alpine
   rules:
+    - *pas-sur-nouvelle-branche
     - changes: ["veille-demande.txt"]
       when: on_success
     - if: '$LIENS'

@@ -81,7 +81,7 @@
       "maj": "2026-09-05",
       "attend_kevin": "changer le code famille (Outils → Changer le code) ; révoquer le jeton GitLab glpat-wD6Q…",
       "attend_session": null,
-      "note": "v3.17 : arbre v3.7→v3.14 rapatrié de GitLab (code porté, docs de recherche remis sur GitHub, branche publie-septembre poussée). Données (119 fiches) déposées dans D1 kdmc-arbre + repli D1 dans le routeur → le domaine sert l'arbre dès la fusion, sans publication. Navigateur 23/23, routeur 42/42, gates verts. PR à ouvrir (API GitHub bloquée ici)."
+      "note": "v3.17 fusionnée dans main (PR #3670 → 899e09b9). Routeur déployé avec liaison D1 (run 33980608977 vert) : le domaine sert l'arbre v3.14. Miroir GitLab : branche poussée, GitLab main réaligné (e9e52b1b, sans force). Piège trouvé et corrigé : 1er push d'une branche sur GitLab = toutes les règles changes: vraies (publier-site etc. partis) + npm ci sans lockfile → .gitlab-ci.yml corrigé (leçon #216)."
     },
     "lingua": {
       "titre": "Duolingo reverse-engineering",
