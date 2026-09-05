@@ -439,6 +439,32 @@ maintenant dans GitHub **à l'identique** (copie octet pour octet, aucune diverg
 réconcilier), et `.gitlab-ci.yml` des deux côtés est **la même recette**.
 `secrets-map.txt` ne contient que des **noms** de secrets, aucune valeur.
 
+### Suite (5.09 soir) — l'arbre généalogique : les DONNÉES sont sorties du fichier public
+
+`arbre/index.html` (servi tel quel, dépôt public) embarquait **~100 personnes** (noms, dates et
+lieux de naissance, notes de famille) **et l'empreinte du code famille**, comparée dans le
+navigateur. Cette empreinte est aussi le nom du chemin Firebase `/arbre/<empreinte>` — et la
+règle `/arbre .read = auth != null` laissait un jeton anonyme **lister tout `/arbre`**. Donc :
+lire le fichier = avoir les données, sans code. Corrigé en **v3.16** (branche
+`claude/sarzance-family-tree-3jxi7i`) :
+
+| Avant | Maintenant |
+|---|---|
+| ~65 Ko de personnes dans le HTML | **0 personne** dans le fichier (348 → 283 Ko) |
+| empreinte du code dans le HTML, comparée localement | le code se vérifie sur le domaine : `POST /__arbre/unlock` (routeur, empreinte en KV `arbre:codehash`, essais limités par IP, journal) |
+| nouvel appareil = données du fichier | nouvel appareil = données envoyées **par le domaine** à qui prouve le code (`arbre:seed`, texte sans photos) |
+| — | publication **admin seulement** (`PUT /__arbre/seed`, même grant que `/__admin/login`) depuis **Outils → 📤 Publier** |
+| changement de code = local | `POST /__arbre/code` (preuve = ancien) + l'**ancien chemin cloud est effacé** |
+| Firebase `/arbre` lisible en entier | lecture/écriture **par enfant 64-hex seulement** (marqueur `rules-deploy-request.json` bumpé → auto-apply) |
+
+**Fail-open** : un appareil qui a déjà l'arbre et l'empreinte en mémoire continue de marcher
+hors ligne ou sur un hébergement sans routeur (contrôle local en repli). **Fail-closed** côté
+domaine : sans empreinte publiée, personne n'entre. Gardes : `npm run test:arbre-prive`
+(dans `test:ci`), `services/kdmc-router/arbre.test.mjs` (34 contrôles, bloquant dans
+`deploy-kdmc-router.yml`) ; vérification en vrai navigateur `tools/arbre/verify-domaine.mjs`
+(21 contrôles, famille **synthétique**). **Ce qui a été public une fois le reste** (historique
+Git) : Kevin doit **publier une fois** depuis son iPhone puis **changer le code famille**.
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
@@ -485,10 +511,14 @@ Stage `veille` ajouté (tout à la demande, **0 minute au repos**) : **liens ré
 **dépendances CDN**, **sources Lingua**, **récolte LSF** — les quatre **sans aucune clé
 nouvelle**.
 
-> ⚠️ **Précision honnête** : ces jobs sont écrits dans le `.gitlab-ci.yml` **du dépôt**, qui
-> est désormais la source. Ils ne tourneront sur GitLab qu'à la **prochaine remise à niveau
-> de GitLab depuis GitHub** — laquelle demande le jeton GitLab (cf. `KEVIN_ACTIONS_TODO.md`).
-> Écrits et validés, oui ; en service là-bas, pas encore. La nuance compte.
+> ✅ **En service depuis le 5.09 (14h)** : GitLab `main` a été remis au niveau de GitHub
+> (commit `042e709ee`, pipeline `2822740843`). Les 4 jobs de veille y apparaissent en
+> **bouton « manual »** (`lingua-lsf`, `lingua-sources`, `cdn-dependances`, `liens-reels`),
+> 0 minute tant qu'on ne les lance pas. Recette de remise à niveau : superposer l'arbre
+> GitHub sur GitLab `main` en **conservant les fichiers privés qui n'existent que là-bas**
+> (`ETAT_RECONSTRUCTION.md`, `arbre/PASSATION-ARBRE.md`, `arbre/RECHERCHES-EN-COURS.md`,
+> `arbre/research/*.md`) et en **retirant** les copies rangées de workflows redevenus actifs
+> sur GitHub (13 le 5.09). Jeton utilisé **une fois**, jamais écrit — à révoquer.
 
 *La veille CDN est passée de **3 adresses écrites à la main** à **78 lues dans le code** :
 75 bibliothèques n'étaient surveillées par personne.*

@@ -95,10 +95,9 @@ for (const [nm, u] of [
 
 // ---- 4) VA PLUS LOIN — registres officiels supplémentaires + photos ----
 // Personnes du seed (extraites du vrai index.html) pour les requêtes par personne
-const HTML2 = fs.readFileSync('arbre/index.html', 'utf8');
-const _st = HTML2.indexOf('var SRC={'); const _en = HTML2.indexOf('function seed(){');
 let SEED = {};
-try { let _u = 0; SEED = new Function('uid', 'now', HTML2.slice(_st, _en) + '\nreturn buildSeed();')(() => 't' + (++_u), () => 0); } catch (e) { console.log('seed extract:', e.message); }
+/* v3.16 : plus de buildSeed dans le fichier public → export privé (tools/arbre/lire-donnees.mjs). */
+try { SEED = (await (await import('./lire-donnees.mjs')).lireDonnees()).persons; } catch (e) { console.log('données de l\'arbre :', e.message); }
 const yr2 = d => { const m = String(d || '').match(/(\d{4})/); return m ? +m[1] : 0; };
 
 R.mil = []; R.graves = []; R.avis = []; R.suisse = [];

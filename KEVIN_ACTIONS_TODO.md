@@ -1,5 +1,13 @@
 # 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
 
+> **5.09.2026 12:50 — « Note toutes les tâches pour plus tard »** : la liste COMPLÈTE (les tiennes,
+> les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
+> « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
+>
+> Tes 4 gestes, dans l'ordre : ① changer le code admin (ci-dessous) · ② révoquer le jeton GitLab
+> `glpat-wD6Q…` · ③ dire aux autres sessions : accès Cloudflare « 9r4 », nombre de gilets +
+> broderie, compte développeur Apple oui/non · ④ envoyer la réponse prête au support GitHub (m003).
+
 ---
 
 ## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
@@ -22,6 +30,20 @@ Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, 
 Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
 **Messages** suivent le routeur toutes seules.
 
+### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
+L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :
+les données sont servies par le domaine à qui tape le code. Il faut les y **mettre une fois**,
+depuis ton iPhone (le seul endroit où elles sont complètes) :
+1. Ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet **Outils** → **📤 Publier
+   l'arbre sur le domaine (admin)** → tape ton code admin (il part au domaine, rien n'est gardé).
+   Tu dois voir « 📤 Arbre publié : N personnes ».
+2. Toujours dans **Outils** → **Changer le code** de la famille : l'ancienne empreinte a été
+   publique (elle était dans le fichier), donc l'ancien code ne vaut plus rien. Repartage le
+   nouveau aux cousins. L'ancien chemin en ligne est effacé automatiquement.
+
+Tant que le geste 1 n'est pas fait : **tes appareils marchent** (ils ont tout en mémoire),
+mais un **nouvel** appareil verrait « Arbre pas encore publié sur le domaine ».
+
 ### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
 - **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
 - **Boutiques** (tableau de bord) : `Paramètres → Changer le PIN admin`.
@@ -31,23 +53,17 @@ connaître (les tests envoient l'empreinte, jamais le code).*
 
 ---
 
-## 🔴 ENSUITE (5.09.2026) — un jeton GitLab, 2 min
+## ✅ FAIT (5.09.2026, 14h) — GitLab est aligné, le jeton a servi une fois
 
-Ton site **kd-mc.com est propre** : il ne publie plus aucun de mes documents de travail
-(ils exposaient des noms de famille, des dates de naissance et des e-mails). C'est
-vérifié automatiquement **après chaque mise en ligne**.
+Tu m'as donné un jeton GitLab : il a servi **une seule fois** (un push, puis lecture du
+pipeline), il n'est écrit **nulle part** (vérifié : 0 trace dans `.git/config`, 0 fichier).
+**GitLab → Préférences → Jetons d'accès → `glpat-wD6Q…` → Révoquer** — un clic, quand tu veux.
 
-Il reste **le miroir de secours**, `kdmc-site.pages.dev`, qui lui publie encore ces
-documents. Le correctif est écrit et testé — mais pour le mettre en place je dois pousser
-sur **GitLab**, et je n'ai plus de jeton (les deux précédents sont révoqués).
-
-### ▶️ Ce que je te demande
-GitLab → **Préférences → Jetons d'accès → Ajouter** :
-portée **`write_repository` seule**, expiration **courte (1 jour suffit)**.
-Tu me le colles ici, je fais le reste — je ne l'écris jamais sur le disque.
-
-*Pourquoi je ne peux pas m'en passer : la publication du miroir lit le dépôt GitLab,
-pas GitHub. Sans jeton, aucun chemin ne mène à ce fichier.*
+Ce que ça a permis : le dépôt GitLab est maintenant **au même niveau que GitHub** (mêmes
+exclusions de publication pour le miroir, mêmes 4 vérifications de veille disponibles
+là-bas en bouton), et **tes documents privés qui n'existent que sur GitLab y sont restés**.
+Le miroir `kdmc-site.pages.dev` a été republié et re-vérifié : **plus aucun document de travail
+dessus** (20 adresses sondées, 20 absentes). Détail dans `MEMO_RESUME.md`.
 
 ---
 

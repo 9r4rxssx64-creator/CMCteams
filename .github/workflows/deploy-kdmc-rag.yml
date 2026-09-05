@@ -5,7 +5,7 @@
 # sur main ET sur claude/** (schéma deploy-apex-chat.yml v1.1.125). Audit du 05/09 :
 # la route /health existait dans la source depuis des semaines mais le worker en ligne
 # datait du 08/07 — personne n'avait appuyé sur le bouton (dispatch seul = déploiement
-# fantôme, leçon #211). La fusion robot dans main (GITHUB_TOKEN) ne déclenche pas les
+# fantôme, leçon #213). La fusion robot dans main (GITHUB_TOKEN) ne déclenche pas les
 # workflows `push`, d'où claude/**. Zéro cron, zéro volume automatique.
 #
 # ⚠️ Vectorize doit être disponible sur le compte (comme les Durable Objects ont été

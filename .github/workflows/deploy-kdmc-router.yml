@@ -32,12 +32,13 @@ jobs:
 
       # Garde BLOQUANTE : on ne déploie pas un routeur dont la voix ou le repli sont cassés.
       # Ces deux tests tournent hors ligne (fetch simulé) → rapides, sans clé, sans réseau.
-      - name: Tests du worker (voix Lingua + voix clonée d'Antonin)
+      - name: Tests du worker (voix Lingua + voix clonée d'Antonin + code famille de l'arbre)
         working-directory: services/kdmc-router
         shell: bash -eo pipefail {0}
         run: |
           node voix-tts.test.mjs
           node antonin-tts.test.mjs
+          node arbre.test.mjs
           node ../../tools/lingua/verify-coach.mjs
 
       - name: Install wrangler

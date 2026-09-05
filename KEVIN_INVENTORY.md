@@ -1,7 +1,7 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (surveillance du domaine · rapatriement · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05** (surveillance du domaine remise en route · Départs light v1.39 · poster de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
 
 ## 🛰️ Surveillance du domaine remise en route — session 2026-09-05 (soir)
 
@@ -9,8 +9,36 @@
 |---|---|---|
 | `services/kdmc-uptime/worker.js` | **La sonde** : toutes les heures, les **26 sous-domaines + 6 workers**. Alerte l'iPhone quand une adresse tombe et quand elle revient. L'ancienne n'en voyait que 13, et elle est éteinte depuis le 14/08 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/worker.js) |
 | `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
-| `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [▶️ Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) |
+| `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
 | `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
+
+## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/departs/index.html` (v1.39) | La page s'ouvre sur **TON équipe du mois en cours** (retrouvée par ton nom, parce que le numéro d'équipe change chaque mois) — et donc sur **ton vrai miroir**. Avant : Kevin tombait sur BJ Éq.7 / miroir BJ Éq.4 au lieu de BJ Éq.6 / miroir BJ Éq.10. | [Ouvrir les Départs](https://cmcteams.kd-mc.com/tools/departs/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/departs/index.html) |
+| `tests/verify-mois-ouverture.mjs` | **La garde** (`npm run test:mois-ouverture`, dans `test:ci`) : compte par compte, sur CMCteams **et** la page light — bon mois, **mon** équipe, **mon** miroir (non vide, réciproque, bouton visible), et les deux surfaces d'accord. Balayage complet : 38 équipes / 245 personnes. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-mois-ouverture.mjs) |
+
+## 🔐 L'arbre sans données dans le fichier public — session 2026-09-05 soir (arbre v3.16, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.16) | **Plus aucune personne ni empreinte dans le fichier.** Le code se vérifie sur le domaine ; **Outils → 📤 Publier l'arbre sur le domaine (admin)** envoie l'arbre (texte, sans photos) une fois ; **Changer le code** prévient le domaine et efface l'ancien chemin cloud. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `services/kdmc-router/worker.js` (bloc `handleArbre`) | Le domaine : `/__arbre/unlock` (code vérifié, essais limités), `/__arbre/seed` (données à qui prouve le code ; publication admin), `/__arbre/code` (changement), `/__arbre/status`. | [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/worker.js) · [Déploiement](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/arbre.test.mjs` | Test du routeur (34 contrôles), **bloquant** avant chaque déploiement. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/arbre.test.mjs) |
+| `tests/arbre-prive.test.mjs` | **La garde** (`npm run test:arbre-prive`, dans `test:ci`) : 0 personne, 0 empreinte dans le fichier, contrôle sur le domaine câblé, publication admin, règles Firebase par empreinte. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-prive.test.mjs) |
+| `tools/arbre/verify-domaine.mjs` | **Vérification en vrai navigateur** (Chromium) avec un domaine simulé : nouvel appareil, réouverture, publication, hors ligne, rien de publié, changement de code — 21 contrôles. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-domaine.mjs) |
+| `tools/arbre/fixture-famille.mjs` | Famille **inventée** (81 personnes, 0 vrai prénom) pour les vérifications — plus jamais de vraies données dans un outil. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/fixture-famille.mjs) |
+| `tools/arbre/lire-donnees.mjs` | **Chargeur commun** des outils locaux (patrimoine, recherches, audit cloud) : lit un **export privé** de l'app (`patrimoine/arbre.json`, ignoré par git, ou `ARBRE_EXPORT=…`) — jamais le fichier public. Sans export : famille inventée, signalée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/lire-donnees.mjs) |
+| `firebase-rules-apex.json` + `tools/firebase/rules-deploy-request.json` | `/arbre` n'est plus lisible en entier : lecture par empreinte seulement (marqueur bumpé → publication automatique). | [Règles](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/firebase-rules-apex.json) |
+
+## 🖼 Poster grand format de l'arbre — session 2026-09-05 (arbre v3.15, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (bloc « POSTER GRAND FORMAT ») | Dans l'arbre : **Outils → 🖼 Poster grand format**, ou le bouton **🖨** de la vue Arbre. Un dessin vectoriel de toute la famille → **PDF** (A4 → A0, B0, **bannières 1 m / 1,5 m / 2 m**), **mosaïque A4** à découper-coller (plan de montage numéroté), **fichier SVG** pour un imprimeur, **image HD**. Indicateur de lisibilité (taille réelle des prénoms en mm) | [ouvrir l'arbre](https://arbre.kd-mc.com) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `tests/arbre-poster.test.mjs` | **La garde** (`npm run test:arbre-poster`, dans `test:ci`) : fonctions définies ET câblées, version app = cache hors-ligne, 9 formats, mosaïque, XSS. Prouvée par 3 sabotages | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
+| `tools/arbre/verify-poster.mjs` | **Vérification en vrai navigateur** (Chromium) : construit le poster pour chaque famille × style × papier, compte les personnes, rend les PDF (poster + mosaïque), capture la feuille iPhone. `node tools/arbre/verify-poster.mjs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) |
 
 ## 🍽 Livre de cuisine complété — session 2026-09-05 (soir)
 
@@ -70,6 +98,10 @@ Les **deux règlements ont été lus** (pas de mémoire) avant de ranger quoi qu
 | `tools/gitlab/qui-sert.sh` | Répond en vrai : **qui sert kd-mc.com aujourd'hui**, GitHub Pages ou le miroir ? (à relancer avant de couper une publication) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/qui-sert.sh) |
 | `tools/gitlab/*.sh` (11 scripts) | Publier, vérifier la clé Cloudflare, déployer un Worker, état du domaine, généalogie… **N'existaient que sur GitLab**, maintenant à l'abri ici aussi | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/tools/gitlab) |
 | `.gitlab-ci.yml` | La recette GitLab — **identique des deux côtés** désormais. 0 tâche programmée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) |
+
+
+### 5 septembre 2026 — vérification du mois d'ouverture
+- [tests/verify-mois-ouverture.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-mois-ouverture.mjs) — garde : app + light ouvrent sur le mois courant, pour chaque compte, avec le cas « mois passé mémorisé ». `npm run test:mois-ouverture`
 
 ## 🔗 Vérificateur de liens RÉEL — session 2026-08-14
 

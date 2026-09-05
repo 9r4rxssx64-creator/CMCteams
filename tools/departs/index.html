@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.32</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.39</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.37";
+var APP_VER="v1.39";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -758,13 +758,16 @@ function fillSel(){ var s=document.getElementById("boardSel"); if(!s)return; s.i
 // ── Ma vue (vue par personne) ──
 function allNames(){ var set={},out=[]; Object.keys(BOARDS).forEach(function(k){ var b=BOARDS[k]; if(b.kind==="abs")return;
   (b.people||[]).forEach(function(p){ if(!set[p.name]){ set[p.name]=1; out.push(p.name); } }); }); out.sort(); return out; }
-function boardForName(nm){ var ks=Object.keys(BOARDS); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
+/* v1.37 — on parcourt du mois le PLUS RÉCENT au plus ancien : une personne change d'équipe chaque
+   mois, on doit tomber sur son équipe ACTUELLE (avant, l'ordre du fichier de données décidait). */
+function _depScanKeys(){ try{ return _depKeysRecent(); }catch(_){ return Object.keys(BOARDS); } }
+function boardForName(nm){ var ks=_depScanKeys(); for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
   if((b.people||[]).some(function(p){return p.name===nm;})) return ks[i]; } return null; }
 function mirrorBoardId(id){ if(!id)return null;
   if(DEP_MIRROR[id]&&BOARDS[DEP_MIRROR[id]])return DEP_MIRROR[id]; // miroir explicite (données générées)
   if(/m$/.test(id)){ var base=id.replace(/m$/,""); return BOARDS[base]?base:null; } var m=id+"m"; return BOARDS[m]?m:null; }
 // v1.12 — résout une personne par matricule SBM (U…) → {bid, name}
-function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); var ks=Object.keys(BOARDS);
+function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); var ks=_depScanKeys();
   for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
     var p=(b.people||[]).find(function(x){return x.id&&String(x.id).toUpperCase()===U;}); if(p)return {bid:ks[i],name:p.name}; } return null; }
 function fillMeSel(){ var s=document.getElementById("meSel"); if(!s)return; s.innerHTML="";
@@ -878,8 +881,67 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
   if(_mq){ if(/^u\w*\d/i.test(_mq)){ var _h=personById(_mq); if(_h){ ME=_h.name; _MEBID=_h.bid; } } else { ME=_mq; _MEBID=boardForName(_mq); }
     try{localStorage.setItem("cmc_dep_me",ME);}catch(_){} }
 }catch(_){}
+/* v1.37 — « quand j'ouvre, ce n'est pas le mois du jour » (Kevin 2026-09-05).
+   L'identifiant d'un tableau contient le mois (« 2026-08-1 ») et son NUMÉRO n'est PAS stable d'un
+   mois à l'autre (2026-08-1 = CMC Éq.5, 2026-09-1 = BJ Éq.1). On mémorisait cet identifiant tel
+   quel : tant que le tableau d'août existait encore, la page rouvrait sur AOÛT indéfiniment.
+   On mémorise donc l'ÉQUIPE (repère stable, lu dans le libellé) et on la retrouve dans le mois le
+   plus récent. Si l'équipe n'existe plus ce mois-ci → tableau par défaut.
+
+   v1.39 — « miroir aussi pour chaque » (Kevin 2026-09-05). Le repère « nom d'équipe » ne suffit
+   PAS : chacun CHANGE D'ÉQUIPE CHAQUE MOIS (règle métier absolue). Reporter « BJ Éq.7 » d'août sur
+   septembre posait Kevin sur une équipe où il n'est même pas — et donc sur le MAUVAIS MIROIR
+   (mesuré : affiché BJ Éq.7 / miroir BJ Éq.4, alors qu'il est en BJ Éq.6 / miroir BJ Éq.10).
+   Le seul repère stable d'un mois à l'autre, c'est LA PERSONNE. Ordre de priorité désormais :
+     1. ?me=… (lien profond)                    2. un tableau du mois EN COURS déjà mémorisé
+        (choix délibéré : « je regardais une autre équipe aujourd'hui »)
+     3. MON équipe de ce mois-ci (par mon nom)  4. l'équipe mémorisée reportée par son nom
+     5. tableau par défaut
+   Le miroir suit tout seul : il est calculé à partir du tableau affiché. */
+function _depTeamOf(id){ var b=BOARDS[id]; if(!b)return "";
+  var p=String(b.label||"").split(" — "); return (p[1]||"").replace(/\s*\([^)]*\)\s*$/,"").trim(); }
+function _depRank(id){ var b=BOARDS[id]; return b?(b.year*12+b.monthIdx):-1; }
+function _depLatestRank(){ var r=-1; Object.keys(BOARDS).forEach(function(id){ var b=BOARDS[id];
+  if(b&&b.kind!=="abs"){ var v=b.year*12+b.monthIdx; if(v>r)r=v; } }); return r; }
+/* clés triées du mois le plus récent au plus ancien : garantit qu'on trouve l'équipe ACTUELLE
+   d'une personne, sans dépendre de l'ordre d'écriture du fichier de données. */
+function _depKeysRecent(){ return Object.keys(BOARDS).sort(function(a,b){ return _depRank(b)-_depRank(a); }); }
+function _depRollForward(id){
+  if(!BOARDS[id])return null;
+  if(_depRank(id)>=_depLatestRank())return id;               // déjà sur le mois le plus récent
+  var team=_depTeamOf(id); if(!team)return null;
+  var latest=_depLatestRank();
+  var hit=Object.keys(BOARDS).filter(function(k){ var b=BOARDS[k];
+    return b&&b.kind!=="abs"&&(b.year*12+b.monthIdx)===latest&&_depTeamOf(k)===team; });
+  return hit[0]||null;
+}
+/* MON tableau du mois le plus récent, retrouvé par MON NOM (repère stable : le numéro
+   d'équipe, lui, change tous les mois). Renvoie null si je ne suis pas dans ce mois. */
+function _depBoardOfMeLatest(){
+  if(!ME)return null;
+  var latest=_depLatestRank();
+  var ks=Object.keys(BOARDS).filter(function(k){ var b=BOARDS[k];
+    return b&&b.kind!=="abs"&&(b.year*12+b.monthIdx)===latest; });
+  for(var i=0;i<ks.length;i++){
+    if((BOARDS[ks[i]].people||[]).some(function(p){return p.name===ME;}))return ks[i];
+  }
+  return null;
+}
 BID=(function(){ if(_MEBID&&BOARDS[_MEBID])return _MEBID;
-  try{var s=localStorage.getItem("cmc_dep_board");return (s&&BOARDS[s])?s:defaultBoard();}catch(e){return defaultBoard();}})();
+  try{
+    var s=localStorage.getItem("cmc_dep_board");
+    // un tableau du mois EN COURS déjà mémorisé = choix délibéré → on le respecte
+    if(s&&BOARDS[s]&&_depRank(s)>=_depLatestRank())return s;
+    // sinon on repart de MOI (mon équipe change chaque mois, mon nom non)
+    var moi=_depBoardOfMeLatest();
+    if(moi){ if(moi!==s){ try{localStorage.setItem("cmc_dep_board",moi);}catch(_){} } return moi; }
+    // pas de nom connu (ou absent du mois) → on reporte l'équipe mémorisée par son nom
+    if(s&&BOARDS[s]){
+      var f=_depRollForward(s);
+      if(f){ if(f!==s){ try{localStorage.setItem("cmc_dep_board",f);}catch(_){} } return f; }
+    }
+    return defaultBoard();
+  }catch(e){return defaultBoard();}})();
 CURMO=(BID&&BOARDS[BID])?(BOARDS[BID].year+"-"+BOARDS[BID].monthIdx):null;
 // v1.35 (ultra-review 2026-08-10) — FILET DE SÉCURITÉ. AVANT : si boards-gen.js ne chargeait pas
 // (404, réseau coupé, fichier corrompu), DEPARTS_GEN était absent → applyBoards vidait BOARDS →

@@ -15,6 +15,7 @@
 
 import { errors } from '../../core/errors.js';
 import { logger } from '../../core/logger.js';
+import { MAX_SYSTEM_PROMPT_CHARS } from '../../core/prompt-budget.js';
 /* P0-3 PERF (audit v13.2.5) : apex-tools-dispatch (102KB raw / 27KB gzip) lazy-loadé
  * uniquement quand un tool_use est détecté dans la réponse Claude (loop boucle 530).
  * Évite preload boot pour 99% des requests qui n'utilisent pas tools. */
@@ -523,7 +524,10 @@ const KEEP_LAST_MESSAGES = 25;
  *  - Token cap concret : 150K tokens (sur les 200K Anthropic, laisse 50K
  *    pour system + tools + output) — plus restrictif que 400K chars.
  */
-const MAX_SYSTEM_PROMPT_CHARS = 32000; /* ~8000-10000 tokens FR */
+/* v13.4.365 (fix « system too long » Kevin 2026-09-05) : la valeur vit
+ * désormais dans core/prompt-budget.ts, importée aussi par memory.ts et
+ * chat-engine.ts. Elle était écrite en dur ICI *et* dans memory.ts : les deux
+ * étages ne mesuraient pas la même chaîne, d'où la panne. Ne PAS la redéclarer. */
 const MAX_TOTAL_BODY_TOKENS = 150_000; /* Anthropic Sonnet 4.6 = 200K context */
 const MAX_TOKENS_OUTPUT_HARD_CAP = 8192;
 const MAX_TOKENS_OUTPUT_HARD_MIN = 1;

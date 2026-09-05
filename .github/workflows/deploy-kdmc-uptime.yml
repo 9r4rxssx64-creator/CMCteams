@@ -18,7 +18,7 @@
 # Pourquoi claude/** : la fusion dans main est faite par le robot avec GITHUB_TOKEN,
 # et GitHub ne déclenche PAS les workflows `push` pour ces commits-là ; sans
 # claude/**, ce déploiement resterait à attendre un clic pour toujours (règle
-# « jamais demander un clic », leçon #211). Un push = un déploiement, zéro cron :
+# « jamais demander un clic », leçon #213). Un push = un déploiement, zéro cron :
 # ce n'est pas du volume automatique, c'est l'usage prévu d'Actions (règle 2 de
 # verify-actions-conformes). Le worker est fail-open : déployer sans jeton push
 # est sûr (il surveille, il n'alerte pas).

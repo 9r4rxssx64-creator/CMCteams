@@ -40,7 +40,7 @@ maintenant **tout seuls à chaque push** qui touche le worker (main + `claude/**
 **« Tu as tout. Vérifie » (Kevin)** — les 4 canaux essayés, résultat honnête :
 - API GitHub (jeton de session) : `/user` répond, mais tout `/repos/…` est refusé par le proxy
   (« GitHub access is not enabled for this session ») → **impossible de lancer un workflow
-  depuis ici**. D'où le passage en auto-sur-push (leçon #211).
+  depuis ici**. D'où le passage en auto-sur-push (leçon #213).
 - WebFetch sur github.com : **fonctionne** → j'ai lu la PR #3652, les runs, les annotations.
 - Connecteur Cloudflare : **fonctionne** → 24 workers listés, `kdmc-uptime` absent (jamais
   déployé), `kdmc-rag` daté du 08/07.
@@ -53,6 +53,275 @@ maintenant **tout seuls à chaque push** qui touche le worker (main + `claude/**
 tout vient de la source, des relevés enregistrés et des API. Pas de second avis non-Claude,
 pas de passe stabilité, pas de mesure de perf. Le premier passage de `kdmc-uptime` donnera le
 premier relevé réel des 26 adresses depuis le 14/08 — visible dans les runs Actions.
+
+---
+
+## 5 septembre 2026 — « Miroir aussi pour chaque » : la page ouvrait sur la MAUVAISE ÉQUIPE (corrigé v1.39)
+
+**Retour Kevin** : « Miroir aussi pour chaque ». Le bon mois ne suffisait pas.
+
+### Le vrai bug (mesuré dans un vrai navigateur, pas déduit)
+Corriger le MOIS (v1.38) laissait un défaut plus grave : je reportais le **numéro d'équipe** du
+mois passé sur le mois courant. Or **chacun change d'équipe chaque mois** (règle métier absolue).
+Résultat pour Kevin, connecté : la page affichait **BJ Éq.7** (son équipe d'août) — une équipe où
+il **n'est même pas** en septembre — et donc le **mauvais miroir : BJ Éq.4** au lieu de **BJ Éq.10**.
+
+### Le correctif — le repère stable, c'est LA PERSONNE
+Ordre de priorité à l'ouverture : lien `?me=…` → tableau **du mois en cours** déjà mémorisé (choix
+délibéré : « je regardais une autre équipe ») → **mon équipe de ce mois-ci, retrouvée par mon nom**
+→ équipe mémorisée reportée par son nom → tableau par défaut. **Le miroir suit tout seul**, il se
+calcule à partir du tableau affiché.
+**Après correctif, Kevin ouvre sur BJ Éq.6, miroir BJ Éq.10** — identique à CMCteams.
+
+### CMCteams (app) : aucun bug — vérifié
+L'app recalcule l'équipe du mois par les jours de repos : Kevin y était déjà en BJ Éq.6 / miroir
+BJ Éq.10. Seule la page light reportait un numéro d'équipe. **Piège évité** : l'app résout les
+équipes **au rendu de la vue Départs** — sans ce rendu, le contrôle aurait été un faux vert.
+
+### Garde permanente élargie (`npm run test:mois-ouverture`, dans `test:ci`)
+Compte par compte, sur les deux surfaces : mon équipe **et mon miroir** du mois courant, le miroir
+non vide, réciproque (le miroir du miroir, c'est moi), le bouton « 🔁 Équipe miroir » visible, et
+**app ⇄ light identiques**. Plus un balayage complet : **38 équipes / 245 personnes**, 0 miroir sur
+un autre mois, 0 miroir vide, 0 non réciproque. Deux équipes n'ont pas de miroir en septembre
+(CMC Éq.13, Roul. Éq.3) : vérifié, **aucune autre équipe n'a leurs jours de repos** — c'est la
+réalité du planning, pas un bug ; le test le distingue explicitement d'un miroir manquant à tort.
+**Prouvée discriminante** : correctif retiré → **20 contrôles en échec** (dont « app ⇄ light
+divergents ») ; correctif remis → 0.
+
+## 5 septembre 2026 — « mauvais mois à l'ouverture » (corrigé) + un garde aveugle depuis 1 mois
+
+**Retour Kevin** : « quand j'ouvre, pas sur la date du jour, mauvais mois. Vérifie pour chaque
+compte, light et CMCteams, données réelles ». PDF SEPTEMBRE_2026_V2 fourni (identique à la
+fixture du dépôt, vérifié par empreinte).
+
+### 1. Le bug — page light (Départs), corrigé en v1.38
+L'identifiant d'un tableau contient le mois (`2026-08-1`) **et son numéro n'est pas stable d'un
+mois à l'autre** (`2026-08-1` = CMC Éq.5, `2026-09-1` = BJ Éq.1). La page mémorisait cet
+identifiant **tel quel** : tant que le tableau d'août existait, elle rouvrait sur **août**,
+indéfiniment. C'est exactement ce que montrait la capture de Kevin (« Août 2026 — CMC Éq.5 »).
+**Correctif** : on mémorise l'**équipe** (repère stable lu dans le libellé) et on la retrouve dans
+le mois le plus récent ; `boardForName`/`personById` parcourent désormais du mois le plus RÉCENT au
+plus ancien (avant, l'ordre d'écriture du fichier de données décidait de l'équipe trouvée).
+**Prouvé discriminant** : code d'avant → reste sur « Août 2026 » ; code corrigé → « Septembre 2026 »,
+même équipe conservée.
+
+### 2. CMCteams (app) : aucun bug — vérifié, pas supposé
+Admin + 3 employés ouvrent bien sur **Septembre 2026**, 285 personnes avec planning. L'app ne
+mémorise aucun mois (elle repart toujours du mois courant).
+
+### 3. Le garde de parité était AVEUGLE à septembre (le vrai enseignement)
+`test:departs-compare` annonçait **36 équipes miroir « manquantes dans l'app »** pour septembre.
+**Faux rouge** : sa liste de mois était écrite en dur (`juillet, août`) et n'avait jamais été
+étendue. Mesuré dans un vrai navigateur : septembre fonctionne parfaitement des deux côtés, dans
+n'importe quel ordre. **Correctif** : les mois sont maintenant **déduits des données générées**,
+donc le garde suivra tout seul les mois à venir (même correctif trouvé en parallèle par la session
+Arbre — la version retenue au moment de la fusion est celle de `main`).
+**Effet réel** : cellules comparées **4 671 → 13 980** (+9 309 jamais vérifiées jusqu'ici),
+**0 écart**, miroirs compris. L'équipe de Kevin en septembre (BJ Éq.6, miroir BJ Éq.10) est
+identique app ⇄ light.
+
+### 4. Données réelles vérifiées
+`test:everyone-has-planning` 280 PASS / 0 FAIL · `test:departs-integrity` 117 équipes, 737
+personnes, **22 602 contrôles d'horaires, 0 violation** · `test:parite-cmcteams-light` 6 OK ·
+95/95 vues rendent, 0 erreur JS.
+
+### 5. Nouveau garde permanent
+`npm run test:mois-ouverture` (câblé dans `test:ci`) : pour chaque compte, app et light ouvrent
+sur le mois courant, **avec le cas « mois passé mémorisé »**. Autonome (lance son propre serveur —
+en `file://` la seed ne se charge pas, le test serait un faux vert).
+
+## 5 septembre 2026 (nuit, session arbre) — Arbre v3.16 : les données et l'empreinte sont SORTIES du fichier public (fait n°12, « Go tout »)
+
+**Demande Kevin** : *« Go tout »* (feu vert sur le chantier annoncé : 318 noms et 257 dates de naissance
+dans `arbre/index.html`, dépôt public, code vérifié après chargement).
+
+**Fait** — branche `claude/sarzance-family-tree-3jxi7i` (resynchronisée sur `main` après la fusion de #3649) :
+- **Routeur** (`services/kdmc-router/worker.js`, bloc isolé `handleArbre`, 0 ligne existante touchée) :
+  `POST /__arbre/unlock` (empreinte en KV `arbre:codehash`, essais limités par IP, journal), `GET/PUT
+  /__arbre/seed` (données texte ; **PUT réservé admin**, même grant que `/__admin/login`), `POST
+  /__arbre/code` (rotation, preuve = ancien), `GET /__arbre/status`. Test `arbre.test.mjs` **34/34**, bloquant
+  dans `deploy-kdmc-router.yml` ; `admin.test.mjs` toujours 41/41. Message **m024** à domain-kdmc (territoire).
+- **App v3.16** (348 → **283 Ko**) : `buildSeed` (65 Ko de personnes) et `DEFAULT_CODEHASH` **supprimés**. La
+  porte interroge le domaine d'abord ; **repli local** si le domaine est muet (appareil qui a déjà l'empreinte) ;
+  message clair si rien n'est publié. **Outils → 🔐 Domaine** : état publié + **📤 Publier** (code admin
+  demandé, envoyé, jamais gardé). **Changer le code** prévient le domaine et **efface l'ancien chemin cloud**.
+- **Firebase** : `/arbre` n'a plus de `.read` au parent (un jeton anonyme pouvait **lister toutes les
+  empreintes**) → lecture/écriture par enfant 64-hex ; marqueur `rules-deploy-request.json` bumpé (auto-apply).
+- **Vérifié en VRAI navigateur** : `tools/arbre/verify-domaine.mjs` **21/21** (domaine simulé, famille
+  **synthétique** de 81 personnes : nouvel appareil, réouverture sans réseau, publication admin, hors ligne,
+  rien de publié, changement de code, 0 erreur JS) ; `verify-poster.mjs` rejoué avec la fixture → **tout vert**
+  (PDF A1 + mosaïques rendus). Garde `npm run test:arbre-prive` (dans `test:ci`) **31/31**.
+- **Outils locaux** qui exécutaient `buildSeed()` (patrimoine `chercher`, `actes-verif`, `cloud-audit`, `research-*`) →
+  chargeur commun `tools/arbre/lire-donnees.mjs` : export privé `patrimoine/arbre.json` (ignoré par git) ou
+  `ARBRE_EXPORT`, sinon famille inventée signalée (la garde `test:patrimoine-prive` reste verte : 8/8).
+- Leçon **#212** (empreinte-chemin = secret ; `.read` parent = listing). ETAT-INFRA fait n°12 complété.
+
+**Kevin (KEVIN_ACTIONS_TODO)** : 1) Outils → **Publier** une fois depuis l'iPhone ; 2) **changer le code
+famille** (l'ancienne empreinte a été publique). Ses appareils marchent déjà sans rien faire.
+
+**Toujours en attente** : v3.7→v3.14 (jeton GitLab lecture, « Peut-être ») ; PR à ouvrir pour cette branche
+(l'API GitHub est bloquée depuis cette session — m023 à studio-crea, ou le lien compare pour Kevin).
+
+---
+
+## 5 septembre 2026 (soir, session arbre) — Arbre v3.15 : poster grand format (A4 → bannière 2 m) + l'arbre v3.7→v3.14 introuvable côté GitHub
+
+**Demande Kevin** : *« Je veux pouvoir imprimer l'arbre en grand, gros format, va plus loin. »*
+
+**Fait** — arbre **v3.15**, branche `claude/sarzance-family-tree-3jxi7i` :
+- **Un seul dessin vectoriel** de tout l'arbre (cartes, liens, bandeaux de section, 💍/💔, blasons de la
+  famille dans l'en-tête, légende des branches, pied daté) → **4 sorties** : 🖨 **Imprimer / PDF** au
+  format choisi (A4, A3, A2, A1, A0, B0, **bannière 1 m / 1,5 m / 2 m à hauteur automatique**),
+  🧩 **mosaïque A4** (marge 10 mm, recouvrement 10 mm, repères de coupe, feuilles numérotées + plan de
+  montage), ⬇ **fichier SVG** (pour un imprimeur), 🖼 **image HD** (PNG plafonné à 16 Mpx = limite iPhone).
+- Styles **Plan clair** (cartes) / **Arbre décoré** (médaillons sur l'arbre vectoriel) · photos réduites en
+  vignettes 96 px · orientation automatique · en-tête proportionné à la largeur · **indicateur de
+  lisibilité** (hauteur réelle des prénoms en mm sur le papier choisi + format recommandé) · bouton 🖨 dans
+  la vue Arbre + bouton Outils. Réglages mémorisés (`arbre_poster`).
+- **Pourquoi les bannières** : Sauvaigo·Maiffret = 90 personnes sur 7 générations → dessin 6,5 × plus large
+  que haut. Sur A1 les prénoms font **1,5 mm** (illisible, mesuré) ; bannière 2 m → **3,8 mm** ✅ et 0 blanc
+  perdu. Desarzens (35 pers., 4 gén.) est lisible dès A1.
+- **Vérifié en VRAI navigateur** (`tools/arbre/verify-poster.mjs`, Chromium local) : 2 familles × 2 styles ×
+  4 papiers = **80 contrôles verts** (SVG bien formé, taille en mm, 90/90 et 35/35 personnes présentes,
+  mosaïques comptées), **PDF A1 rendus** (651 Ko et 430 Ko, 1 page), **mosaïques A4 16 pages**, feuille
+  iPhone capturée, **0 erreur JS**. Rendus regardés à l'œil (en-tête, bannière, plan de montage, feuille).
+- **Garde** `npm run test:arbre-poster` (dans `test:ci`, < 1 s) : APP_VER == cache SW, fonctions définies
+  **et câblées**, 9 formats, page CSS en mm, mosaïque, vignettes, XSS (aucune donnée de personne brute dans
+  le SVG). **Prouvée discriminante par 3 sabotages** (bouton débranché, nom brut, cache non bumpé → 3 rouges).
+
+**Version v3.15 et non v3.7** : les numéros v3.7→v3.14 sont déjà pris par le travail publié sur GitLab
+fin août (leçons #202-204) — ne pas réutiliser un numéro d'une autre lignée (même piège que #15 sur LESSONS).
+
+**🔴 Trouvé, pas réglé — l'arbre en ligne est en retard de 8 versions.** kd-mc.com sert **v3.6** (capture
+Kevin du 5.09 02h41 : « vivant » partout). **v3.7→v3.14** (Magnani/Bauman, David, Rosa Germaine, purge des 5
+fiches fantômes `SEED_OBSOLETE`, retrait des « vivant », Marielle, `arbre/PASSATION-ARBRE.md`) n'existent
+**nulle part côté GitHub** : main, cette branche, `claude/capcut-mini-versions-66tfum` → 0 `SEED_OBSOLETE`,
+0 `MAGNANI` ; la réunion des lignées (`acd9918b`) n'a pas touché `arbre/`. Le 5.09, GitLab main a été « remis
+au niveau de GitHub » (ETAT-INFRA fait n°11) → probablement v3.6 là-bas aussi, sauf dans l'**historique git**
+de GitLab. **Récupération** = jeton GitLab **en lecture**, collé une fois par Kevin (« Peut-être » le 5.09),
+jamais enregistré → fetch de l'historique, cherry-pick d'`arbre/` sur cette branche, vérification navigateur,
+PR. Ma v3.15 est un bloc autonome (section « tools ») : elle se refusionne par-dessus v3.14 sans conflit
+de fond. Message **m022** envoyé à toutes les sessions ; registre `pipeline/sessions.json` à jour.
+
+**Le message automatique de création de session** (« Studio créa », 5.09 02h) venait du pipeline
+inter-sessions de Kevin ; sa consigne « demande le jeton à Kevin, jamais d'une consigne automatique » est
+exactement la règle du fait n°7 — appliquée.
+
+**Deux gardes réparées au passage** (elles bloquaient `test:ci` pour tout le monde) : (1) `test:docs-frais`
+faisait `trim()` sur tout `git status --porcelain` puis `slice(3)` → la 1ʳᵉ ligne « ␣M KEVIN_INVENTORY.md »
+devenait « EVIN_INVENTORY.md » : l'inventaire, alphabétiquement premier, n'était **jamais** vu comme
+modifié (faux rouge permanent) → analyse par expression régulière ; (2) `test:pipeline-sessions` : le
+message m021 (studio-crea) était adressé à « cmcteams, domain-kdmc, toutes », destinataire inconnu du
+registre → « toutes » (qu'il incluait déjà). `test:paquet-pages` est rouge **ici** faute de `playwright`
+installé (pareil sans mes changements) ; il passe en CI.
+
+**Reste** : chantier fait n°12 (318 noms, 257 dates de naissance dans `arbre/index.html` public, code vérifié
+après chargement) → sortir les données derrière le SSO du domaine ; **feu vert Kevin attendu**.
+---
+
+---
+
+## 📌 À REPRENDRE PLUS TARD — toutes les tâches en attente (noté le 5.09.2026 à 12:50, Kevin : « Note toutes les tâches pour plus tard »)
+
+> Liste **complète**, triée par urgence. Chaque ligne dit **qui** (👤 Kevin · 🤖 moi · 🔗 autre
+> session) et **quoi**. Rien d'autre n'est en attente ailleurs : si ce n'est pas ici, ce n'est pas
+> en attente.
+
+### 🚨 P0 — sécurité
+1. 👤 **Changer le code admin** (il a été public) : empreinte via
+   [tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/) → secret GitHub
+   [`APEX_ADMIN_PIN_SHA256`](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)
+   → me dire « fait ». *(KEVIN_ACTIONS_TODO, tout en haut)*
+2. 🤖 **Dès le « fait »** : lancer par l'API (`actions_run_trigger`) les 6 déploiements qui lisent
+   ce secret — `deploy-kdmc-router`, `deploy-kdmc-access`, `deploy-kdmc-monaco`,
+   `deploy-kdmc-outlook`, `deploy-kdmc-rag`, `sync-apex-secrets-to-cf-worker` — puis prouver en
+   vrai (`live-verify-departs`, `audit-live`) que l'ancien code est refusé et le nouveau accepté.
+3. 👤 **Révoquer le jeton GitLab `glpat-wD6Q…`** (utilisé une fois, jamais écrit) :
+   [Jetons d'accès GitLab](https://gitlab.com/-/user_settings/personal_access_tokens).
+4. 👤 Dans les apps qui ont **leur propre** code (quand tu y passes) : CMCteams
+   `Réglages → Sécurité → Changer le PIN admin` ; Boutiques `Paramètres → Changer le PIN admin`.
+5. 🤖 **Page Départs : « admin » cosmétique côté données** — elle écrit dans Firebase avec un jeton
+   anonyme (`auth != null`), alors que la grande app a `cmcFbRoleAuth` (jeton de rôle via
+   `/login-cmc`). À aligner (message m021 envoyé à la session CMCteams ; leur territoire).
+6. 🤖 **Reprendre le tri du rapport `security-suite`** (gitleaks/TruffleHog sur l'historique) là où
+   il s'est arrêté : le code admin était le 1er vrai positif ; vérifier qu'il n'en reste pas
+   d'autre, et lister les faux positifs avec preuve (clé Firebase Web = publique par conception).
+
+### 🔴 P1 — le site et les deux dépôts
+7. 🤖 **5 pages du site portent des noms** (l'app CMCteams, ses plannings, l'arbre) — dit par
+   l'audit d'exposition, ce n'est pas une exclusion qui règle ça : servir ces données **derrière la
+   connexion du domaine** (SSO `/__sso/whoami`). Chantier de fond, à découper par surface.
+8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
+   elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
+   `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
+   (0 minute au repos).
+9. 🔗 **domain-kdmc m'attend** : ajouter un job CI « état des sessions » dans `.gitlab-ci.yml`
+   (mon territoire). Réponse à écrire dans `pipeline/sessions.json` une fois fait.
+10. 🔗 **lingua m'attend** : 3 de leurs workflows programmés déplacés (pas supprimés) + j'ai pris
+    LEUR version de `lingua/app.js` — leur confirmer par message que tout est en ordre de leur côté.
+11. 🔗 **free-apis m'attend** : secrets VUS en vrai — `CEREBRAS_API_KEY` existe déjà, il ne reste
+    que **2 comptes à créer** (à leur préciser lesquels, cf. CLAUDE.md liste des 50 secrets).
+12. 🤖 **`tools/pipeline/pousser.sh`** : il fait `git update-ref refs/remotes/origin/<cible>` —
+    faux quand `origin` = GitHub (c'est le cas depuis le 4.09). À corriger : pousser vers GitLab en
+    URL inline, ne toucher à aucun repère `origin/*`. Et le RAPPEL de début de session dit encore
+    « Publier : GITLAB_TOKEN=… ./tools/pipeline/pousser.sh » : à mettre à jour (GitHub est la voie
+    de publication ; GitLab ne reçoit qu'une remise à niveau occasionnelle).
+13. 🤖 **4 tests rouges pré-existants sur `main`**, pas les miens mais à ne pas laisser traîner :
+    `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
+    Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
+
+### 👤 Ce que les AUTRES sessions attendent de Kevin (vu au registre, pour ne rien perdre)
+14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
+15. 👤 **la-detente** : combien de gilets, et broderie logo seul ou logo + prénoms ?
+16. 👤 **meta** : compte développeur Apple (99 $/an) — oui ou non ?
+17. 👤 **m003** : la réponse au support GitHub est prête (3 conditions remplies) — c'est Kevin qui
+    l'envoie.
+
+### ℹ️ Rien à faire, mais à savoir
+- Le miroir `kdmc-site.pages.dev` est **propre** (20/20 sondes en 404, job GitLab `16324368313`),
+  et re-vérifié à chaque republication. Le site principal aussi (étape finale de `deploy.yml`).
+- GitLab `main` = GitHub `main` + 8 fichiers privés (ETAT_RECONSTRUCTION, PASSATION-ARBRE,
+  RECHERCHES-EN-COURS, `arbre/research/*.md`, 2 fichiers-signaux). **Jamais** les copier vers GitHub.
+- Le jeton GitLab ne permettait pas de relancer un job par l'API (`insufficient_scope`) : le
+  fichier-signal `exposition-demande.txt` fait le même travail — c'est la voie à retenir.
+- Serveurs MCP indisponibles cette session (à réautoriser côté claude.ai si besoin) :
+  `hf-mcp-server` (auth), `firecrawl-mcp` et `nanobanana-mcp` (délai de connexion).
+
+---
+
+## 5 septembre 2026 (14h) — GitLab remis au niveau de GitHub, miroir republié
+
+**Demande Kevin** : un jeton GitLab collé dans le chat (portée `api` + écriture), pour finir ce
+qui était promis dans `KEVIN_ACTIONS_TODO.md` : aligner le miroir de secours et les jobs de veille.
+
+**Fait** : GitLab `main` `cec1a5715 → 042e709ee` (branche locale `gitlab-sync`, poussée en ligne,
+jeton **jamais écrit** — 0 trace dans `.git/config`). Recette : arbre GitHub superposé sur GitLab
+`main`, **8 fichiers privés conservés** (ETAT_RECONSTRUCTION, PASSATION-ARBRE, RECHERCHES-EN-COURS,
+3 `arbre/research/*.md`, + les 2 fichiers-signal), **13 copies rangées** de workflows redevenus
+actifs sur GitHub retirées. Quatre gardes verts avant le push (documents-travail, destinations,
+dépôt-public-sain, no-pin-leak). Pipeline `2822740843` : les 4 jobs de veille sont là en bouton
+(`liens-reels`, `cdn-dependances`, `lingua-sources`, `lingua-lsf`), `verifier-cloudflare` ✅.
+
+**Mesuré AVANT republication** (audit d'exposition lancé en parallèle, sur l'ancien miroir) :
+16/20 sondes déjà en 404, **4 documents encore servis** — `coffre-fort/memo/01-secrets-github.pdf`,
+`tools/gitlab/secrets-map.txt`, `AGENTS.md`, `archives/PLAINTE_ANTHROPIC.md`. Ce sont exactement
+ceux que les nouvelles exclusions (`*.md`, `memo`, `tools/gitlab`) retirent.
+
+**APRÈS** (`publier-site` ✅ 96 fichiers envoyés, puis audit relancé par commit-signal
+`5e78a0d42`, job `16324368313` ✅) : **20/20 sondes en 404 — « Aucun document de travail publié sur
+kdmc-site.pages.dev »**. Les 4 restants sont partis. Reste, dit tel quel par l'audit : 5 pages du
+site portent des noms (l'app, ses plannings, l'arbre) — c'est le site lui-même, correctif = données
+derrière la connexion du domaine, pas une exclusion.
+
+*Limite du jeton : lecture API + écriture dépôt seulement — impossible de relancer un job ou de
+créer un pipeline par l'API (`insufficient_scope`). Le fichier-signal `exposition-demande.txt`
+fait le même travail sans droit supplémentaire : c'est la voie à retenir.*
+
+**Kevin** : révoquer le jeton `glpat-wD6Q…` (un clic, KEVIN_ACTIONS_TODO). Le code admin reste à
+changer (section 🚨 D'ABORD).
+
+---
+
 ## 5 septembre 2026 (soir) — le livre de cuisine est complet : 128/128 recettes
 
 **Demande Kevin** : *« Go tout / Auto »* — finir les 6 recettes incomplètes du
@@ -109,8 +378,6 @@ redonne **244 pages contre les 243 livrées**, avec **les mêmes polices** (Deja
 Liberation) et le même moteur (Chromium/Skia) — la chaîne d'origine est bien reproduite.
 
 **`livre.pdf` : 243 → 252 pages**, A4, 128 recettes complètes.
-
----
 
 ---
 
