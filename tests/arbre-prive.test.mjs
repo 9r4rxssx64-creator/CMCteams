@@ -37,7 +37,9 @@ ok(/function domainUnlock\(h\)\{return domainFetch\("\/__arbre\/unlock"/.test(ht
 ok(/async function tryGate\(\)[^]*?var v=await domainUnlock\(h\)[^]*?if\(v&&v\.ok\)\{enter\(h,v\.seed\);return;\}/.test(html), 'tryGate interroge le domaine d\'abord et entre avec l\'arbre reçu');
 ok(/if\(stored&&h===stored\)\{enter\(h,null\);return;\}/.test(html), 'Repli local si le domaine est muet (appareil qui connaît déjà l\'empreinte)');
 ok(/code_non_publie[^]*?pas encore publié/.test(html), 'Message clair si rien n\'est publié');
-ok(/function applyDomainSeed\(sd\)[^]*?photos:\(lp&&lp\.photos\)\|\|\[\]/.test(html), 'applyDomainSeed garde les photos locales');
+ok(/function applyDomainSeed\(sd,force\)[^]*?photos:\(lp&&lp\.photos\)\|\|\[\]/.test(html), 'applyDomainSeed garde les photos locales');
+ok(/async function refreshFromDomain\(\)[^]*?applyDomainSeed\(r\.seed,true\)[^]*?purgeObsoleteSeeds\(\)/.test(html) && /refreshFromDomain\(\)\.then\(function\(\)\{cloudPull\(false\);\}\)/.test(html), 'Un appareil existant récupère une version plus récente des fiches officielles depuis le domaine (seedVersion) et purge les fantômes');
+ok(/function purgeObsoleteSeeds\(\)/.test(html) && !/\|\|\(p\.vivant\?"vivant":""\)/.test(html), 'Code v3.14 porté : purge des fiches fantômes, plus jamais « vivant » affiché');
 ok(/if\(_domainSeed\)\{var nd=applyDomainSeed\(_domainSeed\)/.test(html), 'startApp applique l\'arbre reçu du domaine');
 ok(!/seed\(\);/.test(html), 'Plus d\'appel seed() (rien à inventer localement)');
 

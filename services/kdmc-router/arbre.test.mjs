@@ -100,5 +100,32 @@ ok(j.ok === false && j.reason === 'trop_gros', 'publication > 5 Mo → trop_gros
 r = await mod.fetch(REQ({ path: '/__arbre/unlock', method: 'OPTIONS' }), env);
 ok(r.status === 204, 'préflight → 204');
 
+/* 7. Amorce D1 : KV vide → le domaine sert l'amorce ; KV rempli → KV gagne */
+const d1rows = new Map();
+const ARBRE_DB = { prepare: (sql) => ({ bind: (k) => ({ first: async () => (d1rows.has(k) ? { v: d1rows.get(k), saved_at: 111 } : null) }) }) };
+const store2 = new Map();
+const ACC2 = { get: async (k) => (store2.has(k) ? store2.get(k) : null), put: async (k, v) => { store2.set(k, v); }, delete: async (k) => { store2.delete(k); } };
+const envD1 = { KDMC_SSO_SECRET: 'sec', KDMC_ADMIN_PIN_SHA256: sha(ADMIN_CODE), ACCOUNTS: ACC2, ARBRE_DB };
+({ r, j } = await call({ path: '/__arbre/status' }, envD1));
+ok(j.ok && j.code === false && j.seed === false, 'D1 vide + KV vide → rien de publié');
+d1rows.set('codehash', H1.toUpperCase()); d1rows.set('seed', JSON.stringify({ persons, meta: { seedVersion: 63 } }));
+({ r, j } = await call({ path: '/__arbre/status' }, envD1));
+ok(j.ok && j.code === true && j.seed === true && j.seedVersion === 63 && j.source === 'd1', 'amorce D1 → status : code + données (source d1, seedVersion 63)');
+({ r, j } = await call({ path: '/__arbre/unlock', method: 'POST', headers: JS(), body: JSON.stringify({ hash: H1 }), ip: '7.7.7.7' }, envD1));
+ok(j.ok === true && j.seed && Object.keys(j.seed.persons).length === 2 && j.seedVersion === 63, 'unlock avec l\'amorce D1 → ok + données + seedVersion');
+({ r, j } = await call({ path: '/__arbre/unlock', method: 'POST', headers: JS(), body: JSON.stringify({ hash: H2 }), ip: '7.7.7.7' }, envD1));
+ok(j.ok === false && j.reason === 'code_invalide', 'amorce D1 : mauvais code refusé');
+({ r, j } = await call({ path: '/__admin/login', method: 'POST', headers: JS(), body: JSON.stringify({ code: ADMIN_CODE }) }, envD1));
+const grant2 = j.grant;
+({ r, j } = await call({ path: '/__arbre/seed', method: 'PUT', headers: Object.assign({ 'x-kdmc-admin': grant2 }, JS()), body: JSON.stringify({ codehash: H2, persons: { seed_z: { id: 'seed_z' } }, meta: { seedVersion: 64 } }) }, envD1));
+ok(j.ok === true, 'publication admin par-dessus l\'amorce → ok');
+({ r, j } = await call({ path: '/__arbre/status' }, envD1));
+ok(j.count === 1 && j.seedVersion === 64 && j.source === 'kv', 'KV (publication) a priorité sur D1 : 1 personne, seedVersion 64, source kv');
+({ r, j } = await call({ path: '/__arbre/unlock', method: 'POST', headers: JS(), body: JSON.stringify({ hash: H1 }), ip: '6.6.6.6' }, envD1));
+ok(j.ok === false && j.reason === 'code_invalide', 'après publication : l\'empreinte KV remplace celle de l\'amorce');
+const envD1ko = { KDMC_SSO_SECRET: 'sec', ACCOUNTS: new Map() && { get: async () => null, put: async () => {} }, ARBRE_DB: { prepare: () => { throw new Error('d1 down'); } } };
+({ r, j } = await call({ path: '/__arbre/status' }, envD1ko));
+ok(j.ok === true && j.code === false, 'D1 en panne → fail-open (status répond, rien de publié)');
+
 console.log(`\n${fail ? '❌' : '✅'} arbre (routeur) : ${pass} OK / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);
