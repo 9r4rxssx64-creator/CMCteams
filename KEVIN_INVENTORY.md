@@ -1,7 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05 nuit** (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.gitattributes` | Dit à git que `MEMO_RESUME.md`, `KEVIN_INVENTORY.md` et `LESSONS.md` se fusionnent en **gardant les deux côtés** (« union »). Plus jamais de conflit sur le journal entre deux sessions. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitattributes) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.gitattributes) |
+| `.github/workflows/auto-merge-claude.yml` (étape « Rattraper main avant la PR ») | L'automate fusionne d'abord `main` dans ta branche (journaux en union), pousse, puis fusionne la PR. Un conflit sur du **code** l'arrête proprement avec un avertissement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) · [runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/auto-merge-claude.yml) |
+| Branche `claude/lingua-connexion-honnete` | Réparée à la main 2 fois (main fusionné, journaux gardés, test Lingua branché sur `KDMC_ADMIN_CODE`). Avec ce réglage, la prochaine fois se fera toute seule. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-connexion-honnete) |
+| Branche `claude/lingua-prenom-nom` | **Doublon** de la précédente (même code, 0 différence) + un lien `node_modules` vers un chemin de machine : à laisser au nettoyage, ne pas fusionner. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-prenom-nom) |
 
 ## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
 
