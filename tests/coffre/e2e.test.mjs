@@ -9,6 +9,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('/home/user/CMCteams/apex-ai/v13/node_modules/playwright');
@@ -63,7 +64,7 @@ async function main() {
   await page.fill('#su_p', 'Kevin');
   await page.fill('#su_n', 'Desarzens');
   await page.fill('#su_pass', 'MonChat-Adore-Le-Cafe-2026!');
-  await page.fill('#su_pin', '200807');
+  await page.fill('#su_pin', ADMIN_CODE);
   // [2b] bouton 👁 afficher/masquer la phrase secrète
   await page.click('button[onclick*="su_pass"]');
   const shown = await page.evaluate(() => document.getElementById('su_pass').type === 'text');

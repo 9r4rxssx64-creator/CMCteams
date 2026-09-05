@@ -6,6 +6,7 @@
 import http from 'http';
 import { readFileSync, existsSync, statSync } from 'fs';
 import { createRequire } from 'module';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = process.cwd();
 function loadPlaywright() {
@@ -59,8 +60,8 @@ try {
   await page.waitForSelector('#f-create', { timeout: 5000 });
   await page.fill('#f-prenom', 'Kevin');
   await page.fill('#f-nom', 'Desarzens');
-  await page.fill('#f-code', '200807');
-  await page.fill('#f-code2', '200807');
+  await page.fill('#f-code', ADMIN_CODE);
+  await page.fill('#f-code2', ADMIN_CODE);
   await page.check('#cgu-ok');
   await page.click('#f-create');
 

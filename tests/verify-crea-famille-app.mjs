@@ -15,6 +15,7 @@
 import { chromium } from 'playwright';
 import http from 'http'; import fs from 'fs'; import path from 'path';
 import worker from '../services/kdmc-crea-famille/worker.js';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = path.resolve(new URL('../tools/crea-studio', import.meta.url).pathname);
 const PORT_APP = 8259, PORT_API = 8260;
@@ -171,7 +172,7 @@ await rejoindre(C.page, 'Cousins', 'autre-code');        // Luc crée sa vraie f
 await creer(C.page, 'Chez les cousins');
 await C.page.click('#famShare'); await C.page.waitForTimeout(900);
 
-const K = await telephone('Kevin Desarzens', '200807');
+const K = await telephone('Kevin Desarzens', ADMIN_CODE);
 // Le téléphone de Kevin porte le pass SSO du domaine (session vérifiée Face ID ailleurs) :
 // c'est CE jeton — pas son nom — qui le rend admin famille (règle « ADMIN UNIVERSEL »).
 await K.page.evaluate(() => localStorage.setItem('crea_sso_token', 'jeton-sso-kevin-test'));

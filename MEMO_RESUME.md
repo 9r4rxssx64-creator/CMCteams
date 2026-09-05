@@ -1,5 +1,27 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (fin d'après-midi) — le code admin était PUBLIC : pages corrigées, docs nettoyées, Kevin doit le changer
+
+**Trouvé** (tri des 188 signalements gitleaks, fait n°15 d'ETAT-INFRA) : l'empreinte SHA-256 du code
+admin dans la page Départs (comparée dans le navigateur — un code à 6 chiffres se casse en 1 s),
+puis le code **en clair dans 68 fichiers suivis** du dépôt public (CLAUDE.md, NOTES_USER,
+KEVIN_INVENTORY, README, mémoire compacte…). Le garde existant ne cherchait ni l'empreinte ni la doc.
+
+**Fait** : Départs **v1.37** + Messages **v1.4** → le code part à `POST /__admin/login` (routeur,
+secret Cloudflare) et la page obéit au verdict (`test:departs-pin` 9/9, `test:apex-messages`
+16/16, parité app/light 6/6, 0 écart). 14 docs + mémoire nettoyés (« ‹code admin› »). Garde
+`no-pin-leak` renforcé (clair + empreinte + forme + .md) : 0 fuite / 951 fichiers. 14 scripts e2e
+lisent `KDMC_ADMIN_CODE`. Page `tools/empreinte/` (empreinte calculée sur l'iPhone). Règle
+CLAUDE.md « LE CODE ADMIN NE S'ÉCRIT NULLE PART » + leçon #210 + ETAT-INFRA fait n°15.
+
+**Kevin doit** (KEVIN_ACTIONS_TODO, tout en haut) : nouveau code (8 chiffres) → empreinte via la
+page → secret GitHub `APEX_ADMIN_PIN_SHA256` → me dire « fait » → je relance les 6 déploiements.
+
+**Reste dit franchement** : écritures Firebase de la page light en jeton anonyme (`auth != null`)
+→ « admin » cosmétique côté données (limite v10 connue ; `cmcFbRoleAuth` existe dans la grande
+app — message m021 à la session CMCteams). `tools/departs/verify-xss-delegation.mjs` échoue
+déjà sur main (pas lié). 3 tests rouges pré-existants (lingua-voix, lingua-connexion, router-secours).
+
 ## 5 septembre 2026 (après-midi) — tout rapatrié, et le dépôt public assaini
 
 **Demande Kevin** : *« Note tout. Public mais sécurisé normalement. Rapatrie tout sur GitHub

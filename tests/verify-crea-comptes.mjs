@@ -12,6 +12,7 @@
  */
 import { chromium } from 'playwright';
 import http from 'http'; import fs from 'fs'; import path from 'path';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = path.resolve(new URL('../tools/crea-studio', import.meta.url).pathname), PORT = 8253;
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -97,7 +98,7 @@ chk(r.entre && !ronanAdmin, 'un homonyme (Ronan Desarzens) N\'EST PAS admin');
 await page.evaluate(() => window.Account.logout()); await page.waitForTimeout(250);
 r = await login('Kevin Desarzens', '1111');
 chk(!r.entre && /administrateur/i.test(r.hint), 'code admin incorrect refusé');
-r = await login('Kevin Desarzens', '200807');
+r = await login('Kevin Desarzens', ADMIN_CODE);
 const kevAdmin = await page.evaluate(() => window.Users.isAdmin());
 chk(r.entre && kevAdmin, 'Kevin Desarzens + 200807 = administrateur');
 

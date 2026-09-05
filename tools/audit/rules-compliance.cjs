@@ -60,6 +60,7 @@ const REGISTRE = [
   [/LOGIN TOUJOURS PRÉNOM \+ NOM/i, ['npm:test:pin', 'npm:test:session-kevin']],
   [/COMPTE ADMIN UNIQUE KEVIN/i, ['npm:test:pin', 'npm:test:kevin']],
   [/PIN PER-USER/i, ['npm:test:pin']],
+  [/CODE ADMIN NE S'ÉCRIT NULLE PART/i, ['npm:test:no-pin-leak', 'npm:test:departs-pin', 'npm:test:apex-messages']],
   [/NOMS SECRETS GITHUB/i, ['wf:security-suite.yml']],
   [/IMPORT LOSSLESS/i, ['npm:test:fidelity', 'npm:test:fidelity-pb']],
   [/IMPORTS PDF INCRÉMENTAUX/i, ['npm:test:v702-import-e2e']],

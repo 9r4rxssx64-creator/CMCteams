@@ -2120,7 +2120,7 @@ déjà : orange = CDP). → TODO vVerify axe « Lieux » : refléter la nomencla
   côté Kevin sur /setup.** Le workflow `deploy-kdmc-monaco.yml` rejoue ce probe à chaque déploiement.
 - ✅ **CONNECTÉ + FONCTIONNE (2026-07-13)** : Kevin a saisi ses identifiants sur /setup → « 6 factures
   récupérées, 15 mails scannés ». Le login IMAP marche. (Rappel : le « code admin » de /setup = son code
-  admin habituel ~200807, PAS un code Outlook ; le mot de passe = celui de la boîte monaco.mc.)
+  admin habituel ~‹code admin›, PAS un code Outlook ; le mot de passe = celui de la boîte monaco.mc.)
 - 📚 **Backfill COMPLET (tout l'historique)** : le connecteur ne faisait que du récent (15 derniers de 60 j).
   Bouton **« 📚 Récupérer TOUT l'historique »** sur /setup → `POST /backfill` : `UID SEARCH ALL` → file
   `mon:bf_queue` traitée **par lots** (40 msg ou 14 s), **résumable** (`mon:bf_active`/`bf_remaining`/`bf_max`),

@@ -273,7 +273,7 @@ S'applique : Claude Code (priorité absolue), Apex, CMCteams, tous projets prés
 `tests/unit/v13_4_317-commands-completeness.test.ts` : 0 doublon de nom, `/help` (`helpText`) liste **toutes** les commandes, `parseSlashCommand('/<name>')` reconnaît chaque commande, et la vue rend **toutes** les commandes cliquables (`count data-cmd-route + data-cmd-run == SLASH_COMMANDS.length`). + `v13_4_318-custom-commands.test.ts`. **Toute commande ajoutée sans passer ces tests = bloquer.**
 
 ### 5. Vérification visuelle réelle (Playwright, cf. règle « tu as Playwright, vérifie toi-même »)
-Avant de livrer un changement de commandes : `npm run preview` + Playwright (login Kevin/200807 → `#commands` → clic) pour PROUVER que le clic préremplit/navigue. Ne pas faire tester Kevin à ma place.
+Avant de livrer un changement de commandes : `npm run preview` + Playwright (login Kevin/‹code admin› → `#commands` → clic) pour PROUVER que le clic préremplit/navigue. Ne pas faire tester Kevin à ma place.
 
 ### 6. Test mental obligatoire
 > *« Toute nouvelle vue a-t-elle sa commande dans SLASH_COMMANDS ? Est-elle cliquable dans /commands ? Le test de complétude passe-t-il ? Kevin peut-il créer une commande perso avec cible et la cliquer pour préremplir le chat ? »*
@@ -5415,7 +5415,7 @@ Si non → renforcer guards + ajouter historique manquant.
 
 ## 👑 RÈGLE PERMANENTE — COMPTE ADMIN UNIQUE KEVIN + PERMISSIONS TIERED LAURENCE (Kevin 2026-04-26, ABSOLUE)
 
-> **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN 200807, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
+> **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN ‹code admin›, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
 
 **Règle absolue, prioritaire** — pour Apex (compte admin Kevin), CMCteams (admin AID U11804) :
 
@@ -5443,11 +5443,11 @@ var ADMIN_KEVIN_ALIASES = [
 ];
 ```
 
-Login : si user tape n'importe quel alias + PIN admin (200807, customizable) → identifie comme admin Kevin.
+Login : si user tape n'importe quel alias + PIN admin (‹code admin›, customizable) → identifie comme admin Kevin.
 
 ### 2. PIN admin sécurisé
 
-PIN courant : `200807` (modifiable par Kevin via vSettings → "Changer PIN admin").
+PIN courant : `‹code admin›` (modifiable par Kevin via vSettings → "Changer PIN admin").
 
 Sécurité PIN admin :
 - Hash strict `axHashPin(pin, salt)` avec PBKDF2 100k iterations
@@ -5587,7 +5587,7 @@ Vérifie :
 
 ### 8. Test mental obligatoire
 
-> *"Si Kevin tape 'Kevin' + 200807 → reconnu admin ? OK. Si tape 'kevin.desarzens@gmail.com' + 200807 → reconnu admin ? OK. Si tape 'KD' + 200807 → reconnu admin ? OK. Si Laurence tape 'Kevin' + son PIN à elle → REFUSÉ ? OK. Si Laurence veut effacer son compte → demande Kevin ? OK. Si Laurence change son email → demande Kevin ? OK. Si Laurence ajoute un favori → fait sans demander ? OK."*
+> *"Si Kevin tape 'Kevin' + ‹code admin› → reconnu admin ? OK. Si tape 'kevin.desarzens@gmail.com' + ‹code admin› → reconnu admin ? OK. Si tape 'KD' + ‹code admin› → reconnu admin ? OK. Si Laurence tape 'Kevin' + son PIN à elle → REFUSÉ ? OK. Si Laurence veut effacer son compte → demande Kevin ? OK. Si Laurence change son email → demande Kevin ? OK. Si Laurence ajoute un favori → fait sans demander ? OK."*
 
 S'applique à Apex (priorité) puis CMCteams (admin AID U11804 avec mêmes aliases Kevin DESARZENS).
 
@@ -9395,6 +9395,42 @@ Découvert : un attaquant pouvait taper "Kevin Desarz" sans PIN → devenait adm
 - Search/filter users (vEmps, vPasswords, vPit)
 - Profile edit (vMonProfil, vEmps adminSetReg)
 - IA tool calls qui modifient un user (axEditUser, axImpersonate)
+
+---
+
+## 🔑 RÈGLE ABSOLUE — LE CODE ADMIN NE S'ÉCRIT NULLE PART, ET NE SE VÉRIFIE JAMAIS CÔTÉ CLIENT (2026-09-05, ABSOLUE)
+
+> Trouvé le 5.09.2026 en triant les secrets : le code admin de Kevin était **en clair dans 68
+> fichiers suivis** d'un dépôt **public** (docs, tests, mémoire compacte) et son **empreinte**
+> SHA-256 était embarquée dans la page Départs (`PIN_SHA256="…"`, comparée dans le navigateur).
+> L'empreinte d'un code à 6 chiffres se casse en **une seconde** : la publier = publier le code.
+> Le garde `no-admin-pin-leak` passait au vert (il ne cherchait que le clair, dans les dossiers
+> servis). Leçon #210 · fait n°15 d'`ETAT-INFRA.md`.
+
+### 1. Le code ne s'écrit **nulle part** dans le dépôt
+Ni en clair, ni en empreinte : pas dans CLAUDE.md, NOTES_USER.md, KEVIN_*.md, LESSONS.md, README,
+tests, mémoire compacte, commit, message de session. On écrit « ‹code admin› ». Les scripts e2e
+qui doivent le taper lisent **`process.env.KDMC_ADMIN_CODE`** (secret CI), jamais un littéral.
+
+### 2. Une page ne **compare** jamais un code : elle demande au domaine
+`POST /__admin/login {code}` (ou `{hash}` 64-hex, leçon #95) sur le routeur kd-mc.com — secret
+Cloudflare `KDMC_ADMIN_PIN_SHA256`, essais limités, journalisés — et la page **obéit au verdict**.
+Toute variable `PIN…SHA… = "64-hex"` côté client est une **fuite**, quel que soit le code.
+Réf : `tools/departs/index.html` v1.37 (`checkPin`), `tools/messages/index.html` v1.4 (`tryPin`).
+
+### 3. UN secret pour tous : `APEX_ADMIN_PIN_SHA256`
+Poussé par les workflows vers 6 workers (routeur, admin.kd-mc.com, monaco, outlook, rag, proxy
+Apex). Changer le code = changer ce secret (empreinte calculée sur l'iPhone via
+`tools/empreinte/`, jamais tapée dans un message) + relancer les 6 déploiements par l'API.
+
+### 4. Garde mécanique (dans `test:ci`)
+`npm run test:no-pin-leak` : le clair **et** l'empreinte **et** la forme (`PIN…SHA… = "64-hex"`),
+dans le code servi **et** les `.md`. `npm run test:departs-pin` + `test:apex-messages` : le code
+tapé **part au domaine** et la page obéit au verdict.
+
+### 5. Test mental
+> *« Si ce fichier est lu par un inconnu (le dépôt est public), apprend-il le code — ou de quoi le
+> retrouver en une seconde ? Cette page décide-t-elle seule qu'un code est bon ? »* Si oui → fuite.
 
 ---
 

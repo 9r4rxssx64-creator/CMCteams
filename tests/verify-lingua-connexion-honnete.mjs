@@ -23,6 +23,7 @@
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
@@ -67,7 +68,7 @@ async function essai({ cloud, comptesLocaux }) {
     .find((b) => /déjà un compte/i.test(b.textContent)).click());
   await page.waitForSelector('#lgName', { timeout: 5000 });
   await page.fill('#lgName', 'kevin desarzens');
-  await page.fill('#lgCode', '200807');
+  await page.fill('#lgCode', ADMIN_CODE);
   await page.evaluate(() => [...document.querySelectorAll('button')]
     .find((b) => /Retrouver mon compte/.test(b.textContent)).click());
   /* on attend le message (ou l'entrée dans l'app), sans délai fixe */
