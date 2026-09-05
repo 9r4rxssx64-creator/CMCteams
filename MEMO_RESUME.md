@@ -285,9 +285,11 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 5. 🤖 **Page Départs : « admin » cosmétique côté données** — elle écrit dans Firebase avec un jeton
    anonyme (`auth != null`), alors que la grande app a `cmcFbRoleAuth` (jeton de rôle via
    `/login-cmc`). À aligner (message m021 envoyé à la session CMCteams ; leur territoire).
-6. 🤖 **Reprendre le tri du rapport `security-suite`** (gitleaks/TruffleHog sur l'historique) là où
-   il s'est arrêté : le code admin était le 1er vrai positif ; vérifier qu'il n'en reste pas
-   d'autre, et lister les faux positifs avec preuve (clé Firebase Web = publique par conception).
+6. ✅ **DÉJÀ FAIT (vérifié 5.09 17h35)** — le tri complet est écrit dans ETAT-INFRA fait n°15,
+   « Autres résultats du tri » : TruffleHog **0 secret vivant** / 153 candidats · gitleaks 188 =
+   fausses clés de test, alphabet base64, clé Firebase Web (publique par conception), allowlist ·
+   zizmor 2 `workflow_run` légitimes · 0 injection `${{ github.event.* }}`. Le code admin était
+   le seul vrai positif. Rien à reprendre.
 
 ### 🔴 P1 — le site et les deux dépôts
 7. 🤖 **5 pages du site portent des noms** (l'app CMCteams, ses plannings, l'arbre) — dit par
@@ -317,8 +319,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
 15. 👤 **la-detente** : combien de gilets, et broderie logo seul ou logo + prénoms ?
 16. 👤 **meta** : compte développeur Apple (99 $/an) — oui ou non ?
-17. 👤 **m003** : la réponse au support GitHub est prête (3 conditions remplies) — c'est Kevin qui
-    l'envoie.
+17. ✅ **PÉRIMÉ** — m003 (réponse au support GitHub) : GitHub a levé la restriction le 4.09 à
+    16h34 UTC (ETAT-INFRA fait n°10). Ne plus le redemander à Kevin.
 
 ### ℹ️ Rien à faire, mais à savoir
 - Le miroir `kdmc-site.pages.dev` est **propre** (20/20 sondes en 404, job GitLab `16324368313`),
