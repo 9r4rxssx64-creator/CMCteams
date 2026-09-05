@@ -40,6 +40,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: write   # dernière étape : redéployer kdmc-outlook (son cron réveille la sonde)
 
 jobs:
   deploy:
@@ -181,3 +182,16 @@ jobs:
           curl -sS "$URL/" | tee /tmp/state.json | head -c 400; echo
           grep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }
           echo "✅ kdmc-uptime déployé et opérationnel — passage toutes les 2 h déclenché par le cron de kdmc-outlook (plan gratuit : 5 crons, tous pris)"
+
+      - name: Redéployer kdmc-outlook (son cron est l'horloge de la sonde)
+        # Mesuré 05/09 : après la fusion #3665, kdmc-uptime a été redéployé mais PAS kdmc-outlook
+        # (modified_on inchangé) → le réveil toutes les 2 h n'était pas en ligne. Le dispatch
+        # post-fusion du bot n'est pas fiable pour ce worker ; on le déclenche ICI, sur main
+        # seulement (un run lancé par GITHUB_TOKEN ne relance rien d'autre : pas de boucle).
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy-kdmc-outlook.yml --ref main \
+            && echo "::notice::deploy-kdmc-outlook.yml déclenché (le cron d'Outlook portera le nouveau réveil)" \
+            || echo "::warning::dispatch deploy-kdmc-outlook.yml refusé — le réveil de la sonde reste sur l'ancien code d'Outlook"

@@ -40,8 +40,11 @@ jobs:
         with: { node-version: '22' }
       - name: Install Playwright Chromium
         run: |
-          npm init -y >/dev/null 2>&1 || true
-          npm i -D playwright@^1.48.0
+          # Le package.json de la racine fait planter npm (« Cannot read properties of null
+          # (reading 'edgesOut') », résolution des peer deps — mesuré 05/09 : ce run échouait
+          # en 28 s sans une seule ligne utile). --legacy-peer-deps passe ; version = celle
+          # des devDependencies (1.56.0), sans toucher au package.json.
+          npm i --no-save --no-audit --no-fund --legacy-peer-deps playwright@1.56.0
           npx playwright install --with-deps chromium
       - name: Balayage LIVE de toutes les surfaces
         shell: bash -eo pipefail {0}
