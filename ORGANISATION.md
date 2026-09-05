@@ -115,6 +115,11 @@ liens réels, dépendances CDN, sources Lingua, récolte LSF. Les quatre marchen
 clé nouvelle**. Les autres attendent que leur secret soit ajouté aux variables GitLab — la
 liste est dans `ETAT-INFRA.md`, pour ne pas la redécouvrir une par une.
 
+> ⚠️ **Précision honnête** : ces jobs sont écrits dans le `.gitlab-ci.yml` **du dépôt**, qui
+> est désormais la source. Ils ne tourneront sur GitLab qu'à la **prochaine remise à niveau
+> de GitLab depuis GitHub** — laquelle demande le jeton GitLab (cf. `KEVIN_ACTIONS_TODO.md`).
+> Écrits et validés, oui ; en service là-bas, pas encore. La nuance compte.
+
 *Au passage, la veille CDN est devenue utile : l'ancienne surveillait **3 adresses écrites à
 la main**, la nouvelle les **lit dans le code** — **78 aujourd'hui**. 75 bibliothèques
 n'étaient surveillées par personne.*
