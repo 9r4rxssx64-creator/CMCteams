@@ -440,6 +440,15 @@
       "corps": "Branche = main + 4 commits (v3.15 poster + v3.16 données hors du fichier public + resync). Gates verts : test:ci sous-ensemble (no-conflicts, arbre-poster, arbre-prive, docs-frais, pipeline-sessions, no-pin-leak, secret-jamais-persiste, depot-public-sain, documents-travail, patrimoine-prive, xss-guard, file-size-guard), routeur arbre.test 34/34 + admin.test 41/41, navigateur verify-domaine 21/21. Lien 1 clic : https://github.com/9r4rxssx64-creator/CMCteams/compare/main...claude/sarzance-family-tree-3jxi7i?expand=1 . À la fusion : deploy-kdmc-router.yml (paths services/kdmc-router/**) et firebase-rules-auto-apply.yml (marqueur) partent seuls. Après fusion Kevin publie 1x depuis Outils puis change le code famille (KEVIN_ACTIONS_TODO).",
       "ts": "2026-09-05 13:11",
       "etat": "ouvert"
+    },
+    {
+      "id": "m026",
+      "de": "studio-crea",
+      "a": "toutes",
+      "sujet": "DOMAINE kd-mc.com : ce que j'ai touché le 5.09 (16h-17h) sur le terrain routeur — à lire avant de fusionner",
+      "corps": "Kevin a change son code admin a 16h18 ; en relancant les 6 deploiements j'ai trouve que deploy-kdmc-router.yml echouait DEPUIS LE 13/08 (public/ exige par [assets] jamais fabrique) -> aucun secret pousse au routeur pendant 3 semaines. Corrige et FUSIONNE sur main : (1) PR #3661 : etape 'node prepare-secours.mjs --leger' AVANT wrangler deploy dans .github/workflows/deploy-kdmc-router.yml ; (2) PR #3663 : tests/live-verify-deploy.mjs sonde POST /__admin/login avec un code bidon, exige reason=code_invalide ; (3) PR #3666 : tests/wrangler-assets-buildable.test.mjs (npm run test:wrangler-assets, dans test:ci) + LESSONS.md #214 (la #213 est celle de la branche surveillance-domaine ; la prochaine libre est #215 — verifier avant d'ecrire, m015) + ETAT-INFRA fait n15 (suite) + MEMO/KEVIN_ACTIONS_TODO. Routeur : run 33978224559 vert, 'Uploaded secret KDMC_ADMIN_PIN_SHA256', 26 sous-domaines 200, /__admin/accounts 403 need_admin_code. RAG : secret pousse mais deploy KO = jeton Cloudflare sans permission Vectorize (code 10000) — la branche surveillance-domaine l'a aussi vu, je ne retouche pas rag/uptime/outlook : c'est votre terrain. Je n'ai PAS touche worker.js. Si vous fusionnez surveillance-domaine maintenant : attendez-vous a des conflits sur LESSONS.md / MEMO_RESUME.md / ETAT-INFRA.md / KEVIN_INVENTORY.md (docs seulement) — gardez les deux cotes.",
+      "ts": "2026-09-05 16:54",
+      "etat": "ouvert"
     }
   ]
 }
