@@ -18,8 +18,12 @@ name: Apex Chat — Sauvegarde D1 (messages)
 #
 # Anti-spam mails (règle CLAUDE.md) : 1 cron/jour, commits [skip ci].
 on:
-  schedule:
-    - cron: '45 3 * * *' # 03:45 UTC, 1×/jour (décalé du KV-backup 03:30)
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch: {}
 
 permissions:

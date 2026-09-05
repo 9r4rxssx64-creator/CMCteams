@@ -15,16 +15,23 @@ on:
   push:
     branches: [main]
     paths: [ 'lingua/**', 'tools/lingua/verify-truth.mjs', 'tools/lingua/verify-coach.mjs', 'services/kdmc-router/worker.js', '.github/workflows/lingua-truth.yml' ]
-  schedule:
-    - cron: '0 5 * * 1'   # lundi 05:00 UTC (1×/semaine)
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 permissions:
   contents: read
 
 # Garde anti-empilement (test:ci-no-stampede) : une seule exécution par workflow+réf,
 # les runs obsolètes de la même réf sont annulés (pas un déploiement → cancel OK).
+# Le groupe inclut l'ÉVÉNEMENT (mesuré le 2026-08-13) : sans lui, un envoi sur main annulait
+# le second avis indépendant lancé à la main, qui n'a donc JAMAIS pu s'exécuter — deux fois de
+# suite. Un audit qu'on croit lancé et qui meurt en silence, c'est un faux vert. Désormais un
+# commit ne remplace qu'un commit, et un lancement manuel qu'un lancement manuel.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -44,6 +51,15 @@ jobs:
       # 🇲🇨 La voix du monégasque : chaque cas vient d'une prononciation DOCUMENTÉE.
       - name: "La voix du monégasque dit juste"
         run: node tools/lingua/verify-mc-voix.mjs
+      # 🔊 La voix ne doit plus « baisser toute seule » après quelques questions : une seule
+      # balise son réutilisée, libérée en fin de leçon, garde-fou borné, raisons expliquées.
+      - name: "La voix ne se dégrade plus question après question"
+        run: node tools/lingua/verify-voix.mjs lingua
+      # 🤟 Langue des signes : chaque signe est une VRAIE vidéo sous licence libre, la
+      # question ne donne jamais sa réponse (la « traduction » d'un mot y est le mot lui-même),
+      # et rien ne se prononce — c'est ce qu'on promet à l'élève, donc ça doit être vrai.
+      - name: "Langue des signes : aucun signe inventé, aucun son"
+        run: node tools/lingua/verify-lsf.mjs lingua
       # 📜 Histoire & anecdotes : chaque fait porte sa source, et la rubrique est VRAIMENT
       # branchée dans l'app (une anecdote fausse — ou invisible — ne doit pas passer).
       - name: "Histoire & anecdotes : sourcées et branchées"
@@ -52,6 +68,10 @@ jobs:
       # affichage et fait passer l'audit live au rouge, ce qui masque les vrais problèmes.
       - name: "Aucune image demandée dans le vide"
         run: node tools/lingua/verify-assets.mjs lingua
+      # 📚 Sources officielles des langues : bien formées, branchées, et SEULES les adresses
+      # réellement ouvertes (workflow lingua-sources.yml) sont affichées à l'élève.
+      - name: "Sources officielles : bien formées et branchées"
+        run: node tools/lingua/verify-sources.mjs lingua
       # 🇲🇨 Cours de monégasque : chaque mot publié doit RESTER attesté par une source
       # récoltée. Si une source disparaît ou se corrige, le mot ne doit plus être enseigné.
       - name: "Monégasque : chaque mot publié reste attesté"

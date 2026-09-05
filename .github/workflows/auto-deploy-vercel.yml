@@ -1,3 +1,12 @@
+# ⬅️ RAPATRIÉ ici le 5.09.2026 (Kevin : « rapatrie tout sur GitHub intelligemment
+#    en respectant les règles »). Il teste / déploie / publie CE dépôt — c'est
+#    exactement l'usage prévu par les conditions GitHub Actions.
+#    ⛔ AUCUNE exécution programmée : c'est le VOLUME automatique (~97/jour) qui a
+#    fait suspendre le compte le 15/08, pas ce workflow-ci. On le lance à la main
+#    (bouton « Run workflow ») — et c'est moi qui appuie, via l'API. Ne PAS remettre
+#    de cron : la garde npm run test:actions-conformes échoue en le nommant.
+#    Sa destination et sa raison sont écrites dans
+#    .github/workflows-desactives/DESTINATIONS.json.
 name: Auto-deploy agent sur Vercel
 # Une seule execution a la fois par branche : un nouveau commit remplace
 # l'ancien au lieu de s'empiler dans la file d'attente GitHub.
@@ -11,6 +20,7 @@ concurrency:
 #  ce workflow est un backup explicite)
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:

@@ -23,10 +23,12 @@ on:
       - 'messaging-app/workers/**'
       - '.github/workflows/apex-chat-e2e.yml'
   workflow_dispatch:
-  schedule:
-    # Cron quotidien à 04:00 UTC (5h Monaco) pour détecter régression silencieuse
-    - cron: '0 4 * * *'
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 permissions:
   contents: read
   issues: write   # v1.1.199 — report des échecs E2E dans une issue lisible

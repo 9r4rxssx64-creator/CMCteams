@@ -4,6 +4,7 @@
    et l'absence de débordement horizontal sur mobile (studio + boutique). */
 import { chromium } from 'playwright';
 import fs from 'fs';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const BASE = process.env.BASE || 'http://localhost:8080';
 const errors = [];
@@ -13,7 +14,7 @@ const b = await chromium.launch();
 
 async function login(page){
   await page.fill('#sgName', 'Kevin Desarzens');
-  await page.fill('#sgPin', '200807');
+  await page.fill('#sgPin', ADMIN_CODE);
   await page.click('#studioGate button:has-text("Entrer")');
   await page.waitForFunction(() => { const g=document.getElementById('studioGate'); return !g || g.style.display==='none'; }, { timeout:10000 });
 }

@@ -11,6 +11,10 @@ on:
         description: "Sous-lot d'IDs (ex: 0,1,2) — vide = toutes les manquantes"
         required: false
         type: string
+      force:
+        description: "1 = re-télécharger TOUTES les images (sinon seulement les manquantes)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -36,8 +40,13 @@ jobs:
       - name: Install sharp
         run: npm i sharp@0.33.5 --no-save
 
-      - name: Génération des illustrations (multi-fournisseurs)
+      - name: Purge si force
+        if: ${{ github.event.inputs.force == '1' }}
+        run: rm -f tools/cuisine/img/*.jpg && echo "Images purgées (force) — re-téléchargement complet."
+
+      - name: Génération des illustrations (photos libres de droits + repli IA)
         env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           AX_REPLICATE_KEY: ${{ secrets.AX_REPLICATE_KEY }}
           OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
@@ -53,10 +62,27 @@ jobs:
             echo "Aucune nouvelle image à committer."
             exit 0
           fi
-          git commit -m "Cuisine — illustrations IA générées ($(ls tools/cuisine/img/*.jpg 2>/dev/null | wc -l) images)"
+          git commit -m "Cuisine — illustrations générées ($(ls tools/cuisine/img/*.jpg 2>/dev/null | wc -l) images)"
           for i in 1 2 3 4 5; do
             git fetch origin main -q
             git rebase origin/main && git push origin HEAD:main && { echo "Poussé sur main → Pages se redéploie."; exit 0; }
             echo "retry push $i…"; git rebase --abort 2>/dev/null || true; sleep 5
           done
           echo "Échec push après retries"; exit 1
+
+      - name: Garde-fou — aucune photo en double (chaque recette = photo distincte)
+        if: always()
+        run: |
+          node -e "
+          const fs=require('fs'),cp=require('crypto');
+          const dir='tools/cuisine/img';
+          const files=fs.readdirSync(dir).filter(f=>/^\d+\.jpg$/.test(f));
+          const seen={};
+          for(const f of files){const h=cp.createHash('md5').update(fs.readFileSync(dir+'/'+f)).digest('hex');(seen[h]=seen[h]||[]).push(f);}
+          const groups=Object.values(seen).filter(a=>a.length>1);
+          const uniq=Object.keys(seen).length;
+          console.log(files.length+' images · '+uniq+' uniques · '+groups.length+' groupes en double');
+          for(const g of groups) console.log('::warning::doublon ('+g.length+') : '+g.join(' '));
+          if(groups.length>0){console.error('ÉCHEC : des recettes partagent la même photo. Relancer la génération (chaque recette doit avoir une photo distincte).');process.exit(1);}
+          console.log('✅ 128 photos distinctes — chaque recette a la sienne.');
+          "

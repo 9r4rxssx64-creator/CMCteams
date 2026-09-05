@@ -13,9 +13,12 @@ on:
         description: "Une seule source (skills, gbrain, awesome-design-skills, rtk, meridian-company-os, free-llm-api-resources) — vide = toutes"
         required: false
         default: ""
-  schedule:
-    - cron: "0 3 1 * *"
-
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 permissions:
   contents: write
   pull-requests: write

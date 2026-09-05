@@ -16,6 +16,11 @@ const PDFJS = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.min.
 const PDFW = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.worker.min.js'));
 
 const TARGETS = [
+  // ⚠️ CETTE LISTE DOIT RESTER IDENTIQUE à celle de tools/departs/_gen-boards.mjs.
+  // Règle Kevin 2026-09-02 : « fais CMCteams ET light aussi, toujours ». Un mois
+  // importé d'un seul côté = l'app principale et la page Départs désaccordées.
+  // Un test de parité le vérifie (tests/verify-parite-cmcteams-light.mjs).
+  { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
   { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
   { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
 ];

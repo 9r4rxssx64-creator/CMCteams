@@ -353,7 +353,7 @@ Cohérent avec règle CLAUDE.md "🔄 PIPELINE SELF-HEALING TOTAL CROSS-APP".
 ### Kevin DESARZENS — Admin principal
 - **Email** : `kevind@monaco.mc` (email Monaco principal — source NOTES_USER)
 - **Téléphone interne casino** : 62224
-- **PIN admin** : `200807`
+- **PIN admin** : `‹code admin›`
 - **Aliases reconnus** : Kevin / Kevin DESARZENS / DESARZENS Kevin / kevin desarzens / KD / KDMC
 - **ID cross-app** : `kdmc_admin` (Apex / Apex Chat) / `U11804` (CMCteams)
 - **Devices** : iPhone (principal, PWA Safari), Tablette Lenovo Android, Ordinateur
@@ -848,7 +848,7 @@ Apex Chat hérite **toutes** les règles permanentes des projets Kevin :
 
 ### 7. Compte admin unique Kevin reconnu via tous aliases
 - ADMIN_KEVIN_ALIASES : kevin, kevind@monaco.mc, kdmc, KD, Kevin DESARZENS, etc.
-- PIN admin 200807 (modifiable)
+- PIN admin ‹code admin› (modifiable)
 - Login flexible (tous formats : ordre, casse, tirets, accents, espaces)
 - Algorithme tokens triés + normalization (jamais substring partiel sur 1 token court)
 

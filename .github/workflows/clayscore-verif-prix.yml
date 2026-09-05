@@ -11,6 +11,15 @@ name: ClayScore — Vérifier les prix sur les vraies pages
 # Déclenchement MANUEL uniquement (workflow_dispatch) : pas de cron, donc
 # aucun mail automatique. Conforme à la règle anti-spam.
 
+# Garde « une seule à la fois par branche » (ajouté 15/08/2026). Sans lui, chaque
+# commit empilait une nouvelle exécution sans effacer la précédente — le 6 août,
+# 399 exécutions étaient bloquées en file. Le garde-fou tests/verify-ci-no-stampede
+# l'exigeait depuis, mais ce fichier passait entre les mailles : il faisait
+# ÉCHOUER toute la suite de tests, qui s'arrêtait donc à la 2e vérification.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   # Déclencheur PUSH volontairement très étroit : uniquement quand l'outil ou
   # la table des prix change. C'est ce qui permet de lancer la vérification
@@ -34,6 +43,15 @@ on:
 
 permissions:
   contents: read
+
+
+# Garde anti-empilement (test:ci-no-stampede) : sans elle, chaque commit ajoutait une
+# exécution à la file au lieu de remplacer la précédente — c'est ce qui avait bloqué
+# 399 exécutions le 6 août 2026. Le groupe inclut l'événement pour qu'un commit
+# n'annule jamais une vérification lancée à la main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 jobs:
   verifier:

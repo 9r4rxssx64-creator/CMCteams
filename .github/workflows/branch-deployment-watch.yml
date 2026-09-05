@@ -6,8 +6,12 @@ name: Branch Deployment Watch (Apex anti-PR-fantome)
 # Cron 2h : assure qu'aucune session Claude Code ne laisse une branche fantome >24h.
 
 on:
-  schedule:
-    - cron: "0 8 * * 1"  # v13.4.184 Kevin "mails saturent boite" : weekly Mon 08h UTC (was 2h)
+  # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
+  #    GitHub a suspendu le compte : « repositories that use GitHub Actions
+  #    solely to interact with 3rd party websites […] or for general
+  #    computing purposes may fall afoul of the Additional Product Terms ».
+  #    Ce workflow reste lançable À LA MAIN (workflow_dispatch), mais plus
+  #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
   workflow_dispatch:
 
 permissions:

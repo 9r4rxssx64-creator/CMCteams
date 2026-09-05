@@ -2,9 +2,25 @@
 // verifies: PIN gate, conversation grouping, thread render, reply write, clear-all write.
 import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
-import { dirname, resolve } from 'path';
+import { dirname, resolve, join } from 'path';
+import http from 'node:http';
+import fs from 'node:fs';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const FB = 'https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/cmcteams';
+
+// Servi en HTTP local (plus file://) : depuis v1.4 la page appelle /__admin/login en RELATIF,
+// et sa CSP n'autorise que 'self' — exactement le vrai chemin sur kd-mc.com.
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json' };
+const server = http.createServer((req, res) => {
+  const p = decodeURIComponent((req.url || '/').split('?')[0]);
+  const file = join(root, p.replace(/^\/+/, ''));
+  if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('nf'); }
+  const ext = (file.match(/\.[a-z0-9]+$/i) || [''])[0].toLowerCase();
+  res.writeHead(200, { 'content-type': MIME[ext] || 'application/octet-stream' });
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise(r => server.listen(0, '127.0.0.1', r));
+const BASE = `http://127.0.0.1:${server.address().port}`;
 
 // in-memory Firebase state
 const db = {
@@ -27,7 +43,10 @@ await ctx.route('https://identitytoolkit.googleapis.com/**', r =>
 
 await ctx.route(FB + '/**', async r => {
   const u = new URL(r.request().url());
-  const key = decodeURIComponent(u.pathname.replace('/cmcteams/', '').replace(/\.json$/, ''));
+  // Clé lue comme le VRAI Firebase : on garde le chemin BRUT (non décodé). Un "%2F" est un
+  // caractère du NOM de clé, pas un séparateur de chemin — donc "cmc_dep_img%2Fkd_2" ≠
+  // "cmc_dep_img/kd_2". Décoder ici masquerait le bug « je ne vois pas la photo » (faux vert).
+  const key = u.pathname.replace('/cmcteams/', '').replace(/\.json$/, '');
   const m = r.request().method();
   if (m === 'PUT') {
     let body = null; try { body = JSON.parse(r.request().postData() || 'null'); } catch {}
@@ -39,22 +58,39 @@ await ctx.route(FB + '/**', async r => {
   return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(val) });
 });
 
+// v1.4 — le code n'est plus comparé dans la page : il part à POST /__admin/login (routeur
+// kd-mc.com). Ici on JOUE le routeur : bon code → {ok:true}, autre → {ok:false}. Le test
+// prouve donc que la page ne contient plus d'empreinte ET qu'elle obéit au verdict serveur.
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807';
+const loginCalls = [];
+await ctx.route(/\/__admin\/login$/, r => {
+  let b = {}; try { b = JSON.parse(r.request().postData() || '{}'); } catch {}
+  loginCalls.push(b);
+  const ok = String(b.code || '') === ADMIN_CODE;
+  return r.fulfill({ status: 200, contentType: 'application/json',
+    headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type' },
+    body: JSON.stringify(ok ? { ok: true, grant: 'G' } : { ok: false, reason: 'code_invalide' }) });
+});
+
 const page = await ctx.newPage();
 const errs = []; page.on('pageerror', e => errs.push(String(e)));
-await page.goto('file://' + resolve(root, 'tools/messages/index.html'), { waitUntil: 'domcontentloaded' });
+await page.goto(BASE + '/tools/messages/index.html', { waitUntil: 'domcontentloaded' });
 
 function assert(c, m) { if (!c) { console.error('FAIL: ' + m); process.exitCode = 1; } else console.log('ok: ' + m); }
 
 // 1) gate visible, wrong pin rejected
 await page.waitForSelector('#gate', { state: 'visible' });
 await page.fill('#pin', '000000'); await page.click('#gbtn');
-await page.waitForTimeout(200);
-assert((await page.textContent('#gerr')).includes('incorrect'), 'wrong PIN rejected');
+await page.waitForFunction(() => (document.getElementById('gerr').textContent || '').length > 0, { timeout: 5000 });
+assert((await page.textContent('#gerr')).includes('incorrect'), 'wrong PIN rejected (by the server verdict)');
+assert(loginCalls.length === 1 && loginCalls[0].code === '000000', 'the code was sent to /__admin/login, not compared in the page');
 
 // 2) correct pin → boot
-await page.fill('#pin', '200807'); await page.click('#gbtn');
+await page.fill('#pin', ADMIN_CODE); await page.click('#gbtn');
 await page.waitForFunction(() => document.getElementById('gate').style.display === 'none', { timeout: 5000 });
 await page.waitForTimeout(600);
+const src = await page.content();
+assert(!/PIN_SHA\w*\s*=\s*"[0-9a-f]{64}"/i.test(src), 'no admin-code fingerprint shipped in the page');
 
 // 3) conversation list: 2 employees grouped
 const convs = await page.$$eval('.conv', els => els.map(e => e.querySelector('.nm').textContent));
@@ -68,6 +104,20 @@ const bubbles = await page.$$eval('.b', els => els.map(e => ({ cls: e.className,
 assert(bubbles.some(b => b.cls.includes('emp') && b.t.includes('question horaires')), 'employee message shown');
 assert(bubbles.some(b => b.cls.includes('kev') && b.t.includes('je regarde')), 'Kevin reply merged');
 assert((await page.$('.photo')) !== null, 'photo button present');
+
+// 4bis) « Voir la photo » AFFICHE vraiment la photo (le node est imbriqué : cmc_dep_img/<id>).
+// Sans ce contrôle, une clé mal encodée passait inaperçue : le bouton existait, l'image jamais.
+// pas de gestionnaire de pop-up ici : Playwright ferme seul un éventuel « Photo introuvable »
+// (en poser un le laisserait armé et il volerait le pop-up de l'étape « tout effacer »).
+await page.click('.photo');
+await page.waitForTimeout(400);
+const shown = await page.evaluate(() => {
+  const ov = document.getElementById('imgov'), el = document.getElementById('imgel');
+  return { open: getComputedStyle(ov).display !== 'none', src: el.getAttribute('src') || '' };
+});
+assert(shown.open, 'photo overlay opened');
+assert(shown.src.startsWith('data:image/'), 'photo actually loaded (src=' + shown.src.slice(0, 24) + ')');
+if (shown.open) await page.click('#imgx'); // referme seulement si elle s'est ouverte
 
 // 5) markRead wrote cmc_dep_read on thread open
 await page.waitForTimeout(300);
@@ -92,5 +142,16 @@ assert(writes.some(w => w.key === 'ax_cmc_kevin_inbox' && Array.isArray(w.body) 
 assert(writes.some(w => w.key === 'cmc_dep_reply' && w.body && Object.keys(w.body).length === 0), 'replies cleared');
 
 assert(errs.length === 0, 'no page errors (' + errs.slice(0, 2).join(' | ') + ')');
+
+// 8) le numéro de version est écrit DEUX fois (badge HTML + APP_VER du script). La sonde de
+// mise à jour relit ce fichier et compare le badge distant à APP_VER : s'ils divergent, la page
+// se croit périmée à CHAQUE chargement → rechargement en boucle. Ils doivent rester identiques.
+{
+  const src = (await import('fs')).readFileSync(resolve(root, 'tools/messages/index.html'), 'utf8');
+  const badge = (src.match(/Apex Messages (v[0-9.]+)</) || [])[1];
+  const appver = (src.match(/APP_VER\s*=\s*"(v[0-9.]+)"/) || [])[1];
+  assert(badge && appver && badge === appver, 'version badge HTML == APP_VER (badge=' + badge + ', APP_VER=' + appver + ')');
+}
 console.log(process.exitCode ? '\n❌ SMOKE FAILED' : '\n✅ SMOKE PASSED');
 await browser.close();
+server.close();

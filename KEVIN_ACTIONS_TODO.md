@@ -2,6 +2,201 @@
 
 ---
 
+## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
+
+Ton code admin (celui à 6 chiffres) était écrit **en clair dans 68 fichiers** de ton dépôt
+GitHub — qui est **public** — et son empreinte était dans la page Départs. Tout ça est
+retiré, et plus aucune page ne garde le code ; mais **ce qui a été public une fois le reste**
+(l'historique Git le garde). Le seul vrai correctif : **un nouveau code**. Je ne peux pas le
+faire à ta place : le nouveau code ne doit passer **ni par moi, ni par un message, ni par un
+journal public**.
+
+### ▶️ 3 gestes, 2 minutes
+1. **Choisis** un nouveau code — **8 chiffres**, pas 6 (dix fois plus long à forcer par mille).
+2. Ouvre **[kd-mc.com/CMCteams/tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/)**,
+   tape le code, **« Copier l'empreinte »**. Le calcul se fait sur ton iPhone, rien n'est envoyé.
+3. Ouvre **[le secret APEX_ADMIN_PIN_SHA256](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)**
+   → **Update** → colle l'empreinte → **Save**.
+
+Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, admin.kd-mc.com,
+Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
+**Messages** suivent le routeur toutes seules.
+
+### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
+- **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
+- **Boutiques** (tableau de bord) : `Paramètres → Changer le PIN admin`.
+
+*Ne m'écris jamais le nouveau code. Si tu veux que je vérifie que tout suit, je le fais sans le
+connaître (les tests envoient l'empreinte, jamais le code).*
+
+---
+
+## 🔴 ENSUITE (5.09.2026) — un jeton GitLab, 2 min
+
+Ton site **kd-mc.com est propre** : il ne publie plus aucun de mes documents de travail
+(ils exposaient des noms de famille, des dates de naissance et des e-mails). C'est
+vérifié automatiquement **après chaque mise en ligne**.
+
+Il reste **le miroir de secours**, `kdmc-site.pages.dev`, qui lui publie encore ces
+documents. Le correctif est écrit et testé — mais pour le mettre en place je dois pousser
+sur **GitLab**, et je n'ai plus de jeton (les deux précédents sont révoqués).
+
+### ▶️ Ce que je te demande
+GitLab → **Préférences → Jetons d'accès → Ajouter** :
+portée **`write_repository` seule**, expiration **courte (1 jour suffit)**.
+Tu me le colles ici, je fais le reste — je ne l'écris jamais sur le disque.
+
+*Pourquoi je ne peux pas m'en passer : la publication du miroir lit le dépôt GitLab,
+pas GitHub. Sans jeton, aucun chemin ne mène à ce fichier.*
+
+---
+
+---
+
+### ℹ️ Et si un jour tu veux relancer la génération d'images sur GitLab
+
+Quatre vérifications tournent déjà là-bas **sans rien te demander** (liens du domaine,
+bibliothèques CDN, sources Lingua, langue des signes). Les autres — logos, cartoons,
+mascottes, photos produits, sauvegardes — attendent juste que leur clé soit ajoutée **côté
+GitLab** (*Paramètres → CI/CD → Variables*). Liste complète : `ETAT-INFRA.md` fait n°13.
+**Rien à faire tant que tu n'en as pas besoin** — je te dirai laquelle le jour où ça sert.
+
+---
+
+## ⬜ PÉRIMÉ (2.09.2026) — gardé pour mémoire, GitHub est revenu depuis
+
+*(ce qui suit datait de la suspension ; le compte a rouvert le 4.09 et le code repasse
+par GitHub — seul le jeton GitLab reste utile, voir tout en haut)*
+
+### ~~GitLab partout, GitHub suspendu~~
+
+**Ta décision** : *« On passe par GitLab partout et pour tout jusqu'à nouvel ordre. »* ✅ appliquée.
+
+### ▶️ 1. Faire tourner le jeton GitLab — 2 min
+Il a circulé **en clair** dans une consigne automatique. Rien n'a été publié
+(vérifié : 0 fichier versionné, 0 commit), mais il est à considérer comme grillé.
+**GitLab → Préférences → Jetons d'accès → `glpat-o2uW…` → Révoquer**, puis
+tu m'en donnes un neuf (portée `write_repository` seule, expiration courte)
+quand j'en aurai besoin.
+
+### ▶️ 2. Rien d'autre pour l'instant sur les sessions
+Tu ne peux pas créer de session depuis l'iPhone (l'interface exige un dépôt, et
+GitHub refuse). **Mesuré le 2.09** : une session **sans dépôt** démarre très bien.
+Tu ne peux pas en créer une comme ça toi-même — **dis-moi le thème, je te la crée**.
+
+*(Le connecteur GitHub `claude.ai/customize/connectors?auth_start=github&auth_start_force=1`
+reste le geste qui rétablirait tout d'un coup — mais tant que le compte est suspendu,
+il ne servira à rien. Inutile de le retenter avant que GitHub réponde.)*
+
+### ✅ 3. Planning — septembre EST importé (plus rien à faire)
+Mesuré ce matin dans un vrai navigateur, des deux côtés : **septembre 2026 est bien là**
+(285 personnes, 18 miroirs). L'app et la page Départs donnent **exactement les mêmes
+numéros de départ** — 13 980 cellules comparées, **0 écart**. Ton équipe de septembre :
+**BJ Éq.6 (16/22)**, miroir **BJ Éq.10 (16/3)**.
+*Un test disait le contraire : il ne regardait que juillet et août, donc septembre était
+comparé à du vide. Corrigé — il déduit maintenant les mois tout seul.*
+
+---
+
+---
+
+## 🔧 0. Un pont à déplacer — *(pour moi, pas pour toi ; noté pour ne pas l'oublier)*
+
+Le pont qui faisait remonter les problèmes d'Apex jusqu'à moi
+(`claude-todo-watcher`) tournait sur GitHub Actions. Il interrogeait Firebase en
+boucle — c'est précisément ce que GitHub a sanctionné. Je l'ai retiré.
+
+**Conséquence honnête** : 3 de tes règles absolues (auto-test/auto-fix, pipeline
+self-healing, pipeline autonomie cross-projet) n'ont plus de garde automatique.
+Elles reposent sur ma mémoire en attendant.
+
+**Le vrai correctif** : ce pont doit vivre dans un Cloudflare Worker avec son
+propre déclencheur horaire — là c'est légitime, et ça ne dépend plus de GitHub.
+Je le code quand tu veux, **tu n'as rien à faire**.
+
+---
+
+## 🔴 1. Ton crédit image Google est à ZÉRO — c'est ÇA qui cassait les figurines *(mesuré le 14/08/2026)*
+
+**▶️ [Voir ton crédit Google AI Studio](https://aistudio.google.com/app/apikey)**
+
+### Ce que la machine a répondu, mot pour mot
+Le test automatique lancé sur le vrai serveur a eu **la même réponse sur les 4 modèles** :
+
+```
+gemini-3.1-flash-image-preview : 429 Your prepayment credits are depleted
+gemini-3-pro-image-preview     : 429 …depleted
+gemini-2.5-flash-image         : 429 …depleted
+```
+
+« depleted » = **épuisé**. Ce n'était donc pas un bug de code : le moteur qui
+retouche ta photo n'avait plus de quoi travailler, et il rendait n'importe quoi.
+
+### Ce que j'ai déjà réparé de mon côté (tu n'as rien à faire)
+- Les **figurines / transformations** passent maintenant par un **deuxième
+  moteur** qui part vraiment de ta photo. Prouvé en vrai le 14/08 :
+  `✅ la photo a bien été ÉDITÉE (l'identité est gardée)`.
+- Les **poses de danse** avaient le même trou, elles ont maintenant le même
+  secours (fait aujourd'hui).
+- Si plus rien ne marche, l'app **te le dit** au lieu de te rendre quelqu'un
+  d'autre.
+
+### Ce que ça te coûte en attendant
+Le moteur de secours, c'est **Replicate** — celui-là est **payant à l'image**
+(ta clé `AX_REPLICATE_KEY`). Tant que Google est à sec, chaque figurine passe
+par là. Remettre du crédit Google = revenir au **gratuit** et plus rapide.
+
+### ⚠️ Ce que je ne peux PAS te dire
+Je **n'ai pas pu ouvrir** la page Google (mon accès Internet est bloqué depuis
+ici). Je ne connais donc **ni le prix**, **ni s'il existe un palier gratuit**
+qui couvre l'édition d'image. Regarde sur la page avant de payer quoi que ce
+soit — je ne veux pas que tu sortes la carte sur ma parole.
+
+---
+
+## 🆓 2. Les IA gratuites à brancher — 2 min chacune, **aucune carte bancaire** *(ajouté 14/08/2026)*
+
+J'ai branché **9 nouveaux moteurs gratuits** dans les apps (Créa Studio + le
+serveur commun `apis.kd-mc.com`). Ils sont **déjà dans le code et testés** :
+il ne manque que la clé. **Un moteur sans clé est simplement ignoré** — rien
+n'est cassé tant que tu ne fais rien, tu ajoutes ce que tu veux, quand tu veux.
+
+### Comment on ajoute une clé (le même geste à chaque fois)
+1. Tu ouvres le site, tu crées un compte, tu copies la clé.
+2. **▶️ [Coller la clé ici](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)** — tu mets le **Nom** exact du tableau, tu colles dans **Secret**, tu valides.
+3. C'est tout. Le prochain déploiement la pose tout seul.
+
+> ⚠️ Le **Nom** doit être écrit **exactement** comme dans la colonne « Nom à
+> mettre » (majuscules comprises). Une lettre de travers = la clé ne sert à rien.
+
+### Les clés, dans l'ordre de ce que ça t'apporte
+
+| | Site (1 clic) | Nom à mettre | Ce que ça t'apporte |
+|---|---|---|---|
+| 1 | **▶️ [Hugging Face](https://huggingface.co/settings/tokens)** | `HF_TOKEN` | Du **texte** ET des **images de fond** gratuites en plus |
+| 2 | **▶️ [Cerebras](https://cloud.cerebras.ai/)** | `CEREBRAS_API_KEY` | Le plus **rapide** de tous pour écrire (paroles, textes) |
+| 3 | **▶️ [Nvidia](https://build.nvidia.com/)** | `NVIDIA_API_KEY` | Gros quota gratuit, très stable |
+| 4 | **▶️ [SambaNova](https://cloud.sambanova.ai/)** | `SAMBANOVA_API_KEY` | Rapide, palier gratuit généreux |
+| 5 | **▶️ [Nebius](https://studio.nebius.com/)** | `NEBIUS_API_KEY` | Crédit offert à l'inscription |
+| 6 | **▶️ [Scaleway](https://console.scaleway.com/)** | `SCALEWAY_API_KEY` | Serveurs en **France** (données en Europe) |
+| 7 | **▶️ [Z.ai / GLM](https://open.bigmodel.cn/)** | `GLM_API_KEY` | Modèle gratuit sans limite stricte |
+| 8 | **▶️ [Qwen / Alibaba](https://modelstudio.console.alibabacloud.com/)** | `DASHSCOPE_API_KEY` | Un million de jetons offerts |
+
+### ✅ Rien à faire pour celles-là
+`XAI_API_KEY`, `PERPLEXITI_API_KEY` et `OPEN_AI_API_KEY` : **tu les as déjà**.
+Elles ne servaient nulle part ici — je viens de les brancher, elles marchent
+maintenant sans que tu bouges le petit doigt.
+
+### ⚠️ La même honnêteté que plus haut
+Je **n'ai pas pu ouvrir ces 8 pages** (accès Internet bloqué depuis ici). Les
+adresses viennent de ce que je connais, et **les paliers gratuits changent
+souvent**. Si un lien tombe à côté ou si le gratuit a disparu, **ne t'embête
+pas** : passe au suivant du tableau, ou dis-le-moi et je corrige. Aucune de ces
+8 clés n'est indispensable — chacune ajoute juste une roue de secours.
+
+---
+
+## 💳 3. Abonnement GitHub Pro — 4 $/mois *(ajouté 12/08/2026, à ta demande)*
 ## 🟢 Aucune clé à révoquer — vérifié, pas supposé *(12/08/2026)*
 
 Tu m'as dit « protège mon domaine entièrement ». J'ai fait passer un outil qui
@@ -119,6 +314,92 @@ Donc :
   ça ne casse que les automatisations, jamais tes données.
 
 **Ce n'est pas urgent.** Fais-le quand tu veux arrêter de cliquer pour moi.
+
+---
+
+## 🗺️ SESSION 2026-08-09 — Ce qui t'attend (dans l'ordre)
+
+| # | Ce qui reste | Qui | État |
+|---|---|---|---|
+| 1 | **Récupérer la clé Apple `.p8`** (le téléchargement plante côté Apple) | toi | 🔴 **bloque tout le reste iPhone** |
+| 2 | ~~Projet « KDMC Live » (télé/radio)~~ | — | ❌ **ANNULÉ** par Kevin (2026-08-09). Rien à faire, rien codé. |
+| 3 | Envoyer tes **15 apps sur TestFlight** | moi | ⏳ dès que le point 1 est fait (5 min) |
+| 4 | ~~Stockage `kdmc-deces-insee`~~ | — | ✅ **GARDÉ** (Kevin 2026-08-12 « Garde ») — rien supprimé, la recherche d'actes marche. |
+
+---
+
+### 🔴 1. Ta clé Apple `.p8` — la seule chose qui bloque
+
+Tout le reste est **prêt et prouvé** : tes 15 apps se fabriquent en vraies applis iPhone (testé
+sur des Mac dans le cloud), signature, sécurité, icônes. Il ne manque que **ce fichier**.
+
+Le téléchargement échoue chez Apple (« Une erreur s'est produite ») — ce n'est **pas toi**.
+
+#### 🆘 Avant de re-essayer : 2 choses à vérifier (2 min)
+
+> Le message d'Apple ne dit pas la cause. Voici les 2 pistes **les plus probables** (pas une certitude) :
+
+- **① Un contrat Apple non signé bloque les clés** — c'est le cas le plus fréquent sur un compte
+  tout neuf.
+  👉 **[Ouvrir « Accords, taxes et opérations bancaires »](https://appstoreconnect.apple.com/business)**
+  → si une ligne est **« En attente »** ou **« À accepter »** → **accepte-la**, puis refais la clé.
+- **② Prendre une clé d'ÉQUIPE** (section **Clés d'équipe** / *Team Keys*), pas « individuelle »,
+  avec l'accès **Admin**. ✅ *Oui, c'est bien une clé équipe qu'il faut — tu avais raison de demander.*
+
+Et si ça bloque encore :
+- appui **long** sur *Télécharger* → « **Télécharger le fichier lié** » ;
+- ou **Chrome** sur iPhone ; ou coupe le **Relais privé iCloud** (Réglages → ton nom → iCloud) ;
+- ou **depuis un ordinateur** — le plus fiable, 30 secondes ;
+- ou **attends 24-48 h** : sur une adhésion toute neuve, Apple met parfois ce délai à activer l'API.
+
+💡 Chaque essai raté laisse une clé morte : **supprime-les** (bouton *Révoquer*), sinon on risque de
+coller le mauvais numéro de clé.
+
+#### Puis, quand le fichier est enfin sur ton iPhone :
+
+1. **[🔑 Ouvrir mes clés App Store Connect](https://appstoreconnect.apple.com/access/integrations/api)**
+   → **+** → nom au choix → accès **Admin** → **Generate** → **Télécharger tout de suite**
+   💡 *Le plus fiable : depuis un **ordinateur** (30 s) plutôt que l'iPhone. Ou essaie **Chrome** sur iPhone, ou en **Wi-Fi** au lieu de la 4G.*
+2. **[📋 Copier le fichier en 1 clic](https://9r4rxssx64-creator.github.io/CMCteams/tools/ios/p8.html)** *(100 % privé — rien n'est envoyé sur internet)*
+3. **[🔐 Coller dans mes secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions)** — **2 secrets** :
+   - `APPSTORE_API_KEY_BASE64` = le contenu du fichier
+   - `APPSTORE_API_KEY_ID` = le **Key ID de la clé que tu viens de télécharger** ⚠️ *(le piège : toujours celui de la dernière)*
+4. Tu me dis **« p8 ok »** → **j'envoie les 15 apps sur ton iPhone.**
+
+> ✅ Déjà en place, rien à refaire : `APPLE_TEAM_ID` (`Y45767LAGC`) et `APPSTORE_API_ISSUER_ID`.
+
+---
+
+### ❌ 2. Projet « KDMC Live » — ANNULÉ
+
+Kevin : « **Action 2 annule, rien.** » (2026-08-09) → **abandonné, rien n'a été codé, rien à faire.**
+Aucune trace dans le domaine. Les 9 liens outils (VLC, iptv-org, yt-dlp…) restent simplement
+rangés dans **OSINT** avec leur fonction écrite — c'est tout ce qui a été livré sur ce sujet.
+
+---
+
+### ✅ 4. Stockage `kdmc-deces-insee` — GARDÉ (décision Kevin, 2026-08-12)
+
+Kevin : « **Garde** » → **rien n'a été supprimé, rien à faire.**
+
+Bonne décision : ce stockage est **encore lu par 3 scripts** (`tools/arbre/find-deces.py`,
+`actes-register.py`, `enrich-insee-local.py`), c'est-à-dire l'automatisation
+**« Arbre — retrouver un décès précis »**. Elle continue de donner le **numéro d'acte de
+décès** et le **code de la commune** (la « source 2 » complète), en plus de la recherche
+par nom/date.
+
+*Rappel de ce qui s'est passé : je t'avais annoncé ce stockage comme inutile — c'était une
+info **incomplète** de ma part (j'avais vérifié la page de l'arbre, pas les scripts). Je me
+suis arrêté avant d'effacer et je t'ai rendu le choix. Leçon gravée (#141) : une recherche de
+dépendance couvre page **+ scripts + automatisations**, jamais la page seule.*
+
+---
+
+### ✅ Fait pendant ce temps (rien à faire pour toi)
+
+- **Connexion admin universelle** : tu es reconnu admin **partout** sur ton domaine, sans code par app (déployé + vérifié en ligne).
+- **15 apps prêtes pour l'iPhone**, chacune sécurisée (HTTPS strict, navigation verrouillée au domaine, icône propre) — toutes testées sur Mac cloud.
+- **World Monitor v2.42** : ta **localisation** en direct (point bleu + précision) sur la **carte**, le **globe** et le **globe 3D**. Ton GPS ne quitte jamais l'iPhone (prouvé : 0 fuite réseau).
 
 ---
 
@@ -710,7 +991,7 @@ Carte enregistrée jamais débitée tant que tu restes sous le quota free.
 
 ### PIN admin Kevin (pour référence dans futures sessions)
 
-PIN = `200807` → SHA256 = `cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373`
+PIN = `‹code admin›` → SHA256 = `‹empreinte du code — jamais écrite›`
 (stocké dans GitHub Secret `APEX_ADMIN_PIN_SHA256`).
 
 ---
@@ -2568,7 +2849,7 @@ Pour CHAQUE service manquant, Apex :
 | Revolut Revtag (@kdmc) | Coffre → `ax_revolut_tag` |
 | IBAN + nom titulaire | Coffre → `ax_iban` + `ax_iban_nom` |
 | BTC / ETH / USDC adresses publiques | Coffre → champs correspondants |
-| PIN admin si tu veux changer (200807 par défaut) | Réglages → Sécurité |
+| PIN admin si tu veux changer (‹code admin› par défaut) | Réglages → Sécurité |
 
 ---
 
@@ -2650,3 +2931,25 @@ dans `messaging-app/workers/wrangler.toml` [vars] + redéployer le worker.
 → Neutralise le code de secours `000000` + la fuite OTP. Ton bypass `KEVIN_PHONE_E164` reste
 toujours actif (jamais verrouillé). Détail : `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`.
 **Claude doit me le rappeler.**
+
+## 🍎 iPhone / App Store — 2 actions, une seule fois (2026-08-13)
+
+**Tout le reste est construit et vérifié.** Il ne manque que ce que je ne peux pas faire :
+
+1. **Compte Apple Developer** — 99 €/an → https://developer.apple.com/programs/enroll/
+   *(ta carte bancaire ; aucune automatisation possible)*
+2. **Clé d'accès API** → https://appstoreconnect.apple.com/access/integrations/api
+   → me donner **Issuer ID** + **Key ID** + le fichier **.p8**
+   ⚠️ le `.p8` ne se télécharge **qu'une seule fois**.
+
+Je les range en secrets GitHub (`ASC_ISSUER_ID`, `ASC_KEY_ID`, `ASC_PRIVATE_KEY`) :
+jamais dans le code, jamais affichés, effacés du runner après usage.
+
+**Ensuite, sans rien te demander** : je construis sur un Mac prêté par GitHub et j'envoie
+sur **TestFlight** → l'app s'installe sur ton iPhone comme une vraie app, sans attendre la
+validation d'Apple.
+
+**Honnête** : l'App Store *public* n'est pas garanti — Apple refuse les apps qui ne sont
+qu'un site emballé (règle 4.2). Nos 3 apps ont un vrai contenu propre, donc une chance
+réelle, mais la décision lui appartient.
+

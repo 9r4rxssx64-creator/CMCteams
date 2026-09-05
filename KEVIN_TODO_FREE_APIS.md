@@ -4,6 +4,12 @@ Branche : `claude/free-apis-analysis-c4sy5d` · Créé 2026-07-04 · MAJ temps r
 Le socle (worker + client + config + workflow + 19 tests verts) est **fait et poussé**.
 Ici = ce qui reste, trié par priorité + ce que JE peux faire vs le clic Kevin.
 
+> 📌 **MAJ 14/08/2026 — les 9 NOUVEAUX paliers gratuits** (Cerebras, Nvidia,
+> SambaNova, Hugging Face, Nebius, Scaleway, GLM, Qwen, Perplexity) sont listés
+> avec leurs liens 1 clic dans **[KEVIN_ACTIONS_TODO.md, section 2](KEVIN_ACTIONS_TODO.md)**
+> — c'est LA liste à jour. Ce fichier-ci ne couvre que les clés d'avant, pour
+> ne pas avoir deux listes qui se contredisent.
+
 ---
 
 ## 🔴 Priorité 1 — activer la passerelle (1 clic Kevin puis auto)

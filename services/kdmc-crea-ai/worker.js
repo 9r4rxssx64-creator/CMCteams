@@ -161,7 +161,23 @@ function dancePrompt(pose, extra) {
 }
 
 /* ---------------- Fournisseur 1 : Google Gemini (GRATUIT) ---------------- */
-const GEM_MODELS = ['gemini-2.5-flash-image', 'gemini-2.0-flash-preview-image-generation'];
+/* Modèles d'IMAGE Gemini, essayés dans l'ordre.
+   ⚠️ Vécu le 2026-08-14 (auto-test réel) : la liste ne contenait que 2 noms et
+   les DEUX étaient morts — « models/gemini-2.0-flash-preview-image-generation
+   is not found for API version v1beta ». Google retire/renomme ses modèles
+   d'aperçu sans prévenir, et comme Gemini est le seul moteur qui ÉDITE la
+   photo, tout tombait d'un coup : figurines, cartoon ET poses de danse.
+   Plusieurs noms candidats = une dépréciation ne casse plus la fonction. */
+const GEM_MODELS = [
+  /* Génération actuelle (3.x) — les noms 2.x ci-dessous étaient TOUS périmés,
+     c'est ce qui tuait figurines / cartoon / poses de danse. */
+  'gemini-3.1-flash-image-preview',
+  'gemini-3-pro-image-preview',
+  'gemini-2.5-flash-image',
+  'gemini-2.5-flash-image-preview',
+  'gemini-2.0-flash-preview-image-generation',
+  'gemini-2.0-flash-exp-image-generation',
+];
 
 function parseDataUrl(u) {
   const m = /^data:([^;,]+);base64,(.+)$/.exec(String(u || ''));
@@ -187,7 +203,7 @@ async function geminiImage(env, prompt, imgDataUrl, extraImg) {
     contents: [{ parts }],
     generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
   });
-  let lastErr = 'gemini_failed';
+  let lastErr = 'gemini_failed'; const gemErrs = [];
   for (const model of GEM_MODELS) {
     let r, j;
     try {
@@ -196,10 +212,13 @@ async function geminiImage(env, prompt, imgDataUrl, extraImg) {
         { method: 'POST', headers: { 'content-type': 'application/json' }, body }
       );
       j = await r.json();
-    } catch (e) { lastErr = 'gemini_net_' + String((e && e.message) || e).slice(0, 80); continue; }
+    } catch (e) { lastErr = 'gemini_net_' + String((e && e.message) || e).slice(0, 80); gemErrs.push(model + ':' + lastErr); continue; }
     if (!r.ok) {
       const msg = (j && j.error && j.error.message) || '';
       lastErr = 'gemini_' + r.status + (msg ? '_' + msg.slice(0, 140) : '');
+      /* On garde l'erreur de CHAQUE modèle : avant, seule la dernière
+         survivait, et on ne pouvait pas savoir pourquoi le 1er avait échoué. */
+      gemErrs.push(model + ':' + r.status + (msg ? ' ' + msg.slice(0, 60) : ''));
       continue;
     }
     const cand = (j && j.candidates && j.candidates[0]) || null;
@@ -211,8 +230,9 @@ async function geminiImage(env, prompt, imgDataUrl, extraImg) {
     /* Pas d'image : souvent un refus de sécurité → remonter la cause exacte. */
     const fin = (cand && (cand.finishReason || cand.finish_reason)) || '';
     lastErr = 'gemini_no_image' + (fin ? '_' + fin : '');
+    gemErrs.push(model + ':' + lastErr);
   }
-  throw new Error(lastErr);
+  throw new Error(gemErrs.length ? gemErrs.join(' | ').slice(0, 300) : lastErr);
 }
 
 /* ---------------- Fournisseur 1bis : Cloudflare Workers AI (GRATUIT, même compte) -------
@@ -240,12 +260,31 @@ async function cfImage(env, prompt) {
 /* Plusieurs modèles candidats, essayés dans l'ordre. Un seul modèle figé =
    une dépréciation (vécu : llama-3.1-8b retiré le 2026-05-30) casse la feature
    du jour au lendemain, en silence. */
+/* Qwen GRATUIT — Kevin 2026-09-03 « intègre l'IA Qwen gratuite ».
+   Le Qwen déjà déclaré dans TEXT_PROVIDERS exige une clé DASHSCOPE (compte
+   Alibaba que Kevin n'a pas) : il n'a donc JAMAIS pu répondre. Ici, Qwen passe
+   par Workers AI — le binding `env.AI` est déjà actif sur son compte pour
+   l'image et la voix : ZÉRO clé, ZÉRO nouveau compte, palier gratuit quotidien.
+   Liste de CANDIDATS, pas de promesses : un identifiant inconnu lève une erreur
+   attrapée et on passe au suivant ; /health et la réponse disent lequel a
+   RÉELLEMENT répondu (`cloudflare:@cf/qwen/…`). C'est la seule façon honnête
+   de choisir sans pouvoir interroger le catalogue Cloudflare depuis ici. */
+const CF_QWEN_MODELS = [
+  '@cf/qwen/qwen2.5-coder-32b-instruct',
+  '@cf/qwen/qwq-32b',
+  '@cf/qwen/qwen1.5-14b-chat-awq',
+  '@cf/qwen/qwen1.5-7b-chat-awq',
+  '@cf/qwen/qwen1.5-1.8b-chat',
+];
 const CF_TXT_MODELS = [
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   '@cf/meta/llama-4-scout-17b-16e-instruct',
   '@cf/mistralai/mistral-small-3.1-24b-instruct',
   '@cf/google/gemma-3-12b-it',
   '@cf/meta/llama-3.1-8b-instruct-fast',
+  /* ajoutés APRÈS les moteurs éprouvés : on n'enlève aucun passe-droit à ce
+     qui marchait déjà (règle « nouveaux moteurs en fin de chaîne ») */
+  ...CF_QWEN_MODELS,
 ];
 const CF_TTS_TRIES = [
   { model: '@cf/myshell-ai/melotts', input: (t, l) => ({ prompt: t, lang: l || 'fr' }) },
@@ -262,7 +301,37 @@ const CF_IMG_MODELS = [
 /* Écriture de texte par Cloudflare Workers AI — GRATUIT, aucune clé.
    Sert de secours quand Gemini tombe : sans ça, une panne Gemini = plus de
    paroles NI de partition, donc plus de morceau du tout. */
-async function cfText(env, prompt, wantJson) {
+/* Hugging Face — palier gratuit, modèle FLUX.1-schnell (texte → image). */
+async function hfImage(env, prompt) {
+  const key = env.HF_TOKEN || env.HUGGINGFACE_API_KEY;
+  if (!key) throw new Error('hf_no_key');
+  const r = await fetch('https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', Accept: 'image/png' },
+    body: JSON.stringify({ inputs: String(prompt).slice(0, 900) })
+  });
+  if (!r.ok) throw new Error('hf_' + r.status + '_' + (await r.text()).slice(0, 90));
+  const u = new Uint8Array(await r.arrayBuffer());
+  if (u.length < 500) throw new Error('hf_vide');
+  let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+  return { mime: 'image/png', b64: btoa(s), provider: 'huggingface:flux-schnell' };
+}
+/* Pollinations — texte → image SANS AUCUNE CLÉ ni compte. Dernier filet
+   gratuit : même si toutes les clés tombent, une image reste possible. */
+async function pollinationsImage(prompt, ratio) {
+  const dim = ratio === '16:9' ? [1024, 576] : ratio === '9:16' ? [576, 1024] : [768, 768];
+  const u = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(String(prompt).slice(0, 600))
+    + `?width=${dim[0]}&height=${dim[1]}&nologo=true&model=flux`;
+  const r = await fetch(u, { headers: { Accept: 'image/*' } });
+  if (!r.ok) throw new Error('pollinations_' + r.status);
+  const a = new Uint8Array(await r.arrayBuffer());
+  if (a.length < 500) throw new Error('pollinations_vide');
+  let s = ''; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
+  return { mime: 'image/jpeg', b64: btoa(s), provider: 'pollinations(sans clé)' };
+}
+/* `famille` (optionnel) restreint l'essai à une famille de modèles, ex 'qwen'.
+   Retourne { text, model } : on sait TOUJOURS qui a répondu, pas juste « cloudflare ». */
+async function cfText(env, prompt, wantJson, famille) {
   if (!env.AI) throw new Error('cf_no_binding');
   const input = {
     messages: [
@@ -274,11 +343,15 @@ async function cfText(env, prompt, wantJson) {
     max_tokens: wantJson ? 900 : 700,
   };
   const errs = [];
-  for (const model of CF_TXT_MODELS) {
+  const liste = famille
+    ? CF_TXT_MODELS.filter((m) => m.indexOf('/' + famille + '/') >= 0)
+    : CF_TXT_MODELS;
+  if (!liste.length) throw new Error('cf_aucun_modele_' + famille);
+  for (const model of liste) {
     try {
       const r = await env.AI.run(model, input);
       const t = String((r && (r.response || (r.result && r.result.response) || r.text)) || '').trim();
-      if (t) return t;
+      if (t) return { text: t, model };
       errs.push(model.split('/').pop() + ':vide');
     } catch (e) { errs.push(model.split('/').pop() + ':' + String((e && e.message) || e).slice(0, 60)); }
   }
@@ -298,6 +371,25 @@ const TEXT_PROVIDERS = [
   { id: 'together',   key: 'TOGETHER_API_KEY',   url: 'https://api.together.xyz/v1/chat/completions',          model: 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free', free: true },
   { id: 'deepseek',   key: 'DEEPSEEK_API_KEY',   url: 'https://api.deepseek.com/chat/completions',             model: 'deepseek-chat',                  free: false },
   { id: 'openrouter', key: 'OPENROUTER_API_KEY', url: 'https://openrouter.ai/api/v1/chat/completions',         model: 'meta-llama/llama-3.3-70b-instruct:free', free: true },
+  /* ---- Kevin 2026-08-12 : « beaucoup d'autres IA gratuites, partout, en
+     secours ». Ajoutées APRÈS les moteurs déjà éprouvés (on ne change pas
+     l'ordre existant). Toutes parlent le même dialecte « compatible OpenAI ».
+     Une clé absente = moteur simplement ignoré, jamais une erreur.
+     a) clés que Kevin possède DÉJÀ mais qui ne servaient à rien ici : */
+  { id: 'xai',        key: 'XAI_API_KEY',        url: 'https://api.x.ai/v1/chat/completions',                  model: 'grok-2-latest',                  free: false },
+  { id: 'perplexity', key: 'PERPLEXITI_API_KEY', url: 'https://api.perplexity.ai/chat/completions',            model: 'sonar',                          free: false },
+  /* b) moteurs à généreux palier gratuit — il suffira d'ajouter la clé : */
+  { id: 'cerebras',   key: 'CEREBRAS_API_KEY',   url: 'https://api.cerebras.ai/v1/chat/completions',           model: 'llama-3.3-70b',                  free: true },
+  { id: 'nvidia',     key: 'NVIDIA_API_KEY',     url: 'https://integrate.api.nvidia.com/v1/chat/completions',  model: 'meta/llama-3.3-70b-instruct',    free: true },
+  { id: 'sambanova',  key: 'SAMBANOVA_API_KEY',  url: 'https://api.sambanova.ai/v1/chat/completions',          model: 'Meta-Llama-3.3-70B-Instruct',    free: true },
+  { id: 'huggingface',key: 'HF_TOKEN',           url: 'https://router.huggingface.co/v1/chat/completions',     model: 'meta-llama/Llama-3.3-70B-Instruct', free: true },
+  { id: 'scaleway',   key: 'SCALEWAY_API_KEY',   url: 'https://api.scaleway.ai/v1/chat/completions',           model: 'llama-3.3-70b-instruct',         free: true },
+  { id: 'nebius',     key: 'NEBIUS_API_KEY',     url: 'https://api.studio.nebius.com/v1/chat/completions',     model: 'meta-llama/Llama-3.3-70B-Instruct', free: true },
+  { id: 'glm',        key: 'GLM_API_KEY',        url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', model: 'glm-4-flash',                    free: true },
+  { id: 'qwen',       key: 'DASHSCOPE_API_KEY',  url: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions', model: 'qwen-turbo', free: true },
+  /* c) filet de sécurité PAYANT, en tout dernier : on n'y arrive que si les
+     ~15 moteurs gratuits au-dessus sont tous tombés. */
+  { id: 'openai',     key: 'OPEN_AI_API_KEY',    url: 'https://api.openai.com/v1/chat/completions',            model: 'gpt-4o-mini',                    free: false },
 ];
 /* Appel « compatible OpenAI » : la même forme marche pour Groq, Mistral, Cohere,
    Together, DeepSeek et OpenRouter → un seul code au lieu de six. */
@@ -355,12 +447,23 @@ function anyEngine(env) {
 function enginesAvailable(env) {
   const out = TEXT_PROVIDERS.filter((p) => !!env[p.key]).map((p) => p.id);
   if (env.GOOGLE_API_KEY && out.indexOf('gemini') < 0) out.push('gemini');
-  if (env.AI) out.push('cloudflare');
+  if (env.AI) { out.push('cloudflare'); out.push('qwen-cloudflare(sans clé)'); }
+  if (env.HF_TOKEN || env.HUGGINGFACE_API_KEY) { if (out.indexOf('huggingface') < 0) out.push('huggingface'); }
+  out.push('pollinations(sans clé)');       /* toujours là : aucune clé requise */
   if (env.REPLICATE_API_TOKEN) out.push('replicate(payant)');
   return out;
 }
-async function anyText(env, prompt, wantJson) {
+async function anyText(env, prompt, wantJson, prefer) {
   const errs = [];
+  /* Kevin peut demander explicitement un moteur gratuit sans clé (ex 'qwen') :
+     on l'essaie EN PREMIER, et s'il ne répond pas on retombe sur la chaîne
+     normale — demander Qwen ne doit jamais pouvoir casser une génération. */
+  if (prefer && env.AI) {
+    try {
+      const c = await cfText(env, prompt, wantJson, String(prefer).toLowerCase());
+      if (c && c.text) return { text: c.text, provider: 'cloudflare:' + c.model, tried: errs };
+    } catch (e) { errs.push(prefer + '_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
+  }
   for (const p of TEXT_PROVIDERS) {
     const key = env[p.key] || (p.id === 'gemini' ? env.GOOGLE_API_KEY : null);
     if (!key) continue;
@@ -371,8 +474,10 @@ async function anyText(env, prompt, wantJson) {
       if (t) return { text: t, provider: p.id, tried: errs };
     } catch (e) { errs.push(p.id + '_' + String((e && e.message) || e).slice(0, 70)); }
   }
-  try { return { text: await cfText(env, prompt, wantJson), provider: 'cloudflare', tried: errs }; }
-  catch (e) { errs.push('cloudflare_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
+  try {
+    const c = await cfText(env, prompt, wantJson);
+    return { text: c.text, provider: 'cloudflare:' + c.model, tried: errs };
+  } catch (e) { errs.push('cloudflare_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
   throw new Error(errs.length ? errs.join(' | ') : 'aucune_ia_configuree');
 }
 
@@ -427,6 +532,21 @@ const MODELS = {
   cartoon: { owner: 'catacolabs', name: 'cartoonify', input: (img) => ({ image: img }) },
   enhance: { owner: 'nightmareai', name: 'real-esrgan', input: (img) => ({ image: img, scale: 2, face_enhance: true }) }
 };
+/* Moteurs d'ÉDITION guidée par instruction : ils partent de TA photo et gardent
+   ton visage (contrairement à un moteur texte→image qui invente quelqu'un).
+   Essayés dans l'ordre ; un modèle indisponible échoue proprement et on passe
+   au suivant. */
+/* ⚠️ Mesuré le 2026-08-14 : 3 modèles à la suite dépassaient la limite
+   Cloudflare « Too many subrequests by single Worker invocation » (chaque
+   modèle = recherche de version + création + attente en boucle). On garde
+   donc DEUX candidats seulement — mieux vaut deux essais qui aboutissent
+   que trois qui se font couper en route. */
+const MAGIC_EDIT = [
+  { owner: 'black-forest-labs', name: 'flux-kontext-pro',
+    input: (img, p) => ({ input_image: img, prompt: p, output_format: 'png' }) },
+  { owner: 'black-forest-labs', name: 'flux-kontext-dev',
+    input: (img, p) => ({ input_image: img, prompt: p, output_format: 'png' }) }
+];
 const DEF_MOTION = 'the subject is dancing, funny energetic happy dance, lively motion';
 const I2V = {
   standard: { owner: 'minimax', name: 'video-01-live', input: (img, p) => ({ first_frame_image: img, prompt: p || DEF_MOTION }) },
@@ -457,11 +577,17 @@ function pickOutput(pred) {
   if (Array.isArray(out)) out = out[out.length - 1];
   return (out && typeof out === 'string') ? out : null;
 }
-async function pollUntilDone(pred, token) {
+async function pollUntilDone(pred, token, maxMs) {
   const started = Date.now();
+  const limite = maxMs || 58000;
+  /* Chaque vérification est une sous-requête, et Cloudflare en limite le
+     nombre par appel (vécu : « Too many subrequests »). 2,5 s au lieu de 1,5 s
+     → ~40 % de vérifications en moins pour la même attente. maxMs permet de
+     raccourcir l'attente quand on enchaîne PLUSIEURS images dans le même appel
+     (poses de danse) — sinon le budget de sous-requêtes explose. */
   while (pred.status === 'starting' || pred.status === 'processing') {
-    if (Date.now() - started > 58000) throw new Error('timeout');
-    await new Promise((r) => setTimeout(r, 1500));
+    if (Date.now() - started > limite) throw new Error('timeout');
+    await new Promise((r) => setTimeout(r, 2500));
     pred = await (await fetch(pred.urls.get, { headers: { Authorization: `Token ${token}` } })).json();
   }
   if (pred.status !== 'succeeded') throw new Error('model_' + (pred.error || pred.status || 'failed'));
@@ -477,6 +603,34 @@ async function runImageModel(cfg, buildInput, token, h) {
   if (!img.ok) throw new Error('fetch_out_' + img.status);
   const ct = img.headers.get('content-type') || 'image/png';
   return new Response(img.body, { status: 200, headers: Object.assign({ 'content-type': ct, 'cache-control': 'no-store' }, h) });
+}
+
+/* --- Secours d'ÉDITION pour les SUITES d'images (poses de danse / chant) -----
+   Vécu le 2026-08-14 (auto-test CI) : les crédits image Google étaient à zéro
+   → /magic s'en sortait (il avait déjà ce secours) mais /frames rendait 502 :
+   « pas de poses ». Les poses sont décrites EN TEXTE, donc un vrai moteur
+   d'édition peut les faire à partir de la photo — l'identité est gardée.
+   ⚠️ Budget sous-requêtes Cloudflare : on résout la version du modèle UNE
+   fois (1 sous-requête par candidat), puis on ne lance que le strict minimum
+   d'images avec une attente écourtée. */
+async function firstUsableEditor(token) {
+  const errs = [];
+  for (const m of MAGIC_EDIT) {
+    try { return { model: m, version: await latestVersion(m.owner, m.name, token) }; } catch (e) {
+      errs.push(m.name + ':' + String((e && e.message) || e));
+    }
+  }
+  throw new Error(errs.join(' | ') || 'no_editor');
+}
+async function editToDataUrl(model, version, image, prompt, token, maxMs) {
+  const pred = await createPrediction(version, model.input(image, prompt), token);
+  const outUrl = await pollUntilDone(pred, token, maxMs);
+  const img = await fetch(outUrl);
+  if (!img.ok) throw new Error('fetch_out_' + img.status);
+  const ct = img.headers.get('content-type') || 'image/png';
+  const u = new Uint8Array(await img.arrayBuffer());
+  let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+  return 'data:' + ct + ';base64,' + btoa(s);
 }
 
 /* ---------------- Chaîne : gratuit d'abord, payant en secours ---------------- */
@@ -534,7 +688,18 @@ async function textToImageChain(env, prompt, ratio, h) {
     const t = await togetherImage(env, prompt, ratio);
     return imgResponse(t.mime, t.b64, Object.assign({ 'x-crea-provider': t.provider }, h));
   } catch (e) { errs.push(String((e && e.message) || e)); }
-  /* 3) payant en tout dernier */
+  /* 3) 4e gratuit : Hugging Face (FLUX.1-schnell) — si HF_TOKEN est posé */
+  try {
+    const hf = await hfImage(env, full);
+    return imgResponse(hf.mime, hf.b64, Object.assign({ 'x-crea-provider': hf.provider }, h));
+  } catch (e) { errs.push(String((e && e.message) || e)); }
+  /* 4) 5e gratuit : Pollinations — AUCUNE CLÉ. C'est le filet de sécurité
+     ultime : tant qu'il y a du réseau, il reste une image possible. */
+  try {
+    const po = await pollinationsImage(full, ratio);
+    return imgResponse(po.mime, po.b64, Object.assign({ 'x-crea-provider': po.provider }, h));
+  } catch (e) { errs.push(String((e && e.message) || e)); }
+  /* 5) payant en tout dernier */
   const token = env.REPLICATE_API_TOKEN;
   if (token) {
     try { return await runImageModel(BG, BG.input(prompt, ratio), token, Object.assign({ 'x-crea-provider': 'replicate' }, h)); }
@@ -669,6 +834,12 @@ export default {
     let body = null;
     try { body = await req.json(); } catch (_) { return json({ error: 'bad_json' }, h, 400); }
     const image = body && body.image;
+    /* Moteur texte demandé explicitement (ex { moteur:'qwen' }) : essayé en
+       premier, jamais imposé — s'il ne répond pas, la chaîne normale prend le
+       relais. Liste blanche : on ne laisse pas le client piloter un nom libre. */
+    const MOTEURS_AU_CHOIX = ['qwen'];
+    const moteur = (body && typeof body.moteur === 'string'
+      && MOTEURS_AU_CHOIX.includes(body.moteur.toLowerCase())) ? body.moteur.toLowerCase() : null;
     const badImage = (v) => (!v || typeof v !== 'string' || v.length > 12 * 1024 * 1024);
 
     // --- ✨ MAGIE : transformation 1-clic de la photo (figurine, anime, scène…) ---
@@ -678,18 +849,43 @@ export default {
       const custom = (body && typeof body.custom === 'string') ? body.custom.slice(0, 300) : '';
       const prompt = MAGIC[preset] || (custom ? ('Edit this photo: ' + custom + '.' + KEEP_FACE) : '');
       if (!prompt) return json({ error: 'unknown_preset' }, h, 400);
+      /* Kevin 2026-08-12 : « les figurines… ce n'est pas moi ». Cause : quand
+         Gemini (le seul moteur qui ÉDITE la photo) échouait, on tombait sur un
+         moteur qui RECRÉE à partir du texte → une autre personne. On essaie
+         maintenant un vrai moteur d'ÉDITION en secours, et si le client a
+         demandé de garder le visage (keep_face) on REFUSE de rendre une image
+         inventée : mieux vaut une erreur claire qu'un faux « toi ». */
+      const keepFace = !!(body && (body.keep_face || body.identity === 'preserve'));
       const errs = [];
-      /* Gemini sait ÉDITER la photo (garde le visage) → toujours en premier. */
+      /* 1) Gemini : édite la photo, garde le visage. */
       try {
         const g = await geminiImage(env, prompt, image);
         return imgResponse(g.mime, g.b64, Object.assign({ 'x-crea-provider': g.provider }, h));
-      } catch (e) { errs.push(String((e && e.message) || e)); }
-      /* Secours GRATUIT réel (Workers AI) : il ne peut pas repartir de la photo,
-         il recrée la scène décrite — moins fidèle, mais mieux que « rien ». */
+      } catch (e) { errs.push('gemini:' + String((e && e.message) || e)); }
+      /* 2) Replicate, ÉDITION guidée par l'instruction (l'identité est gardée).
+            Si un modèle n'existe plus, latestVersion() échoue proprement et on
+            passe au suivant — aucun risque de casse. */
+      const rtok = env.REPLICATE_API_TOKEN;
+      if (rtok) {
+        for (const m of MAGIC_EDIT) {
+          try {
+            return await runImageModel(m, m.input(image, prompt), rtok,
+              Object.assign({ 'x-crea-provider': 'replicate-edit:' + m.name }, h));
+          } catch (e3) { errs.push(m.name + ':' + String((e3 && e3.message) || e3)); }
+        }
+      } else errs.push('replicate_no_key');
+      /* 3) Dernier recours : recréer SANS la photo. Ce n'est plus « toi » →
+            on ne le fait QUE si le client l'accepte, et on dit pourquoi. */
+      if (keepFace && !(body && body.allow_recreate)) {
+        return json({ error: 'face_edit_failed', detail: errs.join(' | '),
+          message: "L'IA n'a pas pu partir de ta photo (l'édition a échoué). "
+            + "Je préfère ne rien inventer plutôt que de te rendre quelqu'un d'autre." }, h, 502);
+      }
       try {
         const c = await cfImage(env, prompt.replace(/Keep the SAME person[^.]*\./g, '') + ' Portrait, cinematic, detailed.');
-        return imgResponse(c.mime, c.b64, Object.assign({ 'x-crea-provider': c.provider, 'x-crea-fallback': 'recreated' }, h));
-      } catch (e2) { errs.push(String((e2 && e2.message) || e2)); }
+        return imgResponse(c.mime, c.b64, Object.assign({ 'x-crea-provider': c.provider,
+          'x-crea-fallback': 'recreated', 'x-crea-why': errs.join(' | ').slice(0, 180) }, h));
+      } catch (e2) { errs.push('cf:' + String((e2 && e2.message) || e2)); }
       return json({ error: errs.join(' | ') }, h, 502);
     }
 
@@ -722,7 +918,14 @@ export default {
         if (r.status === 'fulfilled') frames.push('data:' + r.value.mime + ';base64,' + r.value.b64);
         else errs.push(String((r.reason && r.reason.message) || r.reason));
       });
-      if (frames.length < 2) return json({ error: (errs[0] || 'pose_failed'), got: frames.length }, h, 502);
+      /* Pas de secours possible ici : copier une pose demande de comparer DEUX
+         images (ta photo + la pose de référence), ce que seul Gemini sait faire.
+         Un moteur à une seule image ferait « autre chose » — on refuse. */
+      if (frames.length < 2) {
+        return json({ error: (errs[0] || 'pose_failed'), detail: errs.join(' | ').slice(0, 300), got: frames.length,
+          message: 'Le moteur qui copie une pose de référence est indisponible. '
+            + 'Essaie « poses de danse » (⚡ bouton d\'à côté) : lui a un secours.' }, h, 502);
+      }
       return json({ frames, provider: 'gemini', asked: refs.length, got: frames.length, errors: errs.slice(0, 2) }, h);
     }
 
@@ -763,7 +966,7 @@ export default {
       };
       /* TOUTES les IA gratuites sont essayées : une panne ou un quota ne coupe plus la musique. */
       try {
-        const r = await anyText(env, ask, true);
+        const r = await anyText(env, ask, true, moteur);
         const score = parseScore(r.text);
         if (score) return json({ score, style, provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
         return json({ error: 'bad_score_' + r.provider + '_' + String(r.text).slice(0, 90) }, h, 502);
@@ -788,7 +991,7 @@ export default {
           : ('Écris une chanson originale en FRANÇAIS, style ' + style + ', sur : ' + theme
              + '.\nFormat EXACT, rien d\'autre :\nTITRE: <titre court>\nCOUPLET 1:\n<4 lignes>\nREFRAIN:\n<4 lignes accrocheuses et répétables>\nCOUPLET 2:\n<4 lignes>\nRefrain court, rimes simples, facile à chanter. Pas d\'explications.'));
       try {
-        const r = await anyText(env, ask, false);
+        const r = await anyText(env, ask, false, moteur);
         const t = /TITRE\s*:\s*(.+)/i.exec(r.text);
         return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: r.text, style, mode,
           provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
@@ -798,20 +1001,48 @@ export default {
     // --- POSES (danse OU chant) : photo → vidéo, GRATUIT via Gemini ---
     if (url.pathname === '/frames') {
       if (badImage(image)) return json({ error: 'bad_image' }, h, 400);
-      if (!freeAI) return json({ error: 'gemini_no_key' }, h, 503);
       const extra = (body && typeof body.prompt === 'string') ? body.prompt.slice(0, 200) : '';
       const mode = (body && body.mode) === 'sing' ? 'sing' : 'dance';
       const n = Math.max(2, Math.min(8, parseInt((body && body.n), 10) || (mode === 'sing' ? 3 : 5)));
       const poses = mode === 'sing' ? SING_POSES.slice(0, n) : DANCE_POSES.slice(0, n);
-      const res = await Promise.allSettled(poses.map((p) => geminiImage(env, mode === 'sing' ? singPrompt(p) : dancePrompt(p, extra), image)));
+      const texte = (p) => (mode === 'sing' ? singPrompt(p) : dancePrompt(p, extra));
       const frames = [];
       const errs = [];
-      res.forEach((r) => {
-        if (r.status === 'fulfilled') frames.push('data:' + r.value.mime + ';base64,' + r.value.b64);
-        else errs.push(String((r.reason && r.reason.message) || r.reason));
-      });
-      if (frames.length < 2) return json({ error: (errs[0] || 'frames_failed'), got: frames.length }, h, 502);
-      return json({ frames, provider: 'gemini', asked: n, got: frames.length, errors: errs.slice(0, 2) }, h);
+      let provider = 'gemini';
+      /* 1) Gemini (gratuit). On SONDE d'abord UNE pose : s'il est en panne
+            (crédits à zéro, modèle retiré…), lancer les 5 poses ferait
+            5 × 6 modèles = 30 appels réseau pour rien, et il ne resterait plus
+            de budget Cloudflare pour le secours (« Too many subrequests »). */
+      if (freeAI) {
+        try {
+          const g0 = await geminiImage(env, texte(poses[0]), image);
+          frames.push('data:' + g0.mime + ';base64,' + g0.b64);
+          const res = await Promise.allSettled(poses.slice(1).map((p) => geminiImage(env, texte(p), image)));
+          res.forEach((r) => {
+            if (r.status === 'fulfilled') frames.push('data:' + r.value.mime + ';base64,' + r.value.b64);
+            else errs.push(String((r.reason && r.reason.message) || r.reason));
+          });
+        } catch (e) { errs.push(String((e && e.message) || e)); }
+      } else errs.push('gemini_no_key');
+      /* 2) Secours : un vrai moteur d'ÉDITION (part de TA photo, garde ton
+            visage). On ne fait que les 2 poses nécessaires pour animer, avec
+            une attente écourtée — c'est ce qui tient dans le budget Cloudflare. */
+      if (frames.length < 2 && env.REPLICATE_API_TOKEN) {
+        try {
+          const ed = await firstUsableEditor(env.REPLICATE_API_TOKEN);
+          const need = poses.slice(0, 2);
+          const outs = await Promise.all(need.map((p) => editToDataUrl(ed.model, ed.version, image, texte(p), env.REPLICATE_API_TOKEN, 34000)));
+          frames.length = 0;
+          outs.forEach((d) => frames.push(d));
+          provider = 'replicate-edit:' + ed.model.name;
+        } catch (e) { errs.push('edit:' + String((e && e.message) || e)); }
+      } else if (frames.length < 2) errs.push('replicate_no_key');
+      if (frames.length < 2) {
+        return json({ error: (errs[0] || 'frames_failed'), detail: errs.join(' | ').slice(0, 300), got: frames.length,
+          message: "Je n'ai pas pu fabriquer les poses à partir de ta photo. "
+            + 'Je préfère te le dire plutôt que de te rendre quelqu\'un d\'autre.' }, h, 502);
+      }
+      return json({ frames, provider, asked: n, got: frames.length, errors: errs.slice(0, 2) }, h);
     }
 
     // --- lancement génération vidéo Replicate (payant) ---

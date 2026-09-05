@@ -1,5 +1,269 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (fin d'après-midi) — le code admin était PUBLIC : pages corrigées, docs nettoyées, Kevin doit le changer
+
+**Trouvé** (tri des 188 signalements gitleaks, fait n°15 d'ETAT-INFRA) : l'empreinte SHA-256 du code
+admin dans la page Départs (comparée dans le navigateur — un code à 6 chiffres se casse en 1 s),
+puis le code **en clair dans 68 fichiers suivis** du dépôt public (CLAUDE.md, NOTES_USER,
+KEVIN_INVENTORY, README, mémoire compacte…). Le garde existant ne cherchait ni l'empreinte ni la doc.
+
+**Fait** : Départs **v1.37** + Messages **v1.4** → le code part à `POST /__admin/login` (routeur,
+secret Cloudflare) et la page obéit au verdict (`test:departs-pin` 9/9, `test:apex-messages`
+16/16, parité app/light 6/6, 0 écart). 14 docs + mémoire nettoyés (« ‹code admin› »). Garde
+`no-pin-leak` renforcé (clair + empreinte + forme + .md) : 0 fuite / 951 fichiers. 14 scripts e2e
+lisent `KDMC_ADMIN_CODE`. Page `tools/empreinte/` (empreinte calculée sur l'iPhone). Règle
+CLAUDE.md « LE CODE ADMIN NE S'ÉCRIT NULLE PART » + leçon #210 + ETAT-INFRA fait n°15.
+
+**Kevin doit** (KEVIN_ACTIONS_TODO, tout en haut) : nouveau code (8 chiffres) → empreinte via la
+page → secret GitHub `APEX_ADMIN_PIN_SHA256` → me dire « fait » → je relance les 6 déploiements.
+
+**Reste dit franchement** : écritures Firebase de la page light en jeton anonyme (`auth != null`)
+→ « admin » cosmétique côté données (limite v10 connue ; `cmcFbRoleAuth` existe dans la grande
+app — message m021 à la session CMCteams). `tools/departs/verify-xss-delegation.mjs` échoue
+déjà sur main (pas lié). 3 tests rouges pré-existants (lingua-voix, lingua-connexion, router-secours).
+
+## 5 septembre 2026 (après-midi) — tout rapatrié, et le dépôt public assaini
+
+**Demande Kevin** : *« Note tout. Public mais sécurisé normalement. Rapatrie tout sur GitHub
+intelligemment en respectant les règles, et sur GitLab ce qui ne va pas sur GitHub. Va plus
+loin. Sers-toi des deux. »*
+
+### Rapatriement — 49 automatisations, une destination chacune
+Elles avaient été rangées d'un coup le 15/08 **sans dire où elles devaient aller**. Six mois
+plus tard, personne ne savait plus lesquelles étaient légitimes : **14 l'étaient**.
+
+| Destination | Combien |
+|---|---|
+| **GitHub** (rapatriées, à la main, 0 cron) | **14** |
+| **GitLab CI** | 24 |
+| **Cloudflare Worker** | 5 |
+| **nulle part** (crypto) | 6 |
+
+`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+Le bouton, **c'est moi qui l'appuie** (API) — tu ne cliques rien.
+Destination + raison de chacune : `.github/workflows-desactives/DESTINATIONS.json`,
+tenue par `npm run test:destinations-workflows` (4 sabotages attrapés).
+
+### Côté GitLab — 4 jobs qui marchent SANS aucune clé nouvelle
+Stage `veille`, tout à la demande (**0 minute au repos**) : liens réels, dépendances CDN,
+sources Lingua, récolte LSF. *La veille CDN surveillait **3 adresses écrites à la main** ;
+elle les **lit** maintenant dans le code : **78**.* Les clés à ajouter côté GitLab pour les
+autres sont listées dans `ETAT-INFRA.md` fait n°13.
+
+### « Public mais sécurisé » — deux vraies failles trouvées et corrigées
+- **`qodo-ai/pr-agent@main`** : action tierce sur branche **mouvante**, avec la clé OpenAI de
+  Kevin → épinglée `@v0.44.0`.
+- **N'importe qui pouvait déclencher une revue IA payée** en commentant une PR → contrôle
+  `author_association`. Ce n'était pas une fuite : une **facture ouverte aux inconnus**.
+- `pull_request_target` : **0**. Vraie clé dans les fichiers suivis : **0** (les 16 chaînes
+  trouvées sont fausses, sauf la clé Firebase Web, **publique par conception**).
+- Garde `npm run test:depot-public-sain` (4 règles, 4 sabotages) + `SECURITY.md` à la racine.
+- Lancé sur l'historique (11 316 commits) : `security-suite.yml` (gitleaks + TruffleHog).
+
+### Noté
+CLAUDE.md : **2 règles absolues** de plus (dépôt public · destination écrite), chacune avec
+sa garde **déclarée au registre** — le compteur « règles sans garde » est resté à 19.
+LESSONS.md : **#207, #208, #209**.
+
+---
+
+## 5 septembre 2026 — GitHub/GitLab rangés, et une fuite de documents fermée
+
+**Demande Kevin** : *« Organise tout intelligemment pour que tout refonctionne comme
+avant. Entre GitHub et GitLab, vérifie leur règlement pour ne plus faire d'erreur. »*
+Puis, quand j'ai voulu remettre à plus tard : *« Tu as tout pour sinon trouve des
+solutions. »*
+
+### Les deux règlements, LUS (pas de mémoire) — `ORGANISATION.md`
+- **GitHub** interdit toute activité *« unrelated to the production, testing, deployment,
+  or publication of the software project associated with the repository »*. Ce n'est pas
+  une question de fréquence, c'est la **nature** de l'activité.
+- **GitLab** ne l'interdit pas, mais donne **400 minutes par mois**. Tout compte.
+- D'où le partage : GitHub = ce dépôt · GitLab = l'extérieur et le périodique ·
+  Cloudflare Workers = les services permanents.
+
+### GitLab était en train de rejouer l'erreur d'août
+`npm run minutes-gitlab` : **175 min sur 400 en 4 jours** → à sec le 9 septembre. Premier
+poste : la publication du miroir (**41 %**). Avant de couper, j'ai **mesuré qui sert
+vraiment kd-mc.com** (job `qui-sert`) : en-têtes `x-github-request-id` → **le site vient
+de GitHub Pages**, le miroir n'est qu'un filet. Publication passée **à la demande** :
+preuve par deux envois (fichier-bouton touché = 1,4 min · non touché = **0**).
+La garde `conformite` allégée (`node:20` → `node:20-alpine`) : **45 s → 23 s**.
+
+### La vraie trouvaille : le dépôt est PUBLIC et publiait mes documents de travail
+Mesuré sur le vrai site : `/NOTES_USER.md` (19 noms, 4 dates de naissance, 10 e-mails),
+`/CLAUDE.md` (42 noms), `/KEVIN_ACTIONS_TODO.md` (10 noms, 8 dates de naissance).
+Aucune page ne les charge. Retirés **des deux côtés** dans le même geste (étape de
+`deploy.yml` pour kd-mc.com, `--exclude` de `publier.sh` pour le miroir :
+**11 228 → 11 102 fichiers**).
+
+**Le piège** : après le retrait, le site répondait **toujours 200** — c'était le **cache
+de bordure**, pas un correctif raté. L'audit casse maintenant le cache et **sort en
+erreur** sur une fuite ; il tourne **après chaque publication** de kd-mc.com.
+
+**Garde permanente** : `npm run test:documents-travail` (dans `test:ci`) — les trois
+listes (retrait GitHub, exclusions du miroir, chemins sondés) doivent dire la même chose.
+Prouvée discriminante par 3 sabotages. *Pourquoi une garde et pas juste un correctif :
+deux surfaces qui se trompent pareil restent vertes à un test d'égalité (leçon #142).*
+
+### Rangé aussi
+- `tools/gitlab/*.sh` (11 scripts) n'existaient **que** sur GitLab → copiés à l'identique
+  dans GitHub, et `.gitlab-ci.yml` est la **même recette** des deux côtés. Plus rien à
+  repêcher à la main au prochain alignement.
+- GitLab `main` remise au niveau de GitHub `main` (130 workflows, **0 cron, 0 crypto**),
+  en préservant les 9 fichiers qui n'existent que là-bas.
+
+### Ce qui reste ouvert, dit franchement
+1. **`/arbre/index.html`** porte 318 noms, 257 dates de naissance et 12 téléphones **dans
+   le fichier** ; le code d'accès n'est vérifié qu'après chargement. Correctif =
+   architectural (servir la donnée derrière le SSO du domaine). **Attend ton go.**
+2. Le **dépôt et son historique** restent publics : le retrait protège le **site**, pas
+   `github.com`.
+
+---
+
+---
+
+## 5 septembre 2026 — Messages : la photo ne s'ouvrait pas (corrigé)
+
+**Retour Kevin** : dans la page Messages, le bouton « 📷 Voir la photo » ne montrait rien.
+
+### Cause exacte (mesurée, pas supposée)
+`tools/messages/index.html` demandait la photo avec `_get("cmc_dep_img/"+imgId)`, et ce
+`_get` passait **toute la clé** dans `encodeURIComponent` → le `/` devenait `%2F`.
+Firebase lisait alors `cmc_dep_img%2Fkd_…` comme **une seule clé** portant un slash dans
+son nom, au lieu du chemin `cmc_dep_img/kd_…` → node inexistant → réponse vide → aucune image.
+L'app principale (`index.html:4604`) et l'expéditeur (`tools/departs`) construisaient déjà
+le chemin correctement : **seule la page Messages était touchée**.
+
+### Correctif
+- `_enc()` encode **chaque segment** du chemin séparément (les clés simples ne changent pas).
+- `viewImg` n'accepte plus qu'une vraie adresse d'image dans `src` (parité `_okImgUrl` de Départs).
+- Version bumpée **v1.2 → v1.3** aux **deux** endroits (badge HTML + `APP_VER`) → la page
+  se met à jour toute seule sur l'iPhone.
+
+### Le test existait et restait VERT malgré le bug (faux vert, leçon #103)
+`tests/smoke-apex-messages.mjs` avait bien une photo en fixture, mais son simulateur Firebase
+faisait `decodeURIComponent` sur **tout le chemin** → il retransformait `%2F` en `/` et
+**effaçait le bug** ; et aucune assertion ne vérifiait que l'image s'affiche (seulement que le
+bouton existe). Corrigé : le simulateur garde le chemin **brut** (comme le vrai Firebase),
++ assertion « la photo s'ouvre et son `src` commence par `data:image/` »,
++ garde « badge HTML == APP_VER » (sinon la sonde de mise à jour recharge la page en boucle).
+**Prouvé discriminant** : sur le code d'avant → 2 FAIL ; sur le code corrigé → 16 ok, 0 FAIL.
+
+
+## 2 septembre 2026 — GitLab partout, sessions débloquées, miroirs vérifiés
+
+**Décision Kevin** : GitHub suspendu → **GitLab pour tout, jusqu'à nouvel ordre**.
+Nouvelle règle absolue dans CLAUDE.md : *trouver des solutions à ses problèmes,
+jamais lui en créer* (il paie pour travailler, pas pour subir une panne tierce).
+
+### Mesuré, pas supposé
+- Session avec **source GitLab privée** → refusée (la plateforme n'a d'identifiants
+  que GitHub). Session **sans dépôt** → **démarre** (git 2.43.0). ✅ voie retenue.
+- 18 commits publiés sur GitLab, branche `claude/capcut-mini-versions-66tfum`
+  (+ copie `studio-crea-capcut`). `main` GitLab jamais écrasée.
+- `ETAT-INFRA.md` fait n°7 + `SESSIONS-ET-BRANCHES.md` (carte des 17 sessions et
+  de leur branche) écrits sur `main` GitLab — lus par toutes les sessions.
+
+### Miroirs de la light — vérifiés en vrai
+70 correspondances, réciprocité parfaite, règle SBM **35/35**, 0 doublon sur
+273/291 personnes, 30 cellules vides sur 17 484. **9 équipes sans miroir** :
+NON réparées volontairement — la déduction par jours de repos ne retrouve le vrai
+miroir que **6 fois sur 35 (17 %)**, calibré avant d'agir (leçon #189).
+Seule réparation sûre : **réimporter le mois**. Outil : `tools/departs/_verif-miroirs.mjs`.
+
+### Erreurs du jour, consignées
+#186 consigne fausse (ligne 14 au lieu de 111) + affirmation non mesurée sur un
+e-mail · #187 plan de secours impossible (le domaine était dans le compte perdu) ·
+#188 **secret compromis proposé puis persisté** — retiré, rien publié.
+
+---
+
+## 14 août 2026 — OSINT v2.6 : vérifier un numéro de téléphone (défensif)
+
+Kevin envoie 2 captures Facebook (Laravel « Log Viewer » · « SearchPhone » OSINT téléphone).
+
+- **Log Viewer** → **non applicable** : c'est un paquet **Laravel/PHP**, le domaine est en
+  JS + Workers Cloudflare. Rien installé (aurait été du code mort). L'équivalent utile
+  existe déjà : le journal de `admin.kd-mc.com`.
+- **SearchPhone** → l'outil lui-même **non installé** (script Python d'enquête sur des
+  numéros de particuliers = risque RGPD). En revanche ses **sources publiques
+  légitimes** sont ajoutées en liens 1-clic, cadrées **défensif** : *« ce numéro qui
+  m'appelle est-il une arnaque ? »* / *« mon propre numéro a-t-il fuité ? »*.
+- **OSINT v2.6** : nouvelle catégorie **📞 Numéro de téléphone** (5 liens, chacun avec sa
+  fonction écrite et **visible en 390px**) : Signal-Arnaques · 33700 · Numverify ·
+  Hudson Rock · PhoneInfoga (doc, avec **garde-fou RGPD**). Compteur **mesuré** : 134 outils
+  · 20 catégories (jamais estimé).
+- **Preuve** : `npm run test:osint-links` → **11/11 ✅**, et l'assertion « garde-fou légal »
+  est **discriminante** (retiré le warning → ❌ 11 ; remis → ✅).
+- ✅ **Liens VÉRIFIÉS en vrai** (Kevin : « tu as internet et les outils »). `WebFetch` était
+  bloqué sur ces hôtes, mais **WebSearch + vérificateur de liens MCP** répondaient →
+  **2 erreurs trouvées et corrigées** : `hudsonrock.com/free-tools` **injoignable** →
+  remplacé par **`infostealers.com`** (le vrai service gratuit), et sa description était
+  **fausse** (il vérifie e-mail/pseudo/domaine, **pas** un numéro). PhoneInfoga confirmé
+  (+ mention « projet non maintenu »).
+- 🔗 **Nouvel outil permanent** : `tools/audit/liens-check.mjs` + workflow
+  **« Liens — vérification RÉELLE »** (bouton + 1×/mois) → ping réel des **198** liens du
+  domaine depuis le runner CI (réseau ouvert). Classement honnête vivant / protégé
+  (401-403 = anti-robot, pas mort) / MORT. Mode `--lister` testable hors ligne.
+- 📌 **Règle gravée** (CLAUDE.md + leçon #181) : « je n'ai pas pu vérifier » est **interdit**
+  tant que les 4 canaux n'ont pas été essayés (WebFetch → WebSearch → MCP → runner CI).
+
+---
+
+## 9-12 août 2026 — Admin universel du domaine · 15 apps iPhone · localisation · OSINT
+
+### Livré et sur `main`
+1. **ADMIN UNIVERSEL DU DOMAINE (SSO central)** — Kevin est reconnu admin **partout**
+   sans code par app. Le worker `kdmc-crea-famille` demande `kd-mc.com/__sso/whoami`
+   (`estAdminSSO`) et exige `admin && verified` (Face ID prouvé, JAMAIS le nom seul,
+   leçon #99/#166) ; le client `tools/crea-studio` transmet enfin le pass
+   (`Authorization: Bearer kdmc_sso_token`) — sans ça le chemin admin du worker était du
+   **code mort**. Idem `shops/_shared/kdmc-shop-admin.js` (4 boutiques) et `tools/departs`
+   (`_depSsoAutoAdmin`). **Fail-open partout** : SSO muet → PIN local en repli, 0 régression.
+   Règle gravée dans CLAUDE.md. Le secret `CREA_FAMILLE_ADMIN_CODE` devient **facultatif**
+   (repli) → un clic de moins pour Kevin. Garde `test:p0-secu` étendue (17 vérifs).
+2. **PIPELINE iOS — 15 apps du domaine → TestFlight, sans Mac** (`ios-apps-testflight.yml`) :
+   Capacitor emballe chaque app web en vraie appli iPhone sur un **Mac cloud GitHub**,
+   signature **automatique par clé App Store Connect API** (aucun `.p12` à fuiter).
+   Registre `tools/ios/apps.json` (ajouter une app = 1 entrée, 0 secret). Sécurité par app :
+   ATS HTTPS strict partout + `WKAppBoundDomains` (navigation verrouillée au domaine) pour
+   les apps autonomes, relâché pour les boutiques (paiement externe). Icône propre par app
+   (`make-icon.py`, alpha aplati — exigence App Store) + numéro de build unique (sinon
+   TestFlight refuse). **15/15 apps PROUVÉES `ARCHIVE SUCCEEDED`** en dry-run.
+   **Bloqué UNIQUEMENT** par le secret `.p8` : Apple refuse le téléchargement de la clé sur
+   un compte neuf (bug de leur côté, message rouge « réessayer ultérieurement »).
+3. **World Monitor v2.42 — localisation** : puce 📍 Ma position (suivi live `watchPosition`,
+   point + cercle de précision) sur la **carte**, le **globe animé** ET le **globe 3D**.
+   Recentrage au 1er fix seulement, updaters idempotents, permission refusée → message clair
+   + coupe (pas de harcèlement). **Vie privée exacte** : le fix GPS pleine précision ne quitte
+   jamais l'appareil (prouvé 0 fuite réseau) ; dit honnêtement que les couches live chargent
+   la zone AFFICHÉE, comme un déplacement de carte. Test `test:wm-pos` (8/8).
+4. **OSINT v2.5** — catégorie 📺 « Flux TV, radio & fichiers publics » : 9 liens 1-clic avec
+   **leur fonction affichée sous chacun** (nouveau champ `d` + CSS ; avant, seul le nom était
+   visible sur iPhone) et **recherche par fonction**. 129 outils / 19 catégories (compté).
+   **Refusé et écrit dans le code** : vavoo.to, megathread r/Piracy, annuaires de streaming
+   illégal (rediffusion de contenus payants). Test `test:osint-links` (9/9).
+
+### Décisions Kevin de la session
+- **Projet « KDMC Live » (télé/radio) : ANNULÉ** (« Action 2 annule, rien ») — rien codé.
+- **Stockage R2 `kdmc-deces-insee` : GARDÉ** (Kevin 2026-08-12 « Garde ») — **rien supprimé**.
+  Kevin avait d'abord dit « efface » ; je me suis **arrêté avant de détruire** car 3 scripts le
+  lisent encore (`tools/arbre/find-deces.py`, `actes-register.py`, `enrich-insee-local.py`) =
+  l'automatisation « Arbre — retrouver un décès précis » qu'on avait conservée. Mon info
+  précédente était **incomplète** (j'avais vérifié `arbre/index.html`, pas les scripts) → j'ai
+  corrigé et rendu le choix à Kevin, qui a tranché : on garde. La « source 2 » (numéro d'acte +
+  code commune) continue donc de fonctionner. Leçon #141.
+
+### Pièges rencontrés (à ne pas refaire)
+- **Apostrophes dans `node -e '…'`** : même dans un commentaire JS, elles ferment la chaîne
+  bash → « syntax error near unexpected token `)` ». A cassé 4 builds iOS d'un coup.
+- **Icône + numéro de build** : sans eux TestFlight refuse l'envoi — à poser AVANT le 1er essai.
+- **Voyant vert ≠ preuve** : un run « success » de 24 s était en fait un arrêt fail-closed sur
+  secret manquant. Toujours lire le log (`ARCHIVE SUCCEEDED`), pas la pastille.
+
+
 ## Soir du 7 août 2026 — Lingua jeux de rôle 🎭 + Bee vivante dans Créa Studio 🐝
 
 ### Livré et sur `main` (session Lingua/Bee)

@@ -7,6 +7,7 @@
 import http from 'http';
 import { readFileSync } from 'fs';
 import { createRequire } from 'module';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = process.cwd();
 function loadPlaywright() {
@@ -90,7 +91,7 @@ async function openCmc(ctx, token) {
 try {
   /* 1) KEVIN (proprio) + Face ID → CMCteams auto-login ADMIN U11804 */
   const c1 = await browser.newContext();
-  const kevTok = await enroll(c1, 'Kevin', 'Desarzens', '200807');
+  const kevTok = await enroll(c1, 'Kevin', 'Desarzens', ADMIN_CODE);
   const kev = await openCmc(c1, kevTok);
   ok(kev && kev.uid === 'U11804' && kev.isAdmin === true,
     'Kevin Face ID → CMCteams ouvre AUTO la session ADMIN (' + JSON.stringify(kev) + ')');

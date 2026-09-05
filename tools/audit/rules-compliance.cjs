@@ -60,6 +60,7 @@ const REGISTRE = [
   [/LOGIN TOUJOURS PRÉNOM \+ NOM/i, ['npm:test:pin', 'npm:test:session-kevin']],
   [/COMPTE ADMIN UNIQUE KEVIN/i, ['npm:test:pin', 'npm:test:kevin']],
   [/PIN PER-USER/i, ['npm:test:pin']],
+  [/CODE ADMIN NE S'ÉCRIT NULLE PART/i, ['npm:test:no-pin-leak', 'npm:test:departs-pin', 'npm:test:apex-messages']],
   [/NOMS SECRETS GITHUB/i, ['wf:security-suite.yml']],
   [/IMPORT LOSSLESS/i, ['npm:test:fidelity', 'npm:test:fidelity-pb']],
   [/IMPORTS PDF INCRÉMENTAUX/i, ['npm:test:v702-import-e2e']],
@@ -73,9 +74,15 @@ const REGISTRE = [
     'wf:ai-review-independent.yml', 'wf:security-suite.yml']],
   [/TOUJOURS TESTER END-TO-END|VÉRIFIER END-TO-END/i, ['wf:verif-reelle.yml', 'wf:audit-live.yml']],
   [/VÉRIFIER AVANT D'ENVOYER/i, ['wf:verif-reelle.yml']],
-  [/AUTO-TEST \+ AUTO-FIX/i, ['file:apex-ai/v13/services/admin/auto-test-runner.ts', 'wf:claude-todo-watcher.yml']],
+  /* claude-todo-watcher.yml RETIRÉ le 15/08/2026 : son travail consistait à
+     interroger Firebase en boucle et à lui répondre — exactement ce que GitHub
+     a sanctionné (« Actions used solely to interact with 3rd party websites »).
+     On ne le remplace PAS par une fausse référence : ces règles retombent dans
+     la dette réelle, visible et comptée. Leur vraie place est un Cloudflare
+     Worker avec son propre déclencheur — c'est noté dans KEVIN_ACTIONS_TODO. */
+  [/AUTO-TEST \+ AUTO-FIX/i, ['file:apex-ai/v13/services/admin/auto-test-runner.ts']],
   [/WARNING = CORRECTION AUTO/i, ['file:apex-ai/v13/services/admin/auto-test-runner.ts']],
-  [/PIPELINE SELF-HEALING|PIPELINE AUTONOMIE/i, ['wf:claude-todo-watcher.yml', 'wf:apex-audit-escalate.yml']],
+  [/PIPELINE SELF-HEALING|PIPELINE AUTONOMIE/i, ['wf:apex-audit-escalate.yml']],
   [/RIEN PERDRE/i, ['npm:test:pw-noclear']],
   [/SKILLS APEX 2026/i, ['file:apex-ai/v13/tests/unit/skills-dispatch.test.ts']],
   [/APEX N'OUBLIE JAMAIS PERSONNE/i, ['file:apex-ai/v13/tests/unit/rules-injection-watch.test.ts']],
@@ -85,6 +92,18 @@ const REGISTRE = [
   [/BOÎTE À OUTILS AGENTS|6 DÉPÔTS DE RÉFÉRENCE/i, ['file:apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts']],
   [/TAILLE|MONOLITH/i, ['npm:test:file-size-guard']],
   [/DÉTAILLER LES ERREURS/i, ['npm:test:bg-url']],
+  /* Ajoutés le 5.09 : ces trois règles avaient DÉJÀ leur garde, il manquait
+     seulement leur entrée ici — donc l'outil les comptait comme « dette » à
+     tort. Une mesure fausse est pire que pas de mesure : on la corrige, on ne
+     re-fige pas le compteur pour faire taire le rouge. */
+  [/CMCteams .{0,4}ET.{0,4} LIGHT|TOUJOURS LES DEUX/i, ['npm:test:parite-cmcteams-light']],
+  [/TEST EN LIVE EN PERMANENCE|TOUJOURS TESTER END-TO-END/i, ['wf:verif-reelle.yml', 'wf:audit-live.yml']],
+  [/AUDIT EXTÉRIEUR INDÉPENDANT|SECOND AVIS INDÉPENDANT/i, ['wf:ai-review-independent.yml']],
+  /* Ajoutées le 5.09 en même temps que leur garde — jamais une règle sans son
+     automatisme, c'est justement ce que ce compteur mesure. */
+  [/DÉPÔT PUBLIC|PUBLIC MAIS SÉCURISÉ/i, ['npm:test:depot-public-sain']],
+  [/DESTINATION ÉCRITE|GITHUB, GITLAB, WORKER/i, ['npm:test:destinations-workflows']],
+  [/DOCUMENTS? DE TRAVAIL|NE PUBLIE PLUS/i, ['npm:test:documents-travail']],
 ];
 
 /* ─── 2-bis. Règles COMPORTEMENTALES : elles portent sur MA façon de travailler (ton, autonomie,
