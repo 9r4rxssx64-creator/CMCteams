@@ -78,6 +78,28 @@ jobs:
         uses: actions/configure-pages@v6
         with:
           enablement: true
+      # ── Le dépôt est PUBLIC et « path: . » publie TOUT. Mesuré le 5.09 sur le
+      #    vrai site : /NOTES_USER.md exposait 19 noms de famille, 4 dates de
+      #    naissance et 10 e-mails ; /CLAUDE.md 42 noms ; /KEVIN_ACTIONS_TODO.md
+      #    10 noms et 8 dates de naissance. Ce sont des documents de travail —
+      #    le site n'en a AUCUN besoin (vérifié : aucune page ne les charge, les
+      #    renvois de l'app arbre pointent vers github.com).
+      #    On les retire de la COPIE DE TRAVAIL du runner, jamais du dépôt.
+      #    arbre/research/actesimg/ est CONSERVÉ : l'app arbre s'en sert
+      #    réellement (19 références dans arbre/index.html, vérifié).
+      - name: Retirer les documents de travail avant publication
+        run: |
+          set -e
+          for f in NOTES_USER.md KEVIN_ACTIONS_TODO.md KEVIN_INVENTORY.md \
+                   MEMO_RESUME.md CLAUDE.md LESSONS.md ETAT-INFRA.md \
+                   SESSIONS-ET-BRANCHES.md CLAUDE_HANDOFF.json \
+                   arbre/research/actes.json; do
+            [ -e "$f" ] && rm -f "$f" && echo "retiré de la publication : $f"
+          done
+          rm -rf audit pipeline patrimoine 2>/dev/null || true
+          rm -f arbre/research/*.md 2>/dev/null || true
+          echo "documents de travail retirés — le dépôt, lui, n'a pas bougé"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
