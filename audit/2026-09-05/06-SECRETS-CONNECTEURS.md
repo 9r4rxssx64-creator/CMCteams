@@ -8,7 +8,7 @@
 | Sentry | ✅ | org `kdmc` (région DE) | `SENTRY_DSN` attendu par `sync-secrets-to-cloudflare.yml` |
 | Supabase | ✅ | 0 projet | aucun usage |
 | Netlify | ✅ | 0 site | aucun usage |
-| Vercel | non appelé (exige un teamId) | `VERCEL_TOKEN`/`VERCEL_TEAM_ID` consommés par `auto-deploy-vercel.yml`, `sync-agent-firebase-to-vercel.yml` | à mesurer |
+| Vercel | ✅ (mesuré 19h15 sur le mail d'échec reçu par Kevin) | équipe Hobby `g7vrdynktn-5574s-projects`, **1 projet `kdmc-agent-monaco`** (Root Directory `tools/agent`, agent cron 3h/8h/lundi 9h). **40 déploiements aujourd'hui, un par push de chaque branche `claude/*`, tous CANCELED ou ERROR** ; la production `main` annulée à chaque nouveau push ; l'échec = la commande de filtrage `git diff --quiet HEAD^ HEAD` qui plante sur le clone Vercel (journal lu), pas le code. Corrigé dans `tools/agent/vercel.json` : aucune prévisualisation hors `main`, `main` seulement si `tools/agent` change. | **oui** — c'était une source de mails d'échec quotidiens |
 | **GitHub** | ❌ absent de la session | d'où l'API `/repos` fermée (fait n°16) | — |
 
 ## Secrets consommés par les workflows actifs (`.github/workflows/*.yml`) : 101 noms
