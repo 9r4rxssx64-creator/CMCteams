@@ -64,12 +64,20 @@ console.log(`Site sondé : ${SITE}\n`);
    de l'accueil. On récupère donc l'accueil une fois, et tout ce qui lui est
    identique est compté ABSENT. Mieux vaut vérifier que crier au loup. */
 let accueil = '';
-try { accueil = await (await fetch(SITE + '/')).text(); } catch { /* ignoré */ }
+/* Anti-cache OBLIGATOIRE. Mesuré le 5.09 : après avoir retiré NOTES_USER.md de
+   la publication (11228 → 11102 fichiers, vérifié dans le journal), le site
+   répondait TOUJOURS 200 sur ce fichier — c'était le cache de bordure. Un audit
+   d'exposition qui se fait berner par un cache ment dans les deux sens : il
+   crie au loup sur une fuite déjà bouchée, et il rassurerait à tort si le cache
+   servait une ancienne version propre. On casse donc le cache à chaque appel. */
+const SANS_CACHE = { cache: 'no-store', headers: { 'cache-control': 'no-cache', pragma: 'no-cache' } };
+const bust = (u) => u + (u.includes('?') ? '&' : '?') + '_nocache=' + Date.now();
+try { accueil = await (await fetch(bust(SITE + '/'), SANS_CACHE)).text(); } catch { /* ignoré */ }
 
 for (const c of CHEMINS) {
   let statut = 0, taille = 0, trouves = [];
   try {
-    const r = await fetch(SITE + c.p, { redirect: 'follow' });
+    const r = await fetch(bust(SITE + c.p), { redirect: 'follow', ...SANS_CACHE });
     statut = r.status;
     if (r.ok) {
       const t = await r.text();
