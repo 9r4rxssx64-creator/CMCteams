@@ -101,7 +101,27 @@ let accueil = '';
    servait une ancienne version propre. On casse donc le cache à chaque appel. */
 const SANS_CACHE = { cache: 'no-store', headers: { 'cache-control': 'no-cache', pragma: 'no-cache' } };
 const bust = (u) => u + (u.includes('?') ? '&' : '?') + '_nocache=' + Date.now();
-try { accueil = await (await fetch(bust(SITE + '/'), SANS_CACHE)).text(); } catch { /* ignoré */ }
+
+/* AVANT TOUT : est-ce qu'on ATTEINT le site ? Sans ce contrôle, un réseau
+   coupé donne « tout est absent » — donc un ✅ franc et massif alors qu'on n'a
+   RIEN mesuré. Vécu le 5.09 depuis le conteneur de l'agent : le pare-feu
+   répondait 403 à chaque adresse et l'audit annonçait fièrement « aucun
+   document de travail publié ». Un contrôle qui ment est pire que pas de
+   contrôle. On exige donc que la page d'accueil réponde vraiment. */
+let statutAccueil = 0;
+try {
+  const r0 = await fetch(bust(SITE + '/'), SANS_CACHE);
+  statutAccueil = r0.status;
+  if (r0.ok) accueil = await r0.text();
+} catch (e) { statutAccueil = -1; accueil = ''; }
+if (!accueil) {
+  console.log(`❌ MESURE IMPOSSIBLE : ${SITE}/ ne répond pas (HTTP ${statutAccueil}).`);
+  console.log('   Je ne peux donc RIEN affirmer sur ce qui est publié — et surtout pas');
+  console.log('   « tout va bien ». Depuis le conteneur de l\'agent, le pare-feu bloque');
+  console.log('   ces adresses : cet audit doit tourner sur un runner (GitHub Actions');
+  console.log('   après la publication, ou le job GitLab), pas ici.');
+  process.exit(2);
+}
 
 for (const c of CHEMINS) {
   let statut = 0, taille = 0, trouves = [];

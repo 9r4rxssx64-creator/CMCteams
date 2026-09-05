@@ -74,7 +74,8 @@ Usage acceptable :
 
 ### Concrètement, aujourd'hui
 
-**Sur GitHub** (133 workflows actifs, **0 exécution programmée**, 0 crypto) :
+**Sur GitHub** (mesuré le 5.09 sur `origin/main` : **134 workflows actifs, 0 exécution
+programmée, 0 crypto**, 50 rangés) :
 tests, lint, CodeQL, gitleaks, Lighthouse, déploiement des Workers du projet,
 publication GitHub Pages (`kd-mc.com`), fusion automatique des branches `claude/*`.
 → *tout est « production, test, déploiement, publication » de ce dépôt.* ✅
@@ -87,9 +88,10 @@ public, vérification des liens, et « qui sert vraiment le site ». La publicat
 **Sur Cloudflare** : les Workers (routeur, IA créa, apis, SSO…) et **c'est là que doivent
 aller les 6 tâches programmées** encore en attente d'un nouveau foyer.
 
-### Les 43 workflows rangés dans `.github/workflows-desactives/`
+### Les 50 workflows rangés dans `.github/workflows-desactives/`
 
-Ils sont **intacts**, jamais supprimés. Ils avaient été mis de côté le 15.08 parce qu'ils
+Ils sont **intacts**, jamais supprimés — 43 mis de côté le 15.08, plus les 6 du bot crypto
+rangés le 5.09. Ceux d'août l'ont été parce qu'ils
 correspondent exactement à ce que GitHub interdit : génération d'images, surveillance de
 sites, pilotage de Railway et Vercel, sauvegardes externes, bulletins d'actualité.
 
@@ -239,6 +241,13 @@ Il est branché **après la publication** dans `deploy.yml` : à chaque mise en 
 kd-mc.com, le site est réinterrogé pour de vrai (3 essais, le temps que Pages propage).
 C'est bien « la publication de CE dépôt » au sens des conditions GitHub — et **aucune
 exécution programmée** : ça part avec la publication, jamais tout seul.
+
+**Deuxième piège, trouvé en le lançant** : depuis le conteneur de l'agent, le pare-feu
+répond `403` à toutes ces adresses — et l'audit annonçait fièrement « aucun document de
+travail publié ». Un ✅ franc et massif alors que **rien n'avait été mesuré**. Il exige
+maintenant que la page d'accueil réponde vraiment avant de conclure, sinon il dit
+**« MESURE IMPOSSIBLE »** et sort en erreur. *Un contrôle qui ment est pire que pas de
+contrôle.*
 
 ### La garde qui empêche les trois listes de diverger
 

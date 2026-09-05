@@ -372,6 +372,12 @@ Il tourne **après chaque publication** de kd-mc.com (dernière étape de `deplo
 3 essais le temps que Pages propage). Aucune exécution programmée : ça part avec la
 publication.
 
+**Deuxième piège** : lancé depuis le conteneur de l'agent (pare-feu → `403` partout), il
+répondait « aucun document de travail publié » — un ✅ alors que rien n'avait été mesuré.
+Il exige maintenant que la page d'accueil réponde avant de conclure, sinon **« MESURE
+IMPOSSIBLE »** + erreur. Les deux propriétés (anti-cache, refus de conclure) sont tenues
+par la garde `test:documents-travail`, prouvée discriminante par sabotage.
+
 ### La garde permanente
 
 `npm run test:documents-travail` (dans `test:ci`) vérifie que les **trois** listes disent

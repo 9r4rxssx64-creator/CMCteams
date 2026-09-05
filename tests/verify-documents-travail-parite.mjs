@@ -126,6 +126,9 @@ if (!/process\.exitCode\s*=\s*1/.test(audit)) {
 if (!/no-store/.test(audit) || !/_nocache=/.test(audit)) {
   echec(`${AUDIT} ne casse plus le cache de bordure — mesuré le 5.09 : sans ça il annonce une fuite déjà bouchée (et rassurerait à tort dans l'autre sens)`);
 }
+if (!/MESURE IMPOSSIBLE/.test(audit) || !/process\.exit\(2\)/.test(audit)) {
+  echec(`${AUDIT} ne vérifie plus qu'il ATTEINT le site avant de conclure — sans ça, un réseau coupé donne « aucun document publié » : un ✅ franc alors que rien n'a été mesuré (vécu le 5.09, le pare-feu répondait 403 partout)`);
+}
 if (!/exposition-publique\.mjs/.test(deploy)) {
   echec(`${DEPLOY} ne vérifie plus, après publication, que le site ne sert aucun document de travail`);
 }
