@@ -24,7 +24,22 @@ pas GitHub. Sans jeton, aucun chemin ne mène à ce fichier.*
 
 ---
 
-## 🔴 URGENT (2.09.2026) — GitLab partout, GitHub suspendu
+### ℹ️ Et si un jour tu veux relancer la génération d'images sur GitLab
+
+Quatre vérifications tournent déjà là-bas **sans rien te demander** (liens du domaine,
+bibliothèques CDN, sources Lingua, langue des signes). Les autres — logos, cartoons,
+mascottes, photos produits, sauvegardes — attendent juste que leur clé soit ajoutée **côté
+GitLab** (*Paramètres → CI/CD → Variables*). Liste complète : `ETAT-INFRA.md` fait n°13.
+**Rien à faire tant que tu n'en as pas besoin** — je te dirai laquelle le jour où ça sert.
+
+---
+
+## ⬜ PÉRIMÉ (2.09.2026) — gardé pour mémoire, GitHub est revenu depuis
+
+*(ce qui suit datait de la suspension ; le compte a rouvert le 4.09 et le code repasse
+par GitHub — seul le jeton GitLab reste utile, voir tout en haut)*
+
+### ~~GitLab partout, GitHub suspendu~~
 
 **Ta décision** : *« On passe par GitLab partout et pour tout jusqu'à nouvel ordre. »* ✅ appliquée.
 

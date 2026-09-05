@@ -438,3 +438,89 @@ ils auraient disparu — il avait déjà fallu les repêcher à la main une fois
 maintenant dans GitHub **à l'identique** (copie octet pour octet, aucune divergence à
 réconcilier), et `.gitlab-ci.yml` des deux côtés est **la même recette**.
 `secrets-map.txt` ne contient que des **noms** de secrets, aucune valeur.
+
+---
+
+## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
+
+> Kevin : *« Rapatrie tout sur GitHub intelligemment en respectant les règles, et sur GitLab
+> ce qui ne va pas sur GitHub. Va plus loin. Sers-toi des deux. »*
+
+Les 49 automatisations rangées le 15/08 l'avaient été **sans dire où elles devaient aller
+ensuite**. C'est pour ça qu'elles y sont restées des mois : plus personne ne savait
+lesquelles étaient légitimes. On finit toujours par tout remettre au hasard, ou par ne rien
+remettre.
+
+### La règle, en une question
+
+> **Est-ce que ça produit, teste, déploie ou publie CE dépôt ?**
+> Oui → **GitHub**, mais **à la main uniquement** (jamais de cron).
+> Non + périodique → **Cloudflare Worker**. Non + appelle l'extérieur → **GitLab CI**.
+> Interdit par les conditions (crypto) → **nulle part**.
+
+### Le résultat, mesuré
+
+| Destination | Combien | Exemples |
+|---|---|---|
+| **GitHub** (rapatriées) | **14** | smoke post-déploiement, vérifs Lingua/Décès en direct, MAJ forcée d'Apex Chat, pentest Strix, audit SEO, déploiement Vercel |
+| **GitLab CI** | 24 | liens réels, sources des langues, génération d'images, sauvegardes KV |
+| **Cloudflare Worker** | 5 | alertes World Monitor, agent 24/7, sentinelles |
+| **nulle part** | 6 | crypto (nommé mot pour mot dans les conditions GitHub) |
+
+`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+
+**Le bouton, c'est moi qui l'appuie** : une automatisation rapatriée est manuelle, donc zéro
+volume automatique — et je la lance via l'API, Kevin ne clique rien.
+
+### La garde qui empêche de reperdre
+
+`npm run test:destinations-workflows` (dans `test:ci`) : rien de rangé sans destination
+écrite, rien de marqué « github » qui n'y soit pas, rien de marqué autrement qui y soit,
+aucun cron sur un rapatrié, un bouton « Lancer » sur chacun, tout le crypto marqué
+« jamais ». Prouvée par 4 sabotages.
+
+### Côté GitLab — ce qui marche déjà, et ce qui attend une clé
+
+Stage `veille` ajouté (tout à la demande, **0 minute au repos**) : **liens réels**,
+**dépendances CDN**, **sources Lingua**, **récolte LSF** — les quatre **sans aucune clé
+nouvelle**.
+
+*La veille CDN est passée de **3 adresses écrites à la main** à **78 lues dans le code** :
+75 bibliothèques n'étaient surveillées par personne.*
+
+**Clés à ajouter aux variables du projet GitLab** pour que les autres puissent tourner
+(à faire quand on en aura besoin, pas avant) :
+
+| Clé | Ce qu'elle débloque |
+|---|---|
+| `AX_REPLICATE_KEY` | cartoons, logos, mascotte vidéo, clonage de voix |
+| `OPEN_AI_API_KEY` | mascottes Lingua (images IA) |
+| `PEXELS_API_KEY` | photos libres de droit pour l'arbre |
+| `PRINTIFY_API_KEY` | photos produits de la boutique |
+| `APEX_ADMIN_PIN_SHA256` | « qui se connecte », synchro Monaco Telecom |
+| `PUSH_ADMIN_TOKEN` | santé des Workers |
+| `FINNHUB_API_KEY` + `RAILWAY_TOKEN` | santé des API externes |
+| `CLOUDFLARE_ACCOUNT_ID`, `KDMC_SSO_SECRET`, `JWT_SECRET` | sauvegardes KV chiffrées |
+
+---
+
+## 🌍 Fait n°14 — PUBLIC MAIS SÉCURISÉ : ce qui a été trouvé et corrigé (5.09.2026)
+
+> Kevin : *« Public mais sécurisé normalement. »*
+
+Public = **le code se lit**. Public ≠ **ouvert à tout**. Mesuré, puis corrigé :
+
+| Trouvé | Pourquoi c'était grave | Corrigé |
+|---|---|---|
+| `qodo-ai/pr-agent@main` | une action tierce sur branche **mouvante**, avec la clé OpenAI de Kevin dans l'environnement : un compte compromis chez eux et la clé partait | épinglée `@v0.44.0` |
+| revue IA déclenchable par **n'importe qui** | un inconnu commentait une PR → revue IA **payée** avec la clé de Kevin, et minutes du compte consommées | contrôle `author_association` (OWNER/MEMBER/COLLABORATOR) |
+| `pull_request_target` | aurait exécuté le code d'un inconnu avec nos secrets | **0 trouvé** ✅ |
+| vraie clé dans les fichiers suivis | publiée pour toujours | **0** — les 16 chaînes trouvées sont fausses, **sauf la clé Firebase Web, publique par conception** |
+
+**Garde** : `npm run test:depot-public-sain` (dans `test:ci`), 4 règles, **prouvée
+discriminante par 4 sabotages**. `SECURITY.md` ajouté à la racine (où signaler, ce qui est
+public exprès, ce qui intéresse vraiment).
+
+**Non couvert, et dit franchement** : l'**historique** (11 316 commits) relève de
+gitleaks/TruffleHog (`security-suite.yml`, lancé le 5.09) ; les **réglages GitHub**
+(protection de branche, droits par défaut du jeton) vivent côté serveur, pas dans le dépôt.

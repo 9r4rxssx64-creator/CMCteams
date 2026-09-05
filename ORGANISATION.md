@@ -74,8 +74,8 @@ Usage acceptable :
 
 ### Concrètement, aujourd'hui
 
-**Sur GitHub** (mesuré le 5.09 sur `origin/main` : **134 workflows actifs, 0 exécution
-programmée, 0 crypto**, 50 rangés) :
+**Sur GitHub** (mesuré le 5.09 après rapatriement : **143 workflows actifs, 0 exécution
+programmée, 0 crypto**, 35 rangés) :
 tests, lint, CodeQL, gitleaks, Lighthouse, déploiement des Workers du projet,
 publication GitHub Pages (`kd-mc.com`), fusion automatique des branches `claude/*`.
 → *tout est « production, test, déploiement, publication » de ce dépôt.* ✅
@@ -88,10 +88,40 @@ public, vérification des liens, et « qui sert vraiment le site ». La publicat
 **Sur Cloudflare** : les Workers (routeur, IA créa, apis, SSO…) et **c'est là que doivent
 aller les 6 tâches programmées** encore en attente d'un nouveau foyer.
 
-### Les 50 workflows rangés dans `.github/workflows-desactives/`
+### Le rapatriement du 5.09 — 49 automatisations, une destination chacune
 
-Ils sont **intacts**, jamais supprimés — 43 mis de côté le 15.08, plus les 6 du bot crypto
-rangés le 5.09. Ceux d'août l'ont été parce qu'ils
+Elles avaient été rangées d'un coup le 15/08 pour sauver le compte. Rangées, mais **sans
+dire où elles devaient aller ensuite** — et c'est comme ça qu'elles y sont restées des mois,
+sans que personne sache lesquelles étaient légitimes.
+
+Chacune a désormais sa destination ÉCRITE dans
+`.github/workflows-desactives/DESTINATIONS.json`, avec sa raison, tenue par
+`npm run test:destinations-workflows` :
+
+| Destination | Combien | Pourquoi |
+|---|---|---|
+| **GitHub** (rapatriées) | **14** | elles testent, déploient ou publient CE dépôt — l'usage prévu. **À la main uniquement**, jamais de cron : le bouton, c'est moi qui l'appuie via l'API. |
+| **GitLab CI** | 24 | elles appellent des sites tiers (liens, sources, génération d'images, sauvegardes) |
+| **Cloudflare Worker** | 5 | elles doivent tourner en continu : ce sont des services, pas du CI |
+| **nulle part** | 6 | crypto — « Cryptomining » est nommé mot pour mot dans les conditions |
+
+Les 14 rapatriées : smoke test après déploiement, smoke cadastre, vérif live d'un
+sous-domaine, les deux vérifs Lingua (appel en direct, voix), les deux vérifs Décès, la mise
+à jour forcée d'Apex Chat, le diagnostic du proxy Apex, le pentest Strix, l'audit SEO,
+l'extraction ClayScore, et les deux du déploiement Vercel.
+
+**Ce qui a été ajouté côté GitLab** (stage `veille`, tout à la demande, 0 minute au repos) :
+liens réels, dépendances CDN, sources Lingua, récolte LSF. Les quatre marchent **sans aucune
+clé nouvelle**. Les autres attendent que leur secret soit ajouté aux variables GitLab — la
+liste est dans `ETAT-INFRA.md`, pour ne pas la redécouvrir une par une.
+
+*Au passage, la veille CDN est devenue utile : l'ancienne surveillait **3 adresses écrites à
+la main**, la nouvelle les **lit dans le code** — **78 aujourd'hui**. 75 bibliothèques
+n'étaient surveillées par personne.*
+
+### Les 35 workflows encore rangés dans `.github/workflows-desactives/`
+
+Ils sont **intacts**, jamais supprimés. Ceux qui restent l'ont été parce qu'ils
 correspondent exactement à ce que GitHub interdit : génération d'images, surveillance de
 sites, pilotage de Railway et Vercel, sauvegardes externes, bulletins d'actualité.
 
@@ -115,6 +145,9 @@ sites, pilotage de Railway et Vercel, sauvegardes externes, bulletins d'actualit
 | 0 workflow crypto | idem (règle 3) — nommé « Cryptomining » dans les conditions |
 | 0 workflow **critique** rangé par erreur | idem (règle 4) — liste lue dans `cross-app-preservation.yml` |
 | Rester sous les 400 minutes GitLab | `npm run minutes-gitlab` (à lancer avant d'ajouter un job) |
+| Chaque automatisation a une destination écrite, et elle y est | `npm run test:destinations-workflows` |
+| Le dépôt public ne laisse ni clé ni bouton à un inconnu | `npm run test:depot-public-sain` |
+| Le site publié ne sert aucun document de travail | `npm run test:documents-travail` + contrôle réel après chaque publication |
 
 Les quatre premières sont **prouvées discriminantes par sabotage** : on remet un cron, on
 range un workflow critique — la garde échoue en nommant le fichier.
@@ -280,3 +313,26 @@ fichier (leçon #142). D'où `npm run test:documents-travail` (câblé dans `tes
 `audit/reglement/` : conditions produit GitHub, usage acceptable GitHub, limites d'Actions,
 évènements déclencheurs, conditions GitLab, minutes de calcul, runners partagés, usage
 acceptable GitLab.*
+
+---
+
+## 8. « Public mais sécurisé normalement » (Kevin, 5.09.2026)
+
+Le dépôt est **public**. Ça veut dire que le **code se lit** — pas que n'importe qui peut
+faire tourner nos clés. Quatre risques comptent vraiment, et ils sont désormais tenus par
+`npm run test:depot-public-sain` (dans `test:ci`, prouvé discriminant par sabotage) :
+
+| Risque | Mesuré le 5.09 | État |
+|---|---|---|
+| `pull_request_target` (exécute le code d'un inconnu avec nos secrets) | 0 | ✅ |
+| action tierce épinglée sur une branche mouvante | **1 trouvée** : `qodo-ai/pr-agent@main`, avec la clé OpenAI | ✅ épinglée `@v0.44.0` |
+| clé payante déclenchable par un inconnu | **1 trouvée** : n'importe qui pouvait commenter une PR et lancer une revue IA payée | ✅ contrôle `author_association` |
+| vraie clé dans les fichiers suivis | 0 — les 16 chaînes trouvées sont de fausses clés de test, **sauf** la clé Firebase Web, **publique par conception** | ✅ cliquet posé |
+
+**Ce que ce garde ne couvre pas, et il le dit lui-même** : l'**historique** (11 316 commits)
+— c'est le travail de gitleaks/TruffleHog dans `security-suite.yml` ; et les **réglages
+GitHub** (protection de branche, droits du jeton par défaut), qui vivent côté serveur.
+
+`SECURITY.md` a été ajouté à la racine : où signaler une faille, ce qui est public exprès
+(la clé Firebase Web en tête — c'est le faux positif classique), et ce qui nous intéresse
+vraiment.

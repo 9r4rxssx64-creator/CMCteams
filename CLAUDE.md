@@ -4,6 +4,114 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26 (Ape
 
 ---
 
+## 🌍 RÈGLE ABSOLUE — DÉPÔT PUBLIC : LE CODE SE LIT, LES DONNÉES ET LES CLÉS NON (Kevin 2026-09-05, ABSOLUE)
+
+> **« Public mais sécurisé normalement. »** — Kevin 2026-09-05
+
+**Règle absolue, NON-NÉGOCIABLE** — CMCteams (dépôt public `9r4rxssx64-creator/CMCteams`),
+tous projets présents et futurs hébergés en public.
+
+### 1. Ce que « public » veut dire — et ce que ça ne veut pas dire
+
+Public = **le code se lit**. Public ≠ « ouvert à tout » : personne d'extérieur ne doit
+pouvoir lire des **données**, faire tourner nos **clés payantes**, ni déclencher nos
+automatisations. Les quatre risques qui comptent vraiment, et qui sont tenus par la garde
+`npm run test:depot-public-sain` (câblée dans `test:ci`, prouvée discriminante par sabotage) :
+
+| Risque | Pourquoi c'est grave sur un dépôt PUBLIC | Ce qui l'empêche |
+|---|---|---|
+| `pull_request_target` | exécute le code d'un **inconnu** avec nos secrets ET un jeton en écriture | interdit, règle 1 |
+| action tierce en `@main` / `@master` | « exécute ce que ce dépôt tiers contiendra demain », avec nos secrets | épingler une **version publiée**, règle 2 |
+| clé payante déclenchable par un commentaire ou une PR d'inconnu | **facture ouverte à des inconnus** + saturation des minutes | contrôle `author_association` (OWNER/MEMBER/COLLABORATOR), règle 3 |
+| nouvelle chaîne en forme de secret | une vraie clé dans un dépôt public est publiée **pour toujours** | cliquet sur une liste de valeurs connues, règle 4 |
+
+**Trouvé en vrai le 5.09** : `qodo-ai/pr-agent@main` tournait avec la clé OpenAI de Kevin,
+et **n'importe qui** pouvait déclencher une revue IA payée en commentant une PR. Corrigé
+(`@v0.44.0` + `author_association`).
+
+### 2. Ce qui est public EXPRÈS et n'est pas une faille — le dire, ne pas crier au loup
+
+- **La clé Firebase Web** (`AIzaSy…`) : publique **par conception**, servie à chaque
+  visiteur ; l'accès est tenu par les **règles Firebase**, pas par elle. Un scanner qui la
+  signale est un faux positif (déjà écrit dans la passe SÉCU : « clé Firebase Web publique
+  ≠ secret »).
+- **Les noms** de secrets dans les workflows (`${{ secrets.X }}`) — des noms, pas des valeurs.
+
+### 3. Le site publié ne sert AUCUN document de travail
+
+Cf. fait n°12 d'`ETAT-INFRA.md` : aucun Markdown publié, dossiers de travail retirés, et
+**vérification réelle après CHAQUE publication** (`test:documents-travail` + l'étape finale
+de `deploy.yml`). Un document de travail ajouté demain est exclu sans qu'on y pense.
+
+### 4. `SECURITY.md` à la racine — obligatoire sur un dépôt public
+
+Où signaler, ce qui est public exprès, ce qui intéresse vraiment, et la liste des contrôles
+automatiques. Un dépôt public sans point de contact reçoit ses failles… dans une issue publique.
+
+### 5. Test mental obligatoire avant chaque ajout sur un dépôt public
+
+> *« Si un inconnu lit ce fichier ce soir, ou clique ce déclencheur : que peut-il apprendre,
+> dépenser, ou faire tourner ? Si la réponse n'est pas “rien de plus que le code”, c'est à
+> corriger AVANT de pousser. »*
+
+S'applique : CMCteams (référence), tous projets publics présents et futurs.
+
+---
+
+## 🔀 RÈGLE ABSOLUE — CHAQUE AUTOMATISATION A UNE DESTINATION ÉCRITE : GITHUB, GITLAB, WORKER, OU NULLE PART (Kevin 2026-09-05, ABSOLUE)
+
+> **« Rapatrie tout sur GitHub intelligemment en respectant les règles, et sur GitLab ce qui
+> ne va pas sur GitHub. Va plus loin. Sers-toi des deux. »** — Kevin 2026-09-05
+
+**Règle absolue, NON-NÉGOCIABLE, complète « ORGANISATION.md »** — tous projets.
+
+### 1. La question, pour chaque automatisation, et une seule
+
+> **Est-ce que ça produit, teste, déploie ou publie CE dépôt ?**
+> Oui → **GitHub**, mais **à la main uniquement** (`workflow_dispatch`, jamais de cron).
+> Non, et c'est périodique → **Cloudflare Worker** (son propre déclencheur, hors quota CI).
+> Non, et ça appelle l'extérieur → **GitLab CI**, en comptant les **400 min/mois**.
+> Interdit par les conditions (crypto) → **nulle part**.
+
+Ce n'est pas la **fréquence** qui décide, c'est la **nature** de l'activité — c'est le texte
+même des conditions GitHub. Et le cron est banni de GitHub non par les conditions mais parce
+que c'est le **VOLUME** (~97 exécutions/jour) qui a fait suspendre le compte le 15/08.
+
+### 2. Ranger sans dire où = perdre
+
+Les 49 automatisations rangées le 15/08 y sont restées des mois **parce que personne n'avait
+écrit où elles devaient aller ensuite**. Résultat : plus personne ne savait lesquelles étaient
+légitimes — on finit par tout remettre au hasard, ou par ne rien remettre.
+
+**Donc : `.github/workflows-desactives/DESTINATIONS.json`** — pour CHACUNE : sa destination,
+ce qu'elle fait, et **pourquoi**. Tenu par `npm run test:destinations-workflows` (dans
+`test:ci`, prouvé discriminant) : rien de rangé sans destination, rien de marqué « github »
+qui n'y soit pas, rien de marqué autrement qui y soit, aucun cron sur un rapatrié, un bouton
+« Lancer » sur chacun, et tout ce qui est crypto marqué « jamais ».
+
+### 3. Le bouton, c'est MOI qui l'appuie
+
+Une automatisation rapatriée est **manuelle** — donc zéro volume automatique, donc conforme.
+Et « manuelle » ne veut pas dire « Kevin clique » : je la lance moi-même via l'API
+(`actions_run_trigger`). Règle « MOINS DE CLICS POSSIBLE » respectée.
+
+### 4. Se servir des DEUX, vraiment
+
+GitLab n'est pas un dépotoir : c'est là que vit ce que GitHub interdit. Les jobs y sont
+**à la demande** (fichier-signal ou bouton) — 0 minute tant qu'on ne les lance pas. Quand un
+job GitLab a besoin d'une clé, elle s'ajoute aux variables du projet GitLab : la liste des
+clés manquantes est tenue dans `ETAT-INFRA.md`, pas redécouverte une par une.
+
+### 5. Test mental obligatoire avant de créer ou de ranger une automatisation
+
+> *« Est-ce que ça produit, teste, déploie ou publie CE dépôt ? Sa destination est-elle
+> ÉCRITE quelque part, avec la raison ? Si je la range aujourd'hui, est-ce que quelqu'un
+> saura dans six mois pourquoi, et où elle devait aller ? »*
+
+S'applique : CMCteams (référence), Apex, tous projets présents et futurs.
+
+---
+
 ## 📋 RÈGLE ABSOLUE — TOUT LE MONDE A UN PLANNING SI SON NOM EST DANS LE PDF (Kevin 2026-05-26, ABSOLUE)
 
 > **"Tout le monde a un planning sans exception du moment que son nom et écrit dans le planning"** — Kevin 2026-05-26

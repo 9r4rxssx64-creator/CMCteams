@@ -98,6 +98,11 @@ const REGISTRE = [
   [/CMCteams .{0,4}ET.{0,4} LIGHT|TOUJOURS LES DEUX/i, ['npm:test:parite-cmcteams-light']],
   [/TEST EN LIVE EN PERMANENCE|TOUJOURS TESTER END-TO-END/i, ['wf:verif-reelle.yml', 'wf:audit-live.yml']],
   [/AUDIT EXTÉRIEUR INDÉPENDANT|SECOND AVIS INDÉPENDANT/i, ['wf:ai-review-independent.yml']],
+  /* Ajoutées le 5.09 en même temps que leur garde — jamais une règle sans son
+     automatisme, c'est justement ce que ce compteur mesure. */
+  [/DÉPÔT PUBLIC|PUBLIC MAIS SÉCURISÉ/i, ['npm:test:depot-public-sain']],
+  [/DESTINATION ÉCRITE|GITHUB, GITLAB, WORKER/i, ['npm:test:destinations-workflows']],
+  [/DOCUMENTS? DE TRAVAIL|NE PUBLIE PLUS/i, ['npm:test:documents-travail']],
 ];
 
 /* ─── 2-bis. Règles COMPORTEMENTALES : elles portent sur MA façon de travailler (ton, autonomie,
