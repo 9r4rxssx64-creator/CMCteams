@@ -74,7 +74,8 @@ Usage acceptable :
 
 ### Concrètement, aujourd'hui
 
-**Sur GitHub** (133 workflows actifs, **0 exécution programmée**, 0 crypto) :
+**Sur GitHub** (mesuré le 5.09 après rapatriement : **143 workflows actifs, 0 exécution
+programmée, 0 crypto**, 35 rangés) :
 tests, lint, CodeQL, gitleaks, Lighthouse, déploiement des Workers du projet,
 publication GitHub Pages (`kd-mc.com`), fusion automatique des branches `claude/*`.
 → *tout est « production, test, déploiement, publication » de ce dépôt.* ✅
@@ -87,9 +88,45 @@ public, vérification des liens, et « qui sert vraiment le site ». La publicat
 **Sur Cloudflare** : les Workers (routeur, IA créa, apis, SSO…) et **c'est là que doivent
 aller les 6 tâches programmées** encore en attente d'un nouveau foyer.
 
-### Les 43 workflows rangés dans `.github/workflows-desactives/`
+### Le rapatriement du 5.09 — 49 automatisations, une destination chacune
 
-Ils sont **intacts**, jamais supprimés. Ils avaient été mis de côté le 15.08 parce qu'ils
+Elles avaient été rangées d'un coup le 15/08 pour sauver le compte. Rangées, mais **sans
+dire où elles devaient aller ensuite** — et c'est comme ça qu'elles y sont restées des mois,
+sans que personne sache lesquelles étaient légitimes.
+
+Chacune a désormais sa destination ÉCRITE dans
+`.github/workflows-desactives/DESTINATIONS.json`, avec sa raison, tenue par
+`npm run test:destinations-workflows` :
+
+| Destination | Combien | Pourquoi |
+|---|---|---|
+| **GitHub** (rapatriées) | **14** | elles testent, déploient ou publient CE dépôt — l'usage prévu. **À la main uniquement**, jamais de cron : le bouton, c'est moi qui l'appuie via l'API. |
+| **GitLab CI** | 24 | elles appellent des sites tiers (liens, sources, génération d'images, sauvegardes) |
+| **Cloudflare Worker** | 5 | elles doivent tourner en continu : ce sont des services, pas du CI |
+| **nulle part** | 6 | crypto — « Cryptomining » est nommé mot pour mot dans les conditions |
+
+Les 14 rapatriées : smoke test après déploiement, smoke cadastre, vérif live d'un
+sous-domaine, les deux vérifs Lingua (appel en direct, voix), les deux vérifs Décès, la mise
+à jour forcée d'Apex Chat, le diagnostic du proxy Apex, le pentest Strix, l'audit SEO,
+l'extraction ClayScore, et les deux du déploiement Vercel.
+
+**Ce qui a été ajouté côté GitLab** (stage `veille`, tout à la demande, 0 minute au repos) :
+liens réels, dépendances CDN, sources Lingua, récolte LSF. Les quatre marchent **sans aucune
+clé nouvelle**. Les autres attendent que leur secret soit ajouté aux variables GitLab — la
+liste est dans `ETAT-INFRA.md`, pour ne pas la redécouvrir une par une.
+
+> ⚠️ **Précision honnête** : ces jobs sont écrits dans le `.gitlab-ci.yml` **du dépôt**, qui
+> est désormais la source. Ils ne tourneront sur GitLab qu'à la **prochaine remise à niveau
+> de GitLab depuis GitHub** — laquelle demande le jeton GitLab (cf. `KEVIN_ACTIONS_TODO.md`).
+> Écrits et validés, oui ; en service là-bas, pas encore. La nuance compte.
+
+*Au passage, la veille CDN est devenue utile : l'ancienne surveillait **3 adresses écrites à
+la main**, la nouvelle les **lit dans le code** — **78 aujourd'hui**. 75 bibliothèques
+n'étaient surveillées par personne.*
+
+### Les 35 workflows encore rangés dans `.github/workflows-desactives/`
+
+Ils sont **intacts**, jamais supprimés. Ceux qui restent l'ont été parce qu'ils
 correspondent exactement à ce que GitHub interdit : génération d'images, surveillance de
 sites, pilotage de Railway et Vercel, sauvegardes externes, bulletins d'actualité.
 
@@ -113,6 +150,9 @@ sites, pilotage de Railway et Vercel, sauvegardes externes, bulletins d'actualit
 | 0 workflow crypto | idem (règle 3) — nommé « Cryptomining » dans les conditions |
 | 0 workflow **critique** rangé par erreur | idem (règle 4) — liste lue dans `cross-app-preservation.yml` |
 | Rester sous les 400 minutes GitLab | `npm run minutes-gitlab` (à lancer avant d'ajouter un job) |
+| Chaque automatisation a une destination écrite, et elle y est | `npm run test:destinations-workflows` |
+| Le dépôt public ne laisse ni clé ni bouton à un inconnu | `npm run test:depot-public-sain` |
+| Le site publié ne sert aucun document de travail | `npm run test:documents-travail` + contrôle réel après chaque publication |
 
 Les quatre premières sont **prouvées discriminantes par sabotage** : on remet un cron, on
 range un workflow critique — la garde échoue en nommant le fichier.
@@ -187,7 +227,117 @@ règle de `publier-site`. C'est écrit à côté du job dans `.gitlab-ci.yml`, p
 ici — un mode d'emploi qui ne vit que dans un document finit par ne pas être lu.
 
 
+---
+
+## 7. Le dépôt est PUBLIC — ce qu'on publie n'est plus une supposition
+
+En rangeant, une chose plus grave que les minutes est apparue : **le dépôt GitHub est
+public, et les deux publications servent « tout ce qu'il y a dedans »**. Mesuré le 5.09
+sur le vrai site : `/NOTES_USER.md` (19 noms de famille, 4 dates de naissance, 10 adresses
+e-mail), `/CLAUDE.md` (42 noms), `/KEVIN_ACTIONS_TODO.md` (10 noms, 8 dates de naissance).
+**Aucune page du site ne charge ces fichiers** — ce sont des documents de travail.
+
+### Une règle simple, et qui se maintient toute seule
+
+La première version listait 11 noms de fichiers à la main. C'était trop étroit : le site
+publiait aussi `AGENTS.md`, `APEX_HANDOFF.md`, tout `archives/` (courriers personnels,
+business plan), les `NOTES_USER.md` des sous-projets, et jusqu'à un mémo PDF
+« secrets GitHub » du coffre-fort (formulaire **vierge**, aucune valeur — vérifié).
+
+Alors on a **mesuré** au lieu de lister : **aucune page du site ne charge un fichier `.md`**.
+Les seuls renvois vers des `.md` dans le code sont des adresses **absolues** vers
+`github.com` / `raw.githubusercontent.com` (c'est ainsi qu'Apex relit ses documents), et
+**aucun service worker n'en met en cache**. D'où la règle :
+
+> **Le site publié ne contient AUCUN Markdown.** Un document de travail ajouté demain est
+> exclu sans que personne ait à y penser.
+
+**672 Markdown** disparaissent ainsi de la publication, plus les dossiers de travail
+(`audit/`, `pipeline/`, `patrimoine/`) et les mémos perso du coffre-fort.
+
+| Surface | Ce qui retire les documents |
+|---|---|
+| **kd-mc.com** (GitHub Pages) | étape « Retirer les documents de travail » de `.github/workflows/deploy.yml` — sur la copie du runner, **le dépôt ne bouge pas** |
+| **miroir Cloudflare** | les `--exclude` de `tools/gitlab/publier.sh` (première baisse mesurée : **11 228 → 11 102 fichiers publiés**) |
+
+**Une exception assumée** : `CLAUDE_ACTIVITY.json` reste publié. La vue « activité Claude »
+de l'app le charge **depuis le site** (`index.html` ~ligne 32025) ; le retirer casserait un
+écran, et il ne contient que des messages de commit, déjà publics. *Mesurer avant de
+supprimer — c'est ce contrôle qui a évité la régression.*
+
+### Retirer ne suffit pas — il faut VÉRIFIER
+
+Le retrait du miroir a bien enlevé 126 fichiers (chiffre lu dans le journal du job), et
+pourtant les adresses répondaient **toujours 200**. Ce n'était pas un correctif raté :
+c'était le **cache de bordure** de Cloudflare. Un audit qui se fait berner par un cache
+ment dans les deux sens — il crie au loup sur une fuite déjà bouchée, et il rassurerait à
+tort si le cache servait une vieille version propre. `tools/audit/exposition-publique.mjs`
+casse donc le cache à chaque appel, et **sort en erreur** dès qu'un document de travail
+répond.
+
+Il est branché **après la publication** dans `deploy.yml` : à chaque mise en ligne de
+kd-mc.com, le site est réinterrogé pour de vrai (3 essais, le temps que Pages propage).
+C'est bien « la publication de CE dépôt » au sens des conditions GitHub — et **aucune
+exécution programmée** : ça part avec la publication, jamais tout seul.
+
+**Deuxième piège, trouvé en le lançant** : depuis le conteneur de l'agent, le pare-feu
+répond `403` à toutes ces adresses — et l'audit annonçait fièrement « aucun document de
+travail publié ». Un ✅ franc et massif alors que **rien n'avait été mesuré**. Il exige
+maintenant que la page d'accueil réponde vraiment avant de conclure, sinon il dit
+**« MESURE IMPOSSIBLE »** et sort en erreur. *Un contrôle qui ment est pire que pas de
+contrôle.*
+
+### La garde qui empêche les trois listes de diverger
+
+Trois fichiers décrivent la même règle : le retrait de `deploy.yml`, les `--exclude` de
+`publier.sh`, et ce que l'audit va sonder. Trois listes séparées dérivent toujours — et un
+simple test d'égalité entre deux surfaces ne verrait rien si les deux oubliaient le **même**
+fichier (leçon #142). D'où `npm run test:documents-travail` (câblé dans `test:ci`) :
+
+> tout ce que GitHub retire doit être exclu du miroir **et** sondé par l'audit ; l'audit
+> doit sortir en erreur sur une fuite **et** casser le cache ; `deploy.yml` doit vraiment
+> lancer l'audit après publication.
+
+**Prouvée discriminante par sabotage** : ajouter un document retiré d'un seul côté → 2
+échecs nommant le fichier ; neutraliser le code de sortie de l'audit → 1 échec ; retirer
+`NOTES_USER.md` de la liste → 1 échec. Restauré : vert.
+
+### Ce qui reste, dit honnêtement
+
+- **`/arbre/index.html`** porte encore 318 noms de famille, 257 dates de naissance
+  complètes et 12 numéros de téléphone **à l'intérieur du fichier** ; le code d'accès n'est
+  vérifié qu'après le chargement. On ne peut pas le retirer : c'est l'app elle-même. Le
+  correctif est architectural — sortir les données du fichier et les servir derrière la
+  connexion du domaine (SSO). **Chantier à part, en attente du feu vert de Kevin.**
+- Le **dépôt GitHub reste public** et son **historique** contient toujours ces fichiers :
+  le retrait protège le **site**, pas `github.com`.
+
+---
+
 *Sources lues le 5.09.2026 depuis le runner GitLab, texte intégral conservé dans
 `audit/reglement/` : conditions produit GitHub, usage acceptable GitHub, limites d'Actions,
 évènements déclencheurs, conditions GitLab, minutes de calcul, runners partagés, usage
 acceptable GitLab.*
+
+---
+
+## 8. « Public mais sécurisé normalement » (Kevin, 5.09.2026)
+
+Le dépôt est **public**. Ça veut dire que le **code se lit** — pas que n'importe qui peut
+faire tourner nos clés. Quatre risques comptent vraiment, et ils sont désormais tenus par
+`npm run test:depot-public-sain` (dans `test:ci`, prouvé discriminant par sabotage) :
+
+| Risque | Mesuré le 5.09 | État |
+|---|---|---|
+| `pull_request_target` (exécute le code d'un inconnu avec nos secrets) | 0 | ✅ |
+| action tierce épinglée sur une branche mouvante | **1 trouvée** : `qodo-ai/pr-agent@main`, avec la clé OpenAI | ✅ épinglée `@v0.44.0` |
+| clé payante déclenchable par un inconnu | **1 trouvée** : n'importe qui pouvait commenter une PR et lancer une revue IA payée | ✅ contrôle `author_association` |
+| vraie clé dans les fichiers suivis | 0 — les 16 chaînes trouvées sont de fausses clés de test, **sauf** la clé Firebase Web, **publique par conception** | ✅ cliquet posé |
+
+**Ce que ce garde ne couvre pas, et il le dit lui-même** : l'**historique** (11 316 commits)
+— c'est le travail de gitleaks/TruffleHog dans `security-suite.yml` ; et les **réglages
+GitHub** (protection de branche, droits du jeton par défaut), qui vivent côté serveur.
+
+`SECURITY.md` a été ajouté à la racine : où signaler une faille, ce qui est public exprès
+(la clé Firebase Web en tête — c'est le faux positif classique), et ce qui nous intéresse
+vraiment.

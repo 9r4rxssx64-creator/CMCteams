@@ -50,4 +50,23 @@ function has(txt, ...subs){ return subs.every(s=>txt.includes(s)); }
     ? '→ Le domaine LIVE répond et sert ces versions.'
     : '→ Le domaine Cloudflare a challengé le runner ; le contenu Pages (raw main) est identique à ce qui est servi.');
   console.log('Si le correctif est ✅ PRÉSENT partout : le calcul déployé est bon → un départ faux vu par Kevin = ANCIENNE version en cache sur son appareil (rafraîchir / ré-ouvrir).');
+
+  /* 5.09.2026 — le code admin se vérifie CÔTÉ DOMAINE (POST /__admin/login), plus dans la page.
+     On prouve ici, en vrai, que le routeur (a) répond en JSON, (b) REFUSE un mauvais code,
+     (c) a bien un code configuré — `admin_pin_not_configured` voudrait dire que le secret n'a
+     pas été poussé (c'est exactement ce qui s'est passé du 13/08 au 05/09 : déploiement rouge,
+     secret jamais mis à jour). Un seul essai faux : le compteur anti-force-brute le tolère.
+     On n'envoie JAMAIS le vrai code ni son empreinte — un code bidon suffit à prouver le refus. */
+  console.log('\n== LE DOMAINE VÉRIFIE-T-IL LE CODE ADMIN ? ==');
+  let j=null, st=0;
+  try{
+    const r=await fetch('https://kd-mc.com/__admin/login',{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'Mozilla/5.0 CMCteams-verify'},body:JSON.stringify({code:'000000'})});
+    st=r.status; j=await r.json().catch(()=>null);
+  }catch(e){ console.log('  ❌ /__admin/login injoignable : '+e.message); process.exit(1); }
+  if(!j){ console.log(`  ❌ /__admin/login ne répond pas en JSON (HTTP ${st})`); process.exit(1); }
+  if(j.ok){ console.log('  ❌ un code BIDON a été ACCEPTÉ — faille'); process.exit(1); }
+  if(j.reason==='admin_pin_not_configured'){ console.log('  ❌ le routeur n\'a AUCUN code configuré (secret KDMC_ADMIN_PIN_SHA256 absent) → relancer deploy-kdmc-router'); process.exit(1); }
+  if(j.reason!=='code_invalide' && j.reason!=='rate_limited'){ console.log(`  ❌ réponse inattendue : ${JSON.stringify(j).slice(0,120)}`); process.exit(1); }
+  console.log(`  ✅ mauvais code REFUSÉ par le domaine (HTTP ${st}, reason=${j.reason}) — un code est bien configuré côté routeur.`);
+  console.log('  ℹ️  Ce contrôle prouve le REFUS et la présence d\'un secret ; il ne peut pas dire LEQUEL (le vrai code ne s\'écrit nulle part) → l\'acceptation du nouveau code se vérifie par une connexion réelle sur departs.kd-mc.com.');
 })().catch(e=>{ console.error('ERREUR', e.message); process.exit(1); });

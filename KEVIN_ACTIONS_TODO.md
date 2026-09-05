@@ -1,8 +1,90 @@
 # 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
 
+> **5.09.2026 12:50 — « Note toutes les tâches pour plus tard »** : la liste COMPLÈTE (les tiennes,
+> les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
+> « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
+>
+> Tes gestes, dans l'ordre : ① ~~changer le code admin~~ ✅ fait 16h18 → **vérifie-le une fois sur
+> departs.kd-mc.com** (ci-dessous) · ② révoquer le jeton GitLab `glpat-wD6Q…` · ③ dire aux autres
+> sessions : accès Cloudflare « 9r4 », nombre de gilets + broderie, compte développeur Apple oui/non
+> · ④ envoyer la réponse prête au support GitHub (m003).
+
 ---
 
-## 🔴 URGENT (2.09.2026) — GitLab partout, GitHub suspendu
+## ✅ FAIT (5.09.2026, 16h35) — ton nouveau code admin est en place sur le domaine
+
+Tu as changé le code (« fait » à 16h18). J'ai relancé les 6 déploiements : **le routeur
+kd-mc.com, admin.kd-mc.com, Monaco, Outlook et le proxy Apex ont le nouveau secret**. En route,
+j'ai trouvé que le déploiement du routeur **échouait depuis le 13 août** sans que personne ne le
+voie — sans ce correctif, l'ancien code (public) serait resté valable sur ton domaine. C'est
+corrigé, prouvé (déploiement vert, 26 adresses répondent, un mauvais code est refusé), et un
+garde empêche que ça revienne.
+
+### ▶️ 1 geste, 20 secondes — vérifie toi-même
+Ouvre **[departs.kd-mc.com](https://departs.kd-mc.com)** → 🔒 → tape ton **nouveau** code →
+« Mode admin activé ». Moi je prouve qu'un mauvais code est refusé ; **toi seul** peux prouver
+que le bon est accepté (je ne le connais pas, c'est voulu). Si ça refuse : dis-moi « refusé ».
+
+### 🔸 Un jour, quand la mémoire RAG d'Apex servira (pas urgent)
+Le déploiement du worker RAG échoue parce que ton jeton Cloudflare n'a pas la permission
+**Vectorize**. Cloudflare → Profil → **Jetons d'API** → le jeton utilisé par GitHub → Modifier →
+ajouter **Vectorize : Edit**. Ensuite je relance le déploiement.
+
+### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
+L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :
+les données sont servies par le domaine à qui tape le code. Il faut les y **mettre une fois**,
+depuis ton iPhone (le seul endroit où elles sont complètes) :
+1. Ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet **Outils** → **📤 Publier
+   l'arbre sur le domaine (admin)** → tape ton code admin (il part au domaine, rien n'est gardé).
+   Tu dois voir « 📤 Arbre publié : N personnes ».
+2. Toujours dans **Outils** → **Changer le code** de la famille : l'ancienne empreinte a été
+   publique (elle était dans le fichier), donc l'ancien code ne vaut plus rien. Repartage le
+   nouveau aux cousins. L'ancien chemin en ligne est effacé automatiquement.
+
+Tant que le geste 1 n'est pas fait : **tes appareils marchent** (ils ont tout en mémoire),
+mais un **nouvel** appareil verrait « Arbre pas encore publié sur le domaine ».
+
+### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
+- **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
+- **Boutiques** (tableau de bord) : `Paramètres → Changer le PIN admin`.
+
+*Ne m'écris jamais le nouveau code. Si tu veux que je vérifie que tout suit, je le fais sans le
+connaître (les tests envoient l'empreinte, jamais le code).*
+
+---
+
+## ✅ FAIT (5.09.2026, 14h) — GitLab est aligné, le jeton a servi une fois
+
+Tu m'as donné un jeton GitLab : il a servi **une seule fois** (un push, puis lecture du
+pipeline), il n'est écrit **nulle part** (vérifié : 0 trace dans `.git/config`, 0 fichier).
+**GitLab → Préférences → Jetons d'accès → `glpat-wD6Q…` → Révoquer** — un clic, quand tu veux.
+
+Ce que ça a permis : le dépôt GitLab est maintenant **au même niveau que GitHub** (mêmes
+exclusions de publication pour le miroir, mêmes 4 vérifications de veille disponibles
+là-bas en bouton), et **tes documents privés qui n'existent que sur GitLab y sont restés**.
+Le miroir `kdmc-site.pages.dev` a été republié et re-vérifié : **plus aucun document de travail
+dessus** (20 adresses sondées, 20 absentes). Détail dans `MEMO_RESUME.md`.
+
+---
+
+---
+
+### ℹ️ Et si un jour tu veux relancer la génération d'images sur GitLab
+
+Quatre vérifications tournent déjà là-bas **sans rien te demander** (liens du domaine,
+bibliothèques CDN, sources Lingua, langue des signes). Les autres — logos, cartoons,
+mascottes, photos produits, sauvegardes — attendent juste que leur clé soit ajoutée **côté
+GitLab** (*Paramètres → CI/CD → Variables*). Liste complète : `ETAT-INFRA.md` fait n°13.
+**Rien à faire tant que tu n'en as pas besoin** — je te dirai laquelle le jour où ça sert.
+
+---
+
+## ⬜ PÉRIMÉ (2.09.2026) — gardé pour mémoire, GitHub est revenu depuis
+
+*(ce qui suit datait de la suspension ; le compte a rouvert le 4.09 et le code repasse
+par GitHub — seul le jeton GitLab reste utile, voir tout en haut)*
+
+### ~~GitLab partout, GitHub suspendu~~
 
 **Ta décision** : *« On passe par GitLab partout et pour tout jusqu'à nouvel ordre. »* ✅ appliquée.
 
@@ -22,10 +104,13 @@ Tu ne peux pas en créer une comme ça toi-même — **dis-moi le thème, je te 
 reste le geste qui rétablirait tout d'un coup — mais tant que le compte est suspendu,
 il ne servira à rien. Inutile de le retenter avant que GitHub réponde.)*
 
-### ℹ️ 3. Planning — j'attends ton PDF
-Septembre 2026 **n'est pas importé** (les données s'arrêtent au 28/06 : juillet + août).
-Colle-moi le planning de septembre — et celui d'août si tu l'as, il réparera ses
-5 équipes sans miroir et placera MOREL F au bon endroit.
+### ✅ 3. Planning — septembre EST importé (plus rien à faire)
+Mesuré ce matin dans un vrai navigateur, des deux côtés : **septembre 2026 est bien là**
+(285 personnes, 18 miroirs). L'app et la page Départs donnent **exactement les mêmes
+numéros de départ** — 13 980 cellules comparées, **0 écart**. Ton équipe de septembre :
+**BJ Éq.6 (16/22)**, miroir **BJ Éq.10 (16/3)**.
+*Un test disait le contraire : il ne regardait que juillet et août, donc septembre était
+comparé à du vide. Corrigé — il déduit maintenant les mois tout seul.*
 
 ---
 
@@ -922,7 +1007,7 @@ Carte enregistrée jamais débitée tant que tu restes sous le quota free.
 
 ### PIN admin Kevin (pour référence dans futures sessions)
 
-PIN = `200807` → SHA256 = `cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373`
+PIN = `‹code admin›` → SHA256 = `‹empreinte du code — jamais écrite›`
 (stocké dans GitHub Secret `APEX_ADMIN_PIN_SHA256`).
 
 ---
@@ -2780,7 +2865,7 @@ Pour CHAQUE service manquant, Apex :
 | Revolut Revtag (@kdmc) | Coffre → `ax_revolut_tag` |
 | IBAN + nom titulaire | Coffre → `ax_iban` + `ax_iban_nom` |
 | BTC / ETH / USDC adresses publiques | Coffre → champs correspondants |
-| PIN admin si tu veux changer (200807 par défaut) | Réglages → Sécurité |
+| PIN admin si tu veux changer (‹code admin› par défaut) | Réglages → Sécurité |
 
 ---
 

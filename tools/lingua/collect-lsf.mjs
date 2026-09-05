@@ -218,7 +218,13 @@ async function infos(titres) {
   if (!ping) {
     console.log('❌ Wikimedia Commons est injoignable depuis ici (internet fermé côté agent).');
     console.log('   Rien n\'a été regardé — ce n\'est PAS « aucun signe n\'existe ».');
-    console.log('   Lance l\'ouvrage « Lingua 🤟 — Récolter la vraie langue des signes (LSF) », qui a le réseau.');
+    /* L'ouvrage GitHub a été déplacé le 5.09 : son travail consiste à moissonner
+       des sites tiers, ce que les conditions GitHub Actions excluent. Il vit
+       désormais sur GitLab (job « lingua-lsf », stage veille, à la demande).
+       Un message qui envoie au mauvais endroit fait perdre plus de temps que
+       pas de message du tout. */
+    console.log('   Lance le job GitLab « lingua-lsf » (stage veille) : c\'est lui qui a le réseau.');
+    console.log('   Pipelines GitLab → Lancer un pipeline → variable LINGUA_LSF=1, ou le bouton du job.');
     process.exit(1);
   }
   const vus = new Set(); const parCat = [];

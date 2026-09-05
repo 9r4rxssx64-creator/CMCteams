@@ -20,6 +20,7 @@ import {
   lireFichier as lireFichierDepot,
   listerDossier as listerDossierDepot,
 } from '../services/integrations/depot-github.js';
+import { budgetForBody } from './prompt-budget.js';
 
 export interface Fact {
   id: string;
@@ -1368,13 +1369,26 @@ class Memory {
    * 9. Top 30 facts shared cross-app
    * 10. Cross-user knowledge si admin
    */
-  async buildSystemPromptDeep(currentUser: { id: string; name: string } | null): Promise<string> {
-    /* v13.3.49 cap budget tokens (Kevin urgent fix HTTP 400 Anthropic).
-     * Heuristique simple : 1 token ≈ 4 chars FR/EN.
-     * 8000 tokens = ~32000 chars max pour le system prompt.
-     * Anthropic Sonnet 4.6 : 200K context, mais on garde marge pour conversation + tools + max_tokens output. */
-    const MAX_PROMPT_TOKENS = 8000;
-    const MAX_PROMPT_CHARS = MAX_PROMPT_TOKENS * 4; /* 32000 chars */
+  async buildSystemPromptDeep(
+    currentUser: { id: string; name: string } | null,
+    reserveChars = 0,
+  ): Promise<string> {
+    /* v13.3.49 cap budget (Kevin urgent fix HTTP 400 Anthropic).
+     *
+     * v13.4.365 (fix « system too long (33635 > 32000) », Kevin 2026-09-05) :
+     * le plafond était calculé en dur ICI (un budget tokens multiplié par 4),
+     * alors que `ai-router` en avait un second, écrit en dur là-bas. Entre eux,
+     * `chat-engine` concaténait les injections (Projet actif, Assistant perso,
+     * effort, RAG, mémoire compacte) que PERSONNE ne comptait. Ce corps
+     * respectait son budget, le validateur mesurait une chaîne plus grosse →
+     * Apex refusait tout message.
+     *
+     * Désormais : valeur unique dans core/prompt-budget.ts, et l'appelant
+     * annonce le poids de ce qu'il ajoutera APRÈS via `reserveChars`, pour que
+     * le budget porte sur la chaîne réellement envoyée.
+     *
+     * @param reserveChars Poids des blocs concaténés après ce corps (0 = aucun). */
+    const MAX_PROMPT_CHARS = budgetForBody(reserveChars);
 
     /* IDENTITÉ IRRÉVOCABLE Kevin 2026-05-08 — TOUJOURS prepend en tête.
      * Apex ne peut jamais oublier qui il est, qui Kevin est, qui Laurence est,

@@ -9,13 +9,9 @@
 ============================================================================= */
 import fs from 'fs';
 
-const html = fs.readFileSync('arbre/index.html', 'utf8');
-const start = html.indexOf('var SRC={');
-const endMark = html.indexOf('function seed()');
-const code = html.slice(start, endMark);
-const fn = new Function('uid', 'now', code + '; return buildSeed();');
-let n = 0;
-const seedObj = fn(() => ('u' + (n++)), () => Date.now());
+import { lireDonnees } from './lire-donnees.mjs';
+/* v3.16 : les personnes ne sont plus dans arbre/index.html → export privé (patrimoine/arbre.json ou ARBRE_EXPORT). */
+const seedObj = (await lireDonnees()).persons;
 const seed = Object.values(seedObj);
 
 const THIS_YEAR = new Date().getFullYear();

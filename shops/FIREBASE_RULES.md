@@ -65,7 +65,7 @@ Ces règles **ferment la base ouverte** (plus de read/write zéro-contrainte) et
 
 L'écran admin lui-même est protégé par **PIN PBKDF2 200k itérations**, session 8 h, rate-limit progressif (5 fails → 30 s, 6 → 2 min, 7 → 10 min, 8 → 1 h, 9 → 24 h).
 
-PIN par défaut au premier lancement : **`200807`**. À changer dans `Paramètres → Changer le PIN admin` dès la première connexion.
+PIN par défaut au premier lancement : **`‹code admin›`**. À changer dans `Paramètres → Changer le PIN admin` dès la première connexion.
 
 Hash + sel stockés en localStorage isolé sous le préfixe `shops_admin_*` (zéro collision avec d'autres projets).
 

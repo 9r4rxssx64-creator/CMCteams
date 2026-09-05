@@ -60,6 +60,7 @@ const REGISTRE = [
   [/LOGIN TOUJOURS PRÉNOM \+ NOM/i, ['npm:test:pin', 'npm:test:session-kevin']],
   [/COMPTE ADMIN UNIQUE KEVIN/i, ['npm:test:pin', 'npm:test:kevin']],
   [/PIN PER-USER/i, ['npm:test:pin']],
+  [/CODE ADMIN NE S'ÉCRIT NULLE PART/i, ['npm:test:no-pin-leak', 'npm:test:departs-pin', 'npm:test:apex-messages']],
   [/NOMS SECRETS GITHUB/i, ['wf:security-suite.yml']],
   [/IMPORT LOSSLESS/i, ['npm:test:fidelity', 'npm:test:fidelity-pb']],
   [/IMPORTS PDF INCRÉMENTAUX/i, ['npm:test:v702-import-e2e']],
@@ -91,6 +92,18 @@ const REGISTRE = [
   [/BOÎTE À OUTILS AGENTS|6 DÉPÔTS DE RÉFÉRENCE/i, ['file:apex-ai/v13/tests/unit/agent-toolkit-catalog.test.ts']],
   [/TAILLE|MONOLITH/i, ['npm:test:file-size-guard']],
   [/DÉTAILLER LES ERREURS/i, ['npm:test:bg-url']],
+  /* Ajoutés le 5.09 : ces trois règles avaient DÉJÀ leur garde, il manquait
+     seulement leur entrée ici — donc l'outil les comptait comme « dette » à
+     tort. Une mesure fausse est pire que pas de mesure : on la corrige, on ne
+     re-fige pas le compteur pour faire taire le rouge. */
+  [/CMCteams .{0,4}ET.{0,4} LIGHT|TOUJOURS LES DEUX/i, ['npm:test:parite-cmcteams-light']],
+  [/TEST EN LIVE EN PERMANENCE|TOUJOURS TESTER END-TO-END/i, ['wf:verif-reelle.yml', 'wf:audit-live.yml']],
+  [/AUDIT EXTÉRIEUR INDÉPENDANT|SECOND AVIS INDÉPENDANT/i, ['wf:ai-review-independent.yml']],
+  /* Ajoutées le 5.09 en même temps que leur garde — jamais une règle sans son
+     automatisme, c'est justement ce que ce compteur mesure. */
+  [/DÉPÔT PUBLIC|PUBLIC MAIS SÉCURISÉ/i, ['npm:test:depot-public-sain']],
+  [/DESTINATION ÉCRITE|GITHUB, GITLAB, WORKER/i, ['npm:test:destinations-workflows']],
+  [/DOCUMENTS? DE TRAVAIL|NE PUBLIE PLUS/i, ['npm:test:documents-travail']],
 ];
 
 /* ─── 2-bis. Règles COMPORTEMENTALES : elles portent sur MA façon de travailler (ton, autonomie,

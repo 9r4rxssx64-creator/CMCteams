@@ -32,16 +32,32 @@ jobs:
 
       # Garde BLOQUANTE : on ne déploie pas un routeur dont la voix ou le repli sont cassés.
       # Ces deux tests tournent hors ligne (fetch simulé) → rapides, sans clé, sans réseau.
-      - name: Tests du worker (voix Lingua + voix clonée d'Antonin)
+      - name: Tests du worker (voix Lingua + voix clonée d'Antonin + code famille de l'arbre)
         working-directory: services/kdmc-router
         shell: bash -eo pipefail {0}
         run: |
           node voix-tts.test.mjs
           node antonin-tts.test.mjs
+          node arbre.test.mjs
           node ../../tools/lingua/verify-coach.mjs
 
       - name: Install wrangler
         run: npm i -g wrangler@3
+
+      # BOUÉE DE SECOURS : wrangler.toml déclare `[assets] directory = "./public"` (copie des
+      # pages servie SEULEMENT si GitHub Pages ne répond pas — ajoutée le 14/08 pendant la
+      # suspension). Ce dossier est gitignoré et fabriqué par prepare-secours.mjs. Sans cette
+      # étape, `wrangler deploy` s'arrête net (« assets.directory does not exist ») — et c'est
+      # EXACTEMENT ce qui s'est passé du 13/08 au 05/09 : 4 déploiements rouges d'affilée,
+      # donc AUCUN secret (dont le hash du code admin) poussé au routeur pendant 3 semaines.
+      # --leger = apps seules, 485 fichiers / 18 Mo (limite Cloudflare : 20 000 / 25 Mo par fichier).
+      - name: Bouée de secours — fabrique public/ (exigé par [assets] du wrangler.toml)
+        working-directory: services/kdmc-router
+        shell: bash -eo pipefail {0}
+        run: |
+          node prepare-secours.mjs --leger
+          test -d public || { echo "::error::public/ absent après prepare-secours"; exit 1; }
+          echo "public/ : $(find public -type f | wc -l) fichiers, $(du -sh public | cut -f1)"
 
       # KV ACCOUNTS : binding FIGÉ dans wrangler.toml (id du namespace existant).
       # Plus de provisioning dynamique (il cassait le déploiement quand le namespace

@@ -4,6 +4,114 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26 (Ape
 
 ---
 
+## 🌍 RÈGLE ABSOLUE — DÉPÔT PUBLIC : LE CODE SE LIT, LES DONNÉES ET LES CLÉS NON (Kevin 2026-09-05, ABSOLUE)
+
+> **« Public mais sécurisé normalement. »** — Kevin 2026-09-05
+
+**Règle absolue, NON-NÉGOCIABLE** — CMCteams (dépôt public `9r4rxssx64-creator/CMCteams`),
+tous projets présents et futurs hébergés en public.
+
+### 1. Ce que « public » veut dire — et ce que ça ne veut pas dire
+
+Public = **le code se lit**. Public ≠ « ouvert à tout » : personne d'extérieur ne doit
+pouvoir lire des **données**, faire tourner nos **clés payantes**, ni déclencher nos
+automatisations. Les quatre risques qui comptent vraiment, et qui sont tenus par la garde
+`npm run test:depot-public-sain` (câblée dans `test:ci`, prouvée discriminante par sabotage) :
+
+| Risque | Pourquoi c'est grave sur un dépôt PUBLIC | Ce qui l'empêche |
+|---|---|---|
+| `pull_request_target` | exécute le code d'un **inconnu** avec nos secrets ET un jeton en écriture | interdit, règle 1 |
+| action tierce en `@main` / `@master` | « exécute ce que ce dépôt tiers contiendra demain », avec nos secrets | épingler une **version publiée**, règle 2 |
+| clé payante déclenchable par un commentaire ou une PR d'inconnu | **facture ouverte à des inconnus** + saturation des minutes | contrôle `author_association` (OWNER/MEMBER/COLLABORATOR), règle 3 |
+| nouvelle chaîne en forme de secret | une vraie clé dans un dépôt public est publiée **pour toujours** | cliquet sur une liste de valeurs connues, règle 4 |
+
+**Trouvé en vrai le 5.09** : `qodo-ai/pr-agent@main` tournait avec la clé OpenAI de Kevin,
+et **n'importe qui** pouvait déclencher une revue IA payée en commentant une PR. Corrigé
+(`@v0.44.0` + `author_association`).
+
+### 2. Ce qui est public EXPRÈS et n'est pas une faille — le dire, ne pas crier au loup
+
+- **La clé Firebase Web** (`AIzaSy…`) : publique **par conception**, servie à chaque
+  visiteur ; l'accès est tenu par les **règles Firebase**, pas par elle. Un scanner qui la
+  signale est un faux positif (déjà écrit dans la passe SÉCU : « clé Firebase Web publique
+  ≠ secret »).
+- **Les noms** de secrets dans les workflows (`${{ secrets.X }}`) — des noms, pas des valeurs.
+
+### 3. Le site publié ne sert AUCUN document de travail
+
+Cf. fait n°12 d'`ETAT-INFRA.md` : aucun Markdown publié, dossiers de travail retirés, et
+**vérification réelle après CHAQUE publication** (`test:documents-travail` + l'étape finale
+de `deploy.yml`). Un document de travail ajouté demain est exclu sans qu'on y pense.
+
+### 4. `SECURITY.md` à la racine — obligatoire sur un dépôt public
+
+Où signaler, ce qui est public exprès, ce qui intéresse vraiment, et la liste des contrôles
+automatiques. Un dépôt public sans point de contact reçoit ses failles… dans une issue publique.
+
+### 5. Test mental obligatoire avant chaque ajout sur un dépôt public
+
+> *« Si un inconnu lit ce fichier ce soir, ou clique ce déclencheur : que peut-il apprendre,
+> dépenser, ou faire tourner ? Si la réponse n'est pas “rien de plus que le code”, c'est à
+> corriger AVANT de pousser. »*
+
+S'applique : CMCteams (référence), tous projets publics présents et futurs.
+
+---
+
+## 🔀 RÈGLE ABSOLUE — CHAQUE AUTOMATISATION A UNE DESTINATION ÉCRITE : GITHUB, GITLAB, WORKER, OU NULLE PART (Kevin 2026-09-05, ABSOLUE)
+
+> **« Rapatrie tout sur GitHub intelligemment en respectant les règles, et sur GitLab ce qui
+> ne va pas sur GitHub. Va plus loin. Sers-toi des deux. »** — Kevin 2026-09-05
+
+**Règle absolue, NON-NÉGOCIABLE, complète « ORGANISATION.md »** — tous projets.
+
+### 1. La question, pour chaque automatisation, et une seule
+
+> **Est-ce que ça produit, teste, déploie ou publie CE dépôt ?**
+> Oui → **GitHub**, mais **à la main uniquement** (`workflow_dispatch`, jamais de cron).
+> Non, et c'est périodique → **Cloudflare Worker** (son propre déclencheur, hors quota CI).
+> Non, et ça appelle l'extérieur → **GitLab CI**, en comptant les **400 min/mois**.
+> Interdit par les conditions (crypto) → **nulle part**.
+
+Ce n'est pas la **fréquence** qui décide, c'est la **nature** de l'activité — c'est le texte
+même des conditions GitHub. Et le cron est banni de GitHub non par les conditions mais parce
+que c'est le **VOLUME** (~97 exécutions/jour) qui a fait suspendre le compte le 15/08.
+
+### 2. Ranger sans dire où = perdre
+
+Les 49 automatisations rangées le 15/08 y sont restées des mois **parce que personne n'avait
+écrit où elles devaient aller ensuite**. Résultat : plus personne ne savait lesquelles étaient
+légitimes — on finit par tout remettre au hasard, ou par ne rien remettre.
+
+**Donc : `.github/workflows-desactives/DESTINATIONS.json`** — pour CHACUNE : sa destination,
+ce qu'elle fait, et **pourquoi**. Tenu par `npm run test:destinations-workflows` (dans
+`test:ci`, prouvé discriminant) : rien de rangé sans destination, rien de marqué « github »
+qui n'y soit pas, rien de marqué autrement qui y soit, aucun cron sur un rapatrié, un bouton
+« Lancer » sur chacun, et tout ce qui est crypto marqué « jamais ».
+
+### 3. Le bouton, c'est MOI qui l'appuie
+
+Une automatisation rapatriée est **manuelle** — donc zéro volume automatique, donc conforme.
+Et « manuelle » ne veut pas dire « Kevin clique » : je la lance moi-même via l'API
+(`actions_run_trigger`). Règle « MOINS DE CLICS POSSIBLE » respectée.
+
+### 4. Se servir des DEUX, vraiment
+
+GitLab n'est pas un dépotoir : c'est là que vit ce que GitHub interdit. Les jobs y sont
+**à la demande** (fichier-signal ou bouton) — 0 minute tant qu'on ne les lance pas. Quand un
+job GitLab a besoin d'une clé, elle s'ajoute aux variables du projet GitLab : la liste des
+clés manquantes est tenue dans `ETAT-INFRA.md`, pas redécouverte une par une.
+
+### 5. Test mental obligatoire avant de créer ou de ranger une automatisation
+
+> *« Est-ce que ça produit, teste, déploie ou publie CE dépôt ? Sa destination est-elle
+> ÉCRITE quelque part, avec la raison ? Si je la range aujourd'hui, est-ce que quelqu'un
+> saura dans six mois pourquoi, et où elle devait aller ? »*
+
+S'applique : CMCteams (référence), Apex, tous projets présents et futurs.
+
+---
+
 ## 📋 RÈGLE ABSOLUE — TOUT LE MONDE A UN PLANNING SI SON NOM EST DANS LE PDF (Kevin 2026-05-26, ABSOLUE)
 
 > **"Tout le monde a un planning sans exception du moment que son nom et écrit dans le planning"** — Kevin 2026-05-26
@@ -165,7 +273,7 @@ S'applique : Claude Code (priorité absolue), Apex, CMCteams, tous projets prés
 `tests/unit/v13_4_317-commands-completeness.test.ts` : 0 doublon de nom, `/help` (`helpText`) liste **toutes** les commandes, `parseSlashCommand('/<name>')` reconnaît chaque commande, et la vue rend **toutes** les commandes cliquables (`count data-cmd-route + data-cmd-run == SLASH_COMMANDS.length`). + `v13_4_318-custom-commands.test.ts`. **Toute commande ajoutée sans passer ces tests = bloquer.**
 
 ### 5. Vérification visuelle réelle (Playwright, cf. règle « tu as Playwright, vérifie toi-même »)
-Avant de livrer un changement de commandes : `npm run preview` + Playwright (login Kevin/200807 → `#commands` → clic) pour PROUVER que le clic préremplit/navigue. Ne pas faire tester Kevin à ma place.
+Avant de livrer un changement de commandes : `npm run preview` + Playwright (login Kevin/‹code admin› → `#commands` → clic) pour PROUVER que le clic préremplit/navigue. Ne pas faire tester Kevin à ma place.
 
 ### 6. Test mental obligatoire
 > *« Toute nouvelle vue a-t-elle sa commande dans SLASH_COMMANDS ? Est-elle cliquable dans /commands ? Le test de complétude passe-t-il ? Kevin peut-il créer une commande perso avec cible et la cliquer pour préremplir le chat ? »*
@@ -2575,7 +2683,8 @@ Un vrai mur (rare) se déclare en listant **les 4 canaux essayés**, jamais un �
 ```bash
 node tools/audit/liens-check.mjs --lister      # hors ligne : liste ce qui sera testé
 ```
-→ workflow **« Liens — vérification RÉELLE »** (`liens-check.yml`, bouton + 1×/mois) : ping
+→ job GitLab **`liens-reels`** (stage `veille`, à la demande — il a quitté GitHub le 5.09,
+son travail est de pinguer des sites tiers) : ping
 réel de **chaque** lien du domaine depuis le runner. Classement honnête : **vivant** /
 **protégé** (401/403 = anti-robot, pas un lien mort) / **MORT** (404, DNS, délai).
 
@@ -5306,7 +5415,7 @@ Si non → renforcer guards + ajouter historique manquant.
 
 ## 👑 RÈGLE PERMANENTE — COMPTE ADMIN UNIQUE KEVIN + PERMISSIONS TIERED LAURENCE (Kevin 2026-04-26, ABSOLUE)
 
-> **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN 200807, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
+> **"Vérifie qu'il ait bien regroupé mon compte admin avec tous mes noms, prénoms. Que quand je rentre mon nom, mon prénom, ou mon prénom et mon nom, ou mon adresse email, toujours avec le même PIN ‹code admin›, il me reconnaisse en admin TOUJOURS. Connexion très très très sécurisée. Pour Laurence, je veux des retours d'informations et autorisations SEULEMENT quand c'est des tâches importantes. Sinon elle peut faire. J'ai un historique de toute manière sur sa fiche."**
 
 **Règle absolue, prioritaire** — pour Apex (compte admin Kevin), CMCteams (admin AID U11804) :
 
@@ -5334,11 +5443,11 @@ var ADMIN_KEVIN_ALIASES = [
 ];
 ```
 
-Login : si user tape n'importe quel alias + PIN admin (200807, customizable) → identifie comme admin Kevin.
+Login : si user tape n'importe quel alias + PIN admin (‹code admin›, customizable) → identifie comme admin Kevin.
 
 ### 2. PIN admin sécurisé
 
-PIN courant : `200807` (modifiable par Kevin via vSettings → "Changer PIN admin").
+PIN courant : `‹code admin›` (modifiable par Kevin via vSettings → "Changer PIN admin").
 
 Sécurité PIN admin :
 - Hash strict `axHashPin(pin, salt)` avec PBKDF2 100k iterations
@@ -5478,7 +5587,7 @@ Vérifie :
 
 ### 8. Test mental obligatoire
 
-> *"Si Kevin tape 'Kevin' + 200807 → reconnu admin ? OK. Si tape 'kevin.desarzens@gmail.com' + 200807 → reconnu admin ? OK. Si tape 'KD' + 200807 → reconnu admin ? OK. Si Laurence tape 'Kevin' + son PIN à elle → REFUSÉ ? OK. Si Laurence veut effacer son compte → demande Kevin ? OK. Si Laurence change son email → demande Kevin ? OK. Si Laurence ajoute un favori → fait sans demander ? OK."*
+> *"Si Kevin tape 'Kevin' + ‹code admin› → reconnu admin ? OK. Si tape 'kevin.desarzens@gmail.com' + ‹code admin› → reconnu admin ? OK. Si tape 'KD' + ‹code admin› → reconnu admin ? OK. Si Laurence tape 'Kevin' + son PIN à elle → REFUSÉ ? OK. Si Laurence veut effacer son compte → demande Kevin ? OK. Si Laurence change son email → demande Kevin ? OK. Si Laurence ajoute un favori → fait sans demander ? OK."*
 
 S'applique à Apex (priorité) puis CMCteams (admin AID U11804 avec mêmes aliases Kevin DESARZENS).
 
@@ -9286,6 +9395,42 @@ Découvert : un attaquant pouvait taper "Kevin Desarz" sans PIN → devenait adm
 - Search/filter users (vEmps, vPasswords, vPit)
 - Profile edit (vMonProfil, vEmps adminSetReg)
 - IA tool calls qui modifient un user (axEditUser, axImpersonate)
+
+---
+
+## 🔑 RÈGLE ABSOLUE — LE CODE ADMIN NE S'ÉCRIT NULLE PART, ET NE SE VÉRIFIE JAMAIS CÔTÉ CLIENT (2026-09-05, ABSOLUE)
+
+> Trouvé le 5.09.2026 en triant les secrets : le code admin de Kevin était **en clair dans 68
+> fichiers suivis** d'un dépôt **public** (docs, tests, mémoire compacte) et son **empreinte**
+> SHA-256 était embarquée dans la page Départs (`PIN_SHA256="…"`, comparée dans le navigateur).
+> L'empreinte d'un code à 6 chiffres se casse en **une seconde** : la publier = publier le code.
+> Le garde `no-admin-pin-leak` passait au vert (il ne cherchait que le clair, dans les dossiers
+> servis). Leçon #210 · fait n°15 d'`ETAT-INFRA.md`.
+
+### 1. Le code ne s'écrit **nulle part** dans le dépôt
+Ni en clair, ni en empreinte : pas dans CLAUDE.md, NOTES_USER.md, KEVIN_*.md, LESSONS.md, README,
+tests, mémoire compacte, commit, message de session. On écrit « ‹code admin› ». Les scripts e2e
+qui doivent le taper lisent **`process.env.KDMC_ADMIN_CODE`** (secret CI), jamais un littéral.
+
+### 2. Une page ne **compare** jamais un code : elle demande au domaine
+`POST /__admin/login {code}` (ou `{hash}` 64-hex, leçon #95) sur le routeur kd-mc.com — secret
+Cloudflare `KDMC_ADMIN_PIN_SHA256`, essais limités, journalisés — et la page **obéit au verdict**.
+Toute variable `PIN…SHA… = "64-hex"` côté client est une **fuite**, quel que soit le code.
+Réf : `tools/departs/index.html` v1.37 (`checkPin`), `tools/messages/index.html` v1.4 (`tryPin`).
+
+### 3. UN secret pour tous : `APEX_ADMIN_PIN_SHA256`
+Poussé par les workflows vers 6 workers (routeur, admin.kd-mc.com, monaco, outlook, rag, proxy
+Apex). Changer le code = changer ce secret (empreinte calculée sur l'iPhone via
+`tools/empreinte/`, jamais tapée dans un message) + relancer les 6 déploiements par l'API.
+
+### 4. Garde mécanique (dans `test:ci`)
+`npm run test:no-pin-leak` : le clair **et** l'empreinte **et** la forme (`PIN…SHA… = "64-hex"`),
+dans le code servi **et** les `.md`. `npm run test:departs-pin` + `test:apex-messages` : le code
+tapé **part au domaine** et la page obéit au verdict.
+
+### 5. Test mental
+> *« Si ce fichier est lu par un inconnu (le dépôt est public), apprend-il le code — ou de quoi le
+> retrouver en une seconde ? Cette page décide-t-elle seule qu'un code est bon ? »* Si oui → fuite.
 
 ---
 

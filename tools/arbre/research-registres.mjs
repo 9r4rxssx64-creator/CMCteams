@@ -10,12 +10,9 @@
 import fs from 'fs';
 import path from 'path';
 
-const HTML = fs.readFileSync('arbre/index.html', 'utf8');
-const start = HTML.indexOf('var SRC={');
-const end = HTML.indexOf('function seed(){');
-const buildSeed = new Function('uid', 'now', HTML.slice(start, end) + '\nreturn buildSeed();');
-let _u = 0;
-const SEED = buildSeed(() => 'tmp' + (++_u), () => 0);
+import { lireDonnees } from './lire-donnees.mjs';
+/* v3.16 : les personnes ne sont plus dans arbre/index.html → export privé (patrimoine/arbre.json ou ARBRE_EXPORT). */
+const SEED = (await lireDonnees()).persons;
 
 const outDir = 'arbre/research';
 const rawDir = path.join(outDir, 'registresraw');

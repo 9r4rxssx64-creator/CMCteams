@@ -47,8 +47,11 @@ if (base === head) { ok('docs : rien de neuf par rapport à main → rien à doc
 
 /* On regarde le travail COMMITTÉ (base..HEAD) **et** le travail EN COURS (working tree) :
    sinon le garde crierait à tort pendant qu'on est justement en train d'écrire les docs. */
+/* Ligne porcelain = « XY chemin ». Pas de slice(3) : sh() fait trim() sur TOUT le résultat, donc la
+   1ʳᵉ ligne « ␣M KEVIN_INVENTORY.md » perdait son espace et devenait « EVIN_INVENTORY.md » (vécu le
+   5.09.2026 : l'inventaire, alphabétiquement premier, n'était JAMAIS vu comme modifié). */
 const enCours = (sh('git status --porcelain') || '').split('\n').filter(Boolean)
-  .map((l) => l.slice(3).trim()).filter(Boolean);
+  .map((l) => l.trim().replace(/^\S{1,2}\s+/, '').replace(/^.* -> /, '')).filter(Boolean);
 const modifies = [...new Set([
   ...(sh(`git diff --name-only ${base} HEAD`) || '').split('\n').filter(Boolean),
   ...enCours,

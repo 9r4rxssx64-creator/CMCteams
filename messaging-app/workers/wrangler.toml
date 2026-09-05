@@ -117,6 +117,21 @@ APEX_CHAT_BASE_URL = "https://9r4rxssx64-creator.github.io/CMCteams/messaging-ap
 APEX_HANDOFF_FIREBASE_URL = "https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app"
 ADMIN_MODE = "A"  # A | B | C — bascule via D1.system_config (cette var = fallback)
 KEVIN_INVISIBLE_ADMIN = "true"
+# v1.1.283 (audit 05/09, faille P0) — ferme la porte admin.
+# "false" : accès admin par numéro + 000000 (ancien comportement historique).
+# "true" (ACTIF depuis v1.1.284) : le numéro seul ne suffit PLUS. La porte admin
+#   principale est le SSO central kd-mc.com (Face ID prouvé → is_admin), via
+#   /api/auth/sso-from-kdmc — INDÉPENDANT de ce drapeau. Le bypass numéro+000000
+#   exige EN PLUS le jeton secret X-Apex-Admin-Token (== APEX_CHAT_ADMIN_TOKEN),
+#   jamais présent dans la page (repli anti-lock-out uniquement).
+# ✅ Activé le 05/09 APRÈS vérification en base : le compte SSO de Kevin
+#   (kdmc_kevin-desarzens, source kdmc-sso) est bien is_admin=1 → reconnu admin
+#   par Face ID sans le numéro. Le numéro avait déjà été retiré de la page
+#   publique en v1.1.282 (l'attaque « voir source → admin » était déjà morte) ;
+#   ce drapeau ferme le dernier vecteur résiduel (numéro connu + 000000).
+# Rollback immédiat si besoin : repasser à "false" + redéployer (le SSO n'est
+#   pas affecté, il fonctionne dans les deux états).
+ADMIN_BYPASS_REQUIRE_MFA = "true"
 # v1.1.172 (audit crew) : "true" = mode cercle privé (signup direct via code
 # 000000, OTP affiché en clair si SMS KO). "false" = OTP SMS RÉEL imposé pour
 # tout le monde (le bypass admin KEVIN_PHONE_E164 reste actif dans tous les cas).

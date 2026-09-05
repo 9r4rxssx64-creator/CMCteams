@@ -144,7 +144,7 @@
 
 ### Livrables
 - **Vue user** : 100% nettoyée, aucun signe Kevin admin
-- **Vue admin** Kevin (déclenchée par `_isKevinAdmin(name) && axCheckPin(200807)`) :
+- **Vue admin** Kevin (déclenchée par `_isKevinAdmin(name) && axCheckPin(‹code admin›)`) :
   - Onglets : Activity, Conversations, Géoloc, Devices, Erreurs, Validations, Signalements, Identités
   - Toggles per-user (mute mic, kill camera, force-logout, ban) — 2-step pour destructifs
   - Chat IA admin avec tools : `kickUser`, `banUser`, `searchAllMessages`, `analyzeUser`, `geoTrace`, `exportConv`, `broadcastNotif`, `summarizeConv`

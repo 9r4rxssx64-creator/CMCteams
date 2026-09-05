@@ -20,18 +20,18 @@ const HTML = fs.readFileSync('arbre/index.html', 'utf8');
 const g = re => (HTML.match(re) || [])[1];
 const FB = g(/var FB="([^"]+)"/);
 const FB_KEY = g(/var FB_KEY="([^"]+)"/);
-const CODEHASH = g(/var DEFAULT_CODEHASH="([^"]+)"/);
-if (!FB || !FB_KEY || !CODEHASH) { console.error('Config FB introuvable dans arbre/index.html'); process.exit(1); }
+/* v3.16 (fait n°12) : l'empreinte du code n'est PLUS dans le fichier public. Elle vient de
+   ARBRE_CODEHASH=<64 hex> ou se calcule depuis ARBRE_CODE=<code famille> (jamais écrit dans le dépôt). */
+import { createHash } from 'crypto';
+import { lireDonnees } from './lire-donnees.mjs';
+const CODEHASH = process.env.ARBRE_CODEHASH || (process.env.ARBRE_CODE ? createHash('sha256').update('arbre::' + process.env.ARBRE_CODE.trim()).digest('hex') : '');
+if (!FB || !FB_KEY) { console.error('Config FB introuvable dans arbre/index.html'); process.exit(1); }
+if (!/^[a-f0-9]{64}$/.test(CODEHASH)) { console.error('Empreinte du code famille absente : ARBRE_CODEHASH=<64 hex> ou ARBRE_CODE=<code> (v3.16 : plus dans le fichier public)'); process.exit(1); }
 
-// ---- Seed attendu : on évalue le VRAI buildSeed du fichier (zéro divergence) ----
-const start = HTML.indexOf('var SRC={');
-const end = HTML.indexOf('function seed(){');
-if (start < 0 || end < 0 || end <= start) { console.error('buildSeed introuvable'); process.exit(1); }
-const seedSrc = HTML.slice(start, end);
-const buildSeed = new Function('uid', 'now', seedSrc + '\nreturn buildSeed();');
-let _u = 0;
-const SEED = buildSeed(() => 'tmp' + (++_u), () => 0);
-const SEED_VERSION = +g(/var SEED_VERSION=(\d+);/) || 0;
+// ---- Données attendues : l'export privé de l'app (plus de buildSeed dans le fichier) ----
+const _don = await lireDonnees();
+const SEED = _don.persons;
+const SEED_VERSION = +(_don.meta && _don.meta.seedVersion) || 0;
 // Anciennes signatures exactes remplacées par une fiche seed (même liste que l'app)
 const legacyM = HTML.match(/var LEGACY_OBSOLETE=\[[\s\S]*?\];/);
 const LEGACY_OBSOLETE = legacyM ? new Function(legacyM[0] + '\nreturn LEGACY_OBSOLETE;')() : [];

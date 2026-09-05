@@ -85,7 +85,7 @@
 
 <div class="wrap" id="view"></div>
 
-<div class="ver" id="ver" title="Toucher pour forcer la mise à jour">Apex Messages v1.2</div>
+<div class="ver" id="ver" title="Toucher pour forcer la mise à jour">Apex Messages v1.4</div>
 
 <div class="imgov" id="imgov"><span class="x" id="imgx">✕</span><img id="imgel" alt="photo"></div>
 
@@ -94,7 +94,7 @@
     <div class="ic">🔐</div>
     <h2>Messages</h2>
     <p>Espace réservé. Entre ton code admin.</p>
-    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••••" maxlength="12">
+    <input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="••••••" maxlength="64">
     <div class="err" id="gerr"></div>
     <button class="btn gold" id="gbtn" style="width:100%;margin-top:14px">Entrer</button>
   </div>
@@ -106,8 +106,10 @@
   var FBURL="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
   var FBPATH="/cmcteams";
   var FBKEY="AIzaSyDciW-0sIIg9msdmgZjQHBksqzsfA6DCMs";
-  // empreinte sha256 du code admin (même code que CMCteams). Le code n'est jamais stocké en clair.
-  var PIN_SHA="cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373";
+  // v1.4 — plus AUCUNE empreinte du code admin dans la page (dépôt public : l'empreinte d'un
+  // code à 6 chiffres = le code). Le code est vérifié par le domaine : POST /__admin/login
+  // (routeur kd-mc.com, secret Cloudflare, essais limités, journalisé).
+  var ADMIN_LOGIN_URL=/^https?:$/.test(location.protocol)?"/__admin/login":"https://kd-mc.com/__admin/login";
   var _tok=null,_timer=null,_esInbox=null,_esReply=null;
   function _qs(){ return _tok?("?auth="+encodeURIComponent(_tok)):""; }
   function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
@@ -122,9 +124,14 @@
         } else _tok=null; if(cb)cb(); })
       .catch(function(){ _tok=null; if(cb)cb(); }); // fail-open : règles ouvertes
   }
-  function _get(k,cb){ fetch(FBURL+FBPATH+"/"+encodeURIComponent(k)+".json"+_qs())
+  // Encode CHAQUE segment séparément : une clé imbriquée ("cmc_dep_img/<id>") doit rester un
+  // CHEMIN. Un encodeURIComponent global transforme le "/" en "%2F" → Firebase cherche alors une
+  // clé unique nommée "cmc_dep_img/<id>" à la racine, qui n'existe pas → réponse vide.
+  // (bug « je ne vois pas la photo » : c'était le seul appel à clé imbriquée de cette page)
+  function _enc(k){ return String(k==null?"":k).split("/").map(encodeURIComponent).join("/"); }
+  function _get(k,cb){ fetch(FBURL+FBPATH+"/"+_enc(k)+".json"+_qs())
       .then(function(r){return r.ok?r.json():null;}).then(function(d){cb(d);}).catch(function(){cb(null);}); }
-  function _put(k,v,cb){ fetch(FBURL+FBPATH+"/"+encodeURIComponent(k)+".json"+_qs(),
+  function _put(k,v,cb){ fetch(FBURL+FBPATH+"/"+_enc(k)+".json"+_qs(),
       {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)})
       .then(function(r){if(cb)cb(r.ok);}).catch(function(){if(cb)cb(false);}); }
 
@@ -263,7 +270,10 @@
   function viewImg(imgId){ if(!imgId)return;
     var ov=document.getElementById("imgov"), el=document.getElementById("imgel");
     el.removeAttribute("src"); ov.style.display="flex";
-    _get("cmc_dep_img/"+imgId,function(url){ if(url&&typeof url==="string"){ el.src=url; }
+    _get("cmc_dep_img/"+imgId,function(url){
+      // seule une vraie adresse d'image entre dans un src (parité avec _okImgUrl de la page Départs)
+      var ok=(typeof url==="string")&&(url.indexOf("data:image/")===0||url.indexOf("https://")===0);
+      if(ok){ el.src=url; }
       else { ov.style.display="none"; alert("Photo introuvable."); } });
   }
   document.getElementById("imgx").addEventListener("click",function(){ document.getElementById("imgov").style.display="none"; });
@@ -301,7 +311,7 @@
   window.addEventListener("focus",pullAll);
 
   // ---- MAJ auto force (règle « toujours partout ») + 1-tap (lesson #102) ----
-  var APP_VER="v1.2";
+  var APP_VER="v1.4";
   function forceUpd(){
     try{ if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}); }catch(_){}
     try{ if(window.caches)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}); }catch(_){}
@@ -320,8 +330,6 @@
   window.addEventListener("focus",checkUpd);
 
   // ---- gate ----
-  async function sha256hex(s){ var buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
-    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join(""); }
   function boot(){
     document.getElementById("gate").style.display="none";
     document.getElementById("subline").textContent="Connexion…";
@@ -330,10 +338,17 @@
   var pin=document.getElementById("pin"), gbtn=document.getElementById("gbtn"), gerr=document.getElementById("gerr");
   async function tryPin(){
     var v=(pin.value||"").trim(); if(!v){ gerr.textContent="Entre ton code."; return; }
-    try{ var h=await sha256hex(v);
-      if(h===PIN_SHA){ try{ sessionStorage.setItem("apex_msg_ok","1"); }catch(_){} boot(); }
-      else { gerr.textContent="Code incorrect."; pin.value=""; pin.focus(); }
-    }catch(e){ gerr.textContent="Erreur : "+(e&&e.message||"crypto indisponible"); }
+    var body=/^[0-9a-f]{64}$/i.test(v)?{hash:v.toLowerCase()}:{code:v};
+    var j=null;
+    try{ var r=await fetch(ADMIN_LOGIN_URL,{method:"POST",credentials:"include",cache:"no-store",
+          headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      j=r&&r.ok?await r.json().catch(function(){return null;}):null;
+    }catch(_){ j=null; }
+    if(j&&j.ok){ try{ sessionStorage.setItem("apex_msg_ok","1"); }catch(_){} boot(); return; }
+    if(!j){ gerr.textContent="Vérification impossible ici — ouvre cette page sur kd-mc.com."; return; }
+    if(j.reason==="rate_limited"){ gerr.textContent="Trop d'essais — réessaie dans "+(j.wait||60)+" s."; return; }
+    if(j.reason==="admin_pin_not_configured"){ gerr.textContent="Code admin non configuré côté serveur."; return; }
+    gerr.textContent="Code incorrect."; pin.value=""; pin.focus();
   }
   gbtn.addEventListener("click",tryPin);
   pin.addEventListener("keydown",function(e){ if(e.key==="Enter")tryPin(); });
