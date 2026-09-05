@@ -26,16 +26,146 @@ comme tes autres branches. Tout sur GitHub, comme avant, avec tous les noms, dat
 - **Vérifié en VRAI navigateur** : `verify-domaine.mjs` **23/23** (nouveau scénario 8 : appareil existant 56 → 63,
   fantôme purgé, photo locale conservée) ; `verify-poster.mjs` tout vert. Gates : arbre-prive 33/33, arbre-poster,
   no-conflicts, docs-frais, pipeline-sessions, patrimoine-prive 8/8, no-pin-leak — **tous verts**.
-- Leçon **#213** (copie manuelle de données = vérifier par somme de contrôle par morceau).
+- Leçon **#215** (copie manuelle de données = vérifier par somme de contrôle par morceau).
 
 **Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été
 publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO). PR à ouvrir/fusionner (API GitHub bloquée ici →
-lien compare + message pipeline m026).
+lien compare + message pipeline m027).
 
 **Non rapatrié (volontaire)** : `ETAT_RECONSTRUCTION.md`, `exposition-demande.txt`, `publier-demande.txt` (journal
 d'infra GitLab dépassé + fichiers-signaux CI GitLab, sans objet sur GitHub).
 
 ---
+
+## 5 septembre 2026 (soir) — la surveillance du domaine était éteinte depuis 22 jours
+
+**Demande Kevin** : *« Fais ton audit du domaine, chaque app, pages, tout ce que nous avons créé »*
+puis *« Enchaîne 1-2-3 en parallèle. Pipeline toutes tes branches. »*
+
+**Trouvé par l'audit** (mesuré sur le dépôt, pas supposé) : le routeur déclare **26 sous-domaines**,
+tous cohérents (26/26 cibles existantes, 0 orphelin) — mais **plus rien ne les surveillait depuis le
+14/08 18h52**, soit 22 jours. Les 7 workflows de contrôle avaient été rangés le 15/08 pour retirer
+les crons, et **personne ne les avait remis ailleurs**. Pire : même avant, la sonde ne couvrait que
+**13 des 26** adresses — l'arbre (111 pages), les boutiques (22 pages), cuisine, lingua, studio,
+autorisations n'avaient **jamais** été contrôlés.
+
+**Fait — 3 chantiers** :
+1. **`services/kdmc-uptime`** — worker Cloudflare, cron horaire, **26 sous-domaines + 6 workers**.
+   Zéro binding (DO → error 1042 sur ce compte ; KV à id placeholder cassent `wrangler deploy`) :
+   l'état vit dans le Cache API. Alerte iPhone via `apex-push-worker`, **fail-open** sans jeton.
+   401/403 sur une page admin = verrou qui marche, pas une panne (sinon alerte permanente ignorée).
+2. **Garde `tests/uptime-couverture.test.mjs`** (câblée `test:ci`) — la liste surveillée doit être
+   le miroir de `ROUTES`. **Prouvée discriminante** : retirer `arbre` → échec immédiat. C'est la
+   leçon #142 : deux listes qui décrivent la même réalité divergent toujours sans garde.
+3. **27 adresses canoniques** basculées de `github.io` vers kd-mc.com dans 11 pages servies
+   (`canonical`, `og:url`, `twitter:url`, JSON-LD) — on déclarait à Google que la version de
+   référence était GitHub. Remappées via la table du routeur, pas à la main : `shops/la-detente`
+   → `shops.kd-mc.com/la-detente/` (**pas** `la-detente.kd-mc.com`, qui est une AUTRE app).
+
+**Destination corrigée** : `uptime-monitor.yml` et `workers-health-check.yml` passent de
+`gitlab` à `worker` dans `DESTINATIONS.json`. Raison chiffrée : une sonde horaire sur GitLab =
+**~360 min/mois sur les 400** (175 déjà prises en 4 jours) → impossible ; le cron Cloudflare est
+hors quota. Garde `test:destinations-workflows` verte après changement.
+
+**Diagnostic `kdmc-rag` (404 au dernier relevé)** : `/health` **existe** dans la source
+(`worker.js:83`). Vérifié par l'API Cloudflare (connecteur) : le worker en ligne date du
+**08/07**, la route est plus récente → version déployée antérieure. Cause : dispatch seul,
+personne n'appuie. **Corrigé** : `deploy-kdmc-rag.yml` et `deploy-kdmc-uptime.yml` se lancent
+maintenant **tout seuls à chaque push** qui touche le worker (main + `claude/**`, schéma
+`deploy-apex-chat.yml`). Plus aucun clic Kevin.
+
+**« Tu as tout. Vérifie » (Kevin)** — les 4 canaux essayés, résultat honnête :
+- API GitHub (jeton de session) : `/user` répond, mais tout `/repos/…` est refusé par le proxy
+  (« GitHub access is not enabled for this session ») → **impossible de lancer un workflow
+  depuis ici**. D'où le passage en auto-sur-push (leçon #213).
+- WebFetch sur github.com : **fonctionne** → j'ai lu la PR #3652, les runs, les annotations.
+- Connecteur Cloudflare : **fonctionne** → 24 workers listés, `kdmc-uptime` absent (jamais
+  déployé), `kdmc-rag` daté du 08/07.
+- Git : ma branche n'est **pas** dans main. La PR #3652 était **bloquée** : le pré-contrôle
+  `tsc --noEmit` échouait (exit 2) — pas à cause de ma branche, mais de **main** : la fusion
+  #3647 avait coupé l'entrée `free-for-dev` du catalogue Apex en deux (7 erreurs TS1117).
+  Reproduit en local, corrigé ici (entrée reconstituée, 75 tests verts, tsc 0 erreur).
+
+**Reste dit franchement** : je n'ai chargé **aucune page réelle** de kd-mc.com (egress bloqué) —
+tout vient de la source, des relevés enregistrés et des API. Pas de second avis non-Claude,
+pas de passe stabilité, pas de mesure de perf. Le premier passage de `kdmc-uptime` donnera le
+premier relevé réel des 26 adresses depuis le 14/08 — visible dans les runs Actions.
+
+---
+
+## 5 septembre 2026 — « Miroir aussi pour chaque » : la page ouvrait sur la MAUVAISE ÉQUIPE (corrigé v1.39)
+
+**Retour Kevin** : « Miroir aussi pour chaque ». Le bon mois ne suffisait pas.
+
+### Le vrai bug (mesuré dans un vrai navigateur, pas déduit)
+Corriger le MOIS (v1.38) laissait un défaut plus grave : je reportais le **numéro d'équipe** du
+mois passé sur le mois courant. Or **chacun change d'équipe chaque mois** (règle métier absolue).
+Résultat pour Kevin, connecté : la page affichait **BJ Éq.7** (son équipe d'août) — une équipe où
+il **n'est même pas** en septembre — et donc le **mauvais miroir : BJ Éq.4** au lieu de **BJ Éq.10**.
+
+### Le correctif — le repère stable, c'est LA PERSONNE
+Ordre de priorité à l'ouverture : lien `?me=…` → tableau **du mois en cours** déjà mémorisé (choix
+délibéré : « je regardais une autre équipe ») → **mon équipe de ce mois-ci, retrouvée par mon nom**
+→ équipe mémorisée reportée par son nom → tableau par défaut. **Le miroir suit tout seul**, il se
+calcule à partir du tableau affiché.
+**Après correctif, Kevin ouvre sur BJ Éq.6, miroir BJ Éq.10** — identique à CMCteams.
+
+### CMCteams (app) : aucun bug — vérifié
+L'app recalcule l'équipe du mois par les jours de repos : Kevin y était déjà en BJ Éq.6 / miroir
+BJ Éq.10. Seule la page light reportait un numéro d'équipe. **Piège évité** : l'app résout les
+équipes **au rendu de la vue Départs** — sans ce rendu, le contrôle aurait été un faux vert.
+
+### Garde permanente élargie (`npm run test:mois-ouverture`, dans `test:ci`)
+Compte par compte, sur les deux surfaces : mon équipe **et mon miroir** du mois courant, le miroir
+non vide, réciproque (le miroir du miroir, c'est moi), le bouton « 🔁 Équipe miroir » visible, et
+**app ⇄ light identiques**. Plus un balayage complet : **38 équipes / 245 personnes**, 0 miroir sur
+un autre mois, 0 miroir vide, 0 non réciproque. Deux équipes n'ont pas de miroir en septembre
+(CMC Éq.13, Roul. Éq.3) : vérifié, **aucune autre équipe n'a leurs jours de repos** — c'est la
+réalité du planning, pas un bug ; le test le distingue explicitement d'un miroir manquant à tort.
+**Prouvée discriminante** : correctif retiré → **20 contrôles en échec** (dont « app ⇄ light
+divergents ») ; correctif remis → 0.
+
+## 5 septembre 2026 — « mauvais mois à l'ouverture » (corrigé) + un garde aveugle depuis 1 mois
+
+**Retour Kevin** : « quand j'ouvre, pas sur la date du jour, mauvais mois. Vérifie pour chaque
+compte, light et CMCteams, données réelles ». PDF SEPTEMBRE_2026_V2 fourni (identique à la
+fixture du dépôt, vérifié par empreinte).
+
+### 1. Le bug — page light (Départs), corrigé en v1.38
+L'identifiant d'un tableau contient le mois (`2026-08-1`) **et son numéro n'est pas stable d'un
+mois à l'autre** (`2026-08-1` = CMC Éq.5, `2026-09-1` = BJ Éq.1). La page mémorisait cet
+identifiant **tel quel** : tant que le tableau d'août existait, elle rouvrait sur **août**,
+indéfiniment. C'est exactement ce que montrait la capture de Kevin (« Août 2026 — CMC Éq.5 »).
+**Correctif** : on mémorise l'**équipe** (repère stable lu dans le libellé) et on la retrouve dans
+le mois le plus récent ; `boardForName`/`personById` parcourent désormais du mois le plus RÉCENT au
+plus ancien (avant, l'ordre d'écriture du fichier de données décidait de l'équipe trouvée).
+**Prouvé discriminant** : code d'avant → reste sur « Août 2026 » ; code corrigé → « Septembre 2026 »,
+même équipe conservée.
+
+### 2. CMCteams (app) : aucun bug — vérifié, pas supposé
+Admin + 3 employés ouvrent bien sur **Septembre 2026**, 285 personnes avec planning. L'app ne
+mémorise aucun mois (elle repart toujours du mois courant).
+
+### 3. Le garde de parité était AVEUGLE à septembre (le vrai enseignement)
+`test:departs-compare` annonçait **36 équipes miroir « manquantes dans l'app »** pour septembre.
+**Faux rouge** : sa liste de mois était écrite en dur (`juillet, août`) et n'avait jamais été
+étendue. Mesuré dans un vrai navigateur : septembre fonctionne parfaitement des deux côtés, dans
+n'importe quel ordre. **Correctif** : les mois sont maintenant **déduits des données générées**,
+donc le garde suivra tout seul les mois à venir (même correctif trouvé en parallèle par la session
+Arbre — la version retenue au moment de la fusion est celle de `main`).
+**Effet réel** : cellules comparées **4 671 → 13 980** (+9 309 jamais vérifiées jusqu'ici),
+**0 écart**, miroirs compris. L'équipe de Kevin en septembre (BJ Éq.6, miroir BJ Éq.10) est
+identique app ⇄ light.
+
+### 4. Données réelles vérifiées
+`test:everyone-has-planning` 280 PASS / 0 FAIL · `test:departs-integrity` 117 équipes, 737
+personnes, **22 602 contrôles d'horaires, 0 violation** · `test:parite-cmcteams-light` 6 OK ·
+95/95 vues rendent, 0 erreur JS.
+
+### 5. Nouveau garde permanent
+`npm run test:mois-ouverture` (câblé dans `test:ci`) : pour chaque compte, app et light ouvrent
+sur le mois courant, **avec le cas « mois passé mémorisé »**. Autonome (lance son propre serveur —
+en `file://` la seed ne se charge pas, le test serait un faux vert).
 
 ## 5 septembre 2026 (nuit, session arbre) — Arbre v3.16 : les données et l'empreinte sont SORTIES du fichier public (fait n°12, « Go tout »)
 
@@ -135,14 +265,19 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 > en attente.
 
 ### 🚨 P0 — sécurité
-1. 👤 **Changer le code admin** (il a été public) : empreinte via
-   [tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/) → secret GitHub
-   [`APEX_ADMIN_PIN_SHA256`](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)
-   → me dire « fait ». *(KEVIN_ACTIONS_TODO, tout en haut)*
-2. 🤖 **Dès le « fait »** : lancer par l'API (`actions_run_trigger`) les 6 déploiements qui lisent
-   ce secret — `deploy-kdmc-router`, `deploy-kdmc-access`, `deploy-kdmc-monaco`,
-   `deploy-kdmc-outlook`, `deploy-kdmc-rag`, `sync-apex-secrets-to-cf-worker` — puis prouver en
-   vrai (`live-verify-departs`, `audit-live`) que l'ancien code est refusé et le nouveau accepté.
+1. ✅ **FAIT 5.09 16h18** — Kevin a changé le code admin (« fait »).
+2. ✅ **FAIT 5.09 16h35** — les 6 déploiements relancés. **Découverte en route** : celui du routeur
+   échouait **depuis le 13/08** (dossier `public/` exigé par `[assets]` jamais fabriqué) → aucun
+   secret poussé au routeur pendant 3 semaines ; corrigé (PR #3661), run vert, secret
+   `KDMC_ADMIN_PIN_SHA256` posé, 26 sous-domaines en 200. Sonde live ajoutée (PR #3663) + garde
+   `test:wrangler-assets` (dans `test:ci`). Détail : ETAT-INFRA fait n°15 (suite), leçon #214.
+   **Reste à Kevin** : se connecter UNE fois avec le nouveau code sur departs.kd-mc.com (moi je
+   prouve le refus d'un mauvais code, pas l'acceptation du bon — je ne le connais pas, c'est voulu).
+2b. 👤 **RAG (mémoire Apex)** : le secret y est, mais son déploiement échoue car le jeton
+   Cloudflare `CLOUDFLARE_API_TOKEN` n'a pas la permission **Vectorize** (index `apex-memory`
+   introuvable → `Authentication error 10000`). À ajouter dans Cloudflare → Profil → Jetons d'API
+   → modifier le jeton → permission « Vectorize : Edit » — **quand la mémoire RAG servira**, pas
+   urgent. Ensuite je relance `deploy-kdmc-rag`.
 3. 👤 **Révoquer le jeton GitLab `glpat-wD6Q…`** (utilisé une fois, jamais écrit) :
    [Jetons d'accès GitLab](https://gitlab.com/-/user_settings/personal_access_tokens).
 4. 👤 Dans les apps qui ont **leur propre** code (quand tu y passes) : CMCteams

@@ -3259,6 +3259,14 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     description:
       "Catalogue de 57 rubriques de services gratuits pour developpeurs : taches programmees, CI, hebergement, bases de donnees, mail, medias, surveillance. Sert de reserve quand un service payant tombe ou qu'un acces est perdu — on y cherche un equivalent gratuit avant de proposer une depense a Kevin.",
     category: 'ai-ml',
+    pwa_compatible: true,
+    oauth_required: false,
+    status: 'installed',
+    install_method: 'native-fetch',
+    estimated_value: 'high',
+    tags: ['agent-toolkit', 'gratuit', 'infra', 'failover'],
+  },
+  {
     id: 'app-store-connect-cli',
     name: 'App Store Connect CLI (asc)',
     source: 'community',
@@ -3286,7 +3294,6 @@ export const APEX_PLUGINS_CATALOG: readonly ApexPluginManifest[] = [
     status: 'installed',
     install_method: 'native-fetch',
     estimated_value: 'high',
-    tags: ['agent-toolkit', 'gratuit', 'infra', 'failover'],
     tags: ['agent-toolkit', 'app-store', 'skills', 'ios'],
   },
   {

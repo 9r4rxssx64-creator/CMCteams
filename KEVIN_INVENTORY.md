@@ -1,7 +1,7 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05 nuit** (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · poster grand format · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05 nuit** (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
 ## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
 
@@ -14,6 +14,21 @@
 | `arbre/research/BRICCO-LEO-BRANCALASSO-2026-09-01.md` · `INSEE-DECES-21-NOMS-2026-09-01.md` · `VICTOR-SAUVAIGO-CITATIONS-2026-09-01.md` | Les 3 dossiers de recherche du 1.09 (branche BRICCO/LEO/Brancalasso, décès INSEE sur 21 noms, citations de Victor Sauvaigo), retrouvés sur GitLab. | [Dossier research](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/sarzance-family-tree-3jxi7i/arbre/research) |
 | Branche `publie-septembre` | Branche qui n'existait que sur GitLab (55 commits), maintenant aussi sur GitHub. | [Voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/publie-septembre) |
 | `tools/arbre/verify-domaine.mjs` (scénario 8) | Vérifie en vrai navigateur qu'un appareil existant récupère bien la version plus récente du domaine (23 contrôles). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-domaine.mjs) |
+## 🛰️ Surveillance du domaine remise en route — session 2026-09-05 (soir)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/kdmc-uptime/worker.js` | **La sonde** : toutes les heures, les **26 sous-domaines + 6 workers**. Alerte l'iPhone quand une adresse tombe et quand elle revient. L'ancienne n'en voyait que 13, et elle est éteinte depuis le 14/08 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/worker.js) |
+| `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
+| `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
+| `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
+
+## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/departs/index.html` (v1.39) | La page s'ouvre sur **TON équipe du mois en cours** (retrouvée par ton nom, parce que le numéro d'équipe change chaque mois) — et donc sur **ton vrai miroir**. Avant : Kevin tombait sur BJ Éq.7 / miroir BJ Éq.4 au lieu de BJ Éq.6 / miroir BJ Éq.10. | [Ouvrir les Départs](https://cmcteams.kd-mc.com/tools/departs/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/departs/index.html) |
+| `tests/verify-mois-ouverture.mjs` | **La garde** (`npm run test:mois-ouverture`, dans `test:ci`) : compte par compte, sur CMCteams **et** la page light — bon mois, **mon** équipe, **mon** miroir (non vide, réciproque, bouton visible), et les deux surfaces d'accord. Balayage complet : 38 équipes / 245 personnes. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-mois-ouverture.mjs) |
 
 ## 🔐 L'arbre sans données dans le fichier public — session 2026-09-05 soir (arbre v3.16, branche `claude/sarzance-family-tree-3jxi7i`)
 
@@ -66,6 +81,7 @@ Les 6 dernières recettes incomplètes sur 128 ont été écrites. **128/128 com
 | `tools/empreinte/index.html` | **Calcule l'empreinte d'un nouveau code admin sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub `APEX_ADMIN_PIN_SHA256` | [ouvrir](https://kd-mc.com/CMCteams/tools/empreinte/) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/empreinte/index.html) |
 | `tests/runtime-audit-departs-pin.mjs` | Verrou admin de la page Départs : plus d'empreinte dans la page, le code **part au domaine** (`/__admin/login`) et la page obéit au verdict (9 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/runtime-audit-departs-pin.mjs) |
 | `tests/no-admin-pin-leak.test.mjs` | Garde renforcé : code en clair **et** empreinte **et** forme `PIN…SHA… = "64-hex"`, dans le code servi **et** les `.md` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-admin-pin-leak.test.mjs) |
+| `tests/wrangler-assets-buildable.test.mjs` | Garde (5.09) : un worker qui exige un dossier `[assets]` non versionné doit avoir une étape qui le fabrique **avant** `wrangler deploy` — le routeur a été rouge 3 semaines pour ça, secret du code admin jamais poussé | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/wrangler-assets-buildable.test.mjs) |
 | `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
 | `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
 
@@ -94,6 +110,10 @@ Les **deux règlements ont été lus** (pas de mémoire) avant de ranger quoi qu
 | `tools/gitlab/qui-sert.sh` | Répond en vrai : **qui sert kd-mc.com aujourd'hui**, GitHub Pages ou le miroir ? (à relancer avant de couper une publication) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/qui-sert.sh) |
 | `tools/gitlab/*.sh` (11 scripts) | Publier, vérifier la clé Cloudflare, déployer un Worker, état du domaine, généalogie… **N'existaient que sur GitLab**, maintenant à l'abri ici aussi | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/tools/gitlab) |
 | `.gitlab-ci.yml` | La recette GitLab — **identique des deux côtés** désormais. 0 tâche programmée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) |
+
+
+### 5 septembre 2026 — vérification du mois d'ouverture
+- [tests/verify-mois-ouverture.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-mois-ouverture.mjs) — garde : app + light ouvrent sur le mois courant, pour chaque compte, avec le cas « mois passé mémorisé ». `npm run test:mois-ouverture`
 
 ## 🔗 Vérificateur de liens RÉEL — session 2026-08-14
 

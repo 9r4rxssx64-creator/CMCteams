@@ -600,6 +600,26 @@ dossiers **servis** : ni l'empreinte, ni la doc.
 | 14 scripts e2e qui **tapent** le code sur une vraie surface lisent `KDMC_ADMIN_CODE` (repli : l'ancien code de test, sans valeur après rotation). | `node --check` × 14 |
 | Page **`tools/empreinte/`** : calcule l'empreinte du nouveau code **sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub. | 0 requête réseau (CSP `connect-src 'none'`) |
 
+**Suite du 5.09, 16h — le code a été CHANGÉ par Kevin, et la rotation a révélé un 2ᵉ trou** :
+en relançant les 6 déploiements qui lisent le secret, **celui du routeur a échoué** — et
+l'historique montre qu'il échouait **depuis le 13/08** (dernier vert), 4 rouges d'affilée
+(04/09, 05/09 ×3) sur la même ligne : `assets.directory … public does not exist`. Le
+`wrangler.toml` exige `./public` depuis le 14/08 (bouée de secours de la suspension), dossier
+gitignoré fabriqué par `prepare-secours.mjs`, **que le workflow ne lançait jamais**. Conséquence
+réelle : **aucun secret poussé au routeur pendant 3 semaines** — l'étape « hash du PIN admin »
+vient APRÈS le deploy, donc sautée : sans ce correctif, l'ancien code (public) serait resté
+valable sur kd-mc.com malgré la rotation. Corrigé (PR #3661 : étape `prepare-secours --leger`
+avant `wrangler deploy`) → run `33978224559` **vert**, `✨ Uploaded secret KDMC_ADMIN_PIN_SHA256`,
+26 sous-domaines en 200, `/__admin/accounts` → 403 `need_admin_code`. Les 4 autres workers
+(access, monaco, outlook, proxy Apex) ont reçu le secret du premier coup ; **RAG** l'a reçu aussi
+(`✨ Uploaded secret`) mais son deploy échoue pour une autre raison : le jeton Cloudflare n'a pas
+la permission **Vectorize** (`Authentication error 10000` sur `vectorize create`) — à ajouter
+côté Cloudflare quand la mémoire RAG servira. **Prévention** : `npm run test:wrangler-assets`
+(dans `test:ci`, prouvé discriminant) — tout worker avec `[assets]` non versionné doit avoir une
+étape qui le fabrique avant `wrangler deploy` ; et `live-verify-departs` sonde désormais
+`POST /__admin/login` avec un code bidon (attendu `code_invalide`, jamais
+`admin_pin_not_configured`). Leçon #214.
+
 **Où vit le code, réellement** : UN secret GitHub, `APEX_ADMIN_PIN_SHA256`, poussé par les
 workflows vers **6 workers** (routeur `KDMC_ADMIN_PIN_SHA256`, admin.kd-mc.com, monaco, outlook,
 rag, proxy Apex). Les pages Départs / Messages suivent désormais le routeur → **changer le

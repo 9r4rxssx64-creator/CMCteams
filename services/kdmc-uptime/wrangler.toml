@@ -1,0 +1,26 @@
+name = "kdmc-uptime"
+main = "worker.js"
+compatibility_date = "2025-06-01"
+workers_dev = true
+
+# account_id injecté par le workflow via CLOUDFLARE_ACCOUNT_ID (jamais commité).
+#
+# ⚠️ ZÉRO BINDING, VOLONTAIREMENT — ce n'est pas un oubli :
+#   - Durable Object → échec au démarrage sur ce compte (error 1042, leçons #132/#133) ;
+#   - KV → les wrangler.toml du dépôt portent des id "REPLACE_AFTER_CREATE" et le
+#     provisioning dynamique a déjà cassé `wrangler deploy` (voir kdmc-router).
+# L'état entre deux passages vit donc dans le Cache API, qui ne demande aucun binding.
+# Il est évictable : au pire on reperd la mémoire des pannes en cours et la prochaine
+# alerte se répète. C'est très largement préférable à un worker qui ne démarre pas.
+#
+# Secret optionnel posé par le workflow : KDMC_PUSH_TOKEN (depuis PUSH_ADMIN_TOKEN).
+# Sans lui, le worker sonde et sert son état, mais n'envoie pas de notification.
+
+[vars]
+KDMC_PUSH_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"
+
+# Passage toutes les heures. C'est un cron CLOUDFLARE, pas GitHub Actions :
+# la règle « jamais de schedule: dans un workflow GitHub » (fait n°10/11) reste
+# entière — c'est justement l'endroit où le périodique a le droit de vivre.
+[triggers]
+crons = ["0 * * * *"]
