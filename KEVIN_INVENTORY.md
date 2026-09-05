@@ -12,6 +12,18 @@
 | `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [▶️ Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) |
 | `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
 
+## 🍽 Livre de cuisine complété — session 2026-09-05 (soir)
+
+Les 6 dernières recettes incomplètes sur 128 ont été écrites. **128/128 complètes.**
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/cuisine/gen-pdf.sh` | **Nouveau** — regénère `livre.pdf` (A4, Chromium). `--help`, `--dry-run`, `--out`, contrôle du format et du nombre de pages avant d'écrire | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/gen-pdf.sh) |
+| `tools/cuisine/livre.pdf` | Le livre imprimable — **243 → 252 pages**, A4 | [ouvrir](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/livre.pdf) |
+| `tools/cuisine/index.html` | Le livre à lire — 6 recettes complétées + notes de provenance (`method_note`) | [ouvrir](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) |
+| `tools/cuisine/imprimer.html` | La version imprimable — 6 blocs ajoutés, 7 lignes décimales réparées, format A4 figé | [ouvrir](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/imprimer.html) |
+| `tools/cuisine/recipes.json` | L'index des recettes — 4 descriptions ajoutées | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/recipes.json) |
+
 ## 🔀 Où va chaque automatisation — session 2026-09-05
 
 | Fichier | À quoi ça sert | Liens |

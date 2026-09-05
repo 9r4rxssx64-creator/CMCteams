@@ -39,6 +39,66 @@ pour lancer le déploiement (le smoke dira en clair si le binding Vectorize pass
 tout vient de la lecture de la source et des relevés enregistrés. Pas de second avis non-Claude,
 pas de passe stabilité, pas de mesure de perf sur ces changements. Le worker n'est **pas encore
 déployé** : son premier passage donnera le premier relevé réel des 26 adresses depuis le 14/08.
+## 5 septembre 2026 (soir) — le livre de cuisine est complet : 128/128 recettes
+
+**Demande Kevin** : *« Go tout / Auto »* — finir les 6 recettes incomplètes du
+Répertoire de la Riviera (`tools/cuisine`).
+
+### Ce qui manquait
+Sur **128 recettes**, 6 étaient incomplètes : 4 entièrement vides (ni ingrédients ni
+préparation) et 2 sans liste d'ingrédients. Les 122 autres étaient complètes.
+
+| Recette | Tome | Ce qui manquait |
+|---|---|---|
+| Soupe de Poissons de Roche à la Monégasque | 2 | tout |
+| Petites Bouchées à la Monégasque | 3 | tout |
+| Filet de Bœuf à la Monte-Carlo | 4 | tout |
+| La Tarte aux Fruits Confits de la Riviera & Crème Frangipane | 9 | tout |
+| Le Galapian de Monaco | 1 | ingrédients |
+| Le Panettone de la Saint-Nicolas aux Agrumes Confits du Rocher | 7 | ingrédients |
+
+### Rien n'a été inventé sans le dire
+Chaque recette a été reconstituée à partir du matériau **déjà présent dans le livre**, et
+porte désormais un champ `method_note` qui dit d'où elle vient — la convention que
+l'ouvrage utilisait déjà pour 17 recettes :
+- **Soupe / Bouchées** : d'après la notice du manuscrit (la liaison aux foies de rougets,
+  le salpicon de thon lié au velouté rosé).
+- **Filet de Bœuf** : d'après le *Filet de Bœuf à la Monégasque* + la garniture Monte-Carlo
+  (pommes parisiennes, beurre de truffe) du *Chateaubriand Monte-Carlo*.
+- **Tarte aux Fruits Confits** : d'après *La Tarte aux Cerises Confites et Frangipane de
+  Monaco* — c'est la recette sœur que le livre désignait lui-même.
+- **Galapian / Panettone** : quantités rétablies d'après les ingrédients cités dans leur
+  propre méthode.
+
+Les 4 mentions **« 📜 Méthode non retrouvée dans le manuscrit »** ont été retirées : elles
+étaient devenues fausses (règle « vérité, rien de faux »).
+
+### Le rendu a été retro-conçu, pas deviné
+`imprimer.html` est du HTML pré-rendu, sans générateur dans le dépôt. L'algorithme a été
+reconstitué puis **rejoué sur les recettes existantes** : ingrédients découpés sur la
+virgule *hors parenthèses*, préparation sur `". "`. Résultat **122/122 et 124/124
+identiques** avant modification — donc les 6 nouveaux blocs sont écrits exactement comme
+les autres. Vérification finale : **128/128 conformes**.
+
+### Deux défauts trouvés au passage, corrigés
+- **7 lignes d'ingrédients coupées en deux par une décimale** : le PDF affichait
+  « 1 alose de 1 » puis « 2 kg ». Réparé (9 lignes à décimale s'affichent maintenant
+  correctement).
+- **Le format du PDF n'était écrit nulle part.** Sans réglage, Chromium sort du Lettre US
+  et toute la pagination change. Le A4 est désormais figé dans `imprimer.html`
+  (`@page{size:A4}`) et contrôlé par le script.
+
+### Le PDF a un outil de regénération (il n'en avait aucun)
+`tools/cuisine/gen-pdf.sh` — `--help`, `--dry-run`, `--out`, contrôle du format A4 et du
+nombre de pages avant d'écrire. Méthode prouvée : en rejouant l'**ancien** fichier, elle
+redonne **244 pages contre les 243 livrées**, avec **les mêmes polices** (DejaVu +
+Liberation) et le même moteur (Chromium/Skia) — la chaîne d'origine est bien reproduite.
+
+**`livre.pdf` : 243 → 252 pages**, A4, 128 recettes complètes.
+
+---
+
+---
 
 ## 5 septembre 2026 (fin d'après-midi) — le code admin était PUBLIC : pages corrigées, docs nettoyées, Kevin doit le changer
 
