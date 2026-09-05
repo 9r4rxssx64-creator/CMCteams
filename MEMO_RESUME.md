@@ -1,5 +1,38 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (14h) — GitLab remis au niveau de GitHub, miroir republié
+
+**Demande Kevin** : un jeton GitLab collé dans le chat (portée `api` + écriture), pour finir ce
+qui était promis dans `KEVIN_ACTIONS_TODO.md` : aligner le miroir de secours et les jobs de veille.
+
+**Fait** : GitLab `main` `cec1a5715 → 042e709ee` (branche locale `gitlab-sync`, poussée en ligne,
+jeton **jamais écrit** — 0 trace dans `.git/config`). Recette : arbre GitHub superposé sur GitLab
+`main`, **8 fichiers privés conservés** (ETAT_RECONSTRUCTION, PASSATION-ARBRE, RECHERCHES-EN-COURS,
+3 `arbre/research/*.md`, + les 2 fichiers-signal), **13 copies rangées** de workflows redevenus
+actifs sur GitHub retirées. Quatre gardes verts avant le push (documents-travail, destinations,
+dépôt-public-sain, no-pin-leak). Pipeline `2822740843` : les 4 jobs de veille sont là en bouton
+(`liens-reels`, `cdn-dependances`, `lingua-sources`, `lingua-lsf`), `verifier-cloudflare` ✅.
+
+**Mesuré AVANT republication** (audit d'exposition lancé en parallèle, sur l'ancien miroir) :
+16/20 sondes déjà en 404, **4 documents encore servis** — `coffre-fort/memo/01-secrets-github.pdf`,
+`tools/gitlab/secrets-map.txt`, `AGENTS.md`, `archives/PLAINTE_ANTHROPIC.md`. Ce sont exactement
+ceux que les nouvelles exclusions (`*.md`, `memo`, `tools/gitlab`) retirent.
+
+**APRÈS** (`publier-site` ✅ 96 fichiers envoyés, puis audit relancé par commit-signal
+`5e78a0d42`, job `16324368313` ✅) : **20/20 sondes en 404 — « Aucun document de travail publié sur
+kdmc-site.pages.dev »**. Les 4 restants sont partis. Reste, dit tel quel par l'audit : 5 pages du
+site portent des noms (l'app, ses plannings, l'arbre) — c'est le site lui-même, correctif = données
+derrière la connexion du domaine, pas une exclusion.
+
+*Limite du jeton : lecture API + écriture dépôt seulement — impossible de relancer un job ou de
+créer un pipeline par l'API (`insufficient_scope`). Le fichier-signal `exposition-demande.txt`
+fait le même travail sans droit supplémentaire : c'est la voie à retenir.*
+
+**Kevin** : révoquer le jeton `glpat-wD6Q…` (un clic, KEVIN_ACTIONS_TODO). Le code admin reste à
+changer (section 🚨 D'ABORD).
+
+---
+
 ## 5 septembre 2026 (soir) — le livre de cuisine est complet : 128/128 recettes
 
 **Demande Kevin** : *« Go tout / Auto »* — finir les 6 recettes incomplètes du
