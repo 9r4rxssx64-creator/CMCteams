@@ -89,6 +89,76 @@ installé (pareil sans mes changements) ; il passe en CI.
 après chargement) → sortir les données derrière le SSO du domaine ; **feu vert Kevin attendu**.
 ---
 
+---
+
+## 📌 À REPRENDRE PLUS TARD — toutes les tâches en attente (noté le 5.09.2026 à 12:50, Kevin : « Note toutes les tâches pour plus tard »)
+
+> Liste **complète**, triée par urgence. Chaque ligne dit **qui** (👤 Kevin · 🤖 moi · 🔗 autre
+> session) et **quoi**. Rien d'autre n'est en attente ailleurs : si ce n'est pas ici, ce n'est pas
+> en attente.
+
+### 🚨 P0 — sécurité
+1. 👤 **Changer le code admin** (il a été public) : empreinte via
+   [tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/) → secret GitHub
+   [`APEX_ADMIN_PIN_SHA256`](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)
+   → me dire « fait ». *(KEVIN_ACTIONS_TODO, tout en haut)*
+2. 🤖 **Dès le « fait »** : lancer par l'API (`actions_run_trigger`) les 6 déploiements qui lisent
+   ce secret — `deploy-kdmc-router`, `deploy-kdmc-access`, `deploy-kdmc-monaco`,
+   `deploy-kdmc-outlook`, `deploy-kdmc-rag`, `sync-apex-secrets-to-cf-worker` — puis prouver en
+   vrai (`live-verify-departs`, `audit-live`) que l'ancien code est refusé et le nouveau accepté.
+3. 👤 **Révoquer le jeton GitLab `glpat-wD6Q…`** (utilisé une fois, jamais écrit) :
+   [Jetons d'accès GitLab](https://gitlab.com/-/user_settings/personal_access_tokens).
+4. 👤 Dans les apps qui ont **leur propre** code (quand tu y passes) : CMCteams
+   `Réglages → Sécurité → Changer le PIN admin` ; Boutiques `Paramètres → Changer le PIN admin`.
+5. 🤖 **Page Départs : « admin » cosmétique côté données** — elle écrit dans Firebase avec un jeton
+   anonyme (`auth != null`), alors que la grande app a `cmcFbRoleAuth` (jeton de rôle via
+   `/login-cmc`). À aligner (message m021 envoyé à la session CMCteams ; leur territoire).
+6. 🤖 **Reprendre le tri du rapport `security-suite`** (gitleaks/TruffleHog sur l'historique) là où
+   il s'est arrêté : le code admin était le 1er vrai positif ; vérifier qu'il n'en reste pas
+   d'autre, et lister les faux positifs avec preuve (clé Firebase Web = publique par conception).
+
+### 🔴 P1 — le site et les deux dépôts
+7. 🤖 **5 pages du site portent des noms** (l'app CMCteams, ses plannings, l'arbre) — dit par
+   l'audit d'exposition, ce n'est pas une exclusion qui règle ça : servir ces données **derrière la
+   connexion du domaine** (SSO `/__sso/whoami`). Chantier de fond, à découper par surface.
+8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
+   elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
+   `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
+   (0 minute au repos).
+9. 🔗 **domain-kdmc m'attend** : ajouter un job CI « état des sessions » dans `.gitlab-ci.yml`
+   (mon territoire). Réponse à écrire dans `pipeline/sessions.json` une fois fait.
+10. 🔗 **lingua m'attend** : 3 de leurs workflows programmés déplacés (pas supprimés) + j'ai pris
+    LEUR version de `lingua/app.js` — leur confirmer par message que tout est en ordre de leur côté.
+11. 🔗 **free-apis m'attend** : secrets VUS en vrai — `CEREBRAS_API_KEY` existe déjà, il ne reste
+    que **2 comptes à créer** (à leur préciser lesquels, cf. CLAUDE.md liste des 50 secrets).
+12. 🤖 **`tools/pipeline/pousser.sh`** : il fait `git update-ref refs/remotes/origin/<cible>` —
+    faux quand `origin` = GitHub (c'est le cas depuis le 4.09). À corriger : pousser vers GitLab en
+    URL inline, ne toucher à aucun repère `origin/*`. Et le RAPPEL de début de session dit encore
+    « Publier : GITLAB_TOKEN=… ./tools/pipeline/pousser.sh » : à mettre à jour (GitHub est la voie
+    de publication ; GitLab ne reçoit qu'une remise à niveau occasionnelle).
+13. 🤖 **4 tests rouges pré-existants sur `main`**, pas les miens mais à ne pas laisser traîner :
+    `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
+    Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
+
+### 👤 Ce que les AUTRES sessions attendent de Kevin (vu au registre, pour ne rien perdre)
+14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
+15. 👤 **la-detente** : combien de gilets, et broderie logo seul ou logo + prénoms ?
+16. 👤 **meta** : compte développeur Apple (99 $/an) — oui ou non ?
+17. 👤 **m003** : la réponse au support GitHub est prête (3 conditions remplies) — c'est Kevin qui
+    l'envoie.
+
+### ℹ️ Rien à faire, mais à savoir
+- Le miroir `kdmc-site.pages.dev` est **propre** (20/20 sondes en 404, job GitLab `16324368313`),
+  et re-vérifié à chaque republication. Le site principal aussi (étape finale de `deploy.yml`).
+- GitLab `main` = GitHub `main` + 8 fichiers privés (ETAT_RECONSTRUCTION, PASSATION-ARBRE,
+  RECHERCHES-EN-COURS, `arbre/research/*.md`, 2 fichiers-signaux). **Jamais** les copier vers GitHub.
+- Le jeton GitLab ne permettait pas de relancer un job par l'API (`insufficient_scope`) : le
+  fichier-signal `exposition-demande.txt` fait le même travail — c'est la voie à retenir.
+- Serveurs MCP indisponibles cette session (à réautoriser côté claude.ai si besoin) :
+  `hf-mcp-server` (auth), `firecrawl-mcp` et `nanobanana-mcp` (délai de connexion).
+
+---
+
 ## 5 septembre 2026 (14h) — GitLab remis au niveau de GitHub, miroir republié
 
 **Demande Kevin** : un jeton GitLab collé dans le chat (portée `api` + écriture), pour finir ce
