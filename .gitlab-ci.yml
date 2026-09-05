@@ -26,6 +26,7 @@
 stages:
   - tests
   - recherches
+  - mesures
 
 default:
   image: node:20
@@ -128,3 +129,19 @@ recherches-patrimoine:
     expire_in: 7 days             # données personnelles : on ne les garde pas
     paths:
       - patrimoine-resultats/
+
+# =============================================================================
+# MESURES — mes yeux depuis la machine (le conteneur de l'agent, lui, est derrière
+# un pare-feu : kd-mc.com, github.io et pages.dev répondent HTTP 000 chez lui).
+# Lecture seule, déclenché par une variable, jamais tout seul.
+# =============================================================================
+qui-sert:
+  stage: mesures
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$QUI_SERT'
+    - when: never
+  script:
+    - 'sh tools/gitlab/qui-sert.sh'

@@ -50,6 +50,8 @@
     "test:v788": "node tests/runtime-audit-v788-fb-auth.mjs",
     "audit:stability": "node tools/audit/stability-audit.cjs --browser",
     "audit:improvements": "node tools/audit/improvements-audit.cjs",
+    "minutes-gitlab": "node tools/audit/minutes-gitlab.mjs",
+    "reglement-plateformes": "node tools/audit/reglement-plateformes.mjs",
     "audit:rules": "node tools/audit/rules-compliance.cjs",
     "audit:all": "npm run audit:stability && npm run audit:improvements && npm run audit:rules",
     "test:team-rule": "node tests/runtime-audit-team-rule.mjs",
