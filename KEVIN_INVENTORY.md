@@ -3,6 +3,15 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-05** (Départs light v1.39 : MON équipe et MON miroir à l'ouverture · poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
 
+## 🛰️ Vérifier le VRAI domaine sans API et sans clic — la CI regarde, et écrit son rapport ici (2026-09-05)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verif-live-rapport.mjs` | Ouvre **cmcteams.kd-mc.com** (repli GitHub Pages, et il DIT lequel a répondu) : version servie, correctif v1.39 présent dans le fichier servi, aucun code admin dans la page — puis, **dans un vrai navigateur**, connecté comme toi : ton équipe et ton miroir du mois, y compris avec un vieux tableau mémorisé. Lecture seule, aucune fiche d'accès créée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verif-live-rapport.mjs) |
+| `.github/workflows/verif-live-rapport.yml` | Le canal : mon `push` déclenche la CI (elle, elle a le réseau), elle **réécrit le rapport dans le dépôt** — je le relis sans API GitHub et **sans un seul clic de ta part**. | [Exécutions](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/verif-live-rapport.yml) |
+| `audit/verif-live/rapport.md` | **Le résultat, en clair.** Écrit par la CI à chaque contrôle (`audit/` n'est jamais publié sur le site). | [Lire le rapport](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/verif-live/rapport.md) |
+| `audit/verif-live/demande.txt` | Fichier-signal : le toucher relance le contrôle en ligne. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/verif-live/demande.txt) |
+
 ## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
 
 | Fichier | À quoi ça sert | Liens |

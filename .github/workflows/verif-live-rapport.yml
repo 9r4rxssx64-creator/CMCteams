@@ -52,6 +52,24 @@ jobs:
         continue-on-error: true          # un contrôle rouge doit quand même être PUBLIÉ, pas perdu
         run: node tests/verif-live-rapport.mjs
 
+      - name: Filet — un rapport existe TOUJOURS, même si le script a planté
+        # Sinon `git add` d'un fichier absent fait échouer tout le job et Kevin
+        # se retrouve sans AUCUNE information : « pas de rapport » ne dit pas pourquoi.
+        run: |
+          set -euo pipefail
+          mkdir -p audit/verif-live
+          if [ ! -f audit/verif-live/rapport.md ]; then
+            {
+              echo "# Vérif LIVE — page Départs ($(date -u '+%Y-%m-%d %H:%M') UTC)"
+              echo
+              echo "## ❌ Le contrôle n'a pas pu s'exécuter"
+              echo
+              echo "Le script \`tests/verif-live-rapport.mjs\` s'est arrêté avant d'écrire son rapport."
+              echo "Sortie du job : voir l'onglet Actions, étape « Vérifier le domaine et écrire le rapport »."
+            } > audit/verif-live/rapport.md
+          fi
+          [ -f audit/verif-live/rapport.json ] || echo '{"echecs":-1,"note":"script interrompu avant ecriture"}' > audit/verif-live/rapport.json
+
       - name: Renvoyer le rapport dans le dépôt
         run: |
           set -euo pipefail

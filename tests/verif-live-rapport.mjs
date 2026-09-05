@@ -27,8 +27,8 @@ const LIVE = 'https://cmcteams.kd-mc.com';
 const REPLI = 'https://9r4rxssx64-creator.github.io/CMCteams';   // ce que Pages sert, si Cloudflare filtre le runner
 const SORTIE = 'audit/verif-live';
 const MFR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-const今 = new Date();
-const MOIS_ATTENDU = MFR[今.getMonth()] + ' ' + 今.getFullYear();
+const maintenant = new Date();
+const MOIS_ATTENDU = MFR[maintenant.getMonth()] + ' ' + maintenant.getFullYear();
 
 const lignes = [];
 let echecs = 0;
