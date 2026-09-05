@@ -3,6 +3,6 @@
   "rules_state": "hardened",
   "apex_state": "hardened",
   "shops_lock": "on",
-  "requested_at": "2026-07-05",
-  "reason": "Kevin « Go / Tout auto » — verrou écriture boutique par rôle (shops_admin_v1/products+logos+selection → auth.token.role==='admin' minté par kdmc-router /__admin/fbtoken). Prérequis complet : kdmc-fb-auth.js (intercepteur fail-open) désormais chargé sur TOUTES les surfaces d'écriture admin (studios + storefronts chez-lolo/la-detente). Orders clients + lectures INCHANGÉS (garde-fou deploy-rules.cjs). Grant = grant admin domaine (reconnu auto après 1 preuve PIN). Rollback : shops_lock=off."
+  "requested_at": "2026-09-05",
+  "reason": "Arbre v3.16 (fait n°12, dépôt PUBLIC) : /arbre n'est plus lisible en entier (plus de listing des empreintes de code) — lecture/écriture UNIQUEMENT par enfant /arbre/<empreinte 64-hex> + auth. Le code famille se vérifie désormais sur le domaine (kdmc-router /__arbre/unlock), plus dans le fichier public. Les états cmcteams/apex/shops sont inchangés (keep/hardened). Rollback : remettre la règle parent .read/.write auth != null sur /arbre."
 }

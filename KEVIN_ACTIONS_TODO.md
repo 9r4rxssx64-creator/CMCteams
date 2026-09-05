@@ -30,6 +30,20 @@ Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, 
 Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
 **Messages** suivent le routeur toutes seules.
 
+### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
+L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :
+les données sont servies par le domaine à qui tape le code. Il faut les y **mettre une fois**,
+depuis ton iPhone (le seul endroit où elles sont complètes) :
+1. Ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet **Outils** → **📤 Publier
+   l'arbre sur le domaine (admin)** → tape ton code admin (il part au domaine, rien n'est gardé).
+   Tu dois voir « 📤 Arbre publié : N personnes ».
+2. Toujours dans **Outils** → **Changer le code** de la famille : l'ancienne empreinte a été
+   publique (elle était dans le fichier), donc l'ancien code ne vaut plus rien. Repartage le
+   nouveau aux cousins. L'ancien chemin en ligne est effacé automatiquement.
+
+Tant que le geste 1 n'est pas fait : **tes appareils marchent** (ils ont tout en mémoire),
+mais un **nouvel** appareil verrait « Arbre pas encore publié sur le domaine ».
+
 ### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
 - **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
 - **Boutiques** (tableau de bord) : `Paramètres → Changer le PIN admin`.

@@ -1,5 +1,5 @@
 /* Arbre familial — Service Worker : réseau d'abord (toujours à jour), repli cache hors-ligne. */
-var CACHE = "arbre-v3.6";
+var CACHE = "arbre-v3.16";
 var ASSETS = ["./", "index.html", "manifest.json", "icon.svg"];
 self.addEventListener("install", function (e) {
   self.skipWaiting();

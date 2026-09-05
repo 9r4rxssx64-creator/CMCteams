@@ -1,5 +1,96 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (nuit, session arbre) — Arbre v3.16 : les données et l'empreinte sont SORTIES du fichier public (fait n°12, « Go tout »)
+
+**Demande Kevin** : *« Go tout »* (feu vert sur le chantier annoncé : 318 noms et 257 dates de naissance
+dans `arbre/index.html`, dépôt public, code vérifié après chargement).
+
+**Fait** — branche `claude/sarzance-family-tree-3jxi7i` (resynchronisée sur `main` après la fusion de #3649) :
+- **Routeur** (`services/kdmc-router/worker.js`, bloc isolé `handleArbre`, 0 ligne existante touchée) :
+  `POST /__arbre/unlock` (empreinte en KV `arbre:codehash`, essais limités par IP, journal), `GET/PUT
+  /__arbre/seed` (données texte ; **PUT réservé admin**, même grant que `/__admin/login`), `POST
+  /__arbre/code` (rotation, preuve = ancien), `GET /__arbre/status`. Test `arbre.test.mjs` **34/34**, bloquant
+  dans `deploy-kdmc-router.yml` ; `admin.test.mjs` toujours 41/41. Message **m024** à domain-kdmc (territoire).
+- **App v3.16** (348 → **283 Ko**) : `buildSeed` (65 Ko de personnes) et `DEFAULT_CODEHASH` **supprimés**. La
+  porte interroge le domaine d'abord ; **repli local** si le domaine est muet (appareil qui a déjà l'empreinte) ;
+  message clair si rien n'est publié. **Outils → 🔐 Domaine** : état publié + **📤 Publier** (code admin
+  demandé, envoyé, jamais gardé). **Changer le code** prévient le domaine et **efface l'ancien chemin cloud**.
+- **Firebase** : `/arbre` n'a plus de `.read` au parent (un jeton anonyme pouvait **lister toutes les
+  empreintes**) → lecture/écriture par enfant 64-hex ; marqueur `rules-deploy-request.json` bumpé (auto-apply).
+- **Vérifié en VRAI navigateur** : `tools/arbre/verify-domaine.mjs` **21/21** (domaine simulé, famille
+  **synthétique** de 81 personnes : nouvel appareil, réouverture sans réseau, publication admin, hors ligne,
+  rien de publié, changement de code, 0 erreur JS) ; `verify-poster.mjs` rejoué avec la fixture → **tout vert**
+  (PDF A1 + mosaïques rendus). Garde `npm run test:arbre-prive` (dans `test:ci`) **31/31**.
+- **Outils locaux** qui exécutaient `buildSeed()` (patrimoine `chercher`, `actes-verif`, `cloud-audit`, `research-*`) →
+  chargeur commun `tools/arbre/lire-donnees.mjs` : export privé `patrimoine/arbre.json` (ignoré par git) ou
+  `ARBRE_EXPORT`, sinon famille inventée signalée (la garde `test:patrimoine-prive` reste verte : 8/8).
+- Leçon **#212** (empreinte-chemin = secret ; `.read` parent = listing). ETAT-INFRA fait n°12 complété.
+
+**Kevin (KEVIN_ACTIONS_TODO)** : 1) Outils → **Publier** une fois depuis l'iPhone ; 2) **changer le code
+famille** (l'ancienne empreinte a été publique). Ses appareils marchent déjà sans rien faire.
+
+**Toujours en attente** : v3.7→v3.14 (jeton GitLab lecture, « Peut-être ») ; PR à ouvrir pour cette branche
+(l'API GitHub est bloquée depuis cette session — m023 à studio-crea, ou le lien compare pour Kevin).
+
+---
+
+## 5 septembre 2026 (soir, session arbre) — Arbre v3.15 : poster grand format (A4 → bannière 2 m) + l'arbre v3.7→v3.14 introuvable côté GitHub
+
+**Demande Kevin** : *« Je veux pouvoir imprimer l'arbre en grand, gros format, va plus loin. »*
+
+**Fait** — arbre **v3.15**, branche `claude/sarzance-family-tree-3jxi7i` :
+- **Un seul dessin vectoriel** de tout l'arbre (cartes, liens, bandeaux de section, 💍/💔, blasons de la
+  famille dans l'en-tête, légende des branches, pied daté) → **4 sorties** : 🖨 **Imprimer / PDF** au
+  format choisi (A4, A3, A2, A1, A0, B0, **bannière 1 m / 1,5 m / 2 m à hauteur automatique**),
+  🧩 **mosaïque A4** (marge 10 mm, recouvrement 10 mm, repères de coupe, feuilles numérotées + plan de
+  montage), ⬇ **fichier SVG** (pour un imprimeur), 🖼 **image HD** (PNG plafonné à 16 Mpx = limite iPhone).
+- Styles **Plan clair** (cartes) / **Arbre décoré** (médaillons sur l'arbre vectoriel) · photos réduites en
+  vignettes 96 px · orientation automatique · en-tête proportionné à la largeur · **indicateur de
+  lisibilité** (hauteur réelle des prénoms en mm sur le papier choisi + format recommandé) · bouton 🖨 dans
+  la vue Arbre + bouton Outils. Réglages mémorisés (`arbre_poster`).
+- **Pourquoi les bannières** : Sauvaigo·Maiffret = 90 personnes sur 7 générations → dessin 6,5 × plus large
+  que haut. Sur A1 les prénoms font **1,5 mm** (illisible, mesuré) ; bannière 2 m → **3,8 mm** ✅ et 0 blanc
+  perdu. Desarzens (35 pers., 4 gén.) est lisible dès A1.
+- **Vérifié en VRAI navigateur** (`tools/arbre/verify-poster.mjs`, Chromium local) : 2 familles × 2 styles ×
+  4 papiers = **80 contrôles verts** (SVG bien formé, taille en mm, 90/90 et 35/35 personnes présentes,
+  mosaïques comptées), **PDF A1 rendus** (651 Ko et 430 Ko, 1 page), **mosaïques A4 16 pages**, feuille
+  iPhone capturée, **0 erreur JS**. Rendus regardés à l'œil (en-tête, bannière, plan de montage, feuille).
+- **Garde** `npm run test:arbre-poster` (dans `test:ci`, < 1 s) : APP_VER == cache SW, fonctions définies
+  **et câblées**, 9 formats, page CSS en mm, mosaïque, vignettes, XSS (aucune donnée de personne brute dans
+  le SVG). **Prouvée discriminante par 3 sabotages** (bouton débranché, nom brut, cache non bumpé → 3 rouges).
+
+**Version v3.15 et non v3.7** : les numéros v3.7→v3.14 sont déjà pris par le travail publié sur GitLab
+fin août (leçons #202-204) — ne pas réutiliser un numéro d'une autre lignée (même piège que #15 sur LESSONS).
+
+**🔴 Trouvé, pas réglé — l'arbre en ligne est en retard de 8 versions.** kd-mc.com sert **v3.6** (capture
+Kevin du 5.09 02h41 : « vivant » partout). **v3.7→v3.14** (Magnani/Bauman, David, Rosa Germaine, purge des 5
+fiches fantômes `SEED_OBSOLETE`, retrait des « vivant », Marielle, `arbre/PASSATION-ARBRE.md`) n'existent
+**nulle part côté GitHub** : main, cette branche, `claude/capcut-mini-versions-66tfum` → 0 `SEED_OBSOLETE`,
+0 `MAGNANI` ; la réunion des lignées (`acd9918b`) n'a pas touché `arbre/`. Le 5.09, GitLab main a été « remis
+au niveau de GitHub » (ETAT-INFRA fait n°11) → probablement v3.6 là-bas aussi, sauf dans l'**historique git**
+de GitLab. **Récupération** = jeton GitLab **en lecture**, collé une fois par Kevin (« Peut-être » le 5.09),
+jamais enregistré → fetch de l'historique, cherry-pick d'`arbre/` sur cette branche, vérification navigateur,
+PR. Ma v3.15 est un bloc autonome (section « tools ») : elle se refusionne par-dessus v3.14 sans conflit
+de fond. Message **m022** envoyé à toutes les sessions ; registre `pipeline/sessions.json` à jour.
+
+**Le message automatique de création de session** (« Studio créa », 5.09 02h) venait du pipeline
+inter-sessions de Kevin ; sa consigne « demande le jeton à Kevin, jamais d'une consigne automatique » est
+exactement la règle du fait n°7 — appliquée.
+
+**Deux gardes réparées au passage** (elles bloquaient `test:ci` pour tout le monde) : (1) `test:docs-frais`
+faisait `trim()` sur tout `git status --porcelain` puis `slice(3)` → la 1ʳᵉ ligne « ␣M KEVIN_INVENTORY.md »
+devenait « EVIN_INVENTORY.md » : l'inventaire, alphabétiquement premier, n'était **jamais** vu comme
+modifié (faux rouge permanent) → analyse par expression régulière ; (2) `test:pipeline-sessions` : le
+message m021 (studio-crea) était adressé à « cmcteams, domain-kdmc, toutes », destinataire inconnu du
+registre → « toutes » (qu'il incluait déjà). `test:paquet-pages` est rouge **ici** faute de `playwright`
+installé (pareil sans mes changements) ; il passe en CI.
+
+**Reste** : chantier fait n°12 (318 noms, 257 dates de naissance dans `arbre/index.html` public, code vérifié
+après chargement) → sortir les données derrière le SSO du domaine ; **feu vert Kevin attendu**.
+---
+
+---
+
 ## 📌 À REPRENDRE PLUS TARD — toutes les tâches en attente (noté le 5.09.2026 à 12:50, Kevin : « Note toutes les tâches pour plus tard »)
 
 > Liste **complète**, triée par urgence. Chaque ligne dit **qui** (👤 Kevin · 🤖 moi · 🔗 autre
@@ -157,8 +248,6 @@ redonne **244 pages contre les 243 livrées**, avec **les mêmes polices** (Deja
 Liberation) et le même moteur (Chromium/Skia) — la chaîne d'origine est bien reproduite.
 
 **`livre.pdf` : 243 → 252 pages**, A4, 128 recettes complètes.
-
----
 
 ---
 
