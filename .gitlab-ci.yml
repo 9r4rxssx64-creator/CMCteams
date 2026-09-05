@@ -48,6 +48,8 @@ tests:
     - npm ci --no-audit --no-fund
     - npm run test:ci
   rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'   # miroir de publication, pas le code
+      when: never
     - changes:
         - "**/*.js"
         - "**/*.mjs"
@@ -67,6 +69,15 @@ conformite:
   # 28 minutes en quatre jours, devenues le premier poste du quota une fois la
   # publication du miroir passée à la demande. L'image alpine fait ~50 Mo.
   image: node:20-alpine
+  rules:
+    # Sur « main », cette branche est le MIROIR de publication : ses copies de
+    # .github/workflows/ ne s'exécutent nulle part, et l'arbre y date d'avant la
+    # remise en conformité (54 crons y dorment, inertes — mesuré le 5.09). Faire
+    # échouer la garde ici serait un rouge permanent que plus personne ne lit.
+    # La vérité du code, c'est GitHub : la garde y tourne à chaque envoi.
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: never
+    - when: on_success
   script:
     - node tests/verify-actions-conformes.mjs
     - |
@@ -138,6 +149,9 @@ recherches-patrimoine:
 verifier-cloudflare:
   stage: verifier
   image: alpine:3.20
+  needs: []                     # la publication de secours ne doit JAMAIS attendre
+                                # les tests : le jour où on en a besoin, c'est
+                                # justement que quelque chose ne va pas.
   rules:
     - changes: ["publier-demande.txt"]
       when: on_success
@@ -176,7 +190,7 @@ verifier-cloudflare:
 publier-site:
   stage: publier
   image: node:20
-  needs: [verifier-cloudflare]
+  needs: [verifier-cloudflare]  # et rien d'autre : indépendant des tests
   rules:
     - changes: ["publier-demande.txt"]
       when: on_success
