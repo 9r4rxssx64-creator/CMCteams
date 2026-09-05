@@ -308,19 +308,37 @@ export default {
 
   // Cron : récupération incrémentale automatique.
   async scheduled(event, env, ctx) {
-    try { await syncOnce(env, { backfill: false }); } catch { /* fail-safe */ }
     // Ce cron (0 */2 * * *) est l'une des 5 places du plan gratuit — il en prête une :
     // il réveille la surveillance du domaine (kdmc-uptime, 26 sous-domaines + 6 workers),
     // qui n'a pas pu obtenir la sienne (limite atteinte, run 33978540250 du 05/09).
-    // Fail-open : un échec ici ne touche jamais la synchro mail ci-dessus.
-    const ping = fetch(UPTIME_RUN_URL, { headers: { 'user-agent': 'kdmc-outlook cron' } })
-      .then((r) => r.text())
-      .catch(() => {});
-    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(ping); else await ping;
+    // LANCÉ EN PREMIER (relecture 05/09) : la synchro mail peut épuiser les 50 sous-requêtes
+    // du plan gratuit, et un ping lancé après serait mort en silence.
+    // Fail-open : un échec ici ne touche jamais la synchro mail ci-dessous.
+    const ping = pingUptime(env);
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(ping);
+    try { await syncOnce(env, { backfill: false }); } catch { /* fail-safe */ }
+    if (!ctx || typeof ctx.waitUntil !== 'function') await ping;
   }
 };
 
-// Surveillance du domaine — appelée par le cron ci-dessus (voir services/kdmc-uptime/wrangler.toml).
+/* Surveillance du domaine — appelée par le cron ci-dessus (services/kdmc-uptime/wrangler.toml).
+   Service Binding UPTIME (wrangler.toml [[services]]) : pas de saut HTTP public ; repli sur
+   l'URL workers.dev si le binding manque. La clé est DÉRIVÉE du secret admin déjà posé sur ce
+   worker (KDMC_ADMIN_PIN_SHA256) — le secret lui-même ne circule jamais. */
 const UPTIME_RUN_URL = 'https://kdmc-uptime.9r4rxssx64.workers.dev/run';
+async function pingUptime(env) {
+  try {
+    const base = env && env.KDMC_ADMIN_PIN_SHA256;
+    if (!base) { console.warn('uptime ping : KDMC_ADMIN_PIN_SHA256 absent, pas de clé → pas de passage'); return; }
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(base + ':uptime-run'));
+    const key = [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    const req = new Request(UPTIME_RUN_URL, { method: 'POST', headers: { 'x-uptime-key': key, 'user-agent': 'kdmc-outlook cron' } });
+    const r = env && env.UPTIME && typeof env.UPTIME.fetch === 'function' ? await env.UPTIME.fetch(req) : await fetch(req);
+    if (!r.ok) console.warn('uptime ping KO : HTTP ' + r.status);
+    if (r.body) await r.body.cancel();
+  } catch (e) {
+    console.warn('uptime ping KO : ' + String((e && e.message) || e));
+  }
+}
 
 export { matchesInvoice, keepAttachment, buildAuthorizeUrl, pkceChallenge, b64url, INVOICE_RE, REDIRECT_URI };

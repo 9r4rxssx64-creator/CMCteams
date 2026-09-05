@@ -10,6 +10,26 @@
 
 ---
 
+## ☁️ 1 clic (5.09 17h) — donner le droit « Vectorize » au jeton Cloudflare, sinon la mémoire d'Apex (RAG) ne se déploie jamais
+
+Le déploiement de `kdmc-rag` échoue avec la vraie raison, enfin lisible :
+`Authentication error [code: 10000] … Please ensure it has the correct permissions` sur
+`/vectorize/v2/indexes`. Le jeton `CLOUDFLARE_API_TOKEN` (celui des secrets GitHub) sait
+déployer des workers, mais **n'a pas le droit Vectorize**. Je ne peux pas modifier un jeton
+Cloudflare à ta place.
+
+### ▶️ 2 gestes, 1 minute
+1. Ouvre **[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)**
+   → le jeton utilisé par GitHub (celui qui a « Workers Scripts : Edit ») → **Modifier**
+   → ajoute la permission **Compte › Vectorize › Edit** → **Continuer** → **Enregistrer**.
+   (Le jeton garde la même valeur : rien à changer dans GitHub.)
+2. Écris-moi « vectorize fait » : je relance le déploiement, l'index `apex-memory` se crée
+   tout seul et `/health` d'Apex passe à `hasVec:true`.
+
+*Sans ça : Apex fonctionne (mémoire fail-open), mais sans souvenirs longs.*
+
+---
+
 ## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
 
 Ton code admin (celui à 6 chiffres) était écrit **en clair dans 68 fichiers** de ton dépôt
