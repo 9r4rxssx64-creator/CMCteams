@@ -70,6 +70,7 @@ const CHEMINS = [
   /* Quelques documents pris au hasard dans le lot : si la règle « aucun Markdown
      publié » se cassait, ce sont eux qui le diraient, pas seulement les fichiers
      que quelqu'un a pensé à lister un jour. */
+  { p: '/tools/gitlab/secrets-map.txt', quoi: 'carte des NOMS de secrets par Worker (aucune valeur, mais rien à faire en ligne)', grave: 2, docTravail: true },
   { p: '/AGENTS.md', quoi: 'consignes de travail (contrôle de la règle « aucun .md publié »)', grave: 1, docTravail: true },
   { p: '/archives/PLAINTE_ANTHROPIC.md', quoi: 'courrier personnel archivé', grave: 2, docTravail: true },
   { p: '/_PROJECTS_KDMC/e-KDMC/NOTES_USER.md', quoi: 'notes métier d\'un sous-projet', grave: 2, docTravail: true },

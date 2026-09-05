@@ -110,7 +110,10 @@ jobs:
           done
           # 3. les dossiers de travail entiers (+ les mémos perso du coffre-fort,
           #    des formulaires vierges qu'aucune page ne propose au téléchargement)
-          rm -rf audit pipeline patrimoine patrimoine-resultats coffre-fort/memo 2>/dev/null || true
+          #    tools/gitlab : les scripts de publication et leur carte des NOMS de
+          #    secrets (aucune valeur). Aucune page ne s'en sert ; un site n'a pas
+          #    à servir ses propres scripts de fabrication.
+          rm -rf audit pipeline patrimoine patrimoine-resultats coffre-fort/memo tools/gitlab 2>/dev/null || true
           apres=$(find . -type f | wc -l)
           echo "documents de travail retirés : $((avant - apres)) fichiers en moins"
           echo "le dépôt, lui, n'a pas bougé — seule la copie du runner est allégée"

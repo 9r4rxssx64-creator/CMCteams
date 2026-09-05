@@ -27,6 +27,7 @@ tar cf /tmp/site.tar --exclude=.git --exclude=.gitlab-ci.yml --exclude='*.patch'
   --exclude='pipeline' \
   --exclude='audit' \
   --exclude='memo' \
+  --exclude='tools/gitlab' \
   --exclude='CLAUDE_HANDOFF.json' \
   --exclude='actes.json' \
   .
