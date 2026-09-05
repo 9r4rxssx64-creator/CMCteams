@@ -47,6 +47,12 @@ const SURFACES = [
   { url: 'https://coffre.' + ROOT + '/', name: 'Coffre-fort', selKey: 'body' },
   { url: 'https://departs.' + ROOT + '/', name: 'Départs', selKey: 'body' },
   { url: 'https://cmcteams-light.' + ROOT + '/', name: 'CMCteams light', selKey: 'body' },
+  // 3 sous-domaines du routeur qui n'étaient JAMAIS balayés (audit domaine 05/09 : 25/26 →
+  // 26/26 + les 2 pages admin). bot/beatbot/autorisations répondent 401/403 sans session :
+  // c'est le verrou qui marche (authGated), pas une panne — l'audit est anonyme.
+  { url: 'https://bot.' + ROOT + '/', name: 'Bot crypto (tableau de bord)', selKey: 'body' },
+  { url: 'https://beatbot.' + ROOT + '/', name: 'Beatbot (robot piscine, admin)', selKey: 'body' },
+  { url: 'https://autorisations.' + ROOT + '/', name: 'Autorisations (admin)', selKey: 'body' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Déverrouille (code famille MAIFFRET déjà par défaut) et VÉRIFIE que l'arbre rend
       // vraiment des cartes — un arbre vide (bug d'agencement) échoue ici. (bug « tjs pas d'arbre » v2.4)
