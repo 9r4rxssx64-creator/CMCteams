@@ -315,3 +315,86 @@ C'est écrit à côté du job, pas seulement ici.
 > *« Est-ce que ça produit, teste, déploie ou publie CE dépôt ? Si oui → GitHub. Si non
 > → est-ce périodique ? Alors Cloudflare Worker. Sinon → GitLab CI, et j'ai compté ce que
 > ça coûte sur les 400 minutes du mois. »*
+
+---
+
+## 🚨 Fait n°12 — LE DÉPÔT EST PUBLIC, et il publiait les documents de travail (5.09.2026)
+
+En rangeant GitHub/GitLab, une chose plus grave que les minutes est apparue. Le dépôt
+`9r4rxssx64-creator/CMCteams` est **public**, et les deux publications servent « tout ce
+qu'il y a dedans ». Mesuré sur le vrai site, pas supposé :
+
+| adresse | ce qu'elle exposait |
+|---|---|
+| `/NOTES_USER.md` | 19 noms de famille, 4 dates de naissance, 10 adresses e-mail |
+| `/CLAUDE.md` | 42 noms |
+| `/KEVIN_ACTIONS_TODO.md` | 10 noms, 8 dates de naissance |
+
+**Aucune page du site ne charge ces fichiers** (vérifié : les renvois de l'app arbre
+pointent vers github.com). Ce sont des documents de travail.
+
+En creusant, la liste de 11 noms s'est révélée trop étroite : le site publiait aussi
+`AGENTS.md`, `APEX_HANDOFF.md`, tout `archives/` (courriers personnels, business plan),
+les `NOTES_USER.md` des sous-projets, et un mémo PDF « secrets GitHub » du coffre-fort
+(formulaire **vierge**, aucune valeur dedans — vérifié).
+
+### La règle retenue : aucun Markdown sur le site
+
+**Mesuré** : aucune page ne charge un `.md` depuis le site ; les seuls renvois sont des
+adresses **absolues** vers `github.com` (c'est ainsi qu'Apex relit ses documents) et aucun
+service worker n'en met en cache. Donc **672 Markdown** sortent de la publication, et la
+règle se maintient toute seule — un document ajouté demain est exclu sans y penser.
+
+**Exception assumée** : `CLAUDE_ACTIVITY.json` reste publié, la vue « activité Claude » de
+l'app le charge depuis le site. Le retirer aurait cassé un écran : c'est la mesure qui a
+évité la régression.
+
+### Ce qui les retire — des deux côtés, dans le même geste
+
+- **kd-mc.com / GitHub Pages** : étape « Retirer les documents de travail » dans
+  `.github/workflows/deploy.yml`. Elle agit sur la **copie du runner** ; le dépôt, lui,
+  n'est pas touché.
+- **miroir Cloudflare** : les `--exclude` de `tools/gitlab/publier.sh`. Première baisse
+  lue dans le journal du job : **11 228 → 11 102 fichiers**, avant l'élargissement.
+  ⚠️ La version élargie n'atteindra le miroir qu'à la prochaine remise à niveau de GitLab
+  depuis GitHub (le jeton GitLab n'est pas disponible dans cette session) : d'ici là,
+  `kdmc-site.pages.dev` publie encore les Markdown que kd-mc.com ne publie plus.
+
+### Le piège du cache — à ne plus jamais oublier
+
+Après ce retrait, le site répondait **toujours 200** sur les mêmes adresses. Ce n'était
+pas un correctif raté : c'était le **cache de bordure** de Cloudflare. `tools/audit/
+exposition-publique.mjs` casse maintenant le cache à chaque appel (`no-store` +
+paramètre unique) et **sort en erreur** quand un document de travail répond. Un contrôle
+qui se fait berner par un cache ment dans les deux sens.
+
+Il tourne **après chaque publication** de kd-mc.com (dernière étape de `deploy.yml`,
+3 essais le temps que Pages propage). Aucune exécution programmée : ça part avec la
+publication.
+
+### La garde permanente
+
+`npm run test:documents-travail` (dans `test:ci`) vérifie que les **trois** listes disent
+la même chose : le retrait de `deploy.yml`, les `--exclude` du miroir, et ce que l'audit
+sonde. Un simple test d'égalité entre deux surfaces ne verrait rien si les deux oubliaient
+le même fichier (leçon #142). Prouvée discriminante par sabotage.
+
+### Ce qui reste ouvert — dit franchement
+
+1. **`/arbre/index.html`** contient encore, **à l'intérieur du fichier**, 318 noms de
+   famille, 257 dates de naissance complètes et 12 numéros de téléphone ; le code d'accès
+   n'est vérifié qu'**après** le chargement. On ne peut pas le retirer : c'est l'app.
+   Correctif = sortir les données du fichier et les servir derrière la connexion du
+   domaine (SSO). **Chantier à part, en attente du feu vert de Kevin.**
+2. Le **dépôt et son historique** restent publics : le retrait protège le **site**, pas
+   `github.com`. Nettoyer l'historique se décide avec Kevin (réécriture = tous les liens
+   de commit changent).
+
+### Les scripts GitLab vivent désormais dans le dépôt GitHub
+
+`tools/gitlab/*.sh` (publier, vérifier, déployer un Worker, état du domaine, généalogie…)
+n'existaient **que** sur GitLab. À la prochaine remise à niveau de GitLab depuis GitHub,
+ils auraient disparu — il avait déjà fallu les repêcher à la main une fois. Ils sont
+maintenant dans GitHub **à l'identique** (copie octet pour octet, aucune divergence à
+réconcilier), et `.gitlab-ci.yml` des deux côtés est **la même recette**.
+`secrets-map.txt` ne contient que des **noms** de secrets, aucune valeur.

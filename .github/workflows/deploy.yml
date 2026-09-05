@@ -87,18 +87,33 @@ jobs:
       #    On les retire de la COPIE DE TRAVAIL du runner, jamais du dépôt.
       #    arbre/research/actesimg/ est CONSERVÉ : l'app arbre s'en sert
       #    réellement (19 références dans arbre/index.html, vérifié).
+      #    MESURÉ avant d'élargir (5.09) : AUCUNE page du site ne charge un
+      #    fichier .md. Les seuls renvois vers des .md dans le code sont des
+      #    adresses ABSOLUES vers github.com / raw.githubusercontent.com (c'est
+      #    ainsi qu'Apex relit ses documents — donc rien ne casse), et aucun
+      #    service worker n'en met en cache. La règle est donc simple et se
+      #    maintient toute seule : le site publié ne contient AUCUN Markdown.
+      #    Un document de travail ajouté demain est exclu sans rien changer ici.
       - name: Retirer les documents de travail avant publication
         run: |
           set -e
-          for f in NOTES_USER.md KEVIN_ACTIONS_TODO.md KEVIN_INVENTORY.md \
-                   MEMO_RESUME.md CLAUDE.md LESSONS.md ETAT-INFRA.md \
-                   SESSIONS-ET-BRANCHES.md CLAUDE_HANDOFF.json \
-                   arbre/research/actes.json; do
-            [ -e "$f" ] && rm -f "$f" && echo "retiré de la publication : $f"
+          avant=$(find . -type f | wc -l)
+          # 1. tous les Markdown (672 aujourd'hui) — aucune page n'en charge
+          find . -name '*.md' -type f -delete
+          # 2. les documents de travail qui ne sont pas des Markdown.
+          #    ⚠️ CLAUDE_ACTIVITY.json est VOLONTAIREMENT gardé : la vue
+          #    « activité Claude » de l'app le charge depuis le site publié
+          #    (index.html ligne ~32025, adresse github.io). Le retirer casserait
+          #    la vue — et il ne contient que des messages de commit, déjà publics.
+          for f in CLAUDE_HANDOFF.json arbre/research/actes.json; do
+            [ -e "$f" ] && rm -f "$f" && echo "retiré : $f"
           done
-          rm -rf audit pipeline patrimoine 2>/dev/null || true
-          rm -f arbre/research/*.md 2>/dev/null || true
-          echo "documents de travail retirés — le dépôt, lui, n'a pas bougé"
+          # 3. les dossiers de travail entiers (+ les mémos perso du coffre-fort,
+          #    des formulaires vierges qu'aucune page ne propose au téléchargement)
+          rm -rf audit pipeline patrimoine patrimoine-resultats coffre-fort/memo 2>/dev/null || true
+          apres=$(find . -type f | wc -l)
+          echo "documents de travail retirés : $((avant - apres)) fichiers en moins"
+          echo "le dépôt, lui, n'a pas bougé — seule la copie du runner est allégée"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
@@ -128,3 +143,31 @@ jobs:
         id: deployment3
         if: steps.deployment.outcome == 'failure' && steps.deployment2.outcome == 'failure'
         uses: actions/deploy-pages@v5
+
+      # ── VÉRIFIER, pas supposer. L'étape de retrait ci-dessus peut très bien
+      #    « réussir » et publier quand même : un nom de fichier qui change, une
+      #    exclusion oubliée, un nouveau document de travail ajouté à la racine.
+      #    Mesuré le 5.09 : le retrait a bien enlevé 126 fichiers du miroir, et
+      #    pourtant les adresses répondaient encore 200 — c'était le cache de
+      #    bordure. Une étape qui passe au vert ne prouve rien ; seule la vraie
+      #    page le prouve. Le runner GitHub a le réseau ouvert (l'agent, non).
+      #
+      #    C'est bien « la publication de CE dépôt » au sens des conditions
+      #    GitHub Actions : on contrôle ce que notre propre site vient de servir.
+      #    Aucune exécution programmée — ça part avec la publication, c'est tout.
+      - name: Vérifier que le site publié ne sert AUCUN document de travail
+        shell: bash
+        run: |
+          set -uo pipefail
+          # Pages met quelques secondes à propager : on laisse 3 chances avant
+          # de crier, sinon un simple délai de propagation ferait un faux rouge.
+          for essai in 1 2 3; do
+            echo "── contrôle $essai/3 ──"
+            if node tools/audit/exposition-publique.mjs --site https://kd-mc.com; then
+              echo "✅ rien à retirer : le site ne publie aucun document de travail."
+              exit 0
+            fi
+            [ "$essai" -lt 3 ] && { echo "propagation en cours ? nouvel essai dans 25 s"; sleep 25; }
+          done
+          echo "::error::Le site publie encore des documents de travail (détail ci-dessus)."
+          exit 1
