@@ -1,7 +1,20 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (surveillance du domaine remise en route · Départs light v1.39 · poster de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05** (Qwen gratuit en IA principale d'Apex v13.4.366 · surveillance du domaine remise en route · Départs light v1.39 · poster de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+
+## 🆓 Qwen gratuit en IA principale + bascule auto par question — Apex v13.4.366 (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | **Le relais Apex** (sa source est dans ce fichier) : sert maintenant **Qwen sans clé** via Workers AI, route `/qwen/…`, PIN obligatoire, 4 modèles essayés dans l'ordre, réponse au format OpenAI, raisonnement `<think>` filtré. L'étape « Verify deploy » fait un **vrai appel Qwen** et écrit `qwen HTTP <code>` dans le journal | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/sync-apex-secrets-to-cf-worker.yml) · [Runs (la preuve live)](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `apex-ai/v13/services/ai/ai-routing-policy.ts` | **Qui répond à quoi** : Qwen en tête pour général/résumé/traduction, Anthropic pour code/raisonnement/créatif et **toute action**, Gemini pour les images, Perplexity pour la recherche, Groq pour la vitesse. Les gratuits passent devant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-routing-policy.ts) |
+| `apex-ai/v13/services/ai/ai-router.ts` | Qwen déclaré comme fournisseur (adresse = le relais lui-même, 0 clé) et inséré dans la chaîne de secours juste après Anthropic | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-router.ts) |
+| `apex-ai/v13/services/ai/crew-experts.ts` | Qwen dans l'équipe d'experts (spécialité multilingue) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+| `apex-ai/v13/features/chat/chat-misc-wiring.ts` | Le libellé du mode ⚡ « Gratuit malin » explique la bascule en clair | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/features/chat/chat-misc-wiring.ts) |
+| `tests/verify-apex-proxy-qwen.mjs` | **NOUVEAU** — la preuve sans réseau : extrait le relais du workflow, le fait tourner avec un Workers AI simulé, 17 contrôles (PIN, formats, filtre `<think>`, modèle mort → suivant, cause exacte). `npm run test:apex-proxy-qwen` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-apex-proxy-qwen.mjs) |
+| `apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` | **NOUVEAU** — la garde : Qwen reste principal, la bascule par question tient, et un fournisseur ne peut plus être oublié dans une liste (13 tests, 3 sabotages prouvés) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts) |
+| `LESSONS.md` · `CLAUDE.md` | Leçon **#214** + règle « Qwen gratuit en IA principale + bascule auto » | [LESSONS](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/LESSONS.md) · [CLAUDE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE.md) |
 
 ## 🛰️ Surveillance du domaine remise en route — session 2026-09-05 (soir)
 

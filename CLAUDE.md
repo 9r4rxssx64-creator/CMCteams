@@ -4,6 +4,66 @@ Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26 (Ape
 
 ---
 
+## 🆓 RÈGLE ABSOLUE — QWEN GRATUIT EN IA PRINCIPALE + BASCULE AUTO PAR QUESTION (Kevin 2026-09-05, ABSOLUE)
+
+> **« Fait tourner Apex sur Qwen l'IA gratuite, privilégie les IA gratuites en tâche principale
+> pour l'instant, et suivant les questions elle bascule automatiquement sur la plus polyvalente,
+> la plus pertinente pour la tâche demandée. »** — Kevin 2026-09-05
+
+**Règle absolue, NON-NÉGOCIABLE** — Apex v13 (référence v13.4.366), tout projet qui appelle une IA.
+
+### 1. Les gratuites d'abord, et « gratuit » veut dire 0 clé
+- **Qwen** répond par défaut aux questions du quotidien. Il tourne sur **Workers AI** (compte
+  Cloudflare, binding `[ai]`) **dans le relais Apex existant** (`apex-secrets-proxy`,
+  route `/qwen/v1/chat/completions`, même PIN que le reste). **Aucune clé** à demander à Kevin :
+  `DASHSCOPE_API_KEY` n'existe pas et ne doit pas exister.
+- Ordre des gratuits (`FREE_PROVIDERS`) : **qwen → groq → gemini → openrouter**. Le mode par
+  défaut `free-smart` prend le **premier gratuit** de la préférence du domaine — l'ordre de cette
+  liste compte autant que celui des domaines.
+- Avant d'ajouter un fournisseur « à clé », vérifier ce que le compte Cloudflare offre déjà sans clé.
+
+### 2. La bascule se décide par TYPE DE QUESTION, jamais par prix seul
+| Type de question | Premier choix | Pourquoi |
+|---|---|---|
+| général, résumé, traduction | **Qwen** | gratuit, polyvalent, multilingue |
+| code, raisonnement, créatif | **Anthropic** | le plus pertinent, Qwen en 2ᵉ |
+| **toute action** (lance, déploie, corrige, envoie, sauvegarde…) | **Anthropic** | **seul fournisseur avec des outils** — la règle `detectDomain` envoie les verbes d'action vers `admin` |
+| image / photo | **Gemini** | Qwen n'est **jamais** proposé en vision |
+| recherche web | **Perplexity** | |
+| vitesse | **Groq** | |
+
+Anthropic reste **le filet derrière tout le monde** (chaîne de secours `anthropic → qwen → …`).
+Jamais une IA sans outils pour une action, jamais une IA sans vision pour une image.
+
+### 3. Le relais parle le format que le client sait déjà lire
+Sortie **OpenAI** (non-stream `choices[0].message.content`, stream `choices[0].delta.content` +
+`[DONE]`) pour réutiliser le lecteur SSE existant. Le raisonnement `<think>…</think>` de Qwen3
+est **filtré côté relais** (même balise coupée entre deux morceaux) : Kevin ne voit jamais le
+monologue interne. Modèle mort → le suivant, nommé dans `x-apex-model` ; tous morts → 502 avec
+la liste des tentatives (cause exacte, jamais muet).
+
+### 4. Un fournisseur s'ajoute aux CINQ endroits, sinon il est ignoré en silence
+`PROVIDERS` + `DEFAULT_CHAIN` + liste `supported` de `buildPolicyAwareChain` (liste blanche en
+dur : un oubli = fournisseur **silencieusement ignoré**, erreur #28) + `PROXY_PROVIDERS` du client
++ `crew-experts` (+ `FREE_PROVIDERS` si gratuit, + coût 0 dans `tokens-dashboard`). La garde
+`tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` lit le source et vérifie chaque endroit.
+
+### 5. Preuve sans réseau + preuve live
+- Sans réseau : `npm run test:apex-proxy-qwen` extrait le worker du heredoc du workflow et le fait
+  tourner avec un `env.AI` simulé (17 contrôles). Câblé dans `test:ci`.
+- Live : l'étape « Verify deploy » du workflow fait un **vrai POST Qwen** avec le PIN et imprime
+  `qwen HTTP <code>` — l'agent ne peut atteindre ni workers.dev ni l'API GitHub, le journal CI est
+  la preuve (leçon #135).
+
+### 6. Test mental obligatoire avant de toucher au routage IA
+> *« Cette question va-t-elle à une IA gratuite quand une gratuite suffit ? Va-t-elle à l'IA la
+> plus PERTINENTE quand ça compte (outils, vision, raisonnement) ? Le fournisseur que j'ajoute
+> est-il dans les 5 listes ? Ai-je une preuve qu'il répond, sans réseau ET en vrai ? »*
+
+S'applique : Apex v13 (référence), CMCteams IA, tous projets présents et futurs. Leçon **#214**.
+
+---
+
 ## 🌍 RÈGLE ABSOLUE — DÉPÔT PUBLIC : LE CODE SE LIT, LES DONNÉES ET LES CLÉS NON (Kevin 2026-09-05, ABSOLUE)
 
 > **« Public mais sécurisé normalement. »** — Kevin 2026-09-05

@@ -1,5 +1,41 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (nuit) — Qwen gratuit devient l'IA principale d'Apex, bascule auto par question (v13.4.366)
+
+**Demande Kevin** : *« Fait tourner Apex sur Qwen l'IA gratuite, privilégie les IA gratuites en tâche
+principale pour l'instant, et suivant les questions elle bascule automatiquement sur la plus
+polyvalente, la plus pertinente pour la tâche demandée. »*
+
+**Ce qui change pour Kevin** (badge **v13.4.366**) :
+- **Qwen répond par défaut** aux questions du quotidien (général, résumé, traduction) — **0 clé**,
+  **0 €** : il tourne sur Workers AI, dans le compte Cloudflare, via le relais Apex existant.
+- **Bascule automatique** selon la question : code / raisonnement / créatif → **Anthropic** ;
+  **toute action** (« lance », « déploie », « corrige », « envoie »…) → **Anthropic** (seul à avoir
+  les outils) ; photo / image → **Gemini** ; recherche → **Perplexity** ; réponse ultra-rapide →
+  **Groq**. Anthropic reste le filet derrière tout le monde.
+- Le mode ⚡ par défaut « Gratuit malin » l'explique en clair dans le chat.
+
+**Comment c'est fait** (tout dans un commit, docs comprises) :
+- Relais `apex-secrets-proxy` (source dans le workflow `sync-apex-secrets-to-cf-worker.yml`) :
+  binding `[ai]`, route `/qwen/v1/chat/completions` (PIN obligatoire), 4 modèles Qwen essayés dans
+  l'ordre (3.8-27b en tête), sortie au format OpenAI (stream + non-stream), raisonnement `<think>`
+  filtré, `/health` annonce `qwen`. L'étape « Verify deploy » fait un **vrai appel Qwen** et
+  imprime `qwen HTTP <code>` dans le journal CI = la preuve live.
+- Client Apex : `qwen` ajouté aux 5 endroits (PROVIDERS, chaîne, `supported`, PROXY_PROVIDERS,
+  crew) + `FREE_PROVIDERS` en tête ; préférences par domaine réécrites ; les verbes d'action
+  envoient vers `admin` (Anthropic) ; coût `qwen_cf` = 0 dans le tableau des jetons.
+- **Preuves** : `tests/verify-apex-proxy-qwen.mjs` (worker extrait + Workers AI simulé, 17
+  contrôles), `tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` (13 tests, 3 sabotages
+  prouvés discriminants), 304/304 non-régression, tsc propre sur les fichiers touchés.
+  Leçon **#214**.
+
+**Limite honnête** : depuis l'agent je ne peux atteindre ni workers.dev ni l'API GitHub. Le
+déploiement du relais part **au merge dans main** (le workflow a changé) ; c'est son journal
+« Verify deploy » qui prouve Qwen en vrai. `/health` garde un cache de 5 min côté client avant
+d'afficher `qwen`.
+
+---
+
 ## 5 septembre 2026 (soir) — la surveillance du domaine était éteinte depuis 22 jours
 
 **Demande Kevin** : *« Fais ton audit du domaine, chaque app, pages, tout ce que nous avons créé »*
