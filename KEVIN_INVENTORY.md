@@ -1,7 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (rapatriement des automatisations · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05** (poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+
+## 🖼 Poster grand format de l'arbre — session 2026-09-05 (arbre v3.15, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (bloc « POSTER GRAND FORMAT ») | Dans l'arbre : **Outils → 🖼 Poster grand format**, ou le bouton **🖨** de la vue Arbre. Un dessin vectoriel de toute la famille → **PDF** (A4 → A0, B0, **bannières 1 m / 1,5 m / 2 m**), **mosaïque A4** à découper-coller (plan de montage numéroté), **fichier SVG** pour un imprimeur, **image HD**. Indicateur de lisibilité (taille réelle des prénoms en mm) | [ouvrir l'arbre](https://arbre.kd-mc.com) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `tests/arbre-poster.test.mjs` | **La garde** (`npm run test:arbre-poster`, dans `test:ci`) : fonctions définies ET câblées, version app = cache hors-ligne, 9 formats, mosaïque, XSS. Prouvée par 3 sabotages | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
+| `tools/arbre/verify-poster.mjs` | **Vérification en vrai navigateur** (Chromium) : construit le poster pour chaque famille × style × papier, compte les personnes, rend les PDF (poster + mosaïque), capture la feuille iPhone. `node tools/arbre/verify-poster.mjs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) |
 
 ## 🔀 Où va chaque automatisation — session 2026-09-05
 

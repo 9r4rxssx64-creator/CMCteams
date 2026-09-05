@@ -122,7 +122,11 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .famchip.on{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#3a2708;border-color:transparent}
 .okb{color:#2c7a3f;font-weight:700}
 #printArea{display:none}
+#posterPrev{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:6px 0 2px;box-shadow:var(--sh)}#posterPrev svg{width:100%;height:auto;display:block}
+.psheet .famchip small{font-weight:600;font-size:11px;margin-left:5px;opacity:.75}
 @media print{
+  #printArea .poster-page{page-break-after:always;break-after:page}#printArea .poster-page:last-child{page-break-after:auto;break-after:auto}
+  #printArea svg.poster{display:block;width:100%;height:auto;max-height:100vh}
   body.printing #app,body.printing #gate,body.printing .ov,body.printing #toast{display:none!important}
   body.printing #printArea{display:block!important;background:#fff}
   #printArea .pr-title{font-family:Georgia,serif;font-size:20px;font-weight:700;color:#5a3d18;margin:0 0 10px}
@@ -262,7 +266,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.6";
+var APP_VER="v3.15";
 var DEFAULT_CODEHASH="a43c9ae454dfed007839c2e26b7b5358b7bc4087ecd74094d2dd43cc4b624aa7"; /* empreinte du code famille — v9.885 : le code en clair était écrit ici en commentaire (audit 2026-08-09) */
 /* ---------- utils ---------- */
 function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
@@ -843,9 +847,9 @@ function renderTree(){
   w.innerHTML='<div id="stageWrap"'+(VIEWSTYLE==="plan"?' class="plan"':'')+'><div id="treeBg"><div id="treeArt">'+treeBgSVG()+'</div><img id="treePhoto" src="'+famPhoto(FAMKEY)+'?v='+APP_VER+'" alt="" onload="this.classList.add(\'on\');var a=document.getElementById(\'treeArt\');if(a)a.style.opacity=0" onerror="if(this.src.indexOf(\'tree-oak\')>=0){this.src=\'tree.jpg?v='+APP_VER+'\';}else{this.style.display=\'none\';}"><div id="treeScrim"></div></div><div id="stage"></div>'
     +'<div class="treemode"><button data-style="arbre"'+(VIEWSTYLE==="arbre"?' class="on"':'')+'>🌳 Arbre</button><button data-style="plan"'+(VIEWSTYLE==="plan"?' class="on"':'')+'>📋 Plan</button></div>'
     +'<div class="treemode fampick"><button data-fam="o"'+(FAMKEY==="o"?' class="on"':'')+'>🫒 Sauvaigo · Maiffret</button><button data-fam="c"'+(FAMKEY==="c"?' class="on"':'')+'>🌳 Desarzens</button></div>'
-    +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button><button data-z="leg" aria-label="Légende">❓</button></div>'
+    +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button><button data-z="leg" aria-label="Légende">❓</button><button data-z="print" aria-label="Imprimer en grand format">🖨</button></div>'
     +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 ":"")+famLabel(FAMKEY)+" · "+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length+' personnes · glisse · pince · touche une fiche</div></div>';
-  var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="leg")showLegend();else if(b.dataset.z==="fit")fitStage(true);else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
+  var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="leg")showLegend();else if(b.dataset.z==="print")openPoster();else if(b.dataset.z==="fit")fitStage(true);else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
   document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}renderTree();};});
   document.querySelectorAll(".fampick [data-fam]").forEach(function(b){b.onclick=function(){if(FAMKEY===b.dataset.fam)return;FAMKEY=b.dataset.fam;try{localStorage.setItem("arbre_fam",FAMKEY);}catch(e){}renderTree();};});
   setupPanZoom();drawStage(true);
@@ -1031,40 +1035,228 @@ function renderSearch(){var w=$("#wrap");var ids=Object.keys(DB.persons).sort(fu
 function openSearch(id){var p=P(id);if(!p)return;var h='<div class="sheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">🔎 '+esc(full(p))+'</h2><p class="mut" style="margin:2px 0 12px;font-size:13px">Ouvre chaque source, confirme la date, puis reviens la saisir sur la fiche.</p>'+searchLinks(p).map(function(l){return '<a class="btn" style="width:100%;margin:6px 0;justify-content:space-between" target="_blank" rel="noopener" href="'+esc(l.u)+'">'+esc(l.t)+' <span class="mut">↗</span></a>';}).join("")+'<button class="btn ghost" data-close style="width:100%;margin-top:10px">Fermer</button></div>';showOverlay(h);}
 
 /* ---------- tools ---------- */
-/* Impression / PDF : rend la famille affichée en A4 paysage (échelle auto),
-   puis window.print() — sur iPhone : Partager → Imprimer → pincer → PDF. */
-function exportPrint(){
-  try{
-    var lay=layoutMainFamily();if(!lay||!lay.nodes.length){toast("Rien à imprimer");return;}
-    var W=lay.w,H=lay.h;
-    var sc=Math.min(1100/W,720/H,1);
-    window._LSET=_lineageSet();_RENDERSTYLE="card";
-    var svg='<svg width="'+W+'" height="'+H+'" style="position:absolute;left:0;top:0">'+lay.links.map(function(l){
-      var gold=l.child&&_LSET[l.child]&&(function(){var c=P(l.child);return c&&((c.pere&&_LSET[c.pere])||(c.mere&&_LSET[c.mere]));})();
-      if(l.couple)return '<line x1="'+l.x1+'" y1="'+l.y1+'" x2="'+l.x2+'" y2="'+l.y2+'" stroke="#7a5427" stroke-width="2.6" stroke-linecap="round"/>';
-      var my=(l.y1+l.y2)/2;return '<path d="M'+l.x1+' '+l.y1+' V '+my+' H '+l.x2+' V '+l.y2+'" fill="none" stroke="'+(gold?'#b0842c':'#7a5427')+'" stroke-width="'+(gold?3.4:2.3)+'"/>';}).join("")+'</svg>';
-    var rowsY={};lay.nodes.forEach(function(n){var k=Math.round(n.y/10)*10;rowsY[k]=Math.min(rowsY[k]||1e9,n.y);});
-    var _b2=(lay.bands&&lay.bands.length>1)?lay.bands[1].y:Infinity;
-    var gl=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;})
-      .map(function(y,i){return '<div class="genlab" style="top:'+Math.max(4,rowsY[y]-70)+'px">Gén. '+(i+1)+'</div>';}).join("");
-    var nodes=lay.nodes.map(tnodeHTML).join("");
-    var box=document.getElementById("printArea");
-    if(!box){box=document.createElement("div");box.id="printArea";document.body.appendChild(box);}
-    box.innerHTML='<div class="pr-title">'+famLabel(FAMKEY)+' — Arbre familial · '+new Date().toLocaleDateString("fr-FR")+'</div>'
-      +'<div class="pr-stage" style="width:'+(W*sc)+'px;height:'+(H*sc)+'px"><div style="position:relative;width:'+W+'px;height:'+H+'px;transform:scale('+sc+');transform-origin:0 0">'+svg+gl+nodes+'</div></div>'
-      +'<div class="pr-foot">arbre.kd-mc.com · '+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length+' personnes</div>';
-    document.body.classList.add("printing");
-    var done=function(){document.body.classList.remove("printing");window.removeEventListener("afterprint",done);};
-    window.addEventListener("afterprint",done);
-    setTimeout(function(){window.print();setTimeout(done,1500);},80);
-  }catch(e){toast("Impression impossible : "+e.message);}
+/* ===== POSTER GRAND FORMAT (v3.15 — Kevin 5.09.2026 « imprimer l'arbre en grand, gros format, va plus loin ») =====
+   Un seul dessin VECTORIEL (SVG) de tout l'arbre → net à n'importe quelle taille, du A4 au A0.
+   Quatre sorties depuis ce même dessin :
+     🖨 Imprimer / PDF au format choisi (A4 → A0)   🧩 Mosaïque A4 à découper et coller (impression maison)
+     ⬇ fichier SVG (à donner à un imprimeur)         🖼 image HD (PNG, plafonnée à ce que l'appareil sait rendre)
+   Les photos sont réduites en vignettes 96 px : le poster reste léger et l'image HD reste possible. */
+var POSTER_PAPERS={A4:[210,297],A3:[297,420],A2:[420,594],A1:[594,841],A0:[841,1189],B0:[1000,1414],L100:[1000,0],L150:[1500,0],L200:[2000,0]}; /* hauteur 0 = bannière : la hauteur suit l'arbre */
+var POSTER_ORDER=["A4","A3","A2","A1","A0","B0","L100","L150","L200"];
+var POSTER_LABEL={A4:"A4",A3:"A3",A2:"A2",A1:"A1",A0:"A0",B0:"B0",L100:"Bannière 1 m",L150:"Bannière 1,5 m",L200:"Bannière 2 m"};
+function _posterPaperLabel(pp){return (POSTER_LABEL[pp.name]||pp.name)+(pp.orient==="bannière"?"":" "+pp.orient);}
+var POSTER_OPT={fam:FAMKEY,style:"plan",paper:"A1",photos:true};
+try{var _po=JSON.parse(localStorage.getItem("arbre_poster")||"{}");if(_po&&POSTER_PAPERS[_po.paper])POSTER_OPT.paper=_po.paper;if(_po&&(_po.style==="plan"||_po.style==="arbre"))POSTER_OPT.style=_po.style;if(_po&&_po.photos===false)POSTER_OPT.photos=false;}catch(e){}
+function _posterSave(){try{localStorage.setItem("arbre_poster",JSON.stringify({paper:POSTER_OPT.paper,style:POSTER_OPT.style,photos:POSTER_OPT.photos}));}catch(e){}}
+function _r1(v){return Math.round(v*10)/10;}
+function _lighten(hex,f){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);function m(c){return Math.round(c+(255-c)*f);}return "rgb("+m(r)+","+m(g)+","+m(b)+")";}
+/* texte SVG qui ne déborde jamais de sa boîte : au-delà de maxW, les glyphes sont resserrés (pas coupés) */
+function _fitText(txt,x,y,fs,maxW,attrs){txt=String(txt==null?"":txt);var w=txt.length*fs*0.56;var tl=w>maxW?' textLength="'+_r1(maxW)+'" lengthAdjust="spacingAndGlyphs"':'';return '<text x="'+_r1(x)+'" y="'+_r1(y)+'" font-size="'+fs+'"'+tl+' '+(attrs||"")+'>'+esc(txt)+'</text>';}
+function posterLayout(fam){var keep=FAMKEY;FAMKEY=fam;try{return layoutMainFamily();}finally{FAMKEY=keep;}}
+function _posterTitle(fam){return fam==="c"?"Famille Desarzens":"Famille Sauvaigo · Maiffret";}
+function _posterFile(fam){return fam==="c"?"Desarzens":"Sauvaigo-Maiffret";}
+/* papier : orientation automatique = celle qui donne le plus grand dessin ; viewBox = la feuille entière, arbre centré */
+function _posterPaper(paper,W,H){var d=POSTER_PAPERS[paper]||POSTER_PAPERS.A1,pw=d[0],ph=d[1];
+  if(!ph){var k=pw/W;return {name:POSTER_PAPERS[paper]?paper:"A1",orient:"bannière",wmm:pw,hmm:Math.round(H*k),mmPerPx:k,vx:0,vy:0,vw:W,vh:H};}
+  var sp=Math.min(pw/W,ph/H),sl=Math.min(ph/W,pw/H),portrait=sp>=sl;var wmm=portrait?pw:ph,hmm=portrait?ph:pw;var mmPerPx=Math.min(wmm/W,hmm/H);
+  var vw=wmm/mmPerPx,vh=hmm/mmPerPx;return {name:POSTER_PAPERS[paper]?paper:"A1",orient:portrait?"portrait":"paysage",wmm:wmm,hmm:hmm,mmPerPx:mmPerPx,vx:-(vw-W)/2,vy:-(vh-H)/2,vw:vw,vh:vh};}
+/* vignettes 96 px des photos (jamais les photos pleine taille dans le poster) */
+var _posterThumbCache={};
+function posterThumbs(lay,withPhotos){
+  if(!withPhotos)return Promise.resolve({});
+  var jobs=[];
+  lay.nodes.forEach(function(n){var p=P(n.id);var ph=p&&p.photos&&p.photos[0];if(!ph)return;var key=n.id+":"+ph.length;if(_posterThumbCache[key])return;
+    jobs.push(new Promise(function(res){var im=new Image();im.onload=function(){try{var S=96,cv=document.createElement("canvas");cv.width=S;cv.height=S;var cx=cv.getContext("2d");var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,s=Math.max(S/w,S/h);cx.drawImage(im,(S-w*s)/2,(S-h*s)/2,w*s,h*s);_posterThumbCache[key]=cv.toDataURL("image/jpeg",0.82);}catch(e){}res();};im.onerror=function(){res();};im.src=ph;}));});
+  return Promise.all(jobs).then(function(){var out={};lay.nodes.forEach(function(n){var p=P(n.id);var ph=p&&p.photos&&p.photos[0];if(ph&&_posterThumbCache[n.id+":"+ph.length])out[n.id]=_posterThumbCache[n.id+":"+ph.length];});return out;});
 }
+function posterBuild(opt){
+  opt=opt||{};var fam=(opt.fam==="c"||opt.fam==="o")?opt.fam:FAMKEY;
+  var lay=posterLayout(fam);if(!lay||!lay.nodes.length)return Promise.reject(new Error("Rien à imprimer pour cette famille"));
+  return posterThumbs(lay,opt.photos!==false).then(function(th){return posterCompose(lay,fam,opt.style||"plan",opt.paper||"A1",th);});
+}
+function posterCompose(lay,fam,style,paper,thumbs){
+  thumbs=thumbs||{};var plan=(style!=="arbre"),T=TREE;
+  var base=Math.max(1,Math.min(8,Math.max(lay.w,1180)/1400)); /* facteur d'échelle de l'en-tête et de la légende */
+  var M=Math.round(48*base),HH=Math.round(214*base),FH=Math.round(170*base),MINW=1180;
+  var W=Math.max(lay.w,MINW)+M*2,H=M+HH+lay.h+FH+M;
+  var ox=M+(Math.max(lay.w,MINW)-lay.w)/2,oy=M+HH;   /* origine de l'arbre dans le poster */
+  var pp=_posterPaper(paper,W,H);
+  var LSET=_lineageSet();
+  function goldLink(l){if(!l.child||!LSET[l.child])return false;var c=P(l.child);return !!(c&&((c.pere&&LSET[c.pere])||(c.mere&&LSET[c.mere])));}
+  var SERIF="Georgia,'Times New Roman',serif";
+  var defs='<defs>'
+   +'<linearGradient id="pcard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffef8"/><stop offset="1" stop-color="#f6ecd3"/></linearGradient>'
+   +'<radialGradient id="pav" cx="36%" cy="30%" r="70%"><stop offset="0" stop-color="#fffbef"/><stop offset="1" stop-color="#e7d4a6"/></radialGradient>'
+   +'<linearGradient id="pbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#efe4c8"/><stop offset="1" stop-color="#e3d1a8"/></linearGradient>'
+   +'<linearGradient id="ptitle" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b0842c"/><stop offset="1" stop-color="#4f7d44"/></linearGradient>'
+   +'<clipPath id="pclip"><rect width="186" height="72" rx="16"/></clipPath>'
+   +'<clipPath id="pavc"><circle cx="38" cy="36" r="24"/></clipPath>'
+   +'<clipPath id="pmed"><circle cx="0" cy="0" r="30"/></clipPath>'
+   +'</defs>';
+  /* ---- fond de feuille + en-tête ---- */
+  var dateStr=new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+  var rowsY={};lay.nodes.forEach(function(n){var k=Math.round(n.y/10)*10;rowsY[k]=Math.min(rowsY[k]||1e9,n.y);});
+  var _b2=(lay.bands&&lay.bands.length>1)?lay.bands[1].y:Infinity;
+  var ys=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;});
+  var gens=ys.length,n=lay.nodes.length,title=_posterTitle(fam);
+  var s='<rect x="'+_r1(pp.vx)+'" y="'+_r1(pp.vy)+'" width="'+_r1(pp.vw)+'" height="'+_r1(pp.vh)+'" fill="#ffffff"/>';
+  var ty=M+Math.round(70*base);
+  s+='<text x="'+M+'" y="'+ty+'" font-family="'+SERIF+'" font-style="italic" font-weight="700" font-size="'+_r1(58*base)+'" fill="url(#ptitle)">'+esc(title)+'</text>';
+  s+='<text x="'+M+'" y="'+_r1(ty+42*base)+'" font-size="'+_r1(22*base)+'" fill="#6b5430">Arbre généalogique · '+n+' personne'+(n>1?"s":"")+' · '+gens+' génération'+(gens>1?"s":"")+'</text>';
+  s+='<text x="'+M+'" y="'+_r1(ty+74*base)+'" font-size="'+_r1(17*base)+'" fill="#8a7a55">'+esc(dateStr)+' · arbre.kd-mc.com</text>';
+  s+='<line x1="'+M+'" y1="'+(M+HH-Math.round(22*base))+'" x2="'+(W-M)+'" y2="'+(M+HH-Math.round(22*base))+'" stroke="#c9b27a" stroke-width="'+_r1(1.5*base)+'"/>';
+  /* blasons de la famille, à droite de l'en-tête (réels ou créés — ceux de l'onglet 🛡 Blasons) */
+  var noms=fam==="c"?["DESARZENS"]:["MAIFFRET","SAUVAIGO"],bx=W-M;
+  noms.forEach(function(nm){try{var b=anyBlasonSVG(nm,_famMembers(nm));var bw=Math.round(118*base),bh=Math.round(158*base);bx-=bw;
+    if(/^<img/.test(b)){var src=(b.match(/src="([^"]+)"/)||[])[1];if(src)s+='<image href="'+esc(src)+'" x="'+bx+'" y="'+(M+2)+'" width="'+bw+'" height="'+bh+'" preserveAspectRatio="xMidYMid meet"/>';}
+    else s+=b.replace(/^<svg/,'<svg x="'+bx+'" y="'+(M+2)+'" width="'+bw+'" height="'+bh+'"');
+    s+='<text x="'+(bx+bw/2)+'" y="'+(M+HH-Math.round(30*base))+'" text-anchor="middle" font-size="'+_r1(12*base)+'" font-weight="700" letter-spacing="1" fill="#7a5427">'+esc(nm)+'</text>';bx-=Math.round(16*base);}catch(e){}});
+  /* ---- zone de l'arbre ---- */
+  if(!plan){s+='<rect x="'+M+'" y="'+oy+'" width="'+(W-2*M)+'" height="'+lay.h+'" rx="22" fill="url(#pbg)"/>';
+    s+=treeBgSVG().replace(/^<svg[^>]*>/,'<svg x="'+M+'" y="'+oy+'" width="'+(W-2*M)+'" height="'+lay.h+'" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax slice" opacity=".82">');}
+  var g='<g transform="translate('+_r1(ox)+','+_r1(oy)+')">';
+  if(plan)ys.forEach(function(y,i){if(i%2===1)g+='<rect x="0" y="'+_r1(rowsY[y]-79)+'" width="'+_r1(lay.w)+'" height="158" fill="rgba(122,84,39,.07)"/>';});
+  (lay.bands||[]).forEach(function(b){g+='<line x1="'+T.PAD+'" y1="'+_r1(b.y)+'" x2="'+_r1(lay.w-T.PAD)+'" y2="'+_r1(b.y)+'" stroke="rgba(122,84,39,.28)" stroke-width="1.4" stroke-dasharray="2 9"/>';});
+  function elbow(l){var r=12,my=(l.y1+l.y2)/2;if(Math.abs(l.x2-l.x1)<3)return 'M'+_r1(l.x1)+' '+_r1(l.y1)+' L '+_r1(l.x2)+' '+_r1(l.y2);var sg=l.x2>l.x1?1:-1;
+    return 'M'+_r1(l.x1)+' '+_r1(l.y1)+' L '+_r1(l.x1)+' '+_r1(my-r)+' Q '+_r1(l.x1)+' '+_r1(my)+' '+_r1(l.x1+sg*r)+' '+_r1(my)+' L '+_r1(l.x2-sg*r)+' '+_r1(my)+' Q '+_r1(l.x2)+' '+_r1(my)+' '+_r1(l.x2)+' '+_r1(my+r)+' L '+_r1(l.x2)+' '+_r1(l.y2);}
+  var couples=[];
+  lay.links.forEach(function(l){
+    if(l.couple){var cst=l.st||"m";if(cst!=="x")couples.push({x:(l.x1+l.x2)/2,y:l.y1,st:cst});
+      var dash=cst==="x"?' stroke-dasharray="2 8" opacity=".35"':(cst==="d"||cst==="s")?' stroke-dasharray="8 6" opacity=".8"':' opacity=".95"';
+      g+='<line x1="'+_r1(l.x1)+'" y1="'+_r1(l.y1)+'" x2="'+_r1(l.x2)+'" y2="'+_r1(l.y2)+'" stroke="'+(plan?'#b0842c':'#ffd977')+'" stroke-width="'+(plan?2.4:3)+'" stroke-linecap="round"'+dash+'/>';return;}
+    var gold=goldLink(l),my=(l.y1+l.y2)/2;
+    if(plan){g+='<path d="'+elbow(l)+'" fill="none" stroke="'+(gold?'#c9992f':'#8a6134')+'" stroke-width="'+(gold?3.8:2.6)+'" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>';return;}
+    var d='M'+_r1(l.x1)+' '+_r1(l.y1)+' C '+_r1(l.x1)+' '+_r1(my)+' '+_r1(l.x2)+' '+_r1(my)+' '+_r1(l.x2)+' '+_r1(l.y2);
+    g+='<path d="'+d+'" fill="none" stroke="rgba(60,40,10,.38)" stroke-width="'+(gold?6:4.8)+'" stroke-linecap="round"/><path d="'+d+'" fill="none" stroke="'+(gold?'#ffd977':'#f3e2b6')+'" stroke-width="'+(gold?4:2.8)+'" stroke-linecap="round" opacity=".95"/>';});
+  couples.forEach(function(c){var tx='translate('+_r1(c.x)+','+_r1(c.y)+')';
+    if(c.st==="d"||c.st==="s"){g+='<g transform="'+tx+'"><rect x="-40" y="-12" width="80" height="24" rx="12" fill="#fff1ee" stroke="#c46a6a" stroke-width="1.2"/><text x="-31" y="5" font-size="13">💔</text><text x="7" y="4" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing=".3" fill="#a03d3d">'+(c.st==="d"?"DIVORCÉS":"SÉPARÉS")+'</text></g>';}
+    else g+='<g transform="'+tx+'"><circle r="13" fill="#fff8e6" stroke="#c9992f" stroke-width="1.2"/><text y="5" text-anchor="middle" font-size="14">💍</text></g>';});
+  function cardSVG(nd){var p=P(nd.id);if(!p)return "";var bc=branchOf(p).c,sub=lifespan(p)||(p.vivant?"vivant":""),blood=!!(LSET[nd.id]&&!nd.root),th=thumbs[nd.id];
+    var c='<g transform="translate('+_r1(nd.x-93)+','+_r1(nd.y-36)+')">';
+    if(blood||nd.root)c+='<rect x="-3" y="-3" width="192" height="78" rx="19" fill="none" stroke="#e9b94a" stroke-width="'+(nd.root?4:2.5)+'" opacity=".9"/>';
+    c+='<rect width="186" height="72" rx="16" fill="url(#pcard)" stroke="'+(nd.root?'#c9992f':'#b59a63')+'" stroke-width="'+(nd.root?2.2:1.2)+'"/>';
+    c+='<g clip-path="url(#pclip)"><rect width="8" height="72" fill="'+bc+'"/>'+(p.sexe==="M"?'<rect x="8" width="178" height="2.5" fill="#5d9fd6" opacity=".75"/>':p.sexe==="F"?'<rect x="8" width="178" height="2.5" fill="#ff9ec7" opacity=".85"/>':'')+'</g>';
+    c+='<circle cx="38" cy="36" r="24" fill="url(#pav)"/>';
+    if(th)c+='<image href="'+th+'" x="14" y="12" width="48" height="48" clip-path="url(#pavc)" preserveAspectRatio="xMidYMid slice"/>';
+    else c+='<text x="38" y="43.5" text-anchor="middle" font-family="'+SERIF+'" font-weight="700" font-size="21" fill="#7a5427">'+esc(initials(p))+'</text>';
+    c+='<circle cx="38" cy="36" r="24" fill="none" stroke="'+(p.sexe==="M"?'#5d9fd6':p.sexe==="F"?'#d98bb3':'#b59a63')+'" stroke-width="2"/>';
+    c+=_fitText(p.prenom||full(p),68,(p.nom?27:33),15,112,'font-family="'+SERIF+'" font-weight="700" fill="#2c2010"');
+    if(p.nom)c+=_fitText(p.nom,68,43,12.5,112,'font-weight="800" letter-spacing=".4" fill="'+bc+'"');
+    if(sub)c+='<text x="68" y="'+(p.nom?60:52)+'" font-size="11.5" fill="#856a3a">'+esc(sub)+'</text>';
+    return c+'</g>';}
+  function medSVG(nd){var p=P(nd.id);if(!p)return "";var bc=branchOf(p).c,sub=lifespan(p)||(p.vivant?"vivant":""),blood=!!(LSET[nd.id]&&!nd.root),th=thumbs[nd.id],R=nd.root?34:28;
+    var c='<g transform="translate('+_r1(nd.x)+','+_r1(nd.y)+')">';
+    if(blood||nd.root)c+='<circle cx="0" cy="-22" r="'+(R+9)+'" fill="none" stroke="#e9b94a" stroke-width="5" opacity=".85"/>';
+    c+='<circle cx="0" cy="-22" r="'+(R+4)+'" fill="'+bc+'"/><circle cx="0" cy="-22" r="'+R+'" fill="url(#pav)"/>';
+    if(th)c+='<g transform="translate(0,-22) scale('+(R/30).toFixed(3)+')"><image href="'+th+'" x="-30" y="-30" width="60" height="60" clip-path="url(#pmed)" preserveAspectRatio="xMidYMid slice"/></g>';
+    else c+='<text x="0" y="'+_r1(-22+R*0.36)+'" text-anchor="middle" font-family="'+SERIF+'" font-weight="700" font-size="'+_r1(R*0.95)+'" fill="#7a5427">'+esc(initials(p))+'</text>';
+    var lines=[[p.prenom||full(p),12.5,700,"#f7ecce"]];if(p.nom)lines.push([p.nom,12,800,_lighten(bc,.55)]);if(sub)lines.push([sub,10,600,"#e9dcb8"]);
+    var pw=Math.min(158,Math.max(72,Math.max.apply(null,lines.map(function(l){return l[0].length*l[1]*0.58;}))+24)),ph=10+lines.length*14;
+    c+='<rect x="'+_r1(-pw/2)+'" y="'+(R-14)+'" width="'+_r1(pw)+'" height="'+ph+'" rx="11" fill="rgba(52,36,12,.86)" stroke="'+bc+'" stroke-width="2"/>';
+    lines.forEach(function(l,i){c+=_fitText(l[0],0,R-14+16+i*14,l[1],pw-14,'text-anchor="middle" font-weight="'+l[2]+'" fill="'+l[3]+'"');});
+    return c+'</g>';}
+  lay.nodes.forEach(function(nd){g+=plan?cardSVG(nd):medSVG(nd);});
+  ys.forEach(function(y,i){g+='<text x="10" y="'+_r1(Math.max(4,rowsY[y]-70)+30)+'" font-size="30" font-weight="800" fill="'+(plan?'rgba(122,84,39,.55)':'rgba(70,46,14,.62)')+'">Gén. '+(i+1)+'</text>';});
+  (lay.bands||[]).forEach(function(b){var lab=String(b.label||"").toUpperCase(),tw=lab.length*11*0.66+40;g+='<g transform="translate('+_r1(lay.w/2)+','+_r1(b.y)+')"><rect x="'+_r1(-tw/2)+'" y="-14" width="'+_r1(tw)+'" height="28" rx="14" fill="rgba(74,54,26,.92)" stroke="#c9b27a"/><text y="4.5" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.1" fill="#f3e6c2">'+esc(lab)+'</text></g>';});
+  g+='</g>';s+=g;
+  /* ---- légende + pied ---- */
+  var ly=oy+lay.h+Math.round(34*base),present={},order=[],F=function(v){return _r1(v*base);};lay.nodes.forEach(function(nd){var b=branchOf(P(nd.id));if(!present[b.lab]){present[b.lab]=b.c;order.push(b.lab);}});
+  s+='<text x="'+M+'" y="'+ly+'" font-size="'+F(13)+'" font-weight="800" letter-spacing="1.2" fill="#7a5427">LÉGENDE</text>';
+  var lx=M,cy=ly+F(30);order.forEach(function(lab){var w=(lab.length*13*0.6+40)*base;if(lx+w>W-M){lx=M;cy+=F(28);}s+='<rect x="'+_r1(lx)+'" y="'+_r1(cy-13*base)+'" width="'+F(14)+'" height="'+F(14)+'" rx="'+F(4)+'" fill="'+present[lab]+'"/><text x="'+_r1(lx+20*base)+'" y="'+_r1(cy-1*base)+'" font-size="'+F(13)+'" fill="#3a2c16">'+esc(lab)+'</text>';lx+=w;});
+  cy+=F(32);var me=viewerId();
+  s+='<text x="'+M+'" y="'+_r1(cy)+'" font-size="'+F(12.5)+'" fill="#6b5430">💍 mariage · 💔 divorcés ou séparés · trait pointillé = union passée · '+(plan?'liseré bleu = homme, rose = femme':'anneau de couleur = branche')+' · cadre doré = lignée directe'+(me?' de '+esc(full(P(me))):'')+' · Gén. = génération</text>';
+  s+='<text x="'+_r1(W/2)+'" y="'+_r1(H-M+10*base)+'" text-anchor="middle" font-size="'+F(11)+'" fill="#8a7a55">arbre.kd-mc.com · Arbre familial '+esc(APP_VER)+' · '+esc(_posterPaperLabel(pp))+' ('+(pp.wmm/10)+' × '+(pp.hmm/10)+' cm) · généré le '+esc(dateStr)+'</text>';
+  var vb=[pp.vx,pp.vy,pp.vw,pp.vh].map(_r1).join(" ");
+  var svg='<svg class="poster" xmlns="http://www.w3.org/2000/svg" width="'+pp.wmm+'mm" height="'+pp.hmm+'mm" viewBox="'+vb+'" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'+defs+s+'</svg>';
+  return {svg:svg,defs:defs,body:s,W:W,H:H,pp:pp,n:n,gens:gens,fam:fam,style:style,title:title,dateStr:dateStr};
+}
+/* ---- mosaïque A4 : le poster découpé en feuilles A4 (marge 10 mm, recouvrement 10 mm), repères de coupe + numéros ---- */
+function posterTilesSVG(pr){var pp=pr.pp,TW=190,TH=277,OV=10,AX=TW-OV,AY=TH-OV;var cols=Math.max(1,Math.ceil((pp.wmm-OV)/AX)),rows=Math.max(1,Math.ceil((pp.hmm-OV)/AY));var k=1/pp.mmPerPx;var pages=[],N=cols*rows,i=0;
+  function mark(x,y,dx,dy){return '<line x1="'+(x+dx*3)+'" y1="'+y+'" x2="'+(x+dx*8)+'" y2="'+y+'"/><line x1="'+x+'" y1="'+(y+dy*3)+'" x2="'+x+'" y2="'+(y+dy*8)+'"/>';}
+  var marks='<g fill="none" stroke="#222" stroke-width=".3">'+mark(10,10,-1,-1)+mark(200,10,1,-1)+mark(10,287,-1,1)+mark(200,287,1,1)+'</g>';
+  for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){i++;var wx=pp.vx+c*AX*k,wy=pp.vy+r*AY*k;
+    pages.push('<svg class="poster" xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 210 297" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif"><rect width="210" height="297" fill="#fff"/>'
+     +'<svg x="10" y="10" width="'+TW+'" height="'+TH+'" viewBox="'+[wx,wy,TW*k,TH*k].map(_r1).join(" ")+'">'+pr.defs+pr.body+'</svg>'+marks
+     +'<g stroke="#8a7a55" stroke-width=".25" stroke-dasharray="1.6 1.6">'+(c<cols-1?'<line x1="'+(200-OV)+'" y1="10" x2="'+(200-OV)+'" y2="287"/>':'')+(r<rows-1?'<line x1="10" y1="'+(287-OV)+'" x2="200" y2="'+(287-OV)+'"/>':'')+'</g>'
+     +'<text x="10" y="7" font-size="3.4" font-weight="700" fill="#333">Feuille '+i+' / '+N+' · ligne '+(r+1)+' · colonne '+(c+1)+'</text>'
+     +'<text x="200" y="7" text-anchor="end" font-size="3" fill="#666">'+esc(pr.title)+' · '+esc(_posterPaperLabel(pp))+' · '+(pp.wmm/10)+' × '+(pp.hmm/10)+' cm</text>'
+     +'<text x="105" y="293.5" text-anchor="middle" font-size="2.6" fill="#666">Découpe sur les repères d\'angle · pointillé = bande de 10 mm à coller sous la feuille voisine · imprimer à 100 % · arbre.kd-mc.com</text></svg>');}
+  return {pages:pages,cols:cols,rows:rows};}
+function posterAssemblySVG(pr,t){var pp=pr.pp,cols=t.cols,rows=t.rows,N=cols*rows;
+  var s='<svg class="poster" xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 210 297" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif"><rect width="210" height="297" fill="#fff"/>';
+  s+='<text x="105" y="22" text-anchor="middle" font-size="8" font-weight="700" fill="#5a3d18">🧩 Plan de montage — '+esc(pr.title)+'</text>';
+  s+='<text x="105" y="31" text-anchor="middle" font-size="3.6" fill="#555">'+esc(_posterPaperLabel(pp))+' ('+(pp.wmm/10)+' × '+(pp.hmm/10)+' cm) = '+N+' feuilles A4 · imprime les pages suivantes à 100 %, pas « ajuster à la page »</text>';
+  var sc=Math.min(150/(cols*190),120/(rows*277)),cw=190*sc,ch=277*sc,gx0=105-cols*cw/2,gy0=40,i=0;
+  for(var r=0;r<rows;r++)for(var c=0;c<cols;c++){i++;var x=gx0+c*cw,y=gy0+r*ch;s+='<rect x="'+_r1(x)+'" y="'+_r1(y)+'" width="'+_r1(cw)+'" height="'+_r1(ch)+'" fill="'+(i%2?'#fbf6e8':'#fff')+'" stroke="#8a7a55" stroke-width=".35"/><text x="'+_r1(x+cw/2)+'" y="'+_r1(y+ch/2+3)+'" text-anchor="middle" font-size="'+_r1(Math.min(9,cw*0.28))+'" font-weight="700" fill="#5a3d18">'+i+'</text>';}
+  var py=gy0+rows*ch+10,pw=100,phh=pw*pp.hmm/pp.wmm;if(py+phh>250){phh=250-py;pw=phh*pp.wmm/pp.hmm;}
+  s+='<svg x="'+_r1(105-pw/2)+'" y="'+_r1(py)+'" width="'+_r1(pw)+'" height="'+_r1(phh)+'" viewBox="'+[pp.vx,pp.vy,pp.vw,pp.vh].map(_r1).join(" ")+'">'+pr.defs+pr.body+'</svg><rect x="'+_r1(105-pw/2)+'" y="'+_r1(py)+'" width="'+_r1(pw)+'" height="'+_r1(phh)+'" fill="none" stroke="#8a7a55" stroke-width=".3"/>';
+  ["1 · Découpe chaque feuille sur ses 4 repères d\'angle.","2 · Pose la feuille 1 en haut à gauche, puis avance ligne par ligne, de gauche à droite.","3 · Chaque feuille suivante recouvre la bande pointillée (10 mm) de sa voisine : colle dessus.","4 · Astuce : ruban de masquage au dos pour tenir, puis colle en bâton sur les bandes."].forEach(function(t,i){s+='<text x="105" y="'+(258+i*7)+'" text-anchor="middle" font-size="3.5" fill="#333">'+esc(t)+'</text>';});
+  s+='<text x="105" y="290" text-anchor="middle" font-size="2.8" fill="#666">arbre.kd-mc.com · Arbre familial '+esc(APP_VER)+' · '+esc(pr.dateStr)+'</text></svg>';
+  return s;}
+/* ---- sorties ---- */
+function _printPages(pages,pageCss){var box=$("#printArea");if(!box){box=document.createElement("div");box.id="printArea";document.body.appendChild(box);}
+  box.innerHTML=pages.map(function(p){return '<div class="poster-page">'+p+'</div>';}).join("");
+  var st=$("#posterPageStyle");if(!st){st=document.createElement("style");st.id="posterPageStyle";document.head.appendChild(st);}st.textContent="@media print{"+pageCss+"}";
+  document.body.classList.add("printing");
+  var done=function(){document.body.classList.remove("printing");window.removeEventListener("afterprint",done);};
+  window.addEventListener("afterprint",done);setTimeout(function(){window.print();setTimeout(done,2500);},120);}
+function _posterErr(e){toast("Poster impossible : "+((e&&e.message)||String(e)));}
+function _dlBlob(blob,name){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},4000);}
+function posterPrint(){toast("🖨 Préparation du poster…");posterBuild(POSTER_OPT).then(function(pr){_printPages([pr.svg],'@page{size:'+pr.pp.wmm+'mm '+pr.pp.hmm+'mm;margin:0}');}).catch(_posterErr);}
+function posterPrintTiles(){toast("🧩 Préparation de la mosaïque…");posterBuild(POSTER_OPT).then(function(pr){var t=posterTilesSVG(pr);_printPages([posterAssemblySVG(pr,t)].concat(t.pages),'@page{size:A4 portrait;margin:0}');}).catch(_posterErr);}
+function posterDownloadSVG(){posterBuild(POSTER_OPT).then(function(pr){_dlBlob(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+pr.svg],{type:"image/svg+xml"}),"Arbre-"+_posterFile(pr.fam)+"-"+pr.pp.name+".svg");toast("⬇ Fichier SVG prêt : vectoriel, à donner tel quel à un imprimeur");}).catch(_posterErr);}
+function posterDownloadPNG(){toast("🖼 Rendu de l'image HD…");posterBuild(POSTER_OPT).then(function(pr){return new Promise(function(res,rej){
+  var MAXPX=16e6,ratio=pr.pp.vw/pr.pp.vh,h=Math.floor(Math.sqrt(MAXPX/ratio)),w=Math.floor(h*ratio);
+  var url=URL.createObjectURL(new Blob([pr.svg],{type:"image/svg+xml"})),im=new Image();
+  im.onload=function(){try{var cv=document.createElement("canvas");cv.width=w;cv.height=h;var cx=cv.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,w,h);cx.drawImage(im,0,0,w,h);URL.revokeObjectURL(url);
+    cv.toBlob(function(b){if(!b)return rej(new Error("image trop grande pour cet appareil — prends le fichier SVG"));_dlBlob(b,"Arbre-"+_posterFile(pr.fam)+"-"+pr.pp.name+"-HD.png");var dpi=Math.round(w/(pr.pp.wmm/25.4));toast("🖼 Image HD : "+w+" × "+h+" px (≈ "+dpi+" dpi en "+pr.pp.name+")");res();},"image/png");}catch(e){URL.revokeObjectURL(url);rej(e);}};
+  im.onerror=function(){URL.revokeObjectURL(url);rej(new Error("rendu impossible sur cet appareil — prends le fichier SVG"));};im.src=url;});}).catch(_posterErr);}
+function _posterInfoHTML(pr,t){var pp=pr.pp,fs=15*pp.mmPerPx,card=186*pp.mmPerPx/10;
+  var ok=fs>=2.4?'✅ <b>lisible</b> à bout de bras':fs>=1.7?'⚠️ <b>petit</b> — lisible de près':'❌ <b>trop petit</b>';
+  var rec=null;for(var i=0;i<POSTER_ORDER.length;i++){var q=_posterPaper(POSTER_ORDER[i],pr.W,pr.H);if(15*q.mmPerPx>=2.4){rec=POSTER_ORDER[i];break;}}
+  return '<div class="kv"><span class="k">Papier</span><span><b>'+esc(_posterPaperLabel(pp))+'</b> · '+(pp.wmm/10)+' × '+(pp.hmm/10)+' cm</span></div>'
+   +'<div class="kv"><span class="k">Contenu</span><span>'+pr.n+' personnes · '+pr.gens+' générations</span></div>'
+   +'<div class="kv"><span class="k">Sur le papier</span><span>cartes de '+card.toFixed(1)+' cm · prénoms '+fs.toFixed(1)+' mm</span></div>'
+   +'<div class="kv"><span class="k">Lisibilité</span><span>'+ok+(rec&&rec!==pp.name&&fs<2.4?' → prends <b>'+esc(POSTER_LABEL[rec])+'</b> ou plus grand':'')+'</span></div>'
+   +'<div class="kv"><span class="k">Mosaïque A4</span><span>'+(t.cols*t.rows)+' feuille'+(t.cols*t.rows>1?"s":"")+' ('+t.cols+' × '+t.rows+')</span></div>';}
+function openPoster(){
+  var o=POSTER_OPT;if(!(o.fam==="o"||o.fam==="c"))o.fam=FAMKEY;
+  function chip(attr,val,cur,labHtml){return '<button class="famchip'+(val===cur?" on":"")+'" data-'+attr+'="'+val+'">'+labHtml+'</button>';}
+  var h='<div class="sheet psheet"><button class="bkbtn" data-close aria-label="Fermer">✕</button><div class="grab"></div><h2 style="padding-left:48px">🖼 Poster grand format</h2>'
+   +'<p class="mut" style="margin:2px 0 4px;font-size:13px">Tout est <b>vectoriel</b> : net à n\'importe quelle taille, de la feuille A4 à la bannière de 2 m. Choisis, regarde l\'aperçu, puis imprime ou enregistre.</p>'
+   +'<label class="fl">Famille</label><div class="chips">'+chip("pofam","o",o.fam,"🫒 Sauvaigo · Maiffret")+chip("pofam","c",o.fam,"🌳 Desarzens")+'</div>'
+   +'<label class="fl">Style</label><div class="chips">'+chip("postyle","plan",o.style,"📋 Plan clair")+chip("postyle","arbre",o.style,"🌳 Arbre décoré")+'</div>'
+   +'<label class="fl">Taille du papier</label><div class="chips">'+POSTER_ORDER.map(function(k){var d=POSTER_PAPERS[k];return chip("popaper",k,o.paper,POSTER_LABEL[k]+'<small>'+(d[1]?(d[0]/10)+'×'+(d[1]/10)+' cm':'large, hauteur auto')+'</small>');}).join("")+'</div>'
+   +'<label class="fl">Photos</label><div class="chips">'+chip("pophotos","1",o.photos?"1":"0","📷 Avec les photos")+chip("pophotos","0",o.photos?"1":"0","🔤 Initiales seulement")+'</div>'
+   +'<div class="sec" id="poInfo" style="margin:12px 0 8px;padding:6px 14px"><span class="mut">Calcul…</span></div>'
+   +'<div id="posterPrev"><div class="mut" style="padding:30px;text-align:center;font-size:13px">Préparation de l\'aperçu…</div></div>'
+   +'<button class="btn gold" id="poPrint" style="width:100%;margin-top:10px">🖨 Imprimer / enregistrer en PDF</button>'
+   +'<button class="btn" id="poTiles" style="width:100%;margin-top:8px">🧩 Mosaïque A4 à assembler</button>'
+   +'<div class="row2" style="margin-top:8px"><button class="btn" id="poSvg">⬇ Fichier SVG</button><button class="btn" id="poPng">🖼 Image HD</button></div>'
+   +'<p class="mut" style="font-size:12.5px;margin:10px 0 0">📲 <b>Sur iPhone</b> : Imprimer → l\'aperçu s\'affiche → pince pour l\'agrandir → Partager → « Enregistrer dans Fichiers » : c\'est ton PDF, vectoriel, qu\'un imprimeur agrandit sans perte. <b>Fichier SVG</b> = le format à donner à un imprimeur ou à ouvrir sur un ordinateur. <b>Mosaïque</b> = impression maison sur des feuilles A4 à découper et coller, avec un plan de montage numéroté.</p>'
+   +'</div>';
+  showOverlay(h);var ov=$(".ov");if(!ov)return;
+  var seq=0;
+  function refresh(){var my=++seq;var info=$("#poInfo",ov),prev=$("#posterPrev",ov);if(info)info.innerHTML='<span class="mut">Calcul…</span>';
+    posterBuild(o).then(function(pr){if(my!==seq||!document.body.contains(ov))return;var t=posterTilesSVG(pr);
+      if(info)info.innerHTML=_posterInfoHTML(pr,t);
+      if(prev)prev.innerHTML=pr.svg;
+      var bt=$("#poTiles",ov);if(bt)bt.textContent="🧩 Mosaïque A4 : "+(t.cols*t.rows)+" feuille"+(t.cols*t.rows>1?"s":"")+" ("+t.cols+" × "+t.rows+") à assembler";
+      var bp=$("#poPrint",ov);if(bp)bp.textContent="🖨 Imprimer / PDF · "+_posterPaperLabel(pr.pp)+" · "+(pr.pp.wmm/10)+" × "+(pr.pp.hmm/10)+" cm";
+    }).catch(function(e){if(info)info.innerHTML='<span style="color:var(--danger)">'+esc((e&&e.message)||String(e))+'</span>';});}
+  function bind(attr,fn){ov.querySelectorAll("[data-"+attr+"]").forEach(function(b){b.onclick=function(){fn(b.dataset[attr]);ov.querySelectorAll("[data-"+attr+"]").forEach(function(x){x.classList.toggle("on",x===b);});_posterSave();refresh();};});}
+  bind("pofam",function(v){o.fam=v;});bind("postyle",function(v){o.style=v;});bind("popaper",function(v){o.paper=v;});bind("pophotos",function(v){o.photos=(v==="1");});
+  $("#poPrint",ov).onclick=posterPrint;$("#poTiles",ov).onclick=posterPrintTiles;$("#poSvg",ov).onclick=posterDownloadSVG;$("#poPng",ov).onclick=posterDownloadPNG;
+  refresh();
+}
+/* compat : l'ancien bouton « Imprimer / PDF » ouvre désormais le poster */
+function exportPrint(){openPoster();}
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
   '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+(viewerId()?esc(full(P(viewerId()))):"vue neutre")+'</span></div>'+(viewerId()?'<button class="btn ghost sm" id="btnNeutre" style="width:100%;margin-top:8px">↺ Revenir à la vue neutre (aucun « moi »)</button>':'<p class="mut" style="font-size:12.5px;margin:6px 0 0">Ouvre TA fiche → « 🙋 C\'est moi » pour voir l\'arbre de ton point de vue.</p>')+'<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
   '<div class="sec"><h3>Sauvegarde & Import</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div>'+
   '<button class="btn gold" id="btnGedcom" style="width:100%;margin-top:8px">🌳 Importer un GEDCOM (Geneanet, FamilySearch…)</button>'+
   '<p class="mut" style="font-size:12.5px;margin:6px 0 0">💡 Sur Geneanet/FamilySearch : « Exporter » → fichier GEDCOM → ouvre-le ici. Je fusionne tout (nouvelles personnes ajoutées, fiches connues complétées, <b>jamais écrasées</b>).</p>'+
-  '<button class="btn" id="btnPrint" style="width:100%;margin-top:8px">🖨 Imprimer / PDF de l\'arbre ('+famLabel(FAMKEY)+')</button><input type="file" id="fileImport" accept=".json,.ged,.gedcom,application/json" class="hidden"></div>'+
+  '<button class="btn gold" id="btnPrint" style="width:100%;margin-top:8px">🖼 Poster grand format · imprimer / PDF (A4 → A0)</button><input type="file" id="fileImport" accept=".json,.ged,.gedcom,application/json" class="hidden"></div>'+
   '<div class="sec"><h3>Sécurité</h3><button class="btn" id="btnCode" style="width:100%">🔑 Changer le code famille</button><button class="btn ghost" id="btnLock" style="width:100%;margin-top:8px">🔒 Verrouiller</button></div>'+
   '<div class="sec"><h3>🤖 Recherches automatiques</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Le robot cherche chaque mois : actes INSEE, registres de Monaco, presse ancienne, et vérifie le nuage familial.</p><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md">📜 Actes &amp; registres trouvés <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md">📚 Infos presse &amp; sources <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md">☁️ Vérification du nuage familial <span class="mut">↗</span></a></div>'+
   '<div class="sec"><h3>À propos</h3><p class="mut" style="font-size:13px;margin:0">Arbre familial '+APP_VER+'. Auto-save + synchro temps réel (code famille). Photos tous formats converties automatiquement. Ajoute/corrige/commente librement.</p></div>';

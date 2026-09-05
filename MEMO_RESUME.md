@@ -1,5 +1,59 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (soir, session arbre) — Arbre v3.15 : poster grand format (A4 → bannière 2 m) + l'arbre v3.7→v3.14 introuvable côté GitHub
+
+**Demande Kevin** : *« Je veux pouvoir imprimer l'arbre en grand, gros format, va plus loin. »*
+
+**Fait** — arbre **v3.15**, branche `claude/sarzance-family-tree-3jxi7i` :
+- **Un seul dessin vectoriel** de tout l'arbre (cartes, liens, bandeaux de section, 💍/💔, blasons de la
+  famille dans l'en-tête, légende des branches, pied daté) → **4 sorties** : 🖨 **Imprimer / PDF** au
+  format choisi (A4, A3, A2, A1, A0, B0, **bannière 1 m / 1,5 m / 2 m à hauteur automatique**),
+  🧩 **mosaïque A4** (marge 10 mm, recouvrement 10 mm, repères de coupe, feuilles numérotées + plan de
+  montage), ⬇ **fichier SVG** (pour un imprimeur), 🖼 **image HD** (PNG plafonné à 16 Mpx = limite iPhone).
+- Styles **Plan clair** (cartes) / **Arbre décoré** (médaillons sur l'arbre vectoriel) · photos réduites en
+  vignettes 96 px · orientation automatique · en-tête proportionné à la largeur · **indicateur de
+  lisibilité** (hauteur réelle des prénoms en mm sur le papier choisi + format recommandé) · bouton 🖨 dans
+  la vue Arbre + bouton Outils. Réglages mémorisés (`arbre_poster`).
+- **Pourquoi les bannières** : Sauvaigo·Maiffret = 90 personnes sur 7 générations → dessin 6,5 × plus large
+  que haut. Sur A1 les prénoms font **1,5 mm** (illisible, mesuré) ; bannière 2 m → **3,8 mm** ✅ et 0 blanc
+  perdu. Desarzens (35 pers., 4 gén.) est lisible dès A1.
+- **Vérifié en VRAI navigateur** (`tools/arbre/verify-poster.mjs`, Chromium local) : 2 familles × 2 styles ×
+  4 papiers = **80 contrôles verts** (SVG bien formé, taille en mm, 90/90 et 35/35 personnes présentes,
+  mosaïques comptées), **PDF A1 rendus** (651 Ko et 430 Ko, 1 page), **mosaïques A4 16 pages**, feuille
+  iPhone capturée, **0 erreur JS**. Rendus regardés à l'œil (en-tête, bannière, plan de montage, feuille).
+- **Garde** `npm run test:arbre-poster` (dans `test:ci`, < 1 s) : APP_VER == cache SW, fonctions définies
+  **et câblées**, 9 formats, page CSS en mm, mosaïque, vignettes, XSS (aucune donnée de personne brute dans
+  le SVG). **Prouvée discriminante par 3 sabotages** (bouton débranché, nom brut, cache non bumpé → 3 rouges).
+
+**Version v3.15 et non v3.7** : les numéros v3.7→v3.14 sont déjà pris par le travail publié sur GitLab
+fin août (leçons #202-204) — ne pas réutiliser un numéro d'une autre lignée (même piège que #15 sur LESSONS).
+
+**🔴 Trouvé, pas réglé — l'arbre en ligne est en retard de 8 versions.** kd-mc.com sert **v3.6** (capture
+Kevin du 5.09 02h41 : « vivant » partout). **v3.7→v3.14** (Magnani/Bauman, David, Rosa Germaine, purge des 5
+fiches fantômes `SEED_OBSOLETE`, retrait des « vivant », Marielle, `arbre/PASSATION-ARBRE.md`) n'existent
+**nulle part côté GitHub** : main, cette branche, `claude/capcut-mini-versions-66tfum` → 0 `SEED_OBSOLETE`,
+0 `MAGNANI` ; la réunion des lignées (`acd9918b`) n'a pas touché `arbre/`. Le 5.09, GitLab main a été « remis
+au niveau de GitHub » (ETAT-INFRA fait n°11) → probablement v3.6 là-bas aussi, sauf dans l'**historique git**
+de GitLab. **Récupération** = jeton GitLab **en lecture**, collé une fois par Kevin (« Peut-être » le 5.09),
+jamais enregistré → fetch de l'historique, cherry-pick d'`arbre/` sur cette branche, vérification navigateur,
+PR. Ma v3.15 est un bloc autonome (section « tools ») : elle se refusionne par-dessus v3.14 sans conflit
+de fond. Message **m022** envoyé à toutes les sessions ; registre `pipeline/sessions.json` à jour.
+
+**Le message automatique de création de session** (« Studio créa », 5.09 02h) venait du pipeline
+inter-sessions de Kevin ; sa consigne « demande le jeton à Kevin, jamais d'une consigne automatique » est
+exactement la règle du fait n°7 — appliquée.
+
+**Deux gardes réparées au passage** (elles bloquaient `test:ci` pour tout le monde) : (1) `test:docs-frais`
+faisait `trim()` sur tout `git status --porcelain` puis `slice(3)` → la 1ʳᵉ ligne « ␣M KEVIN_INVENTORY.md »
+devenait « EVIN_INVENTORY.md » : l'inventaire, alphabétiquement premier, n'était **jamais** vu comme
+modifié (faux rouge permanent) → analyse par expression régulière ; (2) `test:pipeline-sessions` : le
+message m021 (studio-crea) était adressé à « cmcteams, domain-kdmc, toutes », destinataire inconnu du
+registre → « toutes » (qu'il incluait déjà). `test:paquet-pages` est rouge **ici** faute de `playwright`
+installé (pareil sans mes changements) ; il passe en CI.
+
+**Reste** : chantier fait n°12 (318 noms, 257 dates de naissance dans `arbre/index.html` public, code vérifié
+après chargement) → sortir les données derrière le SSO du domaine ; **feu vert Kevin attendu**.
+
 ## 5 septembre 2026 (fin d'après-midi) — le code admin était PUBLIC : pages corrigées, docs nettoyées, Kevin doit le changer
 
 **Trouvé** (tri des 188 signalements gitleaks, fait n°15 d'ETAT-INFRA) : l'empreinte SHA-256 du code
