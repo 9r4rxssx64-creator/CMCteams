@@ -85,7 +85,7 @@
 
 <div class="wrap" id="view"></div>
 
-<div class="ver" id="ver" title="Toucher pour forcer la mise à jour">Apex Messages v1.2</div>
+<div class="ver" id="ver" title="Toucher pour forcer la mise à jour">Apex Messages v1.3</div>
 
 <div class="imgov" id="imgov"><span class="x" id="imgx">✕</span><img id="imgel" alt="photo"></div>
 
@@ -122,9 +122,14 @@
         } else _tok=null; if(cb)cb(); })
       .catch(function(){ _tok=null; if(cb)cb(); }); // fail-open : règles ouvertes
   }
-  function _get(k,cb){ fetch(FBURL+FBPATH+"/"+encodeURIComponent(k)+".json"+_qs())
+  // Encode CHAQUE segment séparément : une clé imbriquée ("cmc_dep_img/<id>") doit rester un
+  // CHEMIN. Un encodeURIComponent global transforme le "/" en "%2F" → Firebase cherche alors une
+  // clé unique nommée "cmc_dep_img/<id>" à la racine, qui n'existe pas → réponse vide.
+  // (bug « je ne vois pas la photo » : c'était le seul appel à clé imbriquée de cette page)
+  function _enc(k){ return String(k==null?"":k).split("/").map(encodeURIComponent).join("/"); }
+  function _get(k,cb){ fetch(FBURL+FBPATH+"/"+_enc(k)+".json"+_qs())
       .then(function(r){return r.ok?r.json():null;}).then(function(d){cb(d);}).catch(function(){cb(null);}); }
-  function _put(k,v,cb){ fetch(FBURL+FBPATH+"/"+encodeURIComponent(k)+".json"+_qs(),
+  function _put(k,v,cb){ fetch(FBURL+FBPATH+"/"+_enc(k)+".json"+_qs(),
       {method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(v)})
       .then(function(r){if(cb)cb(r.ok);}).catch(function(){if(cb)cb(false);}); }
 
@@ -263,7 +268,10 @@
   function viewImg(imgId){ if(!imgId)return;
     var ov=document.getElementById("imgov"), el=document.getElementById("imgel");
     el.removeAttribute("src"); ov.style.display="flex";
-    _get("cmc_dep_img/"+imgId,function(url){ if(url&&typeof url==="string"){ el.src=url; }
+    _get("cmc_dep_img/"+imgId,function(url){
+      // seule une vraie adresse d'image entre dans un src (parité avec _okImgUrl de la page Départs)
+      var ok=(typeof url==="string")&&(url.indexOf("data:image/")===0||url.indexOf("https://")===0);
+      if(ok){ el.src=url; }
       else { ov.style.display="none"; alert("Photo introuvable."); } });
   }
   document.getElementById("imgx").addEventListener("click",function(){ document.getElementById("imgov").style.display="none"; });
@@ -301,7 +309,7 @@
   window.addEventListener("focus",pullAll);
 
   // ---- MAJ auto force (règle « toujours partout ») + 1-tap (lesson #102) ----
-  var APP_VER="v1.2";
+  var APP_VER="v1.3";
   function forceUpd(){
     try{ if("serviceWorker"in navigator)navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}); }catch(_){}
     try{ if(window.caches)caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}); }catch(_){}
