@@ -1,32 +1,28 @@
 # =============================================================================
-# Intégration continue GitLab — VOLONTAIREMENT MINIMALE.
+# UNE SEULE RECETTE POUR TOUTES LES BRANCHES — unifiée le 5.09.2026.
 # -----------------------------------------------------------------------------
-# Deux raisons de ne surtout pas rejouer ici les 126 workflows de GitHub :
+# Avant : deux fichiers différents vivaient sur deux branches. Celui de « main »
+# portait la publication du miroir, celui des branches de travail portait les
+# tests. Fusionner une branche dans main aurait donc SUPPRIMÉ la publication, en
+# silence. C'est exactement le piège de la leçon #142 : deux surfaces qui font le
+# même travail finissent par diverger. Il n'y a plus qu'un fichier.
 #
-#  1. Le compte GitHub a été suspendu le 15/08/2026 précisément pour cet usage :
-#     « repositories that use GitHub Actions solely to interact with 3rd party
-#     websites […] or for general computing purposes ». GitLab a des règles
-#     équivalentes. On ne refait pas la même erreur ailleurs.
+# Les deux règles à ne jamais oublier (règlements lus le 5.09, voir ORGANISATION.md) :
+#   1. GitHub  : une automatisation n'a le droit d'exister que si elle produit,
+#      teste, déploie ou publie CE dépôt. C'est la NATURE, pas la fréquence.
+#   2. GitLab  : 400 minutes de calcul par mois. On les compte
+#      (« npm run minutes-gitlab ») AVANT d'ajouter un job.
 #
-#  2. Le palier gratuit GitLab donne 400 minutes de calcul PAR MOIS. Les ~97
-#     exécutions quotidiennes d'avant les auraient épuisées en moins de 2 jours.
+# ⚠️ NE JAMAIS ajouter de « schedule » ici : le job « conformite » échoue si un
+#    cron réapparaît. Ce qui doit tourner en boucle appartient à un Worker
+#    Cloudflare, pas à un dépôt de code.
 #
-# Ce qui tourne ici : les tests, au push, et rien d'autre.
-# Ce qui NE tourne PAS ici :
-#   - la publication des sites  → Cloudflare Pages construit de son côté
-#                                 (0 minute GitLab consommée)
-#   - la mise en ligne des Workers → à la demande, jamais automatique
-#   - tout ce qui appelle des services tiers en boucle → n'a rien à faire
-#     dans un dépôt de code. Sa place est un Cloudflare Worker.
-#
-# ⚠️ NE JAMAIS ajouter de « schedule » ici. Un test (verify-actions-conformes)
-#    échoue si une exécution programmée réapparaît.
+# La clé Cloudflare n'est PAS disponible sur toutes les branches (mesuré). Chaque
+# job qui en a besoin le vérifie lui-même, au lieu d'une porte globale qui
+# empêcherait tout pipeline ailleurs.
 # =============================================================================
 
-stages:
-  - tests
-  - recherches
-  - mesures
+stages: [tests, verifier, publier, recherches, etat]
 
 default:
   image: node:20
@@ -35,12 +31,12 @@ default:
 variables:
   GIT_DEPTH: "20"              # historique court : clone plus rapide, moins de minutes
 
-# Ne tourne QUE sur un vrai push ou une demande de fusion. Jamais à heure fixe.
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "push"
     - if: $CI_PIPELINE_SOURCE == "web"        # bouton « Lancer » = volontaire
+    - if: $CI_PIPELINE_SOURCE == "api"
     - when: never
 
 tests:
@@ -135,22 +131,158 @@ recherches-patrimoine:
     paths:
       - patrimoine-resultats/
 
+# Vérifie que la clé Cloudflare est vivante et trouve le compte. Il ne coûte que
+# ~30 s, mais 30 s à CHAQUE push font 163 minutes par mois — 41 % du quota pour
+# une simple vérification de clé. Il ne part donc plus que lorsqu'un job qui en a
+# besoin va réellement tourner (il leur fournit CLOUDFLARE_ACCOUNT_ID).
+verifier-cloudflare:
+  stage: verifier
+  image: alpine:3.20
+  rules:
+    - changes: ["publier-demande.txt"]
+      when: on_success
+    - if: '$CLOUDFLARE_API_TOKEN && ($PUBLIER || $DEPLOYER_WORKERS || $REGARDER || $QUI_SERT)'
+      when: on_success
+    - when: manual
+      allow_failure: true
+  script:
+    - 'sh tools/gitlab/verifier.sh'
+  artifacts:
+    reports:
+      dotenv: compte.env
+
 # =============================================================================
-# MESURES — mes yeux depuis la machine (le conteneur de l'agent, lui, est derrière
-# un pare-feu : kd-mc.com, github.io et pages.dev répondent HTTP 000 chez lui).
-# Lecture seule, déclenché par une variable, jamais tout seul.
+# PUBLICATION DU MIROIR — À LA DEMANDE DEPUIS LE 5.09.2026, plus à chaque push.
+# -----------------------------------------------------------------------------
+# Pourquoi ce changement, avec les chiffres :
+#   · le palier gratuit GitLab donne 400 minutes de calcul par mois ;
+#   · ce job seul en avait consommé 72,5 (44 envois × ~99 s) en QUATRE jours,
+#     soit 41 % du mois — au rythme d'alors, GitLab était à sec le 9 septembre.
+#     C'était refaire sur GitLab l'erreur qui a coûté le compte GitHub.
+#
+# Pourquoi c'est sans risque — mesuré le 5.09, pas supposé (job « qui-sert ») :
+#   les en-têtes de kd-mc.com portent « x-kdmc-router » ET « x-github-request-id
+#   / x-github-edge-region / via: varnish » : le site vivant est servi par le
+#   routeur Cloudflare depuis GITHUB PAGES, revenu en service le 4.09. Ce miroir
+#   n'est donc plus la source du site : c'est un filet de secours.
+#
+# Comment le relancer, sans rien réapprendre :
+#   · pousser (ou modifier) le fichier « publier-demande.txt » ;
+#   · ou lancer le pipeline avec la variable PUBLIER ;
+#   · ou cliquer « Lancer » sur le job dans GitLab.
+# Si GitHub retombait, remettre « - when: on_success » en tête des règles suffit
+# à retrouver la publication automatique d'avant.
 # =============================================================================
-qui-sert:
-  stage: mesures
+publier-site:
+  stage: publier
+  image: node:20
+  needs: [verifier-cloudflare]
+  rules:
+    - changes: ["publier-demande.txt"]
+      when: on_success
+    - if: '$PUBLIER'
+    - when: manual
+      allow_failure: true
+  script:
+    - 'bash tools/gitlab/publier.sh'
+
+# Sonde du domaine : qui est vivant, qui est mort — chiffres réels.
+# NB : la ligne « schedule » ci-dessous est SANS EFFET depuis le 5.09 — les règles
+# de workflow en tête de fichier n'acceptent plus les pipelines programmés. Elle
+# est gardée pour documenter le déclencheur d'origine, pas comme une porte ouverte.
+etat-du-domaine:
+  stage: etat
   image: alpine:3.20
   needs: []
   allow_failure: true
-  # Il part quand JE pousse le fichier-signal, comme les recherches patrimoine.
-  # (Le jeton dont je dispose a « read_api » : il peut lire les pipelines, pas
-  #  en lancer. Le fichier-signal est donc mon bouton — et Kevin ne clique rien.)
   rules:
-    - changes: ["qui-sert-demande.txt"]
-      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "api"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - when: never
+  script:
+    - 'sh tools/gitlab/etat.sh'
+
+# Renaissance des workers sur le nouveau compte — a la demande, jamais automatique.
+renaitre-workers:
+  stage: publier
+  image: node:20
+  needs: [verifier-cloudflare]
+  rules:
+    - if: '$DEPLOYER_WORKERS'
+    - when: never
+  script:
+    - 'for W in $DEPLOYER_WORKERS; do bash tools/gitlab/deployer-worker.sh services/$W; done'
+
+# Mes yeux : inventaire Cloudflare a la demande (lecture seule).
+regarder-cloudflare:
+  stage: etat
+  image: alpine:3.20
+  needs: [verifier-cloudflare]
+  allow_failure: true
+  rules:
+    - if: '$REGARDER'
+    - when: never
+  script:
+    - 'sh tools/gitlab/regarder.sh'
+
+# Mes yeux : lire n'importe quelle page web depuis la machine.
+sonder-url:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$SONDER_URL'
+    - when: never
+  script:
+    - 'sh tools/gitlab/sonder-url.sh'
+
+# Tableau de bord des branches — "que se passe-t-il partout ?" (à la demande).
+tableau-branches:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$BRANCHES'
+    - when: never
+  script:
+    - 'sh tools/gitlab/branches.sh'
+
+# Sonde toutes les surfaces du domaine sur le site déployé (à la demande).
+etat-site:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$ETAT_SITE'
+    - when: never
+  script:
+    - 'sh tools/gitlab/etat-site.sh'
+
+# Recherche généalogique INSEE (réseau ouvert) — var NAMES (csv), à la demande.
+genealogie:
+  stage: etat
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  rules:
+    - if: '$GENEALOGIE'
+    - when: never
+  script:
+    - 'sh tools/gitlab/genealogie.sh'
+
+# Mes yeux : qui sert vraiment kd-mc.com aujourd'hui ? (lecture seule)
+# Le conteneur de l'agent Claude ne peut atteindre ni kd-mc.com, ni github.io,
+# ni pages.dev (HTTP 000, pare-feu). Cette machine-ci, oui.
+qui-sert:
+  stage: etat
+  image: alpine:3.20
+  needs: [verifier-cloudflare]
+  allow_failure: true
+  rules:
     - if: '$QUI_SERT'
     - when: manual
       allow_failure: true
