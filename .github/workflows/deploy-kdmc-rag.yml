@@ -62,11 +62,28 @@ jobs:
       - name: Installer wrangler
         run: npm i -g wrangler && wrangler --version
 
-      - name: Créer l'index Vectorize (idempotent)
+      - name: Créer l'index Vectorize (idempotent) — et DIRE s'il n'existe pas
+        shell: bash {0}
         run: |
           # 1024 dims (bge-m3), cosine. Si l'index existe déjà → "already exists" → on continue.
-          wrangler vectorize create apex-memory --dimensions=1024 --metric=cosine 2>&1 | tee /tmp/vec.log || true
-          if grep -qiE "already exists|resource with the name" /tmp/vec.log; then echo "index déjà présent — OK"; fi
+          # 05/09 (run 33978540252) : le déploiement échouait plus loin avec « index 'apex-memory'
+          # not found [code 10159] » parce que cette création échouait EN SILENCE (|| true, journal
+          # jamais montré). Règle « toujours détailler les erreurs » : la sortie remonte en annotations.
+          wrangler vectorize create apex-memory --dimensions=1024 --metric=cosine > /tmp/vec.log 2>&1
+          RC=$?
+          cat /tmp/vec.log
+          if grep -qiE "already exists|resource with the name" /tmp/vec.log; then echo "index déjà présent — OK"; RC=0; fi
+          if [ "$RC" != "0" ]; then
+            grep -iE 'error|✘|failed|code|permission|authoriz|plan' /tmp/vec.log | tail -10 | while IFS= read -r L; do echo "::error::vectorize create ▸ $L"; done
+          fi
+          # Vérité de terrain : l'index est-il là, oui ou non ? (c'est ce que le deploy va exiger)
+          if wrangler vectorize get apex-memory > /tmp/vecget.log 2>&1; then
+            echo "::notice::Vectorize ▸ index apex-memory présent"; head -20 /tmp/vecget.log
+          else
+            tail -8 /tmp/vecget.log | while IFS= read -r L; do echo "::error::vectorize get ▸ $L"; done
+            echo "::error::L'index Vectorize apex-memory N'EXISTE PAS sur le compte et n'a pas pu être créé (voir lignes ci-dessus : droit manquant du jeton CLOUDFLARE_API_TOKEN sur Vectorize, ou plan). Le worker kdmc-rag a un binding VEC dessus → wrangler deploy refusera (code 10159). Rien n'est déployé."
+            exit 1
+          fi
 
       - name: Pousser le secret d'auth
         env:

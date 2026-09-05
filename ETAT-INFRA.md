@@ -602,3 +602,50 @@ message laissé (`pipeline/sessions.json`, m021).
 propre fichier d'allowlist · zizmor `dangerous-triggers: 2` = deux `workflow_run` légitimes
 (`cleanup-stale-branches`, `poolpilot-tuya-diag`) déclenchés par nos propres workflows, pas par
 un inconnu · aucun `${{ github.event.* }}` interpolé dans un `run:` (0 injection de modèle).
+
+---
+
+## 📡 Fait n°16 — CE QU'UNE SESSION PEUT ATTEINDRE, et le plan Cloudflare gratuit est PLEIN (5.09.2026, session « Audit du domaine »)
+
+*Kevin : « Tu as tout. Vérifie » puis « elles ne sont pas toutes au courant de tous les accès, outils, liens ».*
+Tout ce qui suit est **mesuré** depuis une session le 5.09 (les commandes sont données : refais-les chez toi, ne généralise pas).
+
+### Les 4 canaux, et ce qu'ils donnent vraiment
+
+| Canal | Depuis l'agent | Ce que ça permet |
+|---|---|---|
+| **API GitHub** `api.github.com/repos/…` | ❌ 403 « GitHub access is not enabled for this session » (`/user` répond, `/repos` non) — même constat sessions arbre et Départs | rien : ni PR, ni dispatch, ni lecture de run par l'API. `gh` n'est pas installé. |
+| **`git push` / `git fetch`** | ✅ | pousser sa branche ; **déclencher un workflow par `push`** (`branches: ['claude/**']` + `paths`) ; relire ce qu'un workflow a **écrit dans le dépôt** (schéma `verif-live-rapport.yml`, session Départs). |
+| **WebFetch sur `github.com`** (pages HTML) | ✅ | page d'une PR (état, checks, commentaires du bot), liste des runs d'un workflow, **page d'un run avec ses ANNOTATIONS** (`::error::`, `::warning::`, `::notice::`). ❌ **pas** les logs bruts, ❌ **pas** le résumé du run (`$GITHUB_STEP_SUMMARY`) — vérifié sur le run 33978145725 : résumé invisible, annotation lue. Cache 15 min : ajouter `?x=N` pour relire. |
+| **Connecteur Cloudflare** (`workers_list`, `workers_get_worker_code`, docs) | ✅ | **`modified_on` de chaque worker = la preuve qu'un déploiement a eu lieu** ; lire le code réellement en ligne ; chercher la doc. ❌ pas de déploiement, pas de liste des crons/Vectorize. |
+| **kd-mc.com, `*.workers.dev`, `github.io`, `raw`…** | ❌ 403 CONNECT (sauf `raw.githubusercontent.com`, m006) | → la CI, elle, a le réseau ouvert. |
+
+**Règle qui en découle** : ce qu'un workflow doit dire à une session s'écrit **en annotations** (10 par type et par étape) ou **dans un fichier du dépôt** — jamais seulement dans le résumé ou les logs. `deploy-kdmc-uptime.yml` et `deploy-kdmc-rag.yml` remontent les lignes d'erreur de `wrangler` en `::error::` depuis le commit dc12933 ; c'est ainsi que les deux causes ci-dessous ont été lues.
+
+### Un run vert ne prouve rien, `modified_on` si
+
+`Deploy KDMC RAG` a un run **manuel vert** sur `main` le 5.09 ; le connecteur Cloudflare donne `kdmc-rag` **modifié le 08/07**. Le déploiement n'a pas eu lieu (leçon #95, encore). Avant d'écrire « déployé », lire `modified_on`.
+
+### Le compte Cloudflare gratuit : 5 cron triggers, TOUS pris
+
+`wrangler deploy` de `kdmc-uptime` : le code est **téléversé** (modified_on 16:32) puis
+`✘ [ERROR] Trigger configuration was only partially updated: This account has reached the Workers Free limit of 5 cron triggers per account` → code 1, run rouge, **worker en ligne sans cron**.
+Qui tient les 5 : **apex-chat-api : 4** (`0 */1`, `*/5`, `0 9`, `0 3` — `messaging-app/workers/wrangler.toml`) + **kdmc-outlook : 1** (`0 */2`). `kdmc-monaco` l'avait déjà constaté (« code 10072 ») et se faisait réveiller par un cron **GitHub** — rangé le 15/08, donc sa synchro est morte aussi.
+
+**Ce qui est fait** : `kdmc-uptime` n'a plus de `[triggers]` (`crons = []`, ce qui *retire* explicitement) ; c'est le cron de **kdmc-outlook** qui appelle son `/run` toutes les 2 h (6 lignes fail-open). **Ce qui rendrait 3 places** : Apex Chat garde un seul cron `*/5` et aiguille ses 4 jobs sur l'heure (message m027). **Ce qui rendrait 250 places** : Workers Paid (5 $/mois) — décision Kevin, pas nécessaire aujourd'hui.
+
+**Règle** : plus aucun `[triggers] crons` dans un nouveau `wrangler.toml` sans avoir compté les places ; un worker périodique se fait appeler par un cron existant.
+
+### RAG : l'index Vectorize `apex-memory` n'existe pas
+
+`wrangler deploy` de `kdmc-rag` : `Vectorize binding 'VEC' references index 'apex-memory' which was not found [code: 10159]`. Le workflow tentait de le créer **en silence** (`|| true`, journal jamais montré). Depuis ce commit la création dit pourquoi elle échoue (droit Vectorize absent du jeton `CLOUDFLARE_API_TOKEN`, probable — Vectorize est bien disponible sur le plan gratuit) et le run s'arrête **avant** le déploiement, avec la raison en annotation.
+
+### Le robot auto-merge, mesuré le 5.09
+
+- Il fusionne **dès que « Auto PR Review » (tsc + tests changés) est vert**. SonarQube « Quality Gate C » et Semgrep sont **consultatifs** : PR #3652 fusionnée avec eux rouges.
+- Une PR « BLOCKED » peut l'être **par `main`** : la fusion #3647 avait cassé `apex-plugins-catalog.ts` (7 × TS1117) et bloquait *toutes* les PR suivantes. Reproduire `npx tsc --noEmit` sur `main` en local avant d'accuser sa branche ; réparer main **dans la PR**.
+- Après fusion, le bot **dispatche lui-même** chaque `deploy-*.yml` dont un `services/<x>` a changé (vu : `Deploy KDMC Uptime #3` sur main) — la fusion par `GITHUB_TOKEN` ne déclenchant pas les `push`.
+
+### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
+
+Le registre disait `cmcteams → claude/cmcteams-clicking-issue-rmli6m` ; le travail CMCteams réel est sur `claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE), inscrit ce jour comme `cmcteams-departs`. Deux branches Lingua (`lingua-connexion-honnete`, `lingua-prenom-nom`) font **le même travail**, dont une avec `node_modules` commité (m030). Ma session est inscrite comme `domaine-audit`. Avant de commencer : `git fetch --prune` + `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/` — les branches du jour, pas celles du registre.

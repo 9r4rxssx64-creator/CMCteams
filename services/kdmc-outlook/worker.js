@@ -307,9 +307,20 @@ export default {
   },
 
   // Cron : récupération incrémentale automatique.
-  async scheduled(event, env) {
+  async scheduled(event, env, ctx) {
     try { await syncOnce(env, { backfill: false }); } catch { /* fail-safe */ }
+    // Ce cron (0 */2 * * *) est l'une des 5 places du plan gratuit — il en prête une :
+    // il réveille la surveillance du domaine (kdmc-uptime, 26 sous-domaines + 6 workers),
+    // qui n'a pas pu obtenir la sienne (limite atteinte, run 33978540250 du 05/09).
+    // Fail-open : un échec ici ne touche jamais la synchro mail ci-dessus.
+    const ping = fetch(UPTIME_RUN_URL, { headers: { 'user-agent': 'kdmc-outlook cron' } })
+      .then((r) => r.text())
+      .catch(() => {});
+    if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(ping); else await ping;
   }
 };
+
+// Surveillance du domaine — appelée par le cron ci-dessus (voir services/kdmc-uptime/wrangler.toml).
+const UPTIME_RUN_URL = 'https://kdmc-uptime.9r4rxssx64.workers.dev/run';
 
 export { matchesInvoice, keepAttachment, buildAuthorizeUrl, pkceChallenge, b64url, INVOICE_RE, REDIRECT_URI };

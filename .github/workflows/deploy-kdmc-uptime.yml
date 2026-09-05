@@ -3,8 +3,10 @@
 # CONTEXTE : le 15/08/2026 les 7 workflows de surveillance ont été rangés dans
 # .github/workflows-desactives/ pour retirer les crons à l'origine de la suspension
 # du compte. Personne ne les a remis ailleurs → 22 jours sans aucun contrôle
-# (dernier relevé : 14/08 18h52). Ce worker les remplace, du bon côté : le cron
-# vit dans Cloudflare (wrangler.toml [triggers]), JAMAIS ici.
+# (dernier relevé : 14/08 18h52). Ce worker les remplace, du bon côté : le périodique
+# vit dans Cloudflare, JAMAIS ici. Nuance mesurée le 05/09 : le plan gratuit n'a que
+# 5 crons par compte et ils sont pris → ce worker n'a PAS de cron à lui, c'est le cron
+# de kdmc-outlook (toutes les 2 h) qui appelle son /run (services/kdmc-uptime/wrangler.toml).
 #
 # ⚠️ NE JAMAIS ajouter de `schedule:` à ce fichier. C'est exactement ce qui a fait
 # suspendre le compte. La garde npm run test:actions-conformes échoue si un cron
@@ -148,4 +150,4 @@ jobs:
               console.log('  ' + r.id + ' → ' + r.code + (r.detail ? ' (' + r.detail + ')' : ''));
             }
           "
-          echo "✅ kdmc-uptime déployé et opérationnel — cron horaire actif côté Cloudflare"
+          echo "✅ kdmc-uptime déployé et opérationnel — passage toutes les 2 h déclenché par le cron de kdmc-outlook (plan gratuit : 5 crons, tous pris)"

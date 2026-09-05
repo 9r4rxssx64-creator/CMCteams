@@ -1,5 +1,39 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (16h45) — PR fusionnée, deux déploiements rouges ENFIN lisibles, et le pipeline des branches
+
+**Kevin** : *« Attention d'autres branches travaillent sur le domaine. Fais le pipeline de toutes tes
+branches… Elles ne sont pas toutes au courant de tous les accès, outils, liens, apps, manière de
+travailler. »*
+
+**Fusion** : PR #3652 est dans `main` (5c8a300) dès que le pré-contrôle tsc a été vert — SonarQube
+« C » et Semgrep ne bloquent pas. Post-fusion, le robot a lui-même lancé `Deploy KDMC Uptime` sur main.
+
+**Les deux rouges, cause lue en annotation** (le résumé du run est invisible sans connexion, les
+annotations non — c'est la règle écrite au fait n°16) :
+- **uptime** : code téléversé (Cloudflare `modified_on` 16:32) puis `Workers Free limit of 5 cron
+  triggers per account` → 4 crons Apex Chat + 1 Outlook. Fait : `crons = []` dans son wrangler.toml,
+  et le cron d'**Outlook** (`0 */2`) appelle son `/run` (6 lignes fail-open). Passage toutes les 2 h.
+- **rag** : `Vectorize index 'apex-memory' not found [10159]` — la création échouait en silence
+  (`|| true`). Fait : la création dit pourquoi elle échoue et le run s'arrête là, avec la raison.
+  Cause probable : droit Vectorize absent du jeton `CLOUDFLARE_API_TOKEN` → **à lire au prochain run**.
+
+**Pipeline des branches (mesuré, `git for-each-ref`)** : 12 branches du jour, 8 déjà fusionnées,
+4 devant main. Le registre disait `cmcteams → cmcteams-clicking-issue` ; le vrai travail est sur
+`claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE dans le dépôt, session Opus) → inscrite
+`cmcteams-departs`. Ma session inscrite `domaine-audit`. Deux branches Lingua font le même travail
+(m030). Messages déposés : m026 (toutes : les 4 canaux + 5 crons), m027 (apex-chat : 1 cron `*/5`
+rendrait 3 places), m028 (domain-kdmc : uptime en ligne, monaco-sync mort, rag), m029
+(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #214, SESSIONS-ET-BRANCHES
+« état réel au 5.09 ».
+
+**Reste dit franchement** : le passage uptime toutes les 2 h dépend d'Outlook, à vérifier au prochain
+`modified_on`/état `/` du worker ; Vectorize : attendre l'annotation du prochain run (droit du jeton =
+1 clic Kevin sur le jeton Cloudflare, s'il le faut — pas avant d'avoir lu). Option non prise : Workers
+Paid (5 $/mois, 250 crons) — décision Kevin, pas nécessaire aujourd'hui.
+
+---
+
 ## 5 septembre 2026 (soir) — la surveillance du domaine était éteinte depuis 22 jours
 
 **Demande Kevin** : *« Fais ton audit du domaine, chaque app, pages, tout ce que nous avons créé »*
