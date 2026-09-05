@@ -35,8 +35,8 @@ l'arbre v3.14. Miroir GitLab : branche poussée, **GitLab main réaligné** sur 
 3 fichiers propres à GitLab conservés, 0 job déclenché). **Piège mesuré** : le premier push d'une branche sur GitLab
 fait valoir « oui » à TOUTES les règles `changes:` → publier-site, recherches-patrimoine, liens-reels… sont partis
 (~7 min brûlées, pipeline 2823049053), et `tests` échouait de toute façon (`npm ci` sans `package-lock.json`).
-Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, `compare_to:
-main` pour les tests, repli `npm install`) — leçon **#216**. **Prouvé au push suivant** (pipeline 2823055271) : seul
+Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, bouton manuel pour
+`tests` sur une branche nouvelle, repli `npm install`) — leçon **#216**. **Prouvé au push suivant** (pipeline 2823055271) : seul
 `conformite` part (22 s), 0 job à fichier-signal, 0 publication.
 
 **Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été

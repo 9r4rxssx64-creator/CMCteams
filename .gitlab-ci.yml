@@ -52,14 +52,19 @@ tests:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'   # miroir de publication, pas le code
       when: never
+    # Branche NOUVELLE sur GitLab : rien à quoi comparer (et `compare_to: main`
+    # ne peut pas servir : la `main` GitLab n'a pas d'ancêtre commun avec les
+    # branches venues de GitHub → pipeline créé « failed » sans aucun job,
+    # mesuré 5.09 17h31). Donc : bouton manuel, on ne brûle rien.
+    - if: '$CI_COMMIT_BEFORE_SHA == "0000000000000000000000000000000000000000"'
+      when: manual
+      allow_failure: true
     - changes:
-        paths:
-          - "**/*.js"
-          - "**/*.mjs"
-          - "**/*.html"
-          - "**/*.json"
-          - "tests/**/*"
-        compare_to: "refs/heads/main"   # une NOUVELLE branche n'est pas « tout a changé »
+        - "**/*.js"
+        - "**/*.mjs"
+        - "**/*.html"
+        - "**/*.json"
+        - "tests/**/*"
       when: on_success
     - when: manual                # rien à voir dans le code → on ne brûle rien
       allow_failure: true
