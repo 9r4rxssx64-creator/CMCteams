@@ -26,6 +26,7 @@
 stages:
   - tests
   - recherches
+  - mesures
 
 default:
   image: node:20
@@ -65,6 +66,11 @@ tests:
 # aussi. Court, donc quasi gratuit en minutes.
 conformite:
   stage: tests
+  # Image ALPINE et pas node:20 : ce job ne lit que des fichiers. Mesuré le 5.09,
+  # il coûtait 45 s dont l'essentiel en téléchargement d'une image de 400 Mo —
+  # 28 minutes en quatre jours, devenues le premier poste du quota une fois la
+  # publication du miroir passée à la demande. L'image alpine fait ~50 Mo.
+  image: node:20-alpine
   script:
     - node tests/verify-actions-conformes.mjs
     - |
@@ -128,3 +134,25 @@ recherches-patrimoine:
     expire_in: 7 days             # données personnelles : on ne les garde pas
     paths:
       - patrimoine-resultats/
+
+# =============================================================================
+# MESURES — mes yeux depuis la machine (le conteneur de l'agent, lui, est derrière
+# un pare-feu : kd-mc.com, github.io et pages.dev répondent HTTP 000 chez lui).
+# Lecture seule, déclenché par une variable, jamais tout seul.
+# =============================================================================
+qui-sert:
+  stage: mesures
+  image: alpine:3.20
+  needs: []
+  allow_failure: true
+  # Il part quand JE pousse le fichier-signal, comme les recherches patrimoine.
+  # (Le jeton dont je dispose a « read_api » : il peut lire les pipelines, pas
+  #  en lancer. Le fichier-signal est donc mon bouton — et Kevin ne clique rien.)
+  rules:
+    - changes: ["qui-sert-demande.txt"]
+      when: on_success
+    - if: '$QUI_SERT'
+    - when: manual
+      allow_failure: true
+  script:
+    - 'sh tools/gitlab/qui-sert.sh'

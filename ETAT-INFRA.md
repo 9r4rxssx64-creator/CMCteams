@@ -238,3 +238,80 @@ discriminante : un cron remis → 2 échecs). Tout ce qui est périodique appart
 Une bonne nouvelle peut être le moment le plus dangereux : le compte rouvre **dans
 l'état qui l'avait fait fermer**. Avant de se réjouir, on mesure ce qui va repartir
 tout seul.
+
+---
+
+## 🧭 Fait n°11 — QUI FAIT QUOI entre GitHub, GitLab et Cloudflare (5.09.2026)
+
+*Kevin : « organise tout intelligemment pour que tout refonctionne comme avant. Entre
+GitHub et GitLab, vérifie leur règlement pour ne plus faire d'erreur. »*
+
+### Les deux règlements ont été LUS, pas cités de mémoire
+
+Le conteneur de l'agent n'atteint ni `docs.github.com` ni `docs.gitlab.com` (HTTP 000,
+pare-feu). C'est la machine GitLab qui les a lus le 5.09 — texte intégral conservé dans
+`audit/reglement/`, relançable par `npm run reglement-plateformes`.
+
+**GitHub**, conditions produit, section Actions — la phrase qui nous concerne :
+
+> *« If using GitHub-hosted runners, any other activity **unrelated to the production,
+> testing, deployment, or publication of the software project associated with the
+> repository** »* … *« Misuse […] may result in […] suspension or termination of your
+> GitHub account. »*
+
+Ce n'est donc **pas une question de fréquence, mais de nature**. Une automatisation n'a
+le droit d'exister sur GitHub que si elle produit, teste, déploie ou publie **ce dépôt**.
+
+**GitLab** n'interdit pas l'activité « sans rapport ». Sa limite est chiffrée :
+
+> *« Free tier namespaces receive **400 compute minutes per month**. »* · *« Reduce the
+> frequency of scheduled pipelines. »*
+
+### Le partage qui en découle
+
+| | GitHub Actions | GitLab CI | Cloudflare Workers |
+|---|---|---|---|
+| ce qui y va | construire, tester, déployer, **publier ce dépôt** | ce qui **parle à l'extérieur**, et le périodique | les services **permanents** et leurs horloges |
+| tâches programmées | ❌ jamais | ✅ mais comptées | ✅ (hors quota CI) |
+| la limite | la *nature* de l'activité | **400 min/mois** | palier gratuit |
+| le risque | suspension du compte | pipelines coupés en fin de mois | dégradation |
+
+Détail complet, et où doivent aller les 43 workflows rangés : **`ORGANISATION.md`**.
+
+### L'erreur qu'on était en train de refaire sur GitLab — mesurée à temps
+
+`npm run minutes-gitlab` (nouvel outil) a donné : **175 minutes sur 400 consommées en
+4 jours (44 %)**. À ce rythme, GitLab était à sec le **9 septembre** — l'erreur d'août,
+déplacée sur l'autre plateforme. Le premier poste était la publication du miroir :
+**72,5 min (41 %)**, plus 21,7 pour la vérification de clé qui l'accompagnait.
+
+### Avant de couper, on a mesuré qui sert vraiment le site
+
+Nouveau job `qui-sert` (l'agent ne peut atteindre aucune de ces adresses ; la machine
+GitLab, si). En-têtes de `kd-mc.com` le 5.09 :
+
+```
+x-kdmc-router: kd-mc.com                        ← le routeur Cloudflare répond
+x-github-request-id / x-github-edge-region: iad ← mais le contenu vient de GITHUB PAGES
+via: 1.1 varnish · x-served-by: cache-pdk…
+```
+
+**Le site vivant vient de GitHub**, revenu en service le 4.09. Le miroir
+`kdmc-site.pages.dev` est un **filet de secours**, plus la source.
+
+### Ce qui a changé, et comment revenir en arrière
+
+`publier-site` et `verifier-cloudflare` sont passés **à la demande** : ils partent quand
+on modifie **`publier-demande.txt`**, avec la variable `PUBLIER`, ou par le bouton
+« Lancer ». Économie attendue : **~94 min/mois, 23 % du quota rendus**. Une dernière
+publication a eu lieu au moment du changement, donc le filet de secours est à jour.
+
+**Si GitHub retombait** : remettre `- when: on_success` en première règle de
+`publier-site` dans `.gitlab-ci.yml`, et la publication automatique d'avant revient.
+C'est écrit à côté du job, pas seulement ici.
+
+### La question à se poser avant d'ajouter la prochaine automatisation
+
+> *« Est-ce que ça produit, teste, déploie ou publie CE dépôt ? Si oui → GitHub. Si non
+> → est-ce périodique ? Alors Cloudflare Worker. Sinon → GitLab CI, et j'ai compté ce que
+> ça coûte sur les 400 minutes du mois. »*

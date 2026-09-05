@@ -1,0 +1,184 @@
+name: ClayScore → dépôt PRIVÉ (extraction avec historique)
+
+# Pourquoi ce workflow existe
+# ---------------------------
+# ClayScore porte la mention « code privé, tous droits réservés — ne pas
+# publier », mais il vit dans CMCteams, qui est un dépôt PUBLIC (kd-mc.com est
+# servi par GitHub Pages, ce qui l'exige sur un compte gratuit). 128 fichiers,
+# dont les 28 documents du dossier commercial, sont donc lisibles par tous.
+#
+# Ce workflow déplace ClayScore dans son propre dépôt PRIVÉ, en gardant tout
+# son historique de développement.
+#
+# Pourquoi en CI et pas depuis l'agent : créer un dépôt exige un jeton avec le
+# droit `repo`. Le jeton de l'agent ne l'a pas (403). Le runner, lui, a le
+# secret APEX_GITHUB_PAT.
+#
+# ⚠️ Ce workflow NE SUPPRIME RIEN de CMCteams. Il ne fait que créer et
+# remplir le dépôt privé. La suppression côté public est une étape séparée,
+# faite seulement APRÈS vérification que tout est bien arrivé.
+
+on:
+  workflow_dispatch:
+    inputs:
+      nom_depot:
+        description: "Nom du dépôt privé à créer"
+        default: "clayscore"
+        required: true
+      dry_run:
+        description: "true = simuler sans rien créer ni pousser"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  extraire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer CMCteams AVEC tout l'historique
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0          # obligatoire : sans ça, pas d'historique
+
+      - name: Vérifier que le jeton existe et peut créer un dépôt
+        id: jeton
+        env:
+          PAT: ${{ secrets.APEX_GITHUB_PAT }}
+        run: |
+          if [ -z "$PAT" ]; then
+            echo "::error::Le secret APEX_GITHUB_PAT est absent."
+            echo "Il faut un jeton personnel GitHub avec le droit 'repo'."
+            echo "→ https://github.com/settings/tokens  puis l'ajouter en secret"
+            echo "   APEX_GITHUB_PAT dans Settings ▸ Secrets ▸ Actions."
+            exit 1
+          fi
+          # On demande à l'API qui nous sommes : ça valide le jeton d'un coup.
+          CODE=$(curl -sS -o /tmp/me.json -w '%{http_code}' \
+            -H "Authorization: Bearer $PAT" https://api.github.com/user)
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Jeton refusé par GitHub (HTTP $CODE)."
+            exit 1
+          fi
+          echo "utilisateur=$(python3 -c "import json;print(json.load(open('/tmp/me.json'))['login'])")" >> "$GITHUB_OUTPUT"
+
+      - name: Extraire clayscore/ AVEC son historique
+        id: extraction
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # `subtree split` rejoue l'historique du seul sous-dossier : on garde
+          # QUI a fait QUOI et QUAND, au lieu d'un commit initial anonyme.
+          git subtree split --prefix=clayscore -b clayscore-seul
+          git checkout clayscore-seul
+          echo "commits=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+          echo "fichiers=$(git ls-files | wc -l)" >> "$GITHUB_OUTPUT"
+          echo "docs=$(git ls-files 'docs/*.md' | wc -l)" >> "$GITHUB_OUTPUT"
+          echo "tests=$(git ls-files 'tests/test_*.py' | wc -l)" >> "$GITHUB_OUTPUT"
+
+      - name: Créer le dépôt PRIVÉ (s'il n'existe pas déjà)
+        if: ${{ !inputs.dry_run }}
+        env:
+          PAT: ${{ secrets.APEX_GITHUB_PAT }}
+          NOM: ${{ inputs.nom_depot }}
+          MOI: ${{ steps.jeton.outputs.utilisateur }}
+        run: |
+          set -e
+          CODE=$(curl -sS -o /tmp/r.json -w '%{http_code}' \
+            -H "Authorization: Bearer $PAT" \
+            "https://api.github.com/repos/${MOI}/${NOM}")
+          if [ "$CODE" = "200" ]; then
+            PRIVE=$(python3 -c "import json;print(json.load(open('/tmp/r.json'))['private'])")
+            echo "Le dépôt existe déjà (privé=$PRIVE) — on ne le recrée pas."
+            if [ "$PRIVE" != "True" ]; then
+              echo "::error::${MOI}/${NOM} existe mais il est PUBLIC. Arrêt."
+              exit 1
+            fi
+          else
+            echo "Création de ${MOI}/${NOM} en PRIVÉ…"
+            CODE=$(curl -sS -o /tmp/c.json -w '%{http_code}' -X POST \
+              -H "Authorization: Bearer $PAT" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/user/repos \
+              -d "{\"name\":\"${NOM}\",\"private\":true,\"has_issues\":true,
+                   \"description\":\"ClayScore — arbitre electronique de ball-trap. Code prive, tous droits reserves.\"}")
+            if [ "$CODE" != "201" ]; then
+              echo "::error::Création refusée (HTTP $CODE) :"; cat /tmp/c.json
+              echo "Cause la plus probable : le jeton n'a pas le droit 'repo'."
+              exit 1
+            fi
+          fi
+
+      - name: Pousser ClayScore dans le dépôt privé
+        if: ${{ !inputs.dry_run }}
+        env:
+          PAT: ${{ secrets.APEX_GITHUB_PAT }}
+          NOM: ${{ inputs.nom_depot }}
+          MOI: ${{ steps.jeton.outputs.utilisateur }}
+        run: |
+          set -e
+          git remote add prive "https://x-access-token:${PAT}@github.com/${MOI}/${NOM}.git"
+          # Pas de --force : si le dépôt contient déjà autre chose, on veut le
+          # savoir plutôt que de l'écraser.
+          git push prive clayscore-seul:main
+
+      - name: VÉRIFIER que tout est bien arrivé (rien n'est supprimé sans ça)
+        if: ${{ !inputs.dry_run }}
+        env:
+          PAT: ${{ secrets.APEX_GITHUB_PAT }}
+          NOM: ${{ inputs.nom_depot }}
+          MOI: ${{ steps.jeton.outputs.utilisateur }}
+          ATTENDU_FICHIERS: ${{ steps.extraction.outputs.fichiers }}
+        run: |
+          set -e
+          cd "$(mktemp -d)"
+          git clone --quiet "https://x-access-token:${PAT}@github.com/${MOI}/${NOM}.git" verif
+          cd verif
+          RECU=$(git ls-files | wc -l)
+          echo "Fichiers attendus : $ATTENDU_FICHIERS — reçus : $RECU"
+          if [ "$RECU" != "$ATTENDU_FICHIERS" ]; then
+            echo "::error::Le compte de fichiers ne correspond pas. NE RIEN SUPPRIMER."
+            exit 1
+          fi
+          # Les pièces qui comptent vraiment doivent être là.
+          for f in clayscore/vision/verdict.py docs/DEVIS_COMPARATIF.md \
+                   docs/AUDIT_EXTERIEUR.md tools/audit_externe.sh pyproject.toml; do
+            [ -f "$f" ] || { echo "::error::MANQUANT : $f"; exit 1; }
+          done
+          echo "✅ Contenu vérifié fichier par fichier."
+
+      - name: Le logiciel tourne-t-il depuis le NOUVEAU dépôt ?
+        if: ${{ !inputs.dry_run }}
+        env:
+          PAT: ${{ secrets.APEX_GITHUB_PAT }}
+          NOM: ${{ inputs.nom_depot }}
+          MOI: ${{ steps.jeton.outputs.utilisateur }}
+        run: |
+          set -e
+          cd "$(mktemp -d)"
+          git clone --quiet --depth 1 \
+            "https://x-access-token:${PAT}@github.com/${MOI}/${NOM}.git" essai
+          cd essai
+          python3 -m pip install --quiet -r requirements.txt
+          python3 -m pytest -q 2>&1 | tail -5
+
+      - name: Ce qu'il faut retenir
+        run: |
+          {
+            echo "## ClayScore → dépôt privé"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Dépôt | \`${{ steps.jeton.outputs.utilisateur }}/${{ inputs.nom_depot }}\` (**privé**) |"
+            echo "| Commits repris | ${{ steps.extraction.outputs.commits }} |"
+            echo "| Fichiers | ${{ steps.extraction.outputs.fichiers }} |"
+            echo "| Documents du dossier | ${{ steps.extraction.outputs.docs }} |"
+            echo "| Fichiers de tests | ${{ steps.extraction.outputs.tests }} |"
+            echo
+            echo "⚠️ **Rien n'a été supprimé de CMCteams.** La suppression est une"
+            echo "étape séparée, à faire seulement maintenant que le contenu est"
+            echo "vérifié — et elle n'efface PAS ce qui est déjà dans l'historique"
+            echo "public. Ce qui est sorti est sorti."
+          } >> "$GITHUB_STEP_SUMMARY"
