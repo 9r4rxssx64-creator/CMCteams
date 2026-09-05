@@ -12,7 +12,9 @@
         bon code (repli local), et refuse le mauvais ;
      5. domaine sans arbre publié + appareil vierge : message clair, on reste à la porte ;
      6. changement de code : prouvé au domaine (ancien → nouveau), mémorisé localement ;
-     7. le fichier servi ne contient ni personne, ni empreinte ; 0 erreur JS sur tout le parcours.
+     7. le fichier servi ne contient ni personne, ni empreinte ; 0 erreur JS sur tout le parcours ;
+     8. appareil existant : une version plus récente des fiches officielles publiée sur le domaine est fusionnée
+        (photos locales gardées, fantômes purgés).
    Usage : node tools/arbre/verify-domaine.mjs      (sortie 1 si une vérification échoue) */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -40,13 +42,14 @@ function serve() {
       if (u.pathname.startsWith('/__arbre/') || u.pathname === '/__admin/login') {
         if (mock.mode === 'down') { rsp.writeHead(404, { 'content-type': 'text/html' }); rsp.end('<h1>404</h1>'); return; }
         const b = req.method === 'GET' ? {} : await readBody(req);
-        if (u.pathname === '/__arbre/status') { mock.hits.status++; return J(rsp, { ok: true, code: mock.mode !== 'unpublished', seed: mock.mode !== 'unpublished', count: N, savedAt: Date.now() - 60000 }); }
+        if (u.pathname === '/__arbre/status') { mock.hits.status++; return J(rsp, { ok: true, code: mock.mode !== 'unpublished', seed: mock.mode !== 'unpublished', count: Object.keys(mock.seed.persons).length, savedAt: Date.now() - 60000, seedVersion: mock.seed.meta.seedVersion || 0 }); }
         if (u.pathname === '/__arbre/unlock') {
           mock.hits.unlock++;
           if (mock.mode === 'unpublished') return J(rsp, { ok: false, reason: 'code_non_publie' });
           if (String(b.hash || '').toLowerCase() !== mock.codehash) return J(rsp, { ok: false, reason: 'code_invalide' });
-          return J(rsp, { ok: true, seed: mock.seed, savedAt: Date.now() });
+          return J(rsp, { ok: true, seed: mock.seed, savedAt: Date.now(), seedVersion: mock.seed.meta.seedVersion || 0 });
         }
+        if (u.pathname === '/__arbre/seed' && req.method === 'GET') { mock.hits.get = (mock.hits.get || 0) + 1; if (req.headers['x-arbre-code'] !== mock.codehash) return J(rsp, { ok: false, reason: 'code_invalide' }, 403); return J(rsp, { ok: true, seed: mock.seed, savedAt: Date.now(), seedVersion: mock.seed.meta.seedVersion || 0 }); }
         if (u.pathname === '/__admin/login') { mock.hits.login++; return J(rsp, b.code === ADMIN ? { ok: true, grant: 'grant.test' } : { ok: false, reason: 'code_invalide' }); }
         if (u.pathname === '/__arbre/seed' && req.method === 'PUT') {
           mock.hits.put++;
@@ -168,6 +171,27 @@ try {
   await waitApp(page);
   check((await page.evaluate(() => Object.keys(DB.persons).length)) === N, `4. bon code + domaine muet → repli local, l'arbre s'ouvre (${N} personnes)`);
   await ctx.close();
+
+  /* 8. appareil EXISTANT (v3.6 en mémoire, seedVersion 56) + domaine qui publie une version plus récente (63) :
+        les fiches officielles corrigées arrivent, un fantôme (SEED_OBSOLETE) est purgé, les photos locales restent */
+  mock.mode = 'ok';
+  const OLDDB = JSON.parse(JSON.stringify(FX)); OLDDB.meta.seedVersion = 56;
+  const firstId = Object.keys(OLDDB.persons)[0];
+  OLDDB.persons[firstId].prenom = 'Ancien-Prenom'; OLDDB.persons[firstId].updatedAt = 1; OLDDB.persons[firstId].photos = ['data:image/png;base64,AAAA'];
+  OLDDB.persons.seed_david_bauman = { id: 'seed_david_bauman', prenom: 'Fantome', nom: 'TEST', conjoints: [], photos: [], sources: [], comments: [], updatedAt: 1 };
+  delete OLDDB.persons[Object.keys(FX.persons)[5]]; // une fiche que l'appareil n'a pas encore
+  const NEWDB = JSON.parse(JSON.stringify(FX)); NEWDB.meta.seedVersion = 63; NEWDB.persons[firstId].id = firstId;
+  for (const k of Object.keys(NEWDB.persons)) { const q = NEWDB.persons[k]; delete q.photos; q.photoCount = 0; }
+  mock.seed = NEWDB; mock.codehash = sha('arbre::' + CODE);
+  ({ ctx, page } = await newPage({ fn: (a) => { localStorage.setItem('arbre_codehash', a.h); localStorage.setItem('arbre_trust', '1'); localStorage.setItem('arbre_v2_text', a.db); }, arg: { h: sha('arbre::' + CODE), db: JSON.stringify(OLDDB) } }));
+  await waitApp(page);
+  await page.waitForFunction((n) => Object.keys(DB.persons).length === n && DB.meta.seedVersion === 63, N, { timeout: 15000 });
+  const st8 = await page.evaluate((a) => ({ n: Object.keys(DB.persons).length, v: DB.meta.seedVersion, pre: DB.persons[a.id].prenom, photos: (DB.persons[a.id].photos || []).length, ghost: !!DB.persons.seed_david_bauman }), { id: firstId });
+  check(st8.n === N && st8.v === 63, `8. appareil existant : version 56 → 63 récupérée du domaine (${st8.n}/${N} personnes)`);
+  check(st8.pre !== 'Ancien-Prenom' && st8.photos === 1, '8. fiche officielle corrigée depuis le domaine, photo locale conservée');
+  check(!st8.ghost && (mock.hits.get || 0) === 1, '8. fantôme purgé, 1 seul appel GET /__arbre/seed');
+  await ctx.close();
+  mock.seed = FX;
 
   /* 5. domaine sans arbre publié, appareil vierge */
   mock.mode = 'unpublished';

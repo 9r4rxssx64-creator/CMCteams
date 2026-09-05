@@ -98,21 +98,39 @@ function hexEq(a, b) {
   let d = 0; for (let i = 0; i < 64; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
 }
+/* Amorce D1 (base `kdmc-arbre`, binding ARBRE_DB, table kv(k,v,saved_at)) : déposée par une session
+   Claude (données récupérées de l'historique GitLab v3.14) pour que le domaine serve l'arbre AVANT toute
+   publication depuis l'iPhone. KV (publication admin depuis l'app) a TOUJOURS priorité sur D1. Fail-open. */
+async function arbreD1(env, k) {
+  if (!env || !env.ARBRE_DB || !env.ARBRE_DB.prepare) return null;
+  try { const row = await env.ARBRE_DB.prepare('SELECT v, saved_at FROM kv WHERE k = ?1').bind(k).first(); return row && row.v != null ? row : null; } catch { return null; }
+}
+async function arbreCodehash(env) {
+  const kv = await env.ACCOUNTS.get('arbre:codehash');
+  if (kv) return kv;
+  const row = await arbreD1(env, 'codehash');
+  return row ? String(row.v).trim().toLowerCase() : null;
+}
 async function arbreSeedOut(env) {
   let seed = null, meta = null;
   try { const raw = await env.ACCOUNTS.get('arbre:seed'); if (raw) seed = JSON.parse(raw); } catch { seed = null; }
   try { meta = JSON.parse((await env.ACCOUNTS.get('arbre:meta')) || 'null'); } catch { meta = null; }
-  return { seed, savedAt: meta && meta.savedAt || 0, count: meta && meta.count || 0 };
+  if (!seed) {
+    const row = await arbreD1(env, 'seed');
+    if (row) { try { seed = JSON.parse(row.v); meta = { savedAt: row.saved_at || 0, count: Object.keys(seed.persons || {}).length, seedVersion: seed.meta && seed.meta.seedVersion || 0, source: 'd1' }; } catch { seed = null; } }
+  }
+  const seedVersion = (meta && meta.seedVersion) || (seed && seed.meta && seed.meta.seedVersion) || 0;
+  return { seed, savedAt: meta && meta.savedAt || 0, count: meta && meta.count || 0, seedVersion, source: meta && meta.source || (seed ? 'kv' : null) };
 }
 async function handleArbre(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
   const path = url.pathname;
   if (!env || !env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
-  const stored = await env.ACCOUNTS.get('arbre:codehash');
+  const stored = await arbreCodehash(env);
 
   if (path === '/__arbre/status' && request.method === 'GET') {
     const m = await arbreSeedOut(env);
-    return J({ ok: true, code: !!stored, seed: !!m.seed, count: m.count, savedAt: m.savedAt });
+    return J({ ok: true, code: !!stored, seed: !!m.seed, count: m.count, savedAt: m.savedAt, seedVersion: m.seedVersion, source: m.source });
   }
 
   /* Publication (admin seulement) : l'app envoie SES données (texte, sans photos) + l'empreinte
@@ -133,7 +151,7 @@ async function handleArbre(request, url, env) {
     } else if (!stored) return J({ ok: false, reason: 'codehash_requis' });
     const savedAt = Date.now();
     await env.ACCOUNTS.put('arbre:seed', s);
-    await env.ACCOUNTS.put('arbre:meta', JSON.stringify({ savedAt, count, size: s.length }));
+    await env.ACCOUNTS.put('arbre:meta', JSON.stringify({ savedAt, count, size: s.length, seedVersion: +(b.meta && b.meta.seedVersion) || 0, source: 'kv' }));
     await audLog(env, { ev: 'arbre_seed_publish', count, size: s.length });
     return J({ ok: true, savedAt, count });
   }
@@ -150,7 +168,7 @@ async function handleArbre(request, url, env) {
     await rlReset(env, ipHash);
     await audLog(env, { ev: 'arbre_unlock_ok', ip: ipHash.slice(0, 12) });
     const m = await arbreSeedOut(env);
-    return J({ ok: true, seed: m.seed, savedAt: m.savedAt });
+    return J({ ok: true, seed: m.seed, savedAt: m.savedAt, seedVersion: m.seedVersion });
   }
 
   if (path === '/__arbre/seed' && request.method === 'GET') {
@@ -158,7 +176,7 @@ async function handleArbre(request, url, env) {
     if (!stored) return J({ ok: false, reason: 'code_non_publie' });
     if (!hexEq(hash, stored)) return J({ ok: false, reason: 'code_invalide' }, null, 403);
     const m = await arbreSeedOut(env);
-    return J({ ok: true, seed: m.seed, savedAt: m.savedAt });
+    return J({ ok: true, seed: m.seed, savedAt: m.savedAt, seedVersion: m.seedVersion });
   }
 
   /* Rotation du code famille : prouver l'ANCIEN (ou être admin). Le nouveau n'est jamais

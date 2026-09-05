@@ -1,5 +1,42 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (nuit, session arbre, suite) — Arbre v3.17 : l'arbre v3.7→v3.14 rapatrié de GitLab, servi par le domaine dès la fusion (amorce D1)
+
+**Demande Kevin** : jeton GitLab collé + *« Pipeline toutes tes branches. Tu peux tout faire, tu as tout pour,
+comme tes autres branches. Tout sur GitHub, comme avant, avec tous les noms, dates etc. Sécurisé plus si besoin. »*
+
+**Fait** — branche `claude/sarzance-family-tree-3jxi7i` :
+- **GitLab lu une fois** (jeton en variable de session seulement, `.git/config` = 0 entrée gitlab) : les 8 versions
+  perdues (v3.7 → **v3.14**, seedVersion 63, **119 personnes**) sont récupérées. Le **code** v3.14 est porté dans
+  v3.17 (`SEED_OBSOLETE` + `purgeObsoleteSeeds` = purge des 5 fiches fantômes, plus jamais « vivant » affiché,
+  familles BRICCO/MAGNANI/BEAUMELLE, liens de recherche Antenati/FranceArchives/Journal de Monaco/Gallica).
+  Les **documents** de recherche (`arbre/PASSATION-ARBRE.md`, `RECHERCHES-EN-COURS.md`, 3 `arbre/research/*.md`)
+  reviennent sur GitHub, comme avant. La branche GitLab-only `publie-septembre` est poussée sur GitHub.
+- **Les DONNÉES ne reviennent PAS dans le fichier public** (« sécurisé plus ») : elles sont **déposées dans la base
+  Cloudflare D1 `kdmc-arbre`** (table `kv` : `codehash` = empreinte actuelle, `seed` = les 119 fiches, 96 443
+  caractères, `json_valid`, seedVersion 63). Vérification par **somme de contrôle par morceau** (8 × 12 055 car.) :
+  6 morceaux avaient perdu `"conjoints":[],` à la copie → corrigés par remplacement ciblé, re-vérifiés **8/8 identiques**.
+- **Routeur** : repli **D1** quand le KV est vide (`arbreD1/arbreCodehash/arbreSeedOut`, KV prioritaire, `source:'kv'|'d1'`,
+  fail-open si D1 absent) ; liaison `[[d1_databases]] ARBRE_DB` dans `wrangler.toml`. `arbre.test.mjs` **42/42**
+  (mock D1, précédence KV, D1 en panne). → **Dès la fusion, un nouvel appareil reçoit l'arbre v3.14 sans que Kevin
+  publie** ; « Publier » depuis Outils écrase l'amorce (KV gagne).
+- **App v3.17** : `refreshFromDomain()` — un appareil qui a déjà l'arbre (seedVersion 56) compare avec `/__arbre/status`
+  et, si le domaine est plus récent (63), récupère les fiches officielles (`applyDomainSeed(sd,true)` : fiche officielle
+  corrigée, photos/commentaires locaux gardés), purge les fantômes, pousse au cloud. 1 seul GET.
+- **Vérifié en VRAI navigateur** : `verify-domaine.mjs` **23/23** (nouveau scénario 8 : appareil existant 56 → 63,
+  fantôme purgé, photo locale conservée) ; `verify-poster.mjs` tout vert. Gates : arbre-prive 33/33, arbre-poster,
+  no-conflicts, docs-frais, pipeline-sessions, patrimoine-prive 8/8, no-pin-leak — **tous verts**.
+- Leçon **#215** (copie manuelle de données = vérifier par somme de contrôle par morceau).
+
+**Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été
+publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO). PR à ouvrir/fusionner (API GitHub bloquée ici →
+lien compare + message pipeline m027).
+
+**Non rapatrié (volontaire)** : `ETAT_RECONSTRUCTION.md`, `exposition-demande.txt`, `publier-demande.txt` (journal
+d'infra GitLab dépassé + fichiers-signaux CI GitLab, sans objet sur GitHub).
+
+---
+
 ## 5 septembre 2026 (soir) — la surveillance du domaine était éteinte depuis 22 jours
 
 **Demande Kevin** : *« Fais ton audit du domaine, chaque app, pages, tout ce que nous avons créé »*

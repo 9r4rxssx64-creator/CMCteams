@@ -30,19 +30,23 @@ Le déploiement du worker RAG échoue parce que ton jeton Cloudflare n'a pas la 
 **Vectorize**. Cloudflare → Profil → **Jetons d'API** → le jeton utilisé par GitHub → Modifier →
 ajouter **Vectorize : Edit**. Ensuite je relance le déploiement.
 
-### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
-L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :
-les données sont servies par le domaine à qui tape le code. Il faut les y **mettre une fois**,
-depuis ton iPhone (le seul endroit où elles sont complètes) :
-1. Ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet **Outils** → **📤 Publier
-   l'arbre sur le domaine (admin)** → tape ton code admin (il part au domaine, rien n'est gardé).
-   Tu dois voir « 📤 Arbre publié : N personnes ».
-2. Toujours dans **Outils** → **Changer le code** de la famille : l'ancienne empreinte a été
-   publique (elle était dans le fichier), donc l'ancien code ne vaut plus rien. Repartage le
-   nouveau aux cousins. L'ancien chemin en ligne est effacé automatiquement.
+### 🌳 Puis l'arbre (5.09 nuit) — 1 geste, 30 secondes, dès que la branche est en ligne
+L'arbre (arbre.kd-mc.com, v3.17) ne contient **plus aucune personne** dans son fichier public :
+les données sont servies par le domaine à qui tape le code. **Bonne nouvelle : tu n'as plus à
+les publier toi-même.** J'ai retrouvé sur GitLab la version complète (v3.14, **119 personnes**,
+avec les corrections d'août : fiches fantômes retirées, familles BRICCO / MAGNANI / BEAUMELLE)
+et je l'ai **déposée dans la base du domaine** (Cloudflare D1, vérifiée fiche par fiche). Donc :
+- un **nouvel** appareil reçoit l'arbre complet dès qu'il tape le code ;
+- **tes appareils** se mettent à jour tout seuls à l'ouverture (ils récupèrent les fiches
+  corrigées, gardent tes photos et commentaires).
 
-Tant que le geste 1 n'est pas fait : **tes appareils marchent** (ils ont tout en mémoire),
-mais un **nouvel** appareil verrait « Arbre pas encore publié sur le domaine ».
+Il reste **un seul geste** : ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet
+**Outils** → **Changer le code** de la famille. L'ancienne empreinte a été publique (elle était
+dans le fichier sur GitHub), donc l'ancien code ne vaut plus rien. Repartage le nouveau aux
+cousins. L'ancien chemin en ligne est effacé automatiquement.
+
+*(Le bouton **📤 Publier** dans Outils reste là : si un jour tu veux remplacer l'arbre du domaine
+par celui de ton iPhone, il écrase ce que j'ai déposé.)*
 
 ### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
 - **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
