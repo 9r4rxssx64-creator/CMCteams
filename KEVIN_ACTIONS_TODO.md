@@ -2,7 +2,36 @@
 
 ---
 
-## 🔴 UNE SEULE CHOSE (5.09.2026) — un jeton GitLab, 2 min
+## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
+
+Ton code admin (celui à 6 chiffres) était écrit **en clair dans 68 fichiers** de ton dépôt
+GitHub — qui est **public** — et son empreinte était dans la page Départs. Tout ça est
+retiré, et plus aucune page ne garde le code ; mais **ce qui a été public une fois le reste**
+(l'historique Git le garde). Le seul vrai correctif : **un nouveau code**. Je ne peux pas le
+faire à ta place : le nouveau code ne doit passer **ni par moi, ni par un message, ni par un
+journal public**.
+
+### ▶️ 3 gestes, 2 minutes
+1. **Choisis** un nouveau code — **8 chiffres**, pas 6 (dix fois plus long à forcer par mille).
+2. Ouvre **[kd-mc.com/CMCteams/tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/)**,
+   tape le code, **« Copier l'empreinte »**. Le calcul se fait sur ton iPhone, rien n'est envoyé.
+3. Ouvre **[le secret APEX_ADMIN_PIN_SHA256](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)**
+   → **Update** → colle l'empreinte → **Save**.
+
+Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, admin.kd-mc.com,
+Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
+**Messages** suivent le routeur toutes seules.
+
+### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
+- **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
+- **Boutiques** (tableau de bord) : `Paramètres → Changer le PIN admin`.
+
+*Ne m'écris jamais le nouveau code. Si tu veux que je vérifie que tout suit, je le fais sans le
+connaître (les tests envoient l'empreinte, jamais le code).*
+
+---
+
+## 🔴 ENSUITE (5.09.2026) — un jeton GitLab, 2 min
 
 Ton site **kd-mc.com est propre** : il ne publie plus aucun de mes documents de travail
 (ils exposaient des noms de famille, des dates de naissance et des e-mails). C'est
@@ -962,7 +991,7 @@ Carte enregistrée jamais débitée tant que tu restes sous le quota free.
 
 ### PIN admin Kevin (pour référence dans futures sessions)
 
-PIN = `200807` → SHA256 = `cbb070543b39ffeb3e41ed8a61c8fedcce493b93c0b071f7976207634954e373`
+PIN = `‹code admin›` → SHA256 = `‹empreinte du code — jamais écrite›`
 (stocké dans GitHub Secret `APEX_ADMIN_PIN_SHA256`).
 
 ---
@@ -2820,7 +2849,7 @@ Pour CHAQUE service manquant, Apex :
 | Revolut Revtag (@kdmc) | Coffre → `ax_revolut_tag` |
 | IBAN + nom titulaire | Coffre → `ax_iban` + `ax_iban_nom` |
 | BTC / ETH / USDC adresses publiques | Coffre → champs correspondants |
-| PIN admin si tu veux changer (200807 par défaut) | Réglages → Sécurité |
+| PIN admin si tu veux changer (‹code admin› par défaut) | Réglages → Sécurité |
 
 ---
 

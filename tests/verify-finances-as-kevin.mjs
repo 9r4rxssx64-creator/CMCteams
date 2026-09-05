@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = process.env.FIN_AUDIT_OUT || '/tmp/finances-audit';
@@ -120,7 +121,7 @@ try {
   for (let attempt = 0; attempt < 6 && !aiActivated; attempt++) {
     try {
       if (await page.locator('#ai-pin').count()) {
-        await page.fill('#ai-pin', '200807');
+        await page.fill('#ai-pin', ADMIN_CODE);
         await page.click('#ai-on');
       }
       await page.waitForSelector('#ai-off', { timeout: 3000 });

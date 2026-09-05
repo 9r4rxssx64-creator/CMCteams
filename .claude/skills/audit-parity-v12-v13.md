@@ -137,14 +137,14 @@ test.describe('Apex v12/v13 parity tests', () => {
     // Test sur v12 (legacy URL)
     await page.goto('/v12/');
     await page.fill('input[name=name]', 'Kevin DESARZENS');
-    await page.fill('input[name=pin]', '200807');
+    await page.fill('input[name=pin]', '‹code admin›');
     await page.click('button[type=submit]');
     const v12_redirect = page.url();
     
     // Test sur v13
     await page.goto('/v13/');
     await page.fill('input[name=name]', 'Kevin DESARZENS');
-    await page.fill('input[name=pin]', '200807');
+    await page.fill('input[name=pin]', '‹code admin›');
     await page.click('button[type=submit]');
     const v13_redirect = page.url();
     

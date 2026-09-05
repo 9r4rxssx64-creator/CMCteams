@@ -63,7 +63,7 @@
 | 2026-06-15 | 🔶 non-anc. | 1159 | `auto-deploy/apex-v13-build-27582233358` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
 | 2026-06-15 | 🔶 non-anc. | 1156 | `auto-deploy/apex-v13-build-27575880279` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
 | 2026-06-15 | 🔶 non-anc. | 1148 | `auto-deploy/apex-v13-build-27564298985` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
-| 2026-06-15 | 🔶 non-anc. | 1142 | `claude/kdmc-replay-csp` | Domaine kd-mc.com : anti-rejeu WebAuthn one-time + en-têtes sécurit� |
+| 2026-06-15 | 🔶 non-anc. | 1142 | `claude/kdmc-replay-csp` | Domaine kd-mc.com : anti-rejeu WebAuthn one-time + en-têtes sécurit� |
 | 2026-06-15 | 🔶 non-anc. | 1139 | `claude/kdmc-deepen-hardening` | Domaine kd-mc.com : passe approfondie post-audit (rate-limit code admi |
 | 2026-06-15 | 🔶 non-anc. | 1121 | `claude/cmcteams-detection-errors-48gbod` | v9.806: diagnostic équipes affiche la VRAIE famille (familyForMonth), |
 | 2026-06-14 | 🔶 non-anc. | 1156 | `auto-deploy/apex-v13-build-27514357777` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
@@ -170,7 +170,7 @@
 | 2026-06-09 | 🔶 non-anc. | 699 | `claude/fiches-retry-ladetente` | Admin domaine + dashboard : la-detente listée + auto-retry fiches (KV |
 | 2026-06-09 | 🔶 non-anc. | 699 | `claude/apex-chat-domain-register` | Apex Chat: enregistrement auto du compte dans le domaine kd-mc.com (v1 |
 | 2026-06-09 | 🔶 non-anc. | 699 | `claude/apex-ai-domain-register` | Apex AI: enregistrement auto du compte dans le domaine kd-mc.com (v13. |
-| 2026-06-09 | 🔶 non-anc. | 696 | `claude/dashboard-pin-fix` | Dashboard boutiques: code admin choisi par Kevin (plus de 200807 publi |
+| 2026-06-09 | 🔶 non-anc. | 696 | `claude/dashboard-pin-fix` | Dashboard boutiques: code admin choisi par Kevin (plus de ‹code admin› publi |
 | 2026-06-09 | 🔶 non-anc. | 690 | `claude/kdmc-domain-admin` | KDMC router worker (SSO+registre+admin) + admin domaine (fiches max-in |
 | 2026-06-09 | 🔶 non-anc. | 687 | `auto-deploy/apex-v13-build-27236469809` | Auto-deploy Apex v13.4.323 build → apex-ai-v13/ [skip ci] |
 | 2026-06-09 | 🔶 non-anc. | 683 | `claude/kdmc-sso-pwa2` | KDMC APEX portail PWA : index.html (gate+hub) + kdmc-portal.js (compte |

@@ -18,6 +18,7 @@
 import http from 'http';
 import { readFileSync } from 'fs';
 import { createRequire } from 'module';
+const ADMIN_CODE = process.env.KDMC_ADMIN_CODE || '200807'; // code de TEST ; en CI → secret KDMC_ADMIN_CODE (le vrai code ne s'écrit jamais ici)
 
 const ROOT = process.cwd();
 function loadPlaywright() {
@@ -98,12 +99,12 @@ async function journey({ prenom, nom, code, enrolFaceId }) {
 
 try {
   /* 1) PROPRIÉTAIRE + Face ID → auto-login ADMIN */
-  const kevin = await journey({ prenom: 'Kevin', nom: 'Desarzens', code: '200807', enrolFaceId: true });
+  const kevin = await journey({ prenom: 'Kevin', nom: 'Desarzens', code: ADMIN_CODE, enrolFaceId: true });
   ok(kevin.auto && kevin.auto.role === 'admin' && kevin.auto.verified === true,
     'Kevin (proprio) + Face ID → app autoLogin() = ADMIN  [' + JSON.stringify(kevin.auto) + ']');
 
   /* 2) SÉCURITÉ : PROPRIÉTAIRE mais SANS Face ID (nom tapé) → PAS d'auto-login admin */
-  const kevinNoFace = await journey({ prenom: 'Kevin', nom: 'Desarzens', code: '200807', enrolFaceId: false });
+  const kevinNoFace = await journey({ prenom: 'Kevin', nom: 'Desarzens', code: ADMIN_CODE, enrolFaceId: false });
   ok(kevinNoFace.auto === null,
     'Kevin SANS Face ID (nom auto-déclaré) → autoLogin() = null (aucun admin auto) ');
   ok(kevinNoFace.who && kevinNoFace.who.verified === false,

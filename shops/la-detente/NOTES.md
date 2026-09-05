@@ -5,7 +5,7 @@
 ## Rôles & accès
 - **Boutique (clients)** : acheter uniquement. **PAS d'accès au Studio**, **pas de favoris**.
 - **Studio (admin uniquement)** : créer les produits. Gardé par `ld_admin` (redirige les clients vers la boutique). FAB/liens Studio masqués aux clients.
-- **Admin** : activer via `?ld_admin=200807` (boutique ⚙️). Catalogue Printif + publication.
+- **Admin** : activer via `?ld_admin=‹code admin›` (boutique ⚙️). Catalogue Printif + publication.
 
 ## Prix & coûts
 - **Coûts / marges = admin/studio uniquement** — jamais affichés au client (le client voit le prix de vente seul).
