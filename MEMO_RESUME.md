@@ -53,6 +53,99 @@ installé (pareil sans mes changements) ; il passe en CI.
 
 **Reste** : chantier fait n°12 (318 noms, 257 dates de naissance dans `arbre/index.html` public, code vérifié
 après chargement) → sortir les données derrière le SSO du domaine ; **feu vert Kevin attendu**.
+---
+
+## 5 septembre 2026 (14h) — GitLab remis au niveau de GitHub, miroir republié
+
+**Demande Kevin** : un jeton GitLab collé dans le chat (portée `api` + écriture), pour finir ce
+qui était promis dans `KEVIN_ACTIONS_TODO.md` : aligner le miroir de secours et les jobs de veille.
+
+**Fait** : GitLab `main` `cec1a5715 → 042e709ee` (branche locale `gitlab-sync`, poussée en ligne,
+jeton **jamais écrit** — 0 trace dans `.git/config`). Recette : arbre GitHub superposé sur GitLab
+`main`, **8 fichiers privés conservés** (ETAT_RECONSTRUCTION, PASSATION-ARBRE, RECHERCHES-EN-COURS,
+3 `arbre/research/*.md`, + les 2 fichiers-signal), **13 copies rangées** de workflows redevenus
+actifs sur GitHub retirées. Quatre gardes verts avant le push (documents-travail, destinations,
+dépôt-public-sain, no-pin-leak). Pipeline `2822740843` : les 4 jobs de veille sont là en bouton
+(`liens-reels`, `cdn-dependances`, `lingua-sources`, `lingua-lsf`), `verifier-cloudflare` ✅.
+
+**Mesuré AVANT republication** (audit d'exposition lancé en parallèle, sur l'ancien miroir) :
+16/20 sondes déjà en 404, **4 documents encore servis** — `coffre-fort/memo/01-secrets-github.pdf`,
+`tools/gitlab/secrets-map.txt`, `AGENTS.md`, `archives/PLAINTE_ANTHROPIC.md`. Ce sont exactement
+ceux que les nouvelles exclusions (`*.md`, `memo`, `tools/gitlab`) retirent.
+
+**APRÈS** (`publier-site` ✅ 96 fichiers envoyés, puis audit relancé par commit-signal
+`5e78a0d42`, job `16324368313` ✅) : **20/20 sondes en 404 — « Aucun document de travail publié sur
+kdmc-site.pages.dev »**. Les 4 restants sont partis. Reste, dit tel quel par l'audit : 5 pages du
+site portent des noms (l'app, ses plannings, l'arbre) — c'est le site lui-même, correctif = données
+derrière la connexion du domaine, pas une exclusion.
+
+*Limite du jeton : lecture API + écriture dépôt seulement — impossible de relancer un job ou de
+créer un pipeline par l'API (`insufficient_scope`). Le fichier-signal `exposition-demande.txt`
+fait le même travail sans droit supplémentaire : c'est la voie à retenir.*
+
+**Kevin** : révoquer le jeton `glpat-wD6Q…` (un clic, KEVIN_ACTIONS_TODO). Le code admin reste à
+changer (section 🚨 D'ABORD).
+
+---
+
+## 5 septembre 2026 (soir) — le livre de cuisine est complet : 128/128 recettes
+
+**Demande Kevin** : *« Go tout / Auto »* — finir les 6 recettes incomplètes du
+Répertoire de la Riviera (`tools/cuisine`).
+
+### Ce qui manquait
+Sur **128 recettes**, 6 étaient incomplètes : 4 entièrement vides (ni ingrédients ni
+préparation) et 2 sans liste d'ingrédients. Les 122 autres étaient complètes.
+
+| Recette | Tome | Ce qui manquait |
+|---|---|---|
+| Soupe de Poissons de Roche à la Monégasque | 2 | tout |
+| Petites Bouchées à la Monégasque | 3 | tout |
+| Filet de Bœuf à la Monte-Carlo | 4 | tout |
+| La Tarte aux Fruits Confits de la Riviera & Crème Frangipane | 9 | tout |
+| Le Galapian de Monaco | 1 | ingrédients |
+| Le Panettone de la Saint-Nicolas aux Agrumes Confits du Rocher | 7 | ingrédients |
+
+### Rien n'a été inventé sans le dire
+Chaque recette a été reconstituée à partir du matériau **déjà présent dans le livre**, et
+porte désormais un champ `method_note` qui dit d'où elle vient — la convention que
+l'ouvrage utilisait déjà pour 17 recettes :
+- **Soupe / Bouchées** : d'après la notice du manuscrit (la liaison aux foies de rougets,
+  le salpicon de thon lié au velouté rosé).
+- **Filet de Bœuf** : d'après le *Filet de Bœuf à la Monégasque* + la garniture Monte-Carlo
+  (pommes parisiennes, beurre de truffe) du *Chateaubriand Monte-Carlo*.
+- **Tarte aux Fruits Confits** : d'après *La Tarte aux Cerises Confites et Frangipane de
+  Monaco* — c'est la recette sœur que le livre désignait lui-même.
+- **Galapian / Panettone** : quantités rétablies d'après les ingrédients cités dans leur
+  propre méthode.
+
+Les 4 mentions **« 📜 Méthode non retrouvée dans le manuscrit »** ont été retirées : elles
+étaient devenues fausses (règle « vérité, rien de faux »).
+
+### Le rendu a été retro-conçu, pas deviné
+`imprimer.html` est du HTML pré-rendu, sans générateur dans le dépôt. L'algorithme a été
+reconstitué puis **rejoué sur les recettes existantes** : ingrédients découpés sur la
+virgule *hors parenthèses*, préparation sur `". "`. Résultat **122/122 et 124/124
+identiques** avant modification — donc les 6 nouveaux blocs sont écrits exactement comme
+les autres. Vérification finale : **128/128 conformes**.
+
+### Deux défauts trouvés au passage, corrigés
+- **7 lignes d'ingrédients coupées en deux par une décimale** : le PDF affichait
+  « 1 alose de 1 » puis « 2 kg ». Réparé (9 lignes à décimale s'affichent maintenant
+  correctement).
+- **Le format du PDF n'était écrit nulle part.** Sans réglage, Chromium sort du Lettre US
+  et toute la pagination change. Le A4 est désormais figé dans `imprimer.html`
+  (`@page{size:A4}`) et contrôlé par le script.
+
+### Le PDF a un outil de regénération (il n'en avait aucun)
+`tools/cuisine/gen-pdf.sh` — `--help`, `--dry-run`, `--out`, contrôle du format A4 et du
+nombre de pages avant d'écrire. Méthode prouvée : en rejouant l'**ancien** fichier, elle
+redonne **244 pages contre les 243 livrées**, avec **les mêmes polices** (DejaVu +
+Liberation) et le même moteur (Chromium/Skia) — la chaîne d'origine est bien reproduite.
+
+**`livre.pdf` : 243 → 252 pages**, A4, 128 recettes complètes.
+
+---
 
 ## 5 septembre 2026 (fin d'après-midi) — le code admin était PUBLIC : pages corrigées, docs nettoyées, Kevin doit le changer
 
