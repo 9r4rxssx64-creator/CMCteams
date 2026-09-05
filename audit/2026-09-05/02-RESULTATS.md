@@ -15,4 +15,7 @@
 | Outlook `worker.test.mjs` | 6/6 | 6 pass / 0 fail | ✅ |
 | SonarCloud PR #3652 | A | **C** : wrangler non épinglé + scripts d'installation → `wrangler@4 --ignore-scripts` | ✅ corrigé (à re-mesurer par Sonar) |
 | Semgrep PR #3652 | 0 | « vulnerable patterns found » — détail illisible depuis la session | 🔴 non trié |
+| `audit:clicks` (CMCteams, DOM réel hors-ligne) | 0 erreur JS | **79 vues, 1109 boutons exécutés, 0 erreur JS, 0 vue vidée** | ✅ |
+| `test:a11y` (axe-core WCAG 2 AA : accueil, monplanning, rgpd, departs) | 0 critique | **0 critical / 0 serious / 0 moderate / 0 minor** | ✅ |
+| `npm install` à la racine | passe | `Cannot read properties of null (reading 'edgesOut')` → passe avec `--legacy-peer-deps` (256 paquets, dry-run) — corrigé dans `audit-live.yml`, signalé à la session Départs (m032) | ✅ contourné |
 | audit-live (vrai navigateur) | 0 bloquant sur 28 surfaces | déclenché par le push 4c4a469 — résultat dans `05-JOURNAL.md` | ⏳ |

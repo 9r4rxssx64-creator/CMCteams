@@ -29,7 +29,7 @@
 |---|---|---|
 | `npm run audit:improvements` | ✅ 17h05 | 0 compteur en hausse, 6 améliorations chiffrées (`03-FINDINGS.md`) |
 | `npm run audit:stability` | ✅ 17h10 | 0 FAIL 0 WARN (accueil/admin/monplanning, CMCteams) |
-| `npm run audit:clicks`, `test:a11y` | 🔴 non exécutés | `playwright` absent à la racine du bac à sable (`npm i` échoue : « edgesOut »), pas de réseau npm fiable — tournent en CI dans `test:ci` |
+| `npm run audit:clicks`, `test:a11y` | ✅ 17h30 (playwright + axe-core installés dans un dossier isolé, `npm i` à la racine plante : « edgesOut ») | clics : 79 vues / 1109 boutons / 0 erreur JS · a11y : 0 violation |
 | `audit-live.yml` (vrai navigateur sur kd-mc.com) | ✅ déclenché par le push 4c4a469 (rendu push-déclenchable ce jour) | lecture des annotations à la fin du run — `05-JOURNAL.md` |
 | `kdmc-uptime` premier relevé réel | ✅ run 33979141313 | 32 cibles, **6 « en panne » = les 6 workers** (cause à lire au prochain smoke, annotations par cible ajoutées) |
 | 3 relecteurs indépendants (sécurité, SRE, complétude) | ✅ | 2 P0, 4 P1, 6 P2, 5 P3 → tous les sûrs appliqués (`03-FINDINGS.md`) |
