@@ -485,6 +485,11 @@ Stage `veille` ajouté (tout à la demande, **0 minute au repos**) : **liens ré
 **dépendances CDN**, **sources Lingua**, **récolte LSF** — les quatre **sans aucune clé
 nouvelle**.
 
+> ⚠️ **Précision honnête** : ces jobs sont écrits dans le `.gitlab-ci.yml` **du dépôt**, qui
+> est désormais la source. Ils ne tourneront sur GitLab qu'à la **prochaine remise à niveau
+> de GitLab depuis GitHub** — laquelle demande le jeton GitLab (cf. `KEVIN_ACTIONS_TODO.md`).
+> Écrits et validés, oui ; en service là-bas, pas encore. La nuance compte.
+
 *La veille CDN est passée de **3 adresses écrites à la main** à **78 lues dans le code** :
 75 bibliothèques n'étaient surveillées par personne.*
 
