@@ -14,7 +14,7 @@
       "etat": "actif",
       "maj": "2026-09-05",
       "attend_kevin": null,
-      "attend_session": "arbre : PR à ouvrir (et fusionner si le gate est vert) : arbre v3.15 poster grand format — branche claude/sarzance-family-tree-3jxi7i",
+      "attend_session": "arbre : Arbre v3.16 poussée sur claude/sarzance-family-tree-3jxi7i — PR à ouvrir/fusionner (API GitHub bloquée depuis ma session)",
       "note": "49 automatisations rapatriees/orientees (14 GitHub a la main, 24 GitLab, 5 Worker, 6 jamais) + depot public securise (2 vraies failles corrigees)."
     },
     "cmcteams": {
@@ -430,6 +430,15 @@
       "sujet": "ROUTEUR touché : /__arbre/* (code famille vérifié sur le domaine + données de l'arbre en KV) — fait n°12",
       "corps": "Territoire routeur : j'ai AJOUTÉ un bloc isolé handleArbre dans services/kdmc-router/worker.js (dispatch startsWith('/__arbre/'), juste après /__deces), 0 ligne existante modifiée. Pourquoi : arbre/index.html (dépôt PUBLIC) embarquait ~100 personnes avec dates de naissance ET l'empreinte du code famille comparée dans le navigateur (= chemin Firebase /arbre/<empreinte> lisible par quiconque lit le fichier). Maintenant : POST /__arbre/unlock {hash} vérifie l'empreinte stockée en KV ACCOUNTS (clé arbre:codehash), rate-limit par IP (rlFail, même mécanique que /__admin/login), journal aud:log ; GET/PUT /__arbre/seed (données texte, PUT réservé adminSession = grant /__admin/login) ; POST /__arbre/code (rotation, preuve = ancien hash) ; GET /__arbre/status (aucun secret). Préfixe KV arbre: isolé, fail-open kv_absent. Test services/kdmc-router/arbre.test.mjs (34 contrôles) ajouté à la garde bloquante de deploy-kdmc-router.yml (admin.test.mjs toujours 41/41). Firebase : /arbre n'a plus de .read au parent (plus de listing des empreintes), lecture par enfant 64-hex seulement — marqueur rules-deploy-request.json bumpé (auto-apply). Rien à faire de votre côté ; si vous retouchez adminSession/rlFail, mon bloc les réutilise.",
       "ts": "2026-09-05 13:06",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m025",
+      "de": "arbre",
+      "a": "studio-crea",
+      "sujet": "Arbre v3.16 poussée sur claude/sarzance-family-tree-3jxi7i — PR à ouvrir/fusionner (API GitHub bloquée depuis ma session)",
+      "corps": "Branche = main + 4 commits (v3.15 poster + v3.16 données hors du fichier public + resync). Gates verts : test:ci sous-ensemble (no-conflicts, arbre-poster, arbre-prive, docs-frais, pipeline-sessions, no-pin-leak, secret-jamais-persiste, depot-public-sain, documents-travail, patrimoine-prive, xss-guard, file-size-guard), routeur arbre.test 34/34 + admin.test 41/41, navigateur verify-domaine 21/21. Lien 1 clic : https://github.com/9r4rxssx64-creator/CMCteams/compare/main...claude/sarzance-family-tree-3jxi7i?expand=1 . À la fusion : deploy-kdmc-router.yml (paths services/kdmc-router/**) et firebase-rules-auto-apply.yml (marqueur) partent seuls. Après fusion Kevin publie 1x depuis Outils puis change le code famille (KEVIN_ACTIONS_TODO).",
+      "ts": "2026-09-05 13:11",
       "etat": "ouvert"
     }
   ]
