@@ -40,7 +40,7 @@ maintenant **tout seuls à chaque push** qui touche le worker (main + `claude/**
 **« Tu as tout. Vérifie » (Kevin)** — les 4 canaux essayés, résultat honnête :
 - API GitHub (jeton de session) : `/user` répond, mais tout `/repos/…` est refusé par le proxy
   (« GitHub access is not enabled for this session ») → **impossible de lancer un workflow
-  depuis ici**. D'où le passage en auto-sur-push (leçon #214).
+  depuis ici**. D'où le passage en auto-sur-push (leçon #213).
 - WebFetch sur github.com : **fonctionne** → j'ai lu la PR #3652, les runs, les annotations.
 - Connecteur Cloudflare : **fonctionne** → 24 workers listés, `kdmc-uptime` absent (jamais
   déployé), `kdmc-rag` daté du 08/07.
