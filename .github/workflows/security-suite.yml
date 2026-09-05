@@ -147,6 +147,70 @@ jobs:
           PYEOF
           echo "done"
 
+      # ── TRIER, pas seulement COMPTER ────────────────────────────────────────
+      #    Le compte brut ci-dessus dit « trufflehog (secrets vérifiés) : 149 »
+      #    alors qu'il compte TOUTES les lignes du fichier, vérifiées ou non. Un
+      #    chiffre qui porte le mauvais nom fait paniquer pour rien — ou rassure
+      #    à tort. Cette étape lit les rapports et dit ce qu'il en est VRAIMENT :
+      #    combien sont confirmés VIVANTS par le fournisseur, avec quelle règle,
+      #    dans quels fichiers. Elle n'imprime JAMAIS la valeur d'un secret : le
+      #    journal d'un dépôt PUBLIC n'est pas l'endroit pour ça.
+      - name: Triage des secrets (vivants ? faux positifs ? où ?)
+        if: always()
+        run: |
+          python3 - <<'PYEOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          import json, collections, os
+          print("")
+          print("=== TRUFFLEHOG — combien sont VRAIMENT vivants ? ===")
+          vivants, total, par_detecteur, fichiers = 0, 0, collections.Counter(), collections.Counter()
+          try:
+              for l in open('/tmp/sec/trufflehog.jsonl'):
+                  l = l.strip()
+                  if not l: continue
+                  total += 1
+                  d = json.loads(l)
+                  det = d.get('DetectorName', '?')
+                  if d.get('Verified'):
+                      vivants += 1
+                      par_detecteur[det] += 1
+                      md = (d.get('SourceMetadata') or {}).get('Data') or {}
+                      src = (md.get('Git') or md.get('Filesystem') or {})
+                      fichiers[src.get('file', '?')] += 1
+          except FileNotFoundError:
+              print("  (pas de rapport trufflehog)")
+          print("  lignes au total          : %d" % total)
+          print("  CONFIRMÉS VIVANTS        : %d" % vivants)
+          if vivants:
+              print("  par détecteur :")
+              for k, v in par_detecteur.most_common(15): print("    - %s : %d" % (k, v))
+              print("  fichiers concernés (top 15) :")
+              for k, v in fichiers.most_common(15): print("    - %s : %d" % (k, v))
+              print("  ⚠️ Un secret CONFIRMÉ VIVANT dans un dépôt PUBLIC est à révoquer AUJOURD'HUI.")
+          else:
+              print("  ✅ aucun secret confirmé vivant — le reste est non vérifié ou faux positif")
+
+          print("")
+          print("=== GITLEAKS — quelles règles, quels fichiers ? ===")
+          try:
+              gl = json.load(open('/tmp/sec/gitleaks.json')) or []
+          except Exception:
+              gl = []
+          regles, chemins, tests = collections.Counter(), collections.Counter(), 0
+          MOTIF_TEST = ('test', 'fixture', 'spec', 'exemple', 'sample', 'mock', 'placeholder')
+          for f in gl:
+              regles[f.get('RuleID', '?')] += 1
+              ch = f.get('File', '?')
+              chemins[ch] += 1
+              if any(m in ch.lower() for m in MOTIF_TEST): tests += 1
+          print("  signalements : %d — dont %d dans des fichiers de TEST/fixture" % (len(gl), tests))
+          print("  par règle :")
+          for k, v in regles.most_common(15): print("    - %s : %d" % (k, v))
+          print("  fichiers les plus concernés :")
+          for k, v in chemins.most_common(15): print("    - %s : %d" % (k, v))
+          print("")
+          print("Aucune valeur de secret n'est imprimée ici — ce dépôt est public.")
+          PYEOF
+
       - name: Rapport en artifact
         uses: actions/upload-artifact@v4
         with:
