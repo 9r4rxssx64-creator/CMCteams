@@ -62,6 +62,26 @@ for (const { nom, src, wf } of IA) {
     `${nom} : importe le routage commun ET son déploiement surveille ce fichier`);
 }
 
+/* Le piège le PLUS traître : le workflow part bien sur un push `claude/**`,
+   il tourne, il affiche VERT… mais son `actions/checkout` est épinglé sur
+   `ref: main` → il met en ligne le code de `main`, pas celui qu'on vient de
+   pousser. Vécu le 2026-09-06 (Créa AI) : correctif poussé, déploiement vert,
+   worker EN LIGNE encore à l'ancienne version. Un vert qui ment est pire que
+   du rouge. Deux positions cohérentes, une seule interdite : soit on écoute
+   `claude/**` et on déploie CETTE branche, soit on ne l'écoute pas. */
+console.log('— 3 bis. Un déploiement déclenché par claude/** met-il en ligne CETTE branche ? —');
+for (const { nom, wf } of IA) {
+  const y = lire(`.github/workflows/${wf}.yml`);
+  if (!/branches:[\s\S]{0,120}?'claude\/\*\*'/.test(y)) continue;
+  const bloc = (y.match(/uses:\s*actions\/checkout@[^\n]*\n(?:[^\n]*\n){0,6}/) || [''])[0];
+  /* On retire les commentaires AVANT de chercher : sinon un commentaire qui
+     dit « pas de ref: main » déclenche la garde lui-même (vécu à l'écriture
+     de ce test — un faux positif est aussi nuisible qu'un faux négatif). */
+  const sansCom = bloc.split('\n').map((l) => l.replace(/#.*$/, '')).join('\n');
+  chk(!/ref:\s*main\b/.test(sansCom),
+    `${nom} : le checkout n'est PAS épinglé sur main (sinon le push déploie l'ancien code = faux vert)`);
+}
+
 console.log('— 4. La preuve live existe-t-elle ? (un déploiement vert ne prouve rien, leçon #95) —');
 const apis = lire('.github/workflows/deploy-kdmc-apis.yml');
 chk(/Preuve live/.test(apis), 'le hub pose de VRAIES questions aux IA après chaque déploiement');

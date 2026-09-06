@@ -17,6 +17,47 @@
   **inactifs depuis 7 jours**, jamais la branche en cours, `continue-on-error` (un nettoyage ne
   doit jamais faire échouer une livraison), **SHA journalisé** à chaque suppression.
 - Leçon **#228**. Preuve attendue : le compte de branches doit baisser à la prochaine fusion.
+## 6 septembre 2026 (soir) — « applique tout pour tes autres branches » : mesuré, outillé, transmis
+
+Kevin : *« Applique tout pour tes autres branches et qu'elles soient au courant de tes modifs. »*
+
+**Mesuré d'abord, avant de toucher à quoi que ce soit.** Sur les branches `claude/*` :
+
+| | |
+|---|---|
+| Branches **vivantes** (activité < 21 j) en retard | **15** |
+| …avec un **mois de planning manquant** | **0** ✅ |
+| Branches actives encore en **v9.891 / v9.893** (donc sans les 3 correctifs de parser) | `sarzance-family-tree` (9 devant/57 derrière) · `surveillance-domaine-26-adresses` (11/137) · `vercel-config-main` (0/86) · `lingua-connexion-honnete` (0/138) |
+| Branches **abandonnées** qui ont perdu septembre (`2026-8` absent des DEUX générateurs) | **14** |
+
+**Le vrai danger n'est pas le conflit, c'est l'ABSENCE de conflit.** `planning-seed.js` et
+`boards-gen.js` sont des fichiers **générés** : une fusion résolue « du mauvais côté », ou un
+fichier repris tel quel parce qu'« il n'a pas bougé chez moi », supprime **septembre pour 248
+personnes sans une seule ligne rouge**.
+
+**Ce que je n'ai PAS fait, et pourquoi** : je n'ai poussé aucune fusion dans les branches des
+autres sessions. Le bot fusionne déjà `main` dans chaque `claude/*` à leur prochain push — le
+faire à leur place pendant qu'elles travaillent serait du bruit, pas de l'aide.
+
+**Ce que j'ai fait à la place — un outil, pas de la prose** :
+
+```
+npm run retard-branches                                    ma branche
+node tools/pipeline/retard-branches.mjs --toutes           les claude/* vivantes (21 j)
+node tools/pipeline/retard-branches.mjs --toutes --tout    même les abandonnées
+```
+
+Il répond à la question que `branch-coordinator.yml` ne pose pas : lui détecte les
+**chevauchements**, jamais le **retard**. Trois niveaux : à jour · en retard sur un fichier
+partagé · **un mois présent sur `main` est absent ici**. **Non bloquant** (sort en 0 sauf
+`--strict`) — être en retard n'est pas une faute, ce qui compte est de le savoir avant de
+résoudre un conflit. **Prouvé discriminant sur données réelles** : `agent-toolkit-sync`
+(528 derrière) → 🔴 septembre absent ; `sarzance` (57 derrière) → pas de rouge, septembre présent.
+
+**Transmis** : message **m052** à toutes les sessions — ce qui a changé, les deux gardes qui
+peuvent les faire échouer et pourquoi, et surtout **la règle de résolution de conflit** : sur
+`index.html`, `sw.js`, `planning-seed.js`, `boards-gen.js`, `tools/departs/index.html`, on garde
+**le côté de `main`**, jamais le sien. Leçon **#233**.
 
 
 ## 6 septembre 2026 (17h20) — le correctif du nettoyeur est sur `main`, mais le nettoyage n'a pas encore tourné
@@ -5657,3 +5698,63 @@ réelles + parité version package.json ⇄ index.html).
   avec e2e, jamais empilé sur une PR bloquée.
 
 **Bloquant** : PR #3671 attend l'approbation propriétaire de Kevin (CODEOWNERS `*`).
+
+## 2026-09-06 — « Poses de danse » : le rouge du contrôle IA gratuites est corrigé
+
+**Ce que Kevin voyait** : le workflow « Vérifie les IA gratuites » en rouge,
+`❌ une transformation d'image ne marche plus`. Dans le rapport :
+« poses de danse → 502 », alors que « figurine » réussissait juste au-dessus,
+avec **le même moteur** et **la même clé**.
+
+**Cause réelle (mesurée en lisant les deux chemins, pas supposée)** :
+`/frames` lançait ses 2 poses avec `Promise.all` et **34 s** de délai, quand
+`/magic` (qui réussissait) laisse **58 s** à son unique image. Une pose qui
+dépasse → `Promise.all` rejette → **la pose déjà réussie est jetée aussi** →
+0 image → 502, à une image du but.
+
+**Corrigé** (`services/kdmc-crea-ai/worker.js`) :
+- `Promise.allSettled` : ce qui a marché est gardé, chaque échec est nommé.
+- Délai **46 s** au lieu de 34, rendu abordable en espaçant les vérifications
+  à **4 s** (11 par pose au lieu de 19) → plus d'attente **à budget de
+  sous-requêtes Cloudflare égal**.
+- **Rattrapage** : s'il ne manque qu'une pose, elle est refaite SEULE.
+
+**Deuxième défaut, plus grave que le bug** : le rapport n'affichait que le
+message poli — il lisait `message || detail`, donc la cause exacte n'était
+**jamais** lue ; et côté worker `detail` était tronqué en commençant par les
+erreurs Gemini → on lisait « crédits épuisés » au lieu du vrai coupable.
+Corrigé : rapport = **message + cause exacte**, causes décisives en tête,
+et l'étape CI imprime la cause dans son `::error::` au lieu de renvoyer vers
+un fichier (règle « toujours détailler les erreurs, cause exacte »).
+
+**Preuve** : `npm run test:crea-frames` → **23/23** (cas E « une pose casse,
+l'autre est gardée » et F « les deux cassent → `edit#1` + `edit#2` nommés »),
+**prouvé discriminant** par sabotage (retour à `Promise.all` → 8 échecs).
+Gardes dépôt : no-pin-leak · actions-conformes · workflows-pipefail ·
+depot-public-sain · destinations-workflows · deploiement-declenche → toutes OK.
+Le push sur `claude/**` redéploie `kdmc-crea-ai` tout seul.
+
+## 2026-09-06 (suite) — Le déploiement était VERT mais mettait en ligne l'ancien code
+
+**Je me suis trompé et je le corrige** : j'ai annoncé « le push redéploie Créa AI
+tout seul » en me fiant à la **date** du worker sur Cloudflare (16:51 → 17:24).
+En lisant le code **réellement en ligne**, c'était encore l'ancienne version.
+
+**Cause** : `deploy-kdmc-crea-ai.yml` (et `deploy-kdmc-router.yml`) déclaraient bien
+`push: branches: [main, 'claude/**']`, mais leur `actions/checkout` était épinglé
+`with: { ref: main }` → le workflow **part** sur mon push, **tourne**, **réussit**…
+et déploie `main`. On écoute une branche, on publie l'autre.
+
+**Pourquoi ça n'avait pas sauté aux yeux hier** : les 4 autres workflows
+n'épinglent rien, et le travail Qwen était **déjà fusionné dans `main`** — le
+déploiement publiait donc le bon code **par coïncidence**.
+
+**Corrigé** : plus de `ref: main` sur ces 2 workflows.
+**Garde** : `test:deploiement-declenche` §3 bis — un workflow qui écoute
+`claude/**` ne peut plus épingler `ref: main`. **34/34**, discriminant prouvé
+(sabotage → 1 échec). Piège rencontré : la 1ʳᵉ version de la garde se déclenchait
+sur son **propre commentaire** → les commentaires sont retirés avant la recherche.
+
+**Règle que j'applique désormais** : après un déploiement, je vérifie **le code en
+ligne** (la ligne exacte du correctif), jamais seulement l'horodatage.
+Leçon #231.

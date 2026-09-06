@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 1 }
+        with: { fetch-depth: 1 }   # on NE fige PAS la branche : un push sur claude/** deploie CETTE branche
 
       - uses: actions/setup-node@v4
         with: { node-version: 22 }

@@ -99,7 +99,7 @@
 2. **Tu vas voir :** "Get started with Sentry" — 3 champs
 3. **✅ Action :**
    - **Email** : ton email
-   - **Password** : crée-en un fort (je recommande ceci : `KdmcSentry2026!SBM` — à personnaliser)
+   - **Password** : génère-en un fort avec le trousseau iCloud (ne recopie JAMAIS un mot de passe écrit dans un document — ce dépôt est public)
    - **Organization** : `kdmc` ou `cmcteams`
 4. **Clique "Sign up"**
 

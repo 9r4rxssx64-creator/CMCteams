@@ -102,5 +102,12 @@ jobs:
       - name: Échoue SEULEMENT si une transformation est cassée
         if: steps.test.outcome == 'failure'
         run: |
-          echo "::error::une transformation d'image ne marche plus — voir audit/ia-gratuites.md"
+          # La CAUSE EXACTE dans le message d'échec, pas un renvoi vers un
+          # fichier (règle « toujours détailler les erreurs »). Vécu le
+          # 2026-09-06 : « voir audit/ia-gratuites.md » n'apprenait rien, il
+          # fallait rouvrir le worker pour comprendre un simple dépassement.
+          echo "----- ce que le test a réellement dit -----"
+          sed -n '/transformation(s) cassée(s)/,$p' /tmp/verif.log || true
+          CAUSE=$(sed -n '/transformation(s) cassée(s)/,$p' /tmp/verif.log | tr '\n' ' ' | cut -c1-400)
+          echo "::error::transformation d'image cassée — ${CAUSE:-voir audit/ia-gratuites.md}"
           exit 1
