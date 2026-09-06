@@ -141,18 +141,60 @@ export async function verifyJWT(token, secret) {
   } catch { return null; }
 }
 
+// Un ticket WS est à USAGE UNIQUE : son jti est consommé en base. La clé
+// primaire rend la consommation atomique — un rejeu insère 0 ligne et est
+// refusé, même si deux requêtes arrivent en même temps (audit P2a, v1.1.286).
+async function consumeWsTicket(env, payload) {
+  if (!payload || payload.typ !== 'wstkt' || !payload.jti) return false;
+  const DB = env.APEX_CHAT_DB;
+  try {
+    await DB.prepare(
+      'CREATE TABLE IF NOT EXISTS ws_tickets (jti TEXT PRIMARY KEY, expires_at INTEGER NOT NULL)'
+    ).run();
+    const r = await DB.prepare(
+      'INSERT OR IGNORE INTO ws_tickets (jti, expires_at) VALUES (?, ?)'
+    ).bind(payload.jti, (payload.exp || 0) * 1000).run();
+    // 0 ligne insérée = jti déjà présent = REJEU → refusé.
+    if (!r || !r.meta || r.meta.changes !== 1) return false;
+    // Ménage opportuniste (la table ne doit pas grossir indéfiniment).
+    try { await DB.prepare('DELETE FROM ws_tickets WHERE expires_at < ?').bind(Date.now() - 60000).run(); } catch (_) {}
+    return true;
+  } catch (_) {
+    // Base indisponible : on REFUSE (fail-closed) — un ticket non consommable
+    // ne doit jamais valoir session. Le client retombe sur ?token= (legacy).
+    return false;
+  }
+}
+
 async function getAuthUser(request, env) {
   const auth = request.headers.get('Authorization') || '';
   let token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   // WebSocket : le navigateur ne peut PAS poser de header Authorization sur un
-  // upgrade WS → le token arrive en query param ?token=. Sans ce fallback,
-  // toute connexion WebSocket échoue en 401 ("WebSocket non connecté").
+  // upgrade WS → l'identité arrive dans l'URL. Depuis v1.1.286 c'est un TICKET
+  // à usage unique valable 60 s (?ticket=), plus le jeton de session lui-même :
+  // une URL fuite (journaux serveur, historique, Referer) — un ticket qui fuite
+  // est déjà mort. ?token= reste accepté UNE version pour ne pas couper les
+  // apps encore en cache (règle : jamais casser la connexion).
+  let ticketMode = false;
   if (!token) {
-    try { token = new URL(request.url).searchParams.get('token'); } catch (_) {}
+    try {
+      const qs = new URL(request.url).searchParams;
+      const tkt = qs.get('ticket');
+      if (tkt) { token = tkt; ticketMode = true; }
+      else token = qs.get('token');
+    } catch (_) {}
   }
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
   if (!payload || !payload.sub) return null;
+  if (ticketMode) {
+    // Doit être un vrai ticket, et non déjà utilisé.
+    if (!(await consumeWsTicket(env, payload))) return null;
+  } else if (payload.typ === 'wstkt') {
+    // Un ticket ne vaut JAMAIS jeton de session (header Bearer ou ?token=) :
+    // sinon le ticket redeviendrait une clé d'API complète.
+    return null;
+  }
   // Vérif SÛRE (colonnes toujours présentes) — JAMAIS contournée même si une
   // colonne récente manque (fenêtre de déploiement). Rejette banni/supprimé.
   const DB = env.APEX_CHAT_DB;
@@ -3750,6 +3792,21 @@ export async function handleAdminSetToggle(request, env) {
 //  WebSocket → ConversationDO
 // ============================================================================
 
+// POST /api/auth/ws-ticket — échange le jeton de session (header Bearer, qui
+// lui ne voyage JAMAIS dans une URL) contre un ticket à usage unique valable
+// 60 s, destiné à l'URL du WebSocket. Audit P2a (v1.1.286).
+async function handleWsTicket(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const now = Math.floor(Date.now() / 1000);
+  const jti = crypto.randomUUID();
+  const ticket = await signJWT(
+    { sub: auth.sub, typ: 'wstkt', jti, iat: now, exp: now + 60 },
+    env.JWT_SIGN_KEY
+  );
+  return json({ ok: true, ticket, exp: (now + 60) * 1000 });
+}
+
 async function handleWsConversation(convId, request, env) {
   const upgradeHeader = request.headers.get('Upgrade');
   if (upgradeHeader !== 'websocket') return err('Upgrade WebSocket requis', 426);
@@ -5537,6 +5594,9 @@ export default {
       if (path === '/api/admin/trusted-circle' && method === 'GET') return await handleTrustedCircle(request, env, 'GET');
       if (path === '/api/admin/trusted-circle' && method === 'POST') return await handleTrustedCircle(request, env, 'POST');
       if (path === '/api/admin/diag' && method === 'GET') return await handleAdminDiag(request, env);
+      // Ticket WS à usage unique (audit P2a) — le jeton de session reste dans
+      // le header, seul le ticket éphémère part dans l'URL du WebSocket.
+      if (path === '/api/auth/ws-ticket' && method === 'POST') return await handleWsTicket(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
       // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
