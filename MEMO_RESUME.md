@@ -31,6 +31,14 @@
   gratuit » de `CLAUDE.md` avait déjà ses 5 gardes **dans `test:ci`**, il manquait juste son entrée au
   registre `tools/audit/rules-compliance.cjs`. Entrée ajoutée, prouvée par double sabotage (entrée
   retirée → rouge ; garde annoncée disparue → rouge ; restauré → vert).
+  **Et le « rouge de contenu » de la page Départs n'en était pas un.** Le contrôle croisé passe ici
+  (couverture 273/291, horaires identiques). J'ai régénéré la page **deux fois** avec le même code :
+  **64 tableaux sur 124 diffèrent, mais 0 personne et 0 horaire** — la seule différence est
+  l'identifiant des employés créés à l'import, tiré de l'**horloge** (`U_TMP_ + Date.now()`).
+  Donc « régénère la page », le conseil imprimé par le test, aurait committé du bruit. `boards-gen.js`
+  laissé **intact**. Corrigé côté générateur seulement : réseau coupé (Firebase remplaçait
+  `A.overrides` en pleine mesure sur un runner) + échec explicite si l'import ne se stabilise pas.
+  Leçon #221. À la session Départs : rendre l'identifiant temporaire **dérivé du nom**, pas du temps.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
