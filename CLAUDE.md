@@ -2076,7 +2076,7 @@ Apex IA DOIT auto-invoquer le bon skill sans demander confirmation. Section déd
 
 - `.claude/skills/apex-*.md` (20 skills SKILL.md auto-syncés par Apex meta-cache)
 - `apex-ai/v13/services/skills/{docx,pptx,xlsx,pdf}-generator.ts` (runtime client-side)
-- `apex-ai/v13/services/mcp-client.ts` + `mcp-registry.ts` (3 serveurs MCP)
+- `apex-ai/v13/services/ai/mcp-client.ts` + `mcp-registry.ts` (3 serveurs MCP)
 - `apex-ai/v13/services/apex-tools-registry/skills-tools.ts` (16 tools)
 - `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` (dispatcher)
 
@@ -3151,7 +3151,7 @@ Cache 6h dans IndexedDB pour éviter rate limit GitHub. `memory.getDocsContext()
 
 ### 2. Mémoire long-terme PER-USER (admin Kevin, Laurence, clients, amis, familles)
 
-`ax_persistent_memory_<uid>` (via `services/persistent-memory-store.ts`) — facts illimités, classés par catégories :
+`ax_persistent_memory_<uid>` (via `services/storage/persistent-memory-store.ts`) — facts illimités, classés par catégories :
 - `profile` (âge, lieu, métier, allergies)
 - `preferences` (aime/déteste)
 - `relationships` (ma femme, mon fils, mon collègue X)

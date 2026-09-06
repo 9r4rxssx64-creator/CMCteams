@@ -170,7 +170,7 @@ fi
 
 # 4. Pas de eval() en TS strict
 if [ -d apex-ai/v13 ]; then
-  EVAL=$(grep -rnE '\beval\s*\(|new Function\s*\(' apex-ai/v13/src/ | grep -v '\.test\.' 2>/dev/null)
+  EVAL=$(grep -rnE '\beval\s*\(|new Function\s*\(' apex-ai/v13/ | grep -v '\.test\.' 2>/dev/null)
   if [ -n "$EVAL" ]; then
     echo "❌ eval() / new Function() detectes (CSP violation)"
     echo "$EVAL"

@@ -89,5 +89,5 @@ Almanac decompose le sujet en sous-questions :
 
 - Almanac MCP : Show HN 346 pts (github.com/openalmanac)
 - Pattern : Deep Research as a Service
-- Apex integration : `apex-ai/v13/services/mcp-client.ts`
+- Apex integration : `apex-ai/v13/services/ai/mcp-client.ts`
 - Vue : `?view=research`

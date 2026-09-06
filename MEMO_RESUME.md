@@ -4942,3 +4942,31 @@ chemin `/home/user/CMCteams` (majuscules, dossier inexistant → jamais exécut�
 de TOUS les `<script>`, y compris le bloc `application/ld+json`, qui faisait échouer le parse à tous
 les coups. Corrigé (`$CLAUDE_PROJECT_DIR` + `<script>` nus seulement) et **prouvé discriminant** :
 fichier sain → « JS OK », accolade sabotée → `SyntaxError` remontée.
+
+### 2026-09-06 (suite) — passe 3 : mon outillage réparé (.claude/skills)
+
+Les passes 1-2 avaient corrigé les documents ; celle-ci corrige **les skills eux-mêmes**, c'est-à-dire
+les fiches que JE lis pour travailler. Chaque chemin re-vérifié par `ls`/`find` avant correction.
+
+- **⛔ Un cron GitHub prêt à copier** dormait dans `audit-parity-v12-v13.md` (`schedule: '0 8 * * MON'`)
+  — exactement ce qui a fait suspendre le compte le 15/08. Remplacé par `workflow_dispatch` + le rappel
+  de la règle. C'était le seul `schedule:` restant dans `.claude/`.
+- **12 chemins de services morts** : la v13 a rangé ses services en sous-dossiers (`ai/`, `admin/`,
+  `core-svc/`, `integrations/`, `storage/`) et 11 skills + CLAUDE.md citaient encore l'ancien plat
+  (`services/skills/code-review.ts`, `services/mcp-client.ts`, `services/persistent-memory-store.ts`…).
+- **8 skills citaient `apex-ai/v13/src/`** — dossier qui n'existe pas. Leurs `grep` ne renvoyaient
+  donc jamais rien : ils passaient au vert **sans rien vérifier** (variante de la leçon #103).
+- **97 chemins de scripts SEO** réparés dans 18 sous-skills : les 51 `.py` vivent dans
+  `.claude/skills/seo/scripts/`, les sous-skills les appelaient en relatif depuis leur propre dossier
+  → « No such file » garanti. 3 laissés tels quels : le script n'existe nulle part, je n'invente pas.
+- `agent-reach` annonçait un canal **hors service** (workflow rangé côté GitLab, job pas encore créé) ·
+  `agent-toolkit` annonçait un « cron mensuel » (interdit **et** inexistant) et un `index.json` absent ·
+  `verif-reelle` pointait `services/auth/auth.ts` au lieu de `apex-ai/v13/services/auth/auth.ts` ·
+  `csp-*` appelaient `npm run test:e2e` (le vrai script est `e2e`) · `README` des skills annonçait
+  « 15 skills » pour 97 · `./scripts/audit-parity.sh` signalé absent.
+
+**Non corrigé volontairement — à trancher avec Kevin** : `ios-testflight.yml` consomme
+`ASC_KEY_ID`/`ASC_ISSUER_ID`/`ASC_PRIVATE_KEY` alors que ses vrais secrets sont
+`APPSTORE_API_ISSUER`/`APPSTORE_API_KEY`/`APPLE_TEAM_ID` → le workflow tournerait avec des secrets
+VIDES, en silence (cause racine du bug v13.4.229). La correspondance n'est pas certaine et il manque
+un 3ᵉ secret : renommer à l'aveugle serait pire. L'incohérence est écrite dans le skill.

@@ -52,7 +52,7 @@ find apex-ai/v13/dist -name "*.js" -exec sh -c 'brotli -c "$1" 2>/dev/null | wc 
 du -h node_modules/* 2>/dev/null | sort -hr | head -20
 
 # Dead code / unused imports
-grep -rn "import" apex-ai/v13/src/ 2>/dev/null | wc -l
+grep -rn "import" apex-ai/v13/ 2>/dev/null | wc -l
 ```
 
 Budget : initial bundle < 50KB gzip, total < 200KB gzip, lazy chunks > 30KB chacun.

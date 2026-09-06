@@ -123,7 +123,7 @@ Chrome DevTools and look for:
 - Any `<div>` with `onclick` and no `role` / `tabindex` → custom widget that
   agents won't see.
 
-`scripts/render_page.py --mode auto` already loads pages headlessly; extending
+`.claude/skills/seo/scripts/render_page.py --mode auto` already loads pages headlessly; extending
 it with an accessibility-tree dump (`page.accessibility.snapshot()` in
 Playwright) is the natural place to land an automated agent-UX check in a
 future iteration.

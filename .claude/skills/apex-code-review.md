@@ -74,5 +74,5 @@ Detecte regles redondantes ou contradictoires :
 ## References
 
 - /review natif Claude Code (Yury.ai TikTok)
-- Pattern : `apex-ai/v13/services/skills/code-review.ts`
+- Pattern : `apex-ai/v13/services/ai/code-review-multi-agent.ts`
 - Voir aussi : `apex-security-review.md`
