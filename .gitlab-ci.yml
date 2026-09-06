@@ -51,7 +51,10 @@ tests:
   script:
     # Pas de package-lock.json dans le dépôt : `npm ci` seul échoue TOUJOURS (EUSAGE,
     # mesuré 5.09 17h18). Même repli que les workflows GitHub.
-    - npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+    # Sur l'image Playwright (node 22 / npm 10), `npm install` nu plante en résolvant les
+    # peer deps du package.json racine (« Cannot read properties of null (reading 'edgesOut') »,
+    # job 16332439755) — même repli que audit-live.yml sur GitHub.
+    - npm ci --no-audit --no-fund || npm install --no-audit --no-fund --legacy-peer-deps
     - npm run test:ci
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'   # miroir de publication, pas le code

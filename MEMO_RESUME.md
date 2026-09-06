@@ -12,7 +12,8 @@
   rouge serait resté invisible.
 - Job `tests` GitLab, 2ᵉ rouge : `test:all` lance Chromium et l'image `node:20` n'en a pas
   (« Executable doesn't exist … headless_shell »). Job passé sur `mcr.microsoft.com/playwright:v1.56.0-noble`
-  (même version que `devDependencies`), sans téléchargement à chaque run.
+  (même version que `devDependencies`), sans téléchargement à chaque run. 3ᵉ rouge : sur cette image
+  `npm install` plante (`edgesOut`, même bug que sur GitHub) → `--legacy-peer-deps`.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
