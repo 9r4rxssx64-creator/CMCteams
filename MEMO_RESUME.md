@@ -97,6 +97,46 @@ départ à cause de trois rouges d'autres sessions, ça rendrait **chaque** PR r
 Ma leçon sur le PDF portait encore le **221**, alors que `main` en a déjà deux (doublon
 préexistant, pas le mien, laissé tel quel). Elle devient **#231** (`main` a publié un #229 pendant
 la session). La leçon du jour est **#230**.
+## 6 septembre 2026 (17h05) — POURQUOI 370 branches : le nettoyeur automatique était aveugle
+
+- Cause racine trouvée : `cleanup-stale-branches.yml` existe, se déclenche bien après chaque
+  auto-merge, et a la bonne logique — mais `actions/checkout` pose un refspec **mono-branche**
+  (`+refs/heads/main:refs/remotes/origin/main`). Son `git fetch origin --prune` ne ramenait donc
+  **que `main`** → `git branch -r --merged | grep origin/claude/` ne voyait **aucune** branche →
+  `count=0` → **job vert, 0 suppression**, pendant des mois. `fetch-depth: 0` ne corrige pas ça :
+  il donne l'historique de la branche cochée, pas les autres branches.
+- **Fix livré** : `git remote set-branches origin '*'` + fetch avec refspec explicite, **sur les
+  deux jobs**, plus une **garde anti-faux-vert** : 0 branche visible après fetch → le job
+  **échoue bruyamment** au lieu de conclure « rien à faire ». Leçon **#227**.
+- **Je ne peux pas supprimer de branche distante depuis cette session** : le relais git coupe la
+  connexion sur un refspec de suppression (3 essais, `send-pack: unexpected disconnect`), alors
+  que le proxy est sain (`recentRelayFailures: []`) et que les pushs de commits passent. L'API
+  GitHub est fermée (403) et `gh` est absent. **Le canal qui a les droits, c'est la CI** — d'où le
+  correctif du workflow plutôt qu'un contournement de mon côté.
+- Le workflow se déclenche **sur push dans `main` du fichier lui-même** : la fusion de ce
+  correctif le lancera donc, et il supprimera les 231 branches fusionnées de plus de 7 jours.
+
+
+## 6 septembre 2026 (16h55) — pipeline de TOUTES les branches et sessions
+
+- Mesuré sur les **370 branches `claude/*`** distantes : **240 sont des ancêtres de `main`**
+  (tout est dedans, suppression prouvée sans perte) · **40 ont un contenu équivalent** déjà livré
+  autrement · **109 portent des patchs inédits**, qui se regroupent en **49 travaux distincts**
+  (les 109 sont des instantanés successifs des mêmes jobs : `langs-2` → `langs-3` = +2 commits).
+- Union dédupliquée : **699 sujets de commit** jamais livrés à `main`, dont **149 de robot** →
+  **~550 commits de travail réel** qui n'existent que sur des branches.
+- **Correction de méthode assumée** : mon premier test comparait les *fichiers modifiés depuis le
+  fork* — faux (une branche peut avoir touché 1 889 fichiers déjà présents dans `main`). Le bon
+  test est `git cherry` (comparaison de **patchs**), qui reconnaît un travail livré autrement.
+  Le mauvais test annonçait 129 branches à risque ; il y en a **109**.
+- Registre écrit : **`PIPELINE_BRANCHES_SESSIONS.md`** — les 49 travaux datés avec leurs zones,
+  **et les SHA de chaque branche** pour que toute suppression reste restaurable
+  (`git branch <nom> <sha>`).
+- **Pas fusionné les 49** : poser du code de juin-août sur un `main` qui a bougé de milliers de
+  commits = régression garantie. Chaque travail demande une décision (encore utile ou dépassé ?).
+- **Pas supprimé les 40 « équivalents »** : preuve bonne mais moins absolue qu'un ancêtre de
+  `main` — sur une opération irréversible, version conservatrice.
+
 ## 6 septembre 2026 — « Pourquoi tu es bloqué par GitHub ? Trouve des solutions »
 
 **Le blocage, mesuré** (pas supposé) :
