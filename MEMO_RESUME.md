@@ -95,7 +95,8 @@ départ à cause de trois rouges d'autres sessions, ça rendrait **chaque** PR r
 ### Numérotation des leçons — une collision de plus rattrapée
 
 Ma leçon sur le PDF portait encore le **221**, alors que `main` en a déjà deux (doublon
-préexistant, pas le mien, laissé tel quel). Elle devient **#229**. La leçon du jour est **#230**.
+préexistant, pas le mien, laissé tel quel). Elle devient **#231** (`main` a publié un #229 pendant
+la session). La leçon du jour est **#230**.
 ## 6 septembre 2026 — « Pourquoi tu es bloqué par GitHub ? Trouve des solutions »
 
 **Le blocage, mesuré** (pas supposé) :
