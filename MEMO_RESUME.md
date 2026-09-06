@@ -73,6 +73,10 @@
   6ᵉ : `test:garro-cp` 5/3 (MIRANDA 0 cellule) — même classe (1,8 s fixes + réseau) ; corrigé pareil,
   et `test:code-legends` (2,2 s fixes) par précaution. Chaîne locale (après v788) : 0 échec réel, seuls
   `pdfjs-dist`/`axe-core` manquent ici (pas de `npm install` dans le sandbox) — le runner les a.
+  **Réglé dans la foulée** : `test:improvements-guard` (règles sans garde 19 → 20) — la règle « Qwen
+  gratuit » de `CLAUDE.md` avait déjà ses 5 gardes **dans `test:ci`**, il manquait juste son entrée au
+  registre `tools/audit/rules-compliance.cjs`. Entrée ajoutée, prouvée par double sabotage (entrée
+  retirée → rouge ; garde annoncée disparue → rouge ; restauré → vert).
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
