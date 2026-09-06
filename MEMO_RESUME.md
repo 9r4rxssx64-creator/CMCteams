@@ -1,5 +1,51 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (soir, fin) — les 3 rouges de la PR #3682 : aucun n'est le mien, et l'un cache une règle absolue non tenue
+
+La PR est passée de `dirty` à **`unstable`** (conflit résolu). Il restait trois checks rouges,
+tous les trois dans `messaging-app/` — un dossier que **je ne touche pas** : `git diff --stat
+origin/main HEAD -- messaging-app/` est **vide**, les fichiers sont identiques octet pour octet.
+
+| Rouge | À qui | Cause exacte (mesurée) |
+|---|---|---|
+| `e2e (iphone-se)` + `e2e (iphone-safari)` | `apex-chat` | j'ai lancé le workflow sur **`main` non touché** ([run 34045680228](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34045680228), sha `292b136`) : **même résultat exactement** — les 2 WebKit rouges, `pixel-android` et `chromium-desktop` verts. Le test attend 0 erreur de page et en reçoit une : `…/api/system/config due to access control checks` = un **refus CORS**, daté du commit `9233c783` de 16h00 (« CORS restreint aux origines réelles, audit P2b »). WebKit remonte le refus en erreur de page, Chromium non. Message **m048** |
+| `Sync Apex Chat (messaging-app)` | `apex-chat` | la sentinelle qui garantit « **MAJ auto forcée** » est **morte**, et le décalage qu'elle devait empêcher est déjà là. Voir ci-dessous |
+
+### La sentinelle morte — c'est le vrai sujet
+
+`messaging-app-cache-sync.yml` existe pour tenir une règle **absolue** de Kevin :
+`CACHE_VERSION` = `APP_VER`, toujours, sinon la PWA iOS sert l'ancien code et Kevin ne peut pas
+vider son cache. Elle est censée **corriger et commiter toute seule**. Elle ne l'a jamais fait.
+
+**Mesuré sur `main`** : `__APEX_CHAT_VERSION__` = `v1.1.288`, `sw.js` = `v1.1.288`, splash et
+topbar = `v1.1.288` — mais **`lib/sw-handlers.js` = `v1.1.285`**. Trois versions de retard.
+
+**Pourquoi** : son étape de détection tourne sous `bash -e` et lit six versions par
+`VAR=$(grep -oE '…' | head -1 | grep -oE '…')`. L'une cherche `data-version="v…"` dans
+`messaging-app/index.html` — un attribut qui **n'existe pas** (0 occurrence, et `git log -S` ne
+trouve **aucun** commit l'ayant jamais ajouté : la garde est **née morte**). Un `grep` sans
+correspondance sort en **1**, le code de sortie de `VAR=$(…)` est celui de la substitution, et
+`-e` **tue l'étape à la 4ᵉ ligne, avant le moindre `echo`** — d'où un job rouge de 13 s dont le
+journal ne contient aucune ligne utile, donc jamais lu. Reproduit ici à l'identique.
+Les **6 derniers passages** (runs 375→380, sur deux branches) sont rouges.
+Correctif proposé (2 lignes, `|| true`) envoyé à `apex-chat`, **non appliqué** : leur terrain,
+et ils poussent toutes les 15 minutes. Leçon **#230**.
+
+### Autre chose vérifiée au passage, utile à tous
+
+`npm run test:ci` **ne tourne dans aucun workflow GitHub** : `grep -rn "npm run test:ci"
+.github/workflows/` ne renvoie rien. Le seul endroit où il tourne à chaque push est le job
+`tests` de **GitLab** (`.gitlab-ci.yml` ligne 58). Mes deux gardes y sont donc, comme toutes les
+autres — je le dis plutôt que de laisser croire qu'elles passent sur une PR GitHub. Message **m049**.
+Et **non**, il ne faut pas ajouter un workflow GitHub qui lance `test:ci` : il est rouge dès le
+départ à cause de trois rouges d'autres sessions, ça rendrait **chaque** PR rouge.
+
+### Numérotation des leçons — une collision de plus rattrapée
+
+Ma leçon sur le PDF portait encore le **221**, alors que `main` en a déjà deux (doublon
+préexistant, pas le mien, laissé tel quel). Elle devient **#229**. La leçon du jour est **#230**.
+
+
 ## 6 septembre 2026 (soir, suite) — la barrière est vraiment relancée : 2 rouges restants, aucun n'est le mien
 
 Le test e2e est **vert en CI réelle** : workflow « Tests E2E + Validation », run
