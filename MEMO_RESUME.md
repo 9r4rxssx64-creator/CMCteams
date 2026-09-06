@@ -121,6 +121,10 @@
   timeout 30 s. Réseau externe coupé **en laissant passer le serveur local**, et `networkidle` → `load`.
   6 verts ici. (Piège évité : le filtre `^https?://` attrape aussi `http://127.0.0.1` — les 13 premiers
   chargent en `file://`, donc ils n'étaient pas concernés ; vérifié un par un avant de pousser.)
+  **Le job passe alors de 287 s à 766 s** (il va bien plus loin) et bute sur `test:crea-montage`, cette
+  fois pour la raison **inverse** : ce test vérifie ce que l'app fait *quand l'IA n'est pas joignable*, et
+  ne tenait que parce que le sandbox n'a pas de réseau. Sur le runner l'IA répond → sous-titres produits →
+  rouge. L'indisponibilité est maintenant **forcée** au lieu d'être subie : 37/0 ici.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
