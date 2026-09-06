@@ -77,7 +77,12 @@ ligne** : c'est un réglage, pas du code (je l'ai préparé et testé).
 | `UPSTREAM_BASE` | `https://cmcteams.pages.dev` *(l'adresse de l'étape 3)* |
 | `UPSTREAM_PREFIX` | *(laisser complètement vide)* |
 
-Sauvegarder. **kd-mc.com et tes 20 sous-domaines reviennent.**
+Sauvegarder. **kd-mc.com et ses sous-domaines reviennent** (ils étaient 20 au moment de la
+panne du 2.09 ; ils sont **26** depuis — liste vérifiée par `npm run test:uptime-couverture`).
+
+> **⚠️ 5.09.2026 : ce document est un plan de SECOURS, pas la marche à suivre du jour.**
+> GitHub a rouvert le 4.09 à 16h34 UTC ; le site est de nouveau servi depuis GitHub et GitLab
+> n'est plus que le miroir + l'endroit des travaux que GitHub interdit.
 
 > Pourquoi deux réglages : GitHub Pages servait tes pages sous `/CMCteams/…`,
 > Cloudflare Pages les sert à la racine. Le second réglage retire ce préfixe.

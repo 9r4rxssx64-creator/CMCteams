@@ -65,8 +65,13 @@ branche de « cuisine » → **FAIL** ; restauré → 8/0.
 
 ## Pousser sur GitLab sans se faire réclamer un push déjà fait
 
-GitHub est suspendu, mais `origin` continue de le désigner : le contrôle de fin de tour
-compare alors ton travail à un dépôt **figé** et réclame en boucle un push **déjà fait**.
+> **⚠️ Depuis le 4.09.2026 16h34 UTC, GitHub est ROUVERT** (fait n°10 d'`ETAT-INFRA.md`) :
+> `origin` désigne GitHub et c'est le bon dépôt — on pousse là, normalement. Ce paragraphe
+> ne sert QUE si GitHub retombe ; il est gardé pour ça.
+
+Pendant la suspension (15.08 → 4.09), `origin` continuait de désigner un dépôt **figé** :
+le contrôle de fin de tour comparait le travail à cet état gelé et réclamait en boucle un
+push **déjà fait**.
 
 ⚠️ **Renommer les remotes ne sert à rien** — mesuré le 3.09 : le harnais remet `origin` sur
 GitHub à chaque reprise de session (`.git/config` réécrit). N'essaie pas, ça ne tient pas.

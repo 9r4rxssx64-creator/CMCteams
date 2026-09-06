@@ -1,5 +1,14 @@
 # 🚀 Remettre kd-mc.com en ligne
 
+> **⚠️ ÉTAT DU 5.09.2026 — ce document décrit la panne du 2-3.09, elle est TERMINÉE.**
+> **GitHub a rouvert le 4.09 à 16h34 UTC**, le site vit de nouveau depuis GitHub et les
+> **26** sous-domaines répondent (26 entrées dans `ROUTES` du routeur, vérifiées par
+> `npm run test:uptime-couverture`). Les chiffres ci-dessous datent de la panne :
+> « 20 sous-domaines » et « 17 Workers » étaient justes ce jour-là, ils ne le sont plus —
+> aujourd'hui **26 sous-domaines** et **25 workers** sur le compte. Le mode d'emploi reste
+> valable comme **secours** si GitHub retombe : la marche à suivre n'a pas changé, seuls
+> les nombres ont bougé.
+
 > **Inventaire d'abord**, comme demandé. Voilà ce qu'on a réellement, mesuré —
 > pas supposé — avant toute recommandation.
 

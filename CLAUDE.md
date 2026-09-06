@@ -242,6 +242,18 @@ GitHub n'est plus une dépendance de travail. Ce qui a été mesuré le 2.09 :
 - Kevin ne peut pas créer de session sans dépôt depuis l'iPhone (l'interface l'exige) → **c'est moi
   qui les crée pour lui**, une par thème, avec le même titre qu'avant.
 
+> **⚠️ MISE À JOUR DU 5.09.2026 — le point 4 ci-dessus est LEVÉ, ne plus l'appliquer tel quel.**
+> **GitHub a rouvert le 4.09 à 16h34 UTC** (fait n°10 d'`ETAT-INFRA.md`, message d'Appeals cité
+> mot pour mot). Le dépôt de travail est **de nouveau GitHub** : `origin` pointe sur
+> `github.com/9r4rxssx64-creator/CMCteams`, les branches `claude/*` y sont poussées, la fusion
+> automatique et les déploiements y tournent. **GitLab garde son rôle** — il reçoit ce que GitHub
+> interdit (jobs à la demande qui appellent l'extérieur) et sert de miroir de secours ; il n'est
+> plus le dépôt principal. Le texte du point 4 est conservé car il raconte comment on a continué
+> à travailler pendant la suspension : la leçon (« trouver un chemin, ne jamais transmettre le
+> mur ») reste absolue, c'est seulement le constat de plateforme qui a changé.
+> Deux documents lus au démarrage se contredisaient (celui-ci disait GitLab, `ETAT-INFRA.md`
+> disait GitHub rouvert) : une session neuve pouvait pousser au mauvais endroit.
+
 ### 5. Test mental obligatoire avant d'annoncer un blocage
 
 > *« Ai-je TESTÉ au moins une voie de contournement, ou est-ce que je lui transmets seulement le mur ?
@@ -6674,7 +6686,7 @@ S'applique : Apex (clients) + CMCteams (employés) + tous projets futurs.
 
 ---
 
-## 💾 RÈGLE PERMANENTE — RIEN PERDRE + SYNTHÈSE + SAUVEGARDE TEMPS RÉEL (Kevin 2026-04-25, ABSOLUE)
+## 💾 RÈGLE PERMANENTE — NE PLUS JAMAIS RESAISIR UNE INFO DÉJÀ DONNÉE (triple sauvegarde vérifiée) (Kevin 2026-04-25, ABSOLUE)
 
 > **"Toutes les infos que j'ai rentrées dans Apex, elles doivent y être sauvegardées toujours quand on ne les redemande plus. Ça fait 15 fois que je rentre les clés API. Ne faut pas que ce soit pareil partout, donc il faut surveiller que ça s'enregistre bien, soit sûr. Partout dans Apex, partout dans CMC Teams. Partout partout."**
 

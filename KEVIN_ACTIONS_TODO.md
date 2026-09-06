@@ -2410,16 +2410,6 @@ Si non aux 3 → reprendre.
 
 **Solution** : créer un audit unifié `axAuditUnifie()` qui teste les MÊMES axes que l'audit externe pour avoir un score reproductible. À faire en session dédiée.
 
-## 💰 Audit pentest tier-3 $30-80k expliqué
-
-| Tier | Type | Coût | Pour qui |
-|---|---|---|---|
-| **Tier 1** | Audit interne automatique (axRunAllTests, agents internes) | Gratuit | Tous |
-| **Tier 2** | Code review pro freelance (10-15j) | $5-10k | Pro/SaaS |
-| **Tier 3** | Pentest externe firme cybersécurité (Bishop Fox, NCC Group, Trail of Bits) avec bug bounty + cert ISO 27001/SOC 2 | $30-80k | Commercialisé public avec données sensibles |
-
-**Pour Kevin** : pas besoin de tier-3 (usage interne CMC + Laurence + soi-même). Tier-1 + tier-2 occasionnel suffisent.
-
 ## ✅ FIX RÉCENTS (cette session)
 
 ### CMCteams v9.561-562 (Kevin demandes directes)
