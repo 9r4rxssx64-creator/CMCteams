@@ -5489,3 +5489,28 @@ l'autre est gardée » et F « les deux cassent → `edit#1` + `edit#2` nommés 
 Gardes dépôt : no-pin-leak · actions-conformes · workflows-pipefail ·
 depot-public-sain · destinations-workflows · deploiement-declenche → toutes OK.
 Le push sur `claude/**` redéploie `kdmc-crea-ai` tout seul.
+
+## 2026-09-06 (suite) — Le déploiement était VERT mais mettait en ligne l'ancien code
+
+**Je me suis trompé et je le corrige** : j'ai annoncé « le push redéploie Créa AI
+tout seul » en me fiant à la **date** du worker sur Cloudflare (16:51 → 17:24).
+En lisant le code **réellement en ligne**, c'était encore l'ancienne version.
+
+**Cause** : `deploy-kdmc-crea-ai.yml` (et `deploy-kdmc-router.yml`) déclaraient bien
+`push: branches: [main, 'claude/**']`, mais leur `actions/checkout` était épinglé
+`with: { ref: main }` → le workflow **part** sur mon push, **tourne**, **réussit**…
+et déploie `main`. On écoute une branche, on publie l'autre.
+
+**Pourquoi ça n'avait pas sauté aux yeux hier** : les 4 autres workflows
+n'épinglent rien, et le travail Qwen était **déjà fusionné dans `main`** — le
+déploiement publiait donc le bon code **par coïncidence**.
+
+**Corrigé** : plus de `ref: main` sur ces 2 workflows.
+**Garde** : `test:deploiement-declenche` §3 bis — un workflow qui écoute
+`claude/**` ne peut plus épingler `ref: main`. **34/34**, discriminant prouvé
+(sabotage → 1 échec). Piège rencontré : la 1ʳᵉ version de la garde se déclenchait
+sur son **propre commentaire** → les commentaires sont retirés avant la recherche.
+
+**Règle que j'applique désormais** : après un déploiement, je vérifie **le code en
+ligne** (la ligne exacte du correctif), jamais seulement l'horodatage.
+Leçon #231.
