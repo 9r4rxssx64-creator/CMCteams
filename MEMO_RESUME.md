@@ -1,5 +1,25 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (17h05) — POURQUOI 370 branches : le nettoyeur automatique était aveugle
+
+- Cause racine trouvée : `cleanup-stale-branches.yml` existe, se déclenche bien après chaque
+  auto-merge, et a la bonne logique — mais `actions/checkout` pose un refspec **mono-branche**
+  (`+refs/heads/main:refs/remotes/origin/main`). Son `git fetch origin --prune` ne ramenait donc
+  **que `main`** → `git branch -r --merged | grep origin/claude/` ne voyait **aucune** branche →
+  `count=0` → **job vert, 0 suppression**, pendant des mois. `fetch-depth: 0` ne corrige pas ça :
+  il donne l'historique de la branche cochée, pas les autres branches.
+- **Fix livré** : `git remote set-branches origin '*'` + fetch avec refspec explicite, **sur les
+  deux jobs**, plus une **garde anti-faux-vert** : 0 branche visible après fetch → le job
+  **échoue bruyamment** au lieu de conclure « rien à faire ». Leçon **#227**.
+- **Je ne peux pas supprimer de branche distante depuis cette session** : le relais git coupe la
+  connexion sur un refspec de suppression (3 essais, `send-pack: unexpected disconnect`), alors
+  que le proxy est sain (`recentRelayFailures: []`) et que les pushs de commits passent. L'API
+  GitHub est fermée (403) et `gh` est absent. **Le canal qui a les droits, c'est la CI** — d'où le
+  correctif du workflow plutôt qu'un contournement de mon côté.
+- Le workflow se déclenche **sur push dans `main` du fichier lui-même** : la fusion de ce
+  correctif le lancera donc, et il supprimera les 231 branches fusionnées de plus de 7 jours.
+
+
 ## 6 septembre 2026 (16h55) — pipeline de TOUTES les branches et sessions
 
 - Mesuré sur les **370 branches `claude/*`** distantes : **240 sont des ancêtres de `main`**
