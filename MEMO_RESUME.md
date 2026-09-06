@@ -33,6 +33,37 @@
   nouveau lot et je regarde si le compte de branches baisse. Si oui → prouvé. Si non → le seul
   canal restant est le bouton « Run workflow » (je ne peux pas déclencher un workflow : API 403),
   et je le dirai plutôt que de laisser croire que c'est réglé.
+## 6 septembre 2026 (soir, clôture) — vérifié EN VRAI sur kd-mc.com, connecté comme Kevin
+
+Dernière étape : j'ai lancé **« Vérif RÉELLE (connecté en tant que Kevin) »** sur le vrai
+domaine ([run 34046798307](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34046798307),
+Chromium réel, session admin U11804, captures d'écran en artifact). **27 surfaces sur 28 vertes.**
+
+| Surface | Résultat |
+|---|---|
+| **CMCteams** `cmcteams.kd-mc.com` | ✅ page montée, **session admin U11804** reconnue |
+| **CMCteams light** `cmcteams-light.kd-mc.com` | ✅ page montée, **session admin U11804** reconnue |
+| **Départs** `departs.kd-mc.com` | ✅ page montée |
+| Apex AI, Apex Chat, Coffre, Arbre, boutiques, Créa Studio, World Monitor, OSINT, Cüjina… | ✅ |
+| **KDMC Lingua** `lingua.kd-mc.com` | ❌ **seule surface rouge** |
+
+**Ce que ça prouve, et ce que ça ne prouve pas** — à dire honnêtement : ça prouve que les
+trois surfaces CMCteams **se chargent en production** et que la session admin fonctionne. Ça ne
+vérifie pas à l'écran « septembre affiche bien 248 personnes » : cette partie-là est prouvée par
+`npm run test:pdf-fidelite`, qui relit les vrais PDF **sans le parser de l'app** et compare aux
+données réellement déployées (248/248 · 7 440/7 440 des deux côtés).
+
+**Le seul rouge tranche une question laissée ouverte.** Au m046 j'écrivais que le rouge Lingua
+pouvait être « un état de test incomplet **ou** un vrai P0 ». C'est tranché : **vrai P0**.
+`page.fill: Timeout 30000ms exceeded` **sur le site en production** — la page ne se monte pas
+assez pour qu'on puisse seulement remplir un champ. Même signature que le test hors ligne. Un
+utilisateur peut donc tomber sur une page vide, sans message, sans erreur visible. Transmis en
+**m051** avec le lien du run et les captures.
+
+**PR #3696 fusionnée à la main par l'API** après **4 refus consécutifs** du bot : sa fenêtre de
+revue de 6 minutes est plus longue que l'intervalle entre deux avancées de `main`, donc la PR
+redevenait « dirty » avant chaque tentative. Aucune revue n'était exigée (`reviews: []`), le
+contenu était uniquement documentaire.
 
 
 ## 6 septembre 2026 (soir, dernier point) — août 2026 : MOREL F, cause CERNÉE (et une erreur de ma part corrigée)
