@@ -392,3 +392,47 @@ ddb4358a4  2026-06-03  claude/worker-config-26897582610
 - **Je n'ai pas d'accès à l'historique des conversations**, seulement aux branches. Une session
   qui n'a jamais poussé de commit est invisible ici.
 
+---
+
+## Suite : pourquoi les branches ne sont TOUJOURS pas supprimées (état 17h55)
+
+Quatre cycles de vérification, tout est mesuré, rien n'est supposé.
+
+| Ce que j'ai corrigé | Sur `main` ? | Effet observé |
+|---|---|---|
+| Le nettoyeur était **aveugle** (refspec mono-branche, leçon #227) | ✅ | aucun |
+| Le nettoyeur ne **démarrait** pas (2 déclencheurs morts, leçon #228) | — | — |
+| Nettoyage **greffé dans l'auto-merge**, seul workflow qui tourne | ✅ | **aucun** |
+
+**Résultat honnête : 371 branches, inchangé.** Ma branche a bien fusionné (`fusionne=oui`
+pendant 18 min de surveillance), donc l'auto-merge s'exécute — mais aucune branche n'a disparu.
+
+**Je ne sais pas pourquoi, et je ne vais pas inventer une quatrième explication.** Il me
+faudrait le journal d'exécution du workflow, et l'API GitHub est fermée à cette session
+(HTTP 403, re-mesuré). Les trois causes déjà trouvées étaient réelles et sont corrigées ;
+il en reste visiblement une quatrième que je ne peux pas voir d'ici.
+
+### Ce que je ne peux pas faire, mesuré (pas supposé)
+
+```
+API GitHub — déclencher un workflow : HTTP 403
+gh (ligne de commande GitHub)       : absent
+git push origin --delete <branche>  : REFUSÉE (le relais coupe la connexion)
+```
+
+### Le seul canal restant : un clic, une fois
+
+**▶️ [Lancer « Compact stale claude/* branches »](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/cleanup-stale-branches.yml)**
+→ bouton « Run workflow » · `dry_run` = `false` · brancher sur `main`.
+
+Ce workflow porte désormais le correctif de cécité : lancé à la main, il **voit** les branches
+et supprimera celles qui sont déjà entièrement dans `main`. Son journal dira aussi, enfin,
+pourquoi la version automatique ne fait rien — et je pourrai finir le travail sans autre clic.
+
+### Ce qui, lui, est fait et ne dépend d'aucun clic
+
+- La question posée — **est-ce qu'un travail de session est resté en rade ?** — est **répondue** :
+  49 travaux distincts identifiés, datés, avec leurs zones et leurs SHA (tableau plus haut).
+- **Rien n'est en danger** : les 240 branches candidates à la suppression sont des ancêtres de
+  `main` (leur contenu y est déjà), et chaque SHA est noté ici, donc tout reste restaurable.
+- Le ménage est de l'**hygiène**, pas de la valeur : 371 branches encombrent, elles ne perdent rien.
