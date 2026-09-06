@@ -14,6 +14,11 @@
   (« Executable doesn't exist … headless_shell »). Job passé sur `mcr.microsoft.com/playwright:v1.56.0-noble`
   (même version que `devDependencies`), sans téléchargement à chaque run. 3ᵉ rouge : sur cette image
   `npm install` plante (`edgesOut`, même bug que sur GitHub) → `--legacy-peer-deps`.
+  4ᵉ rouge, le vrai : `test:everyone-has-planning` 255/27 sur le runner (280/0 ici) — le test attendait
+  **3 s fixes** après `doImport()` et laissait la page parler au réseau ; le runner GitLab est lent.
+  Rendu déterministe (attente stable des cellules, réseau coupé), 280/0 en local. Au passage :
+  `cmc-runtime-audit.yml` (GitHub) échouait en 17 s depuis un moment (`cache: npm` sans lockfile) →
+  ces tests ne tournaient **nulle part** ; réparé (plus de cache, `--legacy-peer-deps`).
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
