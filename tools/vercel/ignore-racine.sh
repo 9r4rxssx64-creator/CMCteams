@@ -12,6 +12,13 @@
 # Comportement inchangé : on ignore le push si RIEN n'a bougé en dehors des chemins
 # ci-dessous (documentation, CI, dossiers d'autres projets, tests, journaux…).
 set -u
+
+# Le clone que Vercel fabrique est SUPERFICIEL : `HEAD^` n'existe pas toujours.
+# `git diff HEAD^ HEAD` sort alors en code 128, que Vercel compte comme une ERREUR de
+# build (mail d'échec chez Kevin) — c'est le bug corrigé le 05/09 dans
+# tools/agent/vercel.json, à ne pas refaire ici. Sans historique : on construit (sûr).
+git rev-parse -q --verify HEAD^ >/dev/null 2>&1 || exit 1
+
 exec git diff HEAD^ HEAD --quiet -- . \
   ":(exclude)*.md" \
   ":(exclude).github/**" \

@@ -81,9 +81,9 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 **Pipeline + relecture des docs (même jour, sur demande de Kevin)** :
 - Session inscrite au registre commun sous **`cmcteams-pdf`** (elle n'y était pas) + ajoutée à
   `SESSIONS-ET-BRANCHES.md`. Garde `test:pipeline-sessions` : 8 OK / 0 FAIL.
-- **3 messages déposés** : m038 → `cmcteams-departs` (je régénère `boards-gen.js` et passe la page
-  Départs en v1.40 : fusionnez `main` avant de repousser), m039 → `cmcteams` (les 4 endroits touchés
-  dans le parser d'`index.html` + le diff exact des données), m040 → **toutes** (un test « A == B »
+- **3 messages déposés** : m039 → `cmcteams-departs` (je régénère `boards-gen.js` et passe la page
+  Départs en v1.40 : fusionnez `main` avant de repousser), m040 → `cmcteams` (les 4 endroits touchés
+  dans le parser d'`index.html` + le diff exact des données), m041 → **toutes** (un test « A == B »
   ne voit rien quand A et B se trompent pareil ; et les listes de mois figées).
 - **`main` fusionné** dans la branche (30 commits de retard) : 3 conflits résolus (APP_VER,
   `sw.js`, `test:ci`), version **v9.894**, les 4 nouveaux tests IA de `main` conservés.
@@ -104,7 +104,7 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   — remède **mesuré et documenté par `domaine-audit` au message m033** pour le même symptôme sur
   playwright, à la racine de ce dépôt. **Honnêteté : je n'ai pas pu reproduire l'échec dans mon
   conteneur** (npm 10.9.7 vs 10.9.8 sur le runner) : je porte un correctif documenté par une autre
-  session, pas un que j'ai vu passer du rouge au vert. Message **m042**. Cause de fond à prendre :
+  session, pas un que j'ai vu passer du rouge au vert. Message **m043**. Cause de fond à prendre :
   il n'y a **pas de `package-lock.json`** dans ce dépôt.
 - **Vercel : le correctif du 5.09 était annulé par sa propre note.** Le bot Vercel a échoué sur ma
   PR avec la vraie raison : *« The vercel.json schema validation failed … should NOT have additional
@@ -112,7 +112,7 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   correctif faisait **rejeter le fichier par le schéma** — le build sortait en erreur avant même de
   lire l'`ignoreCommand`, donc Kevin recevait toujours un mail d'échec à **chaque push de chaque
   session**. Note déplacée dans `tools/agent/README.md`, `vercel.json` remis aux 6 clés légales.
-  Message **m041** à `studio-crea` (leur terrain). Règle : `vercel.json` n'accepte ni commentaire ni
+  Message **m042** à `studio-crea` (leur terrain). Règle : `vercel.json` n'accepte ni commentaire ni
   clé inconnue.
   **Et il y avait un DEUXIÈME motif de refus, puis un TROISIÈME fichier** : une fois `_note` retirée,
   Vercel a dit la suite — *« `ignoreCommand` should NOT be longer than 256 characters »* (elle en
@@ -125,6 +125,50 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 - **`ETAT-INFRA.md` fait n°16 complété** : il annonce « API GitHub = 403 depuis une session » ;
   **depuis celle-ci elle RÉPOND** (`get_me` OK, PR et fusion par l'API possibles). C'est une
   propriété de la session, pas du dépôt — donc PR créée et fusionnée sans clic Kevin.
+## 6 septembre 2026 (15h45, session Apex Chat) — PR #3671 fusionnée + P2a corrigé (v1.1.286)
+
+- **PR #3671 est dans `main`** (7 min 30 après le push). Vérifié sur `main` : 0 occurrence de
+  `local-admin-`, le message « Admin refusé par le serveur » présent → le correctif P1
+  (« l'admin vient du serveur, jamais du nom ») est **en production**.
+- **P2a corrigé — le jeton de session ne part plus dans l'URL du WebSocket** (v1.1.286).
+  Serveur : `POST /api/auth/ws-ticket` échange le jeton (en-tête) contre un **ticket à usage
+  unique** valable 60 s ; le `jti` est consommé dans `ws_tickets` par une clé primaire (atomique,
+  rejeu = 0 ligne insérée = refusé) ; un ticket **ne vaut jamais session** (refusé en Bearer et en
+  `?token=`) ; base indisponible = **fail-closed**. Client : `K._wsTicket()` + `?ticket=`, avec
+  `?token=` gardé **une version** en repli pour ne pas couper une app encore en cache.
+- Preuve : `tests/unit/ws-ticket-usage-unique.test.js` (6 tests sur le vrai worker), **discriminant
+  prouvé par sabotage** (usage unique retiré → 1 échec ; garde ticket≠session retirée → 1 échec ;
+  restauré → 6/6). Suite complète **1104/1104**, navigateur réel **5/5**, 0 exception JS.
+- **Nouveau finding P2c** consigné : les URL de médias (`K._mediaSrc`) portent encore `?token=`
+  — même défaut, autre chemin. Pas livré dans le même lot **exprès** : un média est relu plusieurs
+  fois, donc un ticket à usage unique ne convient pas tel quel ; à traiter comme une étape vérifiée
+  à part plutôt que risquer de casser l'affichage des photos.
+- Accès GitHub mesuré depuis cette session : **git ouvert** (les pushs passent), **API GitHub
+  fermée** (403 « An org admin must connect the Claude GitHub App »), `gh` absent. Ça ne bloque
+  rien : la fusion est faite par le robot **à l'intérieur** de GitHub. Zéro clic Kevin.
+- Reste : **P2b** (CORS `*` → liste d'origines ; les 4 workers calculent CORS une fois au
+  chargement du module, donc refonte des 4 pipelines de réponse) et **P2c** (médias).
+
+
+## 6 septembre 2026 (15h30, session Apex Chat) — PR #3671 débloquée : c'était un conflit, pas une revue
+
+- **Correction d'une affirmation fausse que j'ai faite deux fois** : la PR #3671 n'attendait **aucune
+  revue de Kevin**. Le robot d'auto-merge a fini par écrire sa cause exacte (leçon #214) :
+  `{"mergeable": false, "mergeable_state": "dirty"}`, `reviews: []` → **conflit avec `main`** sur
+  `LESSONS.md`. Zéro clic Kevin. C'était mon travail depuis le début (leçon #223).
+- `main` fusionné dans `claude/apex-chat-mfa-faceid` : 81 fichiers, un seul conflit (`LESSONS.md`,
+  résolu en gardant les deux côtés ; mes leçons renumérotées **#221/#222** après la #220 de main).
+  `messaging-app/index.html` a fusionné sans conflit et le correctif P1 est intact (0 occurrence des
+  motifs interdits).
+- Re-prouvé après fusion : **1098/1098** tests vitest (56 fichiers) et **5/5** en vrai Chromium
+  (`test:runtime-admin` : onglet Admin masqué au boot, masqué pour « Kevin DESARZENS » sans
+  `is_admin` serveur, affiché seulement quand le serveur l'accorde, 0 exception JS).
+- `.github/AUTOMERGE-DIAGNOSTIC.md` retiré : artefact transitoire du robot, sa cause est réglée et
+  consignée dans LESSONS.md.
+- Reste de l'audit Apex Chat : **P2a** (jeton de session dans l'URL WebSocket → ticket à usage unique,
+  `workers/api-worker.js:148`) et **P2b** (CORS `*` → liste d'origines ; les 4 workers calculent CORS
+  **une fois au chargement du module**, donc refonte des 4 pipelines de réponse — non livré tant que
+  ce n'est pas câblé de bout en bout, erreur #28).
 
 
 ## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
@@ -154,6 +198,22 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   6ᵉ : `test:garro-cp` 5/3 (MIRANDA 0 cellule) — même classe (1,8 s fixes + réseau) ; corrigé pareil,
   et `test:code-legends` (2,2 s fixes) par précaution. Chaîne locale (après v788) : 0 échec réel, seuls
   `pdfjs-dist`/`axe-core` manquent ici (pas de `npm install` dans le sandbox) — le runner les a.
+  **Réglé dans la foulée** : `test:improvements-guard` (règles sans garde 19 → 20) — la règle « Qwen
+  gratuit » de `CLAUDE.md` avait déjà ses 5 gardes **dans `test:ci`**, il manquait juste son entrée au
+  registre `tools/audit/rules-compliance.cjs`. Entrée ajoutée, prouvée par double sabotage (entrée
+  retirée → rouge ; garde annoncée disparue → rouge ; restauré → vert).
+  **Et le « rouge de contenu » de la page Départs n'en était pas un.** Le contrôle croisé passe ici
+  (couverture 273/291, horaires identiques). J'ai régénéré la page **deux fois** avec le même code :
+  **64 tableaux sur 124 diffèrent, mais 0 personne et 0 horaire** — la seule différence est
+  l'identifiant des employés créés à l'import, tiré de l'**horloge** (`U_TMP_ + Date.now()`).
+  Donc « régénère la page », le conseil imprimé par le test, aurait committé du bruit. `boards-gen.js`
+  laissé **intact**. Corrigé côté générateur seulement : réseau coupé (Firebase remplaçait
+  `A.overrides` en pleine mesure sur un runner) + échec explicite si l'import ne se stabilise pas.
+  Leçon #221. À la session Départs : rendre l'identifiant temporaire **dérivé du nom**, pas du temps.
+  **Puis `test:vplan`** (« Ma section » vide côté runner) : même cause. Plutôt que de courir après un
+  rouge à la fois — chaque aller-retour coûte 4 min de runner — j'ai fait l'inventaire : **13 tests de
+  `test:ci`** important un planning avec le réseau **ouvert**. Réseau coupé dans les 13 (aucun n'a besoin
+  du CDN, aucun n'avait de route), attente stable pour `repro-vplan`. **14 tests relancés ici : 14 verts.**
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
@@ -5181,3 +5241,56 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
 - Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
+
+## 2026-09-05 — Apex Chat : fermeture porte admin P0 (v1.1.284)
+- **Faille P0** : bypass « numéro Kevin + 000000 » → JWT admin sans preuve.
+- **v1.1.282** numéro retiré de la page publique (déployé) · **v1.1.283** garde serveur `ADMIN_BYPASS_REQUIRE_MFA` (OFF) · **v1.1.284 garde ACTIVÉE ("true")** après vérif D1 (`kdmc_kevin-desarzens` is_admin=1, source kdmc-sso).
+- **Porte admin principale** = SSO Face ID `kd-mc.com` via `/api/auth/sso-from-kdmc` (indépendant du drapeau). **Repli anti-lock-out** = `X-Apex-Admin-Token` (jamais dans la page).
+- **Rollback** = `messaging-app/workers/wrangler.toml` → `ADMIN_BYPASS_REQUIRE_MFA="false"` + redéploiement (SSO inchangé dans les deux états).
+- **Annulé** : piste « clé admin par app » (empreinte D1) = per-app secret, contraire aux règles (le code admin ne se vérifie jamais côté client).
+- **Coordination domaine** : scan des branches `claude/*` actives → aucune ne modifie la logique admin/SSO (family-tree touche le router mais côté arbre uniquement). Apex Chat admin dépend maintenant de la santé du SSO → ne pas casser `/__sso/whoami` ni la garde `ADMIN_UIDS && verified`.
+
+## 2026-09-05 — Apex Chat : correctif P1/P0 admin client-side (v1.1.285)
+
+Suite directe : fermeture du dernier vecteur admin **côté page**. La porte serveur
+était fermée (v1.1.284, `ADMIN_BYPASS_REQUIRE_MFA="true"`) mais `index.html` fabriquait
+une session admin locale en tapant « Kevin Desarzens » — y compris **quand le serveur
+refusait** (jeton `'local-admin-'`, is_admin:true), ce qui annulait la fermeture.
+
+**Corrigé (v1.1.285, index.html + sw.js)** : l'admin vient UNIQUEMENT de `user.is_admin`
+renvoyé par le Worker (+ JWT gate côté serveur). Supprimés : repli hors-ligne admin,
+`K.user.is_admin=true` par le nom (login + restauration), et la fabrication de jeton
+`'local-admin-'` sur refus serveur (→ session simple utilisateur, pas de lock-out).
+Anti-lock-out reste serveur (`X-Apex-Admin-Token`). Admin de Kevin = SSO Face ID
+(`/api/auth/sso-from-kdmc`, D1 kdmc_kevin-desarzens is_admin=1) — inchangé.
+
+Garde câblée : `tests/unit/no-client-side-admin-by-name.test.js` (discriminante, 4 motifs).
+Validé : 1086/1086 tests verts, JS syntax OK. Leçon #216. Findings P1 → ✅ CORRIGÉ.
+
+Reste audit Apex Chat : P2a (jeton WS dans l'URL, api-worker.js:148), P2b (CORS `*`
+workers/lib/cors.js), mensonges doc (README post-quantum, package.json version).
+
+## 2026-09-06 — Apex Chat : vérité doc (P2) + état des P2 restants
+
+**Corrigé (zéro risque, viole une règle ABSOLUE « vérité, rien de faux »)** :
+`messaging-app/README.md` annonçait « chiffrement militaire post-quantum (PQXDH) »
+et « serveur aveugle » — **les deux FAUX**, mesuré : le chiffrement réel est
+ECDH P-256 + HKDF-SHA256 + AES-GCM-256 + PBKDF2 100k, **zéro Kyber / zéro ML-KEM**
+(`PQXDH` n'est qu'un texte de remplissage `'PENDING_PQXDH'` en base) ; et le
+serveur n'est pas « aveugle » en mode A (kdmc_admin membre invisible).
+`package.json` : 1.1.262 → **1.1.285** (23 versions de retard).
+Garde câblée : `tests/unit/no-false-security-claims.test.js` (README + primitives
+réelles + parité version package.json ⇄ index.html).
+
+**P2 restants — décision motivée, PAS livrés dans cette PR** :
+- **P2b CORS `*`** : les 4 workers calculent le CORS **au chargement du module**
+  (constantes), pas par requête → une liste blanche d'origines exige de refactorer
+  le pipeline de réponse des 4 workers. Valeur réelle FAIBLE (l'auth est en
+  `Authorization: Bearer`, pas en cookie → pas de CSRF ; l'audit le dit lui-même),
+  risque de casser le chat MOYEN. Interdit d'ajouter un helper non câblé
+  (erreur #28). → à faire comme changement dédié, après le merge de P1.
+- **P2a jeton dans l'URL du WebSocket** : correctif = ticket court à usage unique
+  (nouvel endpoint + client + worker). Touche le cœur du chat → à faire seul,
+  avec e2e, jamais empilé sur une PR bloquée.
+
+**Bloquant** : PR #3671 attend l'approbation propriétaire de Kevin (CODEOWNERS `*`).

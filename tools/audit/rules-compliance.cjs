@@ -45,6 +45,10 @@ for (const line of claude.split('\n')) {
    'wf:x'   = workflow GitHub Actions
    'file:x' = fichier/test qui doit exister                                       */
 const REGISTRE = [
+  // Règle « Qwen gratuit » (CLAUDE.md, Kevin 5.09.2026) : ses 5 gardes existaient déjà et
+  // tournaient dans test:ci, mais l'entrée manquait ici → le ratchet comptait la règle comme
+  // « sans automatisme » (19 → 20) et rougissait test:ci pour TOUTES les sessions (6.09).
+  [/QWEN GRATUIT EN IA PRINCIPALE/i, ['npm:test:qwen-gratuit', 'npm:test:bascule', 'npm:test:ia-route', 'npm:test:cmc-ia-gratuite', 'npm:test:apex-proxy-qwen']],
   [/TOUT LE MONDE A UN PLANNING/i, ['npm:test:everyone-has-planning']],
   [/LISTE DE COMMANDES COMPLÈTE/i, ['file:apex-ai/v13/tests/unit/v13_4_317-commands-completeness.test.ts']],
   [/SÉCURITÉ MAXIMALE PARTOUT/i, ['wf:security-suite.yml', 'npm:test:xss-guard', 'npm:test:ia-key-privacy']],

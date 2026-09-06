@@ -73,7 +73,7 @@ Le registre ci-dessus date du 2.09 : les branches ont bougé. **367 branches `cl
 | `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
 | `claude/lingua-connexion-honnete` | +3 | connexion PRÉNOM + NOM sans perdre les anciens comptes | `lingua/app.js` |
 | `claude/lingua-prenom-nom` | +1 | **le même travail** que la précédente (+ un lien `node_modules` commité par erreur) — message m030 | `lingua/app.js` |
-| `claude/verify-cmcteams-light-data-rzlvau` | +2 | le PDF relu **sans le parser de l'app** : 3 défauts que « app == light » ne pouvait pas voir (v9.894 / light v1.40) — message m037/m038 | parser d'import d'`index.html`, `tools/shared/planning-seed.js`, `tools/departs/boards-gen.js`, `tests/verify-pdf-vs-surfaces.mjs` |
+| `claude/verify-cmcteams-light-data-rzlvau` | +2 | le PDF relu **sans le parser de l'app** : 3 défauts que « app == light » ne pouvait pas voir (v9.894 / light v1.40) — messages m039 à m043 | parser d'import d'`index.html`, `tools/shared/planning-seed.js`, `tools/departs/boards-gen.js`, `tests/verify-pdf-vs-surfaces.mjs` |
 
 Avant de commencer une session : **regarde les branches du jour, pas celles du tableau** — et inscris la tienne (`node tools/pipeline/pipeline.mjs enregistrer …`), sinon les autres ne te voient pas.
 
