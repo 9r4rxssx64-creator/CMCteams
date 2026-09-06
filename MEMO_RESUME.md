@@ -5454,3 +5454,38 @@ réelles + parité version package.json ⇄ index.html).
   avec e2e, jamais empilé sur une PR bloquée.
 
 **Bloquant** : PR #3671 attend l'approbation propriétaire de Kevin (CODEOWNERS `*`).
+
+## 2026-09-06 — « Poses de danse » : le rouge du contrôle IA gratuites est corrigé
+
+**Ce que Kevin voyait** : le workflow « Vérifie les IA gratuites » en rouge,
+`❌ une transformation d'image ne marche plus`. Dans le rapport :
+« poses de danse → 502 », alors que « figurine » réussissait juste au-dessus,
+avec **le même moteur** et **la même clé**.
+
+**Cause réelle (mesurée en lisant les deux chemins, pas supposée)** :
+`/frames` lançait ses 2 poses avec `Promise.all` et **34 s** de délai, quand
+`/magic` (qui réussissait) laisse **58 s** à son unique image. Une pose qui
+dépasse → `Promise.all` rejette → **la pose déjà réussie est jetée aussi** →
+0 image → 502, à une image du but.
+
+**Corrigé** (`services/kdmc-crea-ai/worker.js`) :
+- `Promise.allSettled` : ce qui a marché est gardé, chaque échec est nommé.
+- Délai **46 s** au lieu de 34, rendu abordable en espaçant les vérifications
+  à **4 s** (11 par pose au lieu de 19) → plus d'attente **à budget de
+  sous-requêtes Cloudflare égal**.
+- **Rattrapage** : s'il ne manque qu'une pose, elle est refaite SEULE.
+
+**Deuxième défaut, plus grave que le bug** : le rapport n'affichait que le
+message poli — il lisait `message || detail`, donc la cause exacte n'était
+**jamais** lue ; et côté worker `detail` était tronqué en commençant par les
+erreurs Gemini → on lisait « crédits épuisés » au lieu du vrai coupable.
+Corrigé : rapport = **message + cause exacte**, causes décisives en tête,
+et l'étape CI imprime la cause dans son `::error::` au lieu de renvoyer vers
+un fichier (règle « toujours détailler les erreurs, cause exacte »).
+
+**Preuve** : `npm run test:crea-frames` → **23/23** (cas E « une pose casse,
+l'autre est gardée » et F « les deux cassent → `edit#1` + `edit#2` nommés »),
+**prouvé discriminant** par sabotage (retour à `Promise.all` → 8 échecs).
+Gardes dépôt : no-pin-leak · actions-conformes · workflows-pipefail ·
+depot-public-sain · destinations-workflows · deploiement-declenche → toutes OK.
+Le push sur `claude/**` redéploie `kdmc-crea-ai` tout seul.

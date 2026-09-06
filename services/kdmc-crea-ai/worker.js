@@ -583,17 +583,21 @@ function pickOutput(pred) {
   if (Array.isArray(out)) out = out[out.length - 1];
   return (out && typeof out === 'string') ? out : null;
 }
-async function pollUntilDone(pred, token, maxMs) {
+async function pollUntilDone(pred, token, maxMs, pasMs) {
   const started = Date.now();
   const limite = maxMs || 58000;
   /* Chaque vérification est une sous-requête, et Cloudflare en limite le
      nombre par appel (vécu : « Too many subrequests »). 2,5 s au lieu de 1,5 s
      → ~40 % de vérifications en moins pour la même attente. maxMs permet de
      raccourcir l'attente quand on enchaîne PLUSIEURS images dans le même appel
-     (poses de danse) — sinon le budget de sous-requêtes explose. */
+     (poses de danse) — sinon le budget de sous-requêtes explose.
+     pasMs espace davantage les vérifications quand on attend PLUSIEURS images
+     à la fois : c'est ce qui permet d'attendre plus longtemps SANS dépasser le
+     budget (vécu 2026-09-06, cf. /frames). */
+  const pas = pasMs || 2500;
   while (pred.status === 'starting' || pred.status === 'processing') {
     if (Date.now() - started > limite) throw new Error('timeout');
-    await new Promise((r) => setTimeout(r, 2500));
+    await new Promise((r) => setTimeout(r, pas));
     pred = await (await fetch(pred.urls.get, { headers: { Authorization: `Token ${token}` } })).json();
   }
   if (pred.status !== 'succeeded') throw new Error('model_' + (pred.error || pred.status || 'failed'));
@@ -628,9 +632,9 @@ async function firstUsableEditor(token) {
   }
   throw new Error(errs.join(' | ') || 'no_editor');
 }
-async function editToDataUrl(model, version, image, prompt, token, maxMs) {
+async function editToDataUrl(model, version, image, prompt, token, maxMs, pasMs) {
   const pred = await createPrediction(version, model.input(image, prompt), token);
-  const outUrl = await pollUntilDone(pred, token, maxMs);
+  const outUrl = await pollUntilDone(pred, token, maxMs, pasMs);
   const img = await fetch(outUrl);
   if (!img.ok) throw new Error('fetch_out_' + img.status);
   const ct = img.headers.get('content-type') || 'image/png';
@@ -1037,14 +1041,47 @@ export default {
         try {
           const ed = await firstUsableEditor(env.REPLICATE_API_TOKEN);
           const need = poses.slice(0, 2);
-          const outs = await Promise.all(need.map((p) => editToDataUrl(ed.model, ed.version, image, texte(p), env.REPLICATE_API_TOKEN, 34000)));
-          frames.length = 0;
-          outs.forEach((d) => frames.push(d));
-          provider = 'replicate-edit:' + ed.model.name;
+          /* allSettled, JAMAIS `all` — vécu le 2026-09-06 (auto-test CI) :
+             34 s ne suffisaient pas à flux-kontext-pro, `Promise.all` rejetait
+             au PREMIER dépassement et jetait AUSSI la pose qui avait réussi
+             → 0 pose gardée → 502, alors que /magic (même moteur, 58 s, une
+             seule image) réussissait dans le même run. On attend maintenant
+             46 s en espaçant les vérifications à 4 s : ~11 vérifications par
+             pose au lieu de ~19, donc plus long À BUDGET DE SOUS-REQUÊTES
+             ÉGAL (limite Cloudflare, cf. pollUntilDone). */
+          const outs = await Promise.allSettled(need.map((p) =>
+            editToDataUrl(ed.model, ed.version, image, texte(p), env.REPLICATE_API_TOKEN, 46000, 4000)));
+          const faites = [];
+          outs.forEach((r, i) => {
+            if (r.status === 'fulfilled') faites.push(r.value);
+            else errs.push('edit#' + (i + 1) + ':' + String((r.reason && r.reason.message) || r.reason));
+          });
+          /* Une seule pose passée : on refait la manquante SEULE (plus de
+             concurrence = elle a toute l'attente pour elle) plutôt que de
+             rendre 502 alors qu'on est à une image du but. */
+          if (faites.length === 1) {
+            const iRate = outs.findIndex((r) => r.status !== 'fulfilled');
+            try {
+              faites.push(await editToDataUrl(ed.model, ed.version, image, texte(need[iRate]),
+                env.REPLICATE_API_TOKEN, 40000, 4000));
+            } catch (e2) { errs.push('edit-rattrapage:' + String((e2 && e2.message) || e2)); }
+          }
+          if (faites.length >= 2) {
+            frames.length = 0;
+            faites.forEach((d) => frames.push(d));
+            provider = 'replicate-edit:' + ed.model.name;
+          }
         } catch (e) { errs.push('edit:' + String((e && e.message) || e)); }
       } else if (frames.length < 2) errs.push('replicate_no_key');
       if (frames.length < 2) {
-        return json({ error: (errs[0] || 'frames_failed'), detail: errs.join(' | ').slice(0, 300), got: frames.length,
+        /* Ordre du détail : d'abord ce qui a VRAIMENT décidé du refus (le
+           dernier secours), le reste ensuite. Vécu le 2026-09-06 : les erreurs
+           Gemini (6 modèles sondés) mangeaient les 300 caractères et
+           TRONQUAIENT la cause réelle — on lisait « crédits épuisés » alors que
+           le vrai coupable était un délai dépassé côté moteur d'édition. */
+        const decisifs = errs.filter((x) => /^(edit|replicate)/.test(x));
+        const detail = decisifs.concat(errs.filter((x) => !/^(edit|replicate)/.test(x))).join(' | ');
+        return json({ error: (decisifs[0] || errs[0] || 'frames_failed'), detail: detail.slice(0, 400), got: frames.length,
           message: "Je n'ai pas pu fabriquer les poses à partir de ta photo. "
             + 'Je préfère te le dire plutôt que de te rendre quelqu\'un d\'autre.' }, h, 502);
       }
