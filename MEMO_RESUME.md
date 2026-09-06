@@ -4970,3 +4970,18 @@ les fiches que JE lis pour travailler. Chaque chemin re-vérifié par `ls`/`find
 `APPSTORE_API_ISSUER`/`APPSTORE_API_KEY`/`APPLE_TEAM_ID` → le workflow tournerait avec des secrets
 VIDES, en silence (cause racine du bug v13.4.229). La correspondance n'est pas certaine et il manque
 un 3ᵉ secret : renommer à l'aveugle serait pire. L'incohérence est écrite dans le skill.
+
+### 2026-09-06 (suite) — passe 4 : les docs produit remesurées
+
+- **`apex-ai/index.html` fait 80 octets** — un commentaire « Apex v12 archivé, voir `apex-ai/v13/` ».
+  Plusieurs documents le décrivaient encore comme un monolithe de 617 Ko / 30K lignes
+  (`APEX_HANDOFF.md`, `services/README.md`), et surtout **CLAUDE.md faisait de sa vérification une
+  « MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT »** : lancée sur un fichier vide, elle passait toujours
+  au vert sans rien contrôler (même classe que le hook cassé — leçon #103). La procédure vise
+  désormais `index.html` (le vrai mono-fichier) et renvoie Apex v13 vers `tsc --noEmit` + vitest.
+- **Versions et tailles réalignées sur la mesure** : CMC `v9.303`/`v9.522` → **v9.891** · Apex
+  `v12.242` → **v13.4.355** (v12 archivé) · index.html « ~440 Ko / 1.80 Mo / 1.1 Mo » → **3.20 Mo** ·
+  « 121 workflows » → **145** · « 258 employés » → **261 entrées** (260 sans date de départ).
+  Un avertissement en tête de CLAUDE.md dit maintenant que ces nombres dérivent et où lire le vrai.
+- **README.md** (la vitrine publique) : « Hébergée sur GitHub Pages » → servie sur **kd-mc.com par le
+  routeur Cloudflare** (26 sous-domaines) · « 36 outils » → **87** (mesuré) · effectif réaligné.
