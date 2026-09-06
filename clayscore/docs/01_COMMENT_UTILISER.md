@@ -35,7 +35,7 @@ Dans `pages/`, double-clic sur :
 
 ### 1. Installer (une seule commande)
 ```bash
-cd logiciel
+cd clayscore
 ./install.sh
 ```
 Ça installe tout, crée les données de test, et ne touche à rien d'autre sur ta
@@ -66,8 +66,9 @@ c'est ce qui a servi à créer les 3 démos.
 ## C. Vérifier que tout marche (preuves)
 
 ```bash
-cd logiciel
-pytest                      # → doit afficher : 159 passed, 1 skipped
+cd clayscore
+pytest                      # → la sortie de pytest FAIT foi (ne pas comparer à un
+                            #   nombre écrit dans la doc : cinq valeurs différentes y traînent)
 python -m tools.bench --all # → doit afficher : 27/27 = 1.000 (×3)
 ```
 
@@ -79,7 +80,7 @@ récapitulatif.
 ## D. Fabriquer d'autres vidéos de démo
 
 ```bash
-cd logiciel
+cd clayscore
 python -m tools.overlay --scenario casse  --background ciel       --out ma_demo.mp4 --slowmo 4
 python -m tools.overlay --scenario manque --background foret      --out ma_demo2.mp4 --slowmo 4
 python -m tools.overlay --scenario nobird --background contrejour --out ma_demo3.mp4 --slowmo 4
@@ -90,7 +91,7 @@ python -m tools.overlay --scenario nobird --background contrejour --out ma_demo3
 
 ## E. Le jour où le matériel arrive
 
-**Une seule chose change** : le fichier `logiciel/config/config.yaml`.
+**Une seule chose change** : le fichier `config/config.yaml`.
 
 ```yaml
 source:

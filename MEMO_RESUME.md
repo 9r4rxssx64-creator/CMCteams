@@ -5002,3 +5002,25 @@ un 3ᵉ secret : renommer à l'aveugle serait pire. L'incohérence est écrite d
 - Les 4 documents du 5.09 disaient « 32 cibles » et « 6 workers en panne » : **faux rouge** résolu
   depuis (un Worker ne peut pas joindre un `*.workers.dev` du même compte). Réalignés sur **31 cibles**
   + note de résolution.
+
+### 2026-09-06 (suite) — passe 6 : références mortes en série (archives, iRemoteHub, tools, clayscore, légal)
+
+- `archives/` : 2 workflows cités comme actifs alors qu'ils sont **rangés** (`claude-todo-watcher`,
+  `agent-cron`) · `npm run build` inexistant → `build:min`.
+- `iRemoteHub/` : 4 documents citaient `adapters/xxx.js`, le vrai dossier est `bridge/adapters/` ·
+  le README disait « importer les `.shortcut` du dossier `shortcuts/` » alors qu'il n'y a **que des
+  `.md`** (0 fichier `.shortcut` versionné) → reformulé en « recréer à la main d'après les guides ».
+- `tools/agent/README` renvoyait à 5 clients (`gmail/`, `telegram/`, `gdrive/`, `facebook/`,
+  `instagram/`) qui n'existent pas → marqués « prévu, non implémenté ».
+  `tools/planning-parser-tester/README` citait un chemin de bac à sable `/root/.claude/plans/…`.
+- `clayscore/docs` : `cd logiciel`, `logiciel/config/config.yaml`, `pages/landing.html`,
+  `demos/*.mp4` — **aucun n'existe** (le code est à la racine de `clayscore/`, les pages dans `docs/`,
+  les démos ne sont pas versionnées) → réalignés.
+- **Nombre de tests ClayScore : 5 valeurs contradictoires** (130 / 159 / 341 / 344 / 353) dont une
+  dans une **commande promise à Kevin** (« doit afficher 159 passed »). `pytest` n'étant pas installé
+  ici, je **n'ai pas remplacé un chiffre faux par un autre non mesuré** : le nombre figé est retiré de
+  la commande et l'incohérence est écrite dans les 3 documents concernés.
+- `archives/MENTIONS_LEGALES.md` et `archives/CGU_PRO.md` sont des **brouillons à trous** (`[DATE]`,
+  `[ADRESSE LÉGALE]`) qui coexistaient avec les versions en vigueur d'`apex-ai/v13/docs/legal/` →
+  bandeau « TEMPLATE OBSOLÈTE, ne pas citer » en tête, pour qu'un document juridique à trous ne passe
+  jamais pour l'officiel.

@@ -98,7 +98,7 @@ Le **livrable de build reste un `index.html` unique** servi par Pages → le mod
 ### Étapes (très incrémental, réversible à chaque pas)
 1. **Phase 0 — Filet** : geler une baseline (tag git) + le `test:ci` actuel comme garde anti-régression visuelle/fonctionnelle.
 2. **Phase A — Extraire le CSS** : sortir les 8 `<style>` → `assets/cmc.css`, inliné au build. Gain lisibilité, risque quasi nul. Valider rendu identique (Playwright screenshots).
-3. **Phase B — Build esbuild** : introduire `esbuild` qui concatène/minifie les blocs JS en 1 bundle, **réinjecté dans index.html au build**. Sortie = même `index.html` monolithique mais minifié (gain taille ~40-50%). Source devient `src/*.js` découpé par domaine (parser, chat, ia, map, admin…). `npm run build` + CI qui vérifie `index.html` déployé == build (anti #54).
+3. **Phase B — Build esbuild** : introduire `esbuild` qui concatène/minifie les blocs JS en 1 bundle, **réinjecté dans index.html au build**. Sortie = même `index.html` monolithique mais minifié (gain taille ~40-50%). Source devient `src/*.js` découpé par domaine (parser, chat, ia, map, admin…). `npm run build:min` + CI qui vérifie `index.html` déployé == build (anti #54).
 4. **Phase C — CSP nonce** : le plugin de build remplace `unsafe-inline` par un nonce par release sur les `<script>` ; les handlers `onclick=` inline migrés progressivement vers `addEventListener` (gros volume → étalé sur plusieurs sessions, module par module, chacun testé).
 5. **Phase D — Tree-shaking / dead-code** : mesurer (coverage) le code réellement exécuté → retirer le mort confirmé (grep dynamique d'abord, cf. lesson #59).
 

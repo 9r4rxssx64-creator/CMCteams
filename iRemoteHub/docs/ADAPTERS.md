@@ -91,7 +91,7 @@
 | QR / DataMatrix | Caméra téléphone | `BarcodeDetector` API / ZXing-JS |
 | BLE advertising | Host Linux du bridge | `@abandonware/noble` |
 
-**Refusés par design** (hardcodé dans `adapters/clone.js`) : EMV, HID iClass SE, MIFARE DESFire, KeeLoq, Hitag2, Megamos, SIM, passeports, magstripe bancaire.
+**Refusés par design** (hardcodé dans `bridge/adapters/clone.js`) : EMV, HID iClass SE, MIFARE DESFire, KeeLoq, Hitag2, Megamos, SIM, passeports, magstripe bancaire.
 
 ## Exemples d'intégration
 

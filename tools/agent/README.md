@@ -109,10 +109,10 @@ https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app/cmcteams/c
 ## 🔗 Intégrations
 
 L'agent peut appeler les modules `tools/integrations/*` :
-- `gmail/client.js` : envoyer emails
-- `telegram/client.js` : notifications
-- `gdrive/client.js` : backup Drive
-- `facebook/client.js`, `instagram/client.js` : posts auto
+- ~~`gmail/client.js`~~ *(prévu, non implémenté — `lib/` contient config, firebase, gauth, notifier, sentry, tasks)* : envoyer emails
+- ~~`telegram/client.js`~~ *(prévu, non implémenté — `lib/` contient config, firebase, gauth, notifier, sentry, tasks)* : notifications
+- ~~`gdrive/client.js`~~ *(prévu, non implémenté — `lib/` contient config, firebase, gauth, notifier, sentry, tasks)* : backup Drive
+- ~~`facebook/client.js`~~ *(prévu, non implémenté — `lib/` contient config, firebase, gauth, notifier, sentry, tasks)*, ~~`instagram/client.js`~~ *(prévu, non implémenté — `lib/` contient config, firebase, gauth, notifier, sentry, tasks)* : posts auto
 - etc.
 
 ## ⚠️ Limites
