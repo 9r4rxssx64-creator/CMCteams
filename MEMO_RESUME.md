@@ -1,5 +1,48 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (soir) — « applique tout pour tes autres branches » : mesuré, outillé, transmis
+
+Kevin : *« Applique tout pour tes autres branches et qu'elles soient au courant de tes modifs. »*
+
+**Mesuré d'abord, avant de toucher à quoi que ce soit.** Sur les branches `claude/*` :
+
+| | |
+|---|---|
+| Branches **vivantes** (activité < 21 j) en retard | **15** |
+| …avec un **mois de planning manquant** | **0** ✅ |
+| Branches actives encore en **v9.891 / v9.893** (donc sans les 3 correctifs de parser) | `sarzance-family-tree` (9 devant/57 derrière) · `surveillance-domaine-26-adresses` (11/137) · `vercel-config-main` (0/86) · `lingua-connexion-honnete` (0/138) |
+| Branches **abandonnées** qui ont perdu septembre (`2026-8` absent des DEUX générateurs) | **14** |
+
+**Le vrai danger n'est pas le conflit, c'est l'ABSENCE de conflit.** `planning-seed.js` et
+`boards-gen.js` sont des fichiers **générés** : une fusion résolue « du mauvais côté », ou un
+fichier repris tel quel parce qu'« il n'a pas bougé chez moi », supprime **septembre pour 248
+personnes sans une seule ligne rouge**.
+
+**Ce que je n'ai PAS fait, et pourquoi** : je n'ai poussé aucune fusion dans les branches des
+autres sessions. Le bot fusionne déjà `main` dans chaque `claude/*` à leur prochain push — le
+faire à leur place pendant qu'elles travaillent serait du bruit, pas de l'aide.
+
+**Ce que j'ai fait à la place — un outil, pas de la prose** :
+
+```
+npm run retard-branches                                    ma branche
+node tools/pipeline/retard-branches.mjs --toutes           les claude/* vivantes (21 j)
+node tools/pipeline/retard-branches.mjs --toutes --tout    même les abandonnées
+```
+
+Il répond à la question que `branch-coordinator.yml` ne pose pas : lui détecte les
+**chevauchements**, jamais le **retard**. Trois niveaux : à jour · en retard sur un fichier
+partagé · **un mois présent sur `main` est absent ici**. **Non bloquant** (sort en 0 sauf
+`--strict`) — être en retard n'est pas une faute, ce qui compte est de le savoir avant de
+résoudre un conflit. **Prouvé discriminant sur données réelles** : `agent-toolkit-sync`
+(528 derrière) → 🔴 septembre absent ; `sarzance` (57 derrière) → pas de rouge, septembre présent.
+
+**Transmis** : message **m052** à toutes les sessions — ce qui a changé, les deux gardes qui
+peuvent les faire échouer et pourquoi, et surtout **la règle de résolution de conflit** : sur
+`index.html`, `sw.js`, `planning-seed.js`, `boards-gen.js`, `tools/departs/index.html`, on garde
+**le côté de `main`**, jamais le sien. Leçon **#233**.
+
+
 ## 6 septembre 2026 (17h20) — le correctif du nettoyeur est sur `main`, mais le nettoyage n'a pas encore tourné
 
 - Mesuré : le correctif est bien dans `main` (2 occurrences de `remote set-branches`), et pourtant

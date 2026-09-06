@@ -3,6 +3,15 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/pipeline/retard-branches.mjs` | Dit si une branche est dangereusement en retard sur un fichier **partagé** — et surtout si un **mois de planning entier** y a disparu sans faire le moindre bruit. `npm run retard-branches` (ou `--toutes`, `--tout`). Non bloquant. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pipeline/retard-branches.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pipeline/retard-branches.mjs) |
+| `tests/verify-pdf-vs-surfaces.mjs` | Relit les **vrais PDF** sans le parser de l'app et exige chaque personne / chaque cellule des deux côtés. `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-pdf-vs-surfaces.mjs) |
+| `tests/journal-erreurs-lisible.test.mjs` | Empêche le journal d'erreurs de redevenir illisible (3 formes, 3 lecteurs). `npm run test:journal-erreurs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/journal-erreurs-lisible.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/journal-erreurs-lisible.test.mjs) |
+
+
 ## 🇲🇨 L'arbre aux couleurs de Monaco — session 2026-09-06 matin (arbre v3.18 « Munegu », branche `claude/sarzance-family-tree-3jxi7i`)
 
 | Fichier | À quoi ça sert | Liens |
