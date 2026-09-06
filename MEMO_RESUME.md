@@ -1,5 +1,30 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (15h45, session Apex Chat) — PR #3671 fusionnée + P2a corrigé (v1.1.286)
+
+- **PR #3671 est dans `main`** (7 min 30 après le push). Vérifié sur `main` : 0 occurrence de
+  `local-admin-`, le message « Admin refusé par le serveur » présent → le correctif P1
+  (« l'admin vient du serveur, jamais du nom ») est **en production**.
+- **P2a corrigé — le jeton de session ne part plus dans l'URL du WebSocket** (v1.1.286).
+  Serveur : `POST /api/auth/ws-ticket` échange le jeton (en-tête) contre un **ticket à usage
+  unique** valable 60 s ; le `jti` est consommé dans `ws_tickets` par une clé primaire (atomique,
+  rejeu = 0 ligne insérée = refusé) ; un ticket **ne vaut jamais session** (refusé en Bearer et en
+  `?token=`) ; base indisponible = **fail-closed**. Client : `K._wsTicket()` + `?ticket=`, avec
+  `?token=` gardé **une version** en repli pour ne pas couper une app encore en cache.
+- Preuve : `tests/unit/ws-ticket-usage-unique.test.js` (6 tests sur le vrai worker), **discriminant
+  prouvé par sabotage** (usage unique retiré → 1 échec ; garde ticket≠session retirée → 1 échec ;
+  restauré → 6/6). Suite complète **1104/1104**, navigateur réel **5/5**, 0 exception JS.
+- **Nouveau finding P2c** consigné : les URL de médias (`K._mediaSrc`) portent encore `?token=`
+  — même défaut, autre chemin. Pas livré dans le même lot **exprès** : un média est relu plusieurs
+  fois, donc un ticket à usage unique ne convient pas tel quel ; à traiter comme une étape vérifiée
+  à part plutôt que risquer de casser l'affichage des photos.
+- Accès GitHub mesuré depuis cette session : **git ouvert** (les pushs passent), **API GitHub
+  fermée** (403 « An org admin must connect the Claude GitHub App »), `gh` absent. Ça ne bloque
+  rien : la fusion est faite par le robot **à l'intérieur** de GitHub. Zéro clic Kevin.
+- Reste : **P2b** (CORS `*` → liste d'origines ; les 4 workers calculent CORS une fois au
+  chargement du module, donc refonte des 4 pipelines de réponse) et **P2c** (médias).
+
+
 ## 6 septembre 2026 (15h30, session Apex Chat) — PR #3671 débloquée : c'était un conflit, pas une revue
 
 - **Correction d'une affirmation fausse que j'ai faite deux fois** : la PR #3671 n'attendait **aucune

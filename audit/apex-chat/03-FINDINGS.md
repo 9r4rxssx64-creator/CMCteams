@@ -117,10 +117,10 @@ mais le panneau admin et les données déjà en cache s'ouvrent.
 
 ---
 
-## [P2] Le jeton de session circule dans l'URL du WebSocket
+## [P2] Le jeton de session circule dans l'URL du WebSocket — ✅ CORRIGÉ v1.1.286
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/api-worker.js:148`
-- **Statut** : ✅ VÉRIFIÉ (lecture confirmée)
+- **Statut** : ✅ VÉRIFIÉ (lecture confirmée) → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.286)
 
 ```js
 token = new URL(request.url).searchParams.get('token');
@@ -130,6 +130,52 @@ Contournement légitime (le navigateur ne pose pas d'en-tête sur un upgrade Web
 jeton en query string se retrouve dans les journaux serveur, les proxys et les référents.
 
 **Correctif** : jeton d'usage unique et court, échangé contre la session à l'ouverture du socket.
+
+### ✅ Correctif appliqué — v1.1.286 (2026-09-06)
+
+**Serveur** (`workers/api-worker.js`)
+- Nouvelle route `POST /api/auth/ws-ticket` : échange le jeton de session (en-tête `Authorization`,
+  qui ne voyage jamais dans une URL) contre un **ticket** signé `{typ:'wstkt', jti, exp: +60 s}`.
+- `getAuthUser` accepte `?ticket=` et **consomme le `jti`** dans `ws_tickets` (`INSERT OR IGNORE`
+  sur une clé primaire → la consommation est **atomique**, un rejeu insère 0 ligne et est refusé).
+- Un ticket **ne vaut jamais session** : rejeté en `Authorization: Bearer` comme en `?token=`.
+- Base indisponible → **fail-closed** (un ticket non consommable ne peut pas valoir session).
+
+**Client** (`index.html`)
+- `K._wsTicket()` demande un ticket, `_openWs` connecte en `?ticket=`.
+- `?token=` conservé **une version** en repli explicite (une app encore en cache doit continuer à
+  se connecter — règle « jamais casser la connexion »). À retirer en v1.1.287.
+
+**Preuve** — `tests/unit/ws-ticket-usage-unique.test.js`, 6 tests sur le vrai worker :
+ticket refusé sans session · ticket valide ouvre le chemin WS · **le même ticket une 2ᵉ fois est
+refusé** · un ticket ne vaut pas session (Bearer et `?token=`) · repli `?token=` intact ·
+le client demande bien un ticket.
+**Discriminant prouvé par sabotage** : usage unique retiré → 1 échec ; garde « ticket ≠ session »
+retirée → 1 échec ; restauré → 6/6. Suite complète **1104/1104**, navigateur réel **5/5**, 0 exception JS.
+
+**Reste** (même classe, traité séparément) : les URL de médias (`K._mediaSrc`) portent encore
+`?token=` — voir le finding P2c ci-dessous.
+
+---
+
+## [P2c] Le jeton de session circule aussi dans les URL de médias
+
+- **Axe** : Sécurité · **Fichier** : `messaging-app/index.html` (`K._mediaSrc`)
+- **Statut** : ✅ VÉRIFIÉ (lecture confirmée) — **non corrigé**
+
+```js
+return full + (full.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(K.token || '');
+```
+
+Même défaut que le P2a, sur un autre chemin : le jeton de session part dans l'attribut `src` de
+chaque image/vidéo. Il entre donc dans le DOM, l'historique du navigateur et les journaux du
+serveur de médias.
+
+**Pourquoi ce n'est pas livré dans le même lot** : un média est lu **plusieurs fois** (aperçu,
+plein écran, re-rendu), donc un ticket à usage unique ne convient pas tel quel — il faut un
+ticket court **réutilisable** dans sa fenêtre, plus un rafraîchissement côté client. Ça touche
+tout le rendu des médias : le livrer à l'aveugle dans le même commit que le WebSocket risquait de
+casser l'affichage des photos. À traiter comme une étape vérifiée à part.
 
 ---
 
