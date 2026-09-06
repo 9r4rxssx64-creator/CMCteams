@@ -87,10 +87,20 @@ prévoir le chemin de secours (Face ID déjà présent) **avant** de fermer la p
 
 ---
 
-## [P1] Session admin locale obtenue en tapant le nom
+## [P1] Session admin locale obtenue en tapant le nom — ✅ CORRIGÉ v1.1.285 (05/09)
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/index.html:7430`
-- **Statut** : 🟡 DÉDUIT (lecture du code, non rejoué)
+- **Statut** : ✅ VÉRIFIÉ — corrigé v1.1.285, garde de non-régression câblée (`tests/unit/no-client-side-admin-by-name.test.js`), 1086/1086 tests verts.
+
+> **Correctif appliqué (v1.1.285)** : l'admin est décidé UNIQUEMENT côté serveur
+> (`user.is_admin` renvoyé par le Worker + JWT). Les 3 vecteurs client par le nom
+> sont supprimés : (1) repli hors-ligne = simple utilisateur (`is_admin:false`,
+> plus de `kdmc_admin`) ; (2) plus de `K.user.is_admin=true` dérivé du nom dans
+> `K.login`/restauration → on lit `user.is_admin` du serveur ; (3) **le pire** :
+> le bypass en ligne fabriquait un jeton `'local-admin-'` avec `is_admin:true`
+> MÊME sur refus serveur (401 `admin_mfa_required`) → désormais session simple
+> utilisateur sur refus (pas de lock-out ; l'admin re-vient via le SSO Face ID).
+> Anti-lock-out préservé côté serveur (`X-Apex-Admin-Token`). Cf. leçon #216.
 
 Si le worker est injoignable, le client crée un compte local :
 
