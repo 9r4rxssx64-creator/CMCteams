@@ -30,6 +30,98 @@ la liste `WORKERS` est bien relue par l'étape CI (`apex-secrets-proxy kdmc-ais 
 apex-auth-worker`). Doublon de leçon #216 corrigé (l'une passe en #217).
 
 
+## 5 septembre 2026 — Lingua : « j'ai pourtant un compte » réparé pour de vrai
+
+**Kevin, capture à l'appui** : prénom + code sur `kdmc-site.pages.dev` → « Aucune
+sauvegarde pour ce prénom + code 🤔 ». Sa phrase : *« j'ai pourtant un compte »*.
+Il avait raison : le compte existait, l'application mentait.
+
+### Cause mesurée (lue dans le code, pas supposée)
+`enterWithCredentials` (`lingua/app.js`) renvoyait **le même résultat** dans deux
+situations opposées : (a) le serveur a répondu « rien trouvé », (b) le serveur
+**n'a pas répondu du tout**. La progression en ligne passe par `/__lingua/load`
+(worker **kdmc-router**), joignable **uniquement** via `lingua.kd-mc.com` — domaine
+indisponible. Donc `fetch` échouait, le `.catch` retombait dans le cas « rien
+trouvé », et l'écran annonçait une perte de compte là où il n'y avait qu'un
+serveur injoignable. **Mensonge d'interface** — exactement ce qu'interdit la règle
+« toujours détailler les erreurs, cause exacte ».
+
+### Le test existait depuis le 3.09 — le correctif, non
+`tests/verify-lingua-connexion-honnete.mjs` documentait déjà le diagnostic, mais
+`app.js` n'avait **jamais** été corrigé : ni `injoignable:true`, ni `localNames`.
+Le test n'avait donc jamais pu passer. Écrire le test ne répare rien.
+
+### Corrigé
+Trois cas désormais **distincts** : serveur injoignable → *« ne répond pas — ta
+progression n'est pas perdue »* · serveur OK mais vide → *« aucune sauvegarde »*
++ les prénoms réellement présents sur l'appareil (cas « je me suis trompé de
+prénom ») · sauvegarde trouvée → on entre.
+
+### Preuve
+Vrai navigateur, serveur simulé : **8 OK / 0 FAIL**. **Discriminant prouvé** :
+correctif retiré → **3 FAIL**, et le test reproduit mot pour mot le message que
+Kevin a vu. Restauré → 8/8.
+
+### Deuxième mensonge du même type, trouvé et corrigé (même jour)
+Le routeur renvoie `{ok:false, reason:'kv_absent'}` **en 200** quand son stockage
+est indisponible (repli volontaire). Le client repliait ça sur « aucune
+sauvegarde » : le serveur ne peut pas lire, et on annonce à l'utilisateur qu'il
+n'a pas de compte. Corrigé, et le cas est désormais couvert par le test.
+**10 OK / 0 FAIL.**
+
+### ⚠️ Correction d'une supposition (mesurée, pas devinée)
+Le commentaire du test — et ma première version de ce mémo — affirmaient que
+`lingua.kd-mc.com` était « indisponible ». **Jamais vérifié.** Mesuré le 5.09 :
+- le DNS **résout** (`lingua.kd-mc.com` → même IP que `kd-mc.com`) ;
+- la route `custom_domain` est bien déclarée dans `services/kdmc-router/wrangler.toml` ;
+- le CORS de `/__lingua/*` est ouvert à **toutes** les origines (donc venir de
+  `pages.dev` n'est pas le problème).
+
+Je ne peux pas atteindre le domaine depuis cette session (politique réseau), mais
+c'est **ma** limite — pas une panne prouvée. Le commentaire du test a été corrigé.
+
+### Piste du compte de Kevin → confirmée, et c'est devenu le correctif suivant
+La clé du compte en ligne était `sha256(norm(saisie) + ":" + code)` (`cloudKeyFor`) :
+la casse et les accents étaient normalisés, **mais pas les mots**. `kevin` et
+`kevin desarzens` produisaient donc **deux clés différentes** — sa sauvegarde
+pouvait exister sous un autre libellé. Traité ci-dessous.
+
+---
+
+## 5 septembre 2026 (suite) — Lingua : la connexion demande PRÉNOM + NOM
+
+**Kevin** : *« Ajoute nom et prénom pour la connexion, si 2 personnes ont le même
+prénom ça va poser problème. »* Il a raison, et c'est déjà une **règle absolue du
+dépôt** (« LOGIN TOUJOURS PRÉNOM + NOM ») que Lingua était seule à ne pas suivre :
+deux « Kevin » avec le même code tombaient sur **le même compte**.
+
+### Ce qui change
+- L'écran de connexion et celui de création ont **deux champs** (prénom, nom).
+  Un seul mot est refusé, avec un message clair : *« Entre ton prénom ET ton nom »*.
+- La clé du compte en ligne devient `sha256(prénom+nom triés : code)`. Les mots
+  sont **triés** → « Kevin Desarzens » et « Desarzens Kevin » ouvrent le **même**
+  compte : on n'impose pas l'ordre à l'utilisateur.
+
+### Jamais régresser : les anciens comptes restent retrouvables
+Tous les comptes créés **avant** cette règle sont enregistrés sous l'ancienne clé
+(souvent le prénom seul). Ils seraient devenus introuvables du jour au lendemain.
+La connexion interroge donc les clés **dans l'ordre** — nouvelle, puis anciennes —
+et s'arrête à la première sauvegarde trouvée. Une fois retrouvée, elle est
+**réécrite sous la clé prénom + nom** : la connexion suivante tombe directement
+dessus. « Serveur injoignable » n'est retenu que si **aucune** clé n'a pu être lue.
+
+### Un bug trouvé par le test lui-même
+Le nom contenu dans la sauvegarde restaurée (souvent un prénom seul, d'avant la
+règle) **écrasait** le nom complet qu'on venait de saisir : le compte repartait
+donc sous l'ancienne clé et **ne migrait jamais**. Corrigé à la racine dans
+`_applySnapshot` — on ne remplace plus jamais un prénom+nom par un mot unique.
+
+### Preuve
+`tests/verify-lingua-connexion-honnete.mjs`, vrai navigateur, serveur simulé :
+**20 OK / 0 FAIL** (6 cas, dont « ancienne clé retrouvée + migrée » et « prénom
+seul refusé avant tout appel réseau »). **Discriminant prouvé** : les trois
+comportements retirés → **7 FAIL**, et le test reproduit la faille exacte
+(« Bienvenue kevin ! » alors que le nom manque). Restauré → 20/20.
 ## 5 septembre 2026 (nuit) — le journal ne bloque plus les fusions automatiques (pilote « union »)
 
 **Ce qui s'est passé** : Kevin a prévenu « d'autres branches travaillent sur le domaine ». Vérifié sur
