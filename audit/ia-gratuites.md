@@ -1,14 +1,14 @@
 # 🔎 Les IA gratuites — vérifiées pour de vrai
 
 > Écrit automatiquement par la CI (elle a le réseau ouvert, pas moi).
-> Dernier passage : **2026-09-06 16:37 UTC**. Rien n'est recopié de mémoire.
+> Dernier passage : **2026-09-06 20:20 UTC**. Rien n'est recopié de mémoire.
 
 ## 🎨 Qui transforme ta photo aujourd'hui
 
 | Ce qu'on teste | Résultat | Moteur qui a servi | Gratuit ? |
 |---|---|---|---|
-| figurine (garde ton visage) | ✅ image reçue (1051 Ko) | replicate-edit:flux-kontext-pro | 💰 **payant** |
-| poses de danse | ❌ 502 — Je n'ai pas pu fabriquer les poses à partir de ta photo. Je préfère te le dire plutôt que de te rendre quelqu'un d'autre. | — | — |
+| figurine (garde ton visage) | ✅ image reçue (1120 Ko) | replicate-edit:flux-kontext-pro | 💰 **payant** |
+| poses de danse | ❌ 502 — Je n'ai pas pu fabriquer les poses à partir de ta photo. Je préfère te le dire plutôt que de te rendre quelqu'un d'autre. — `edit#1:model_429 | edit-rattrapage:model_429 | gemini-3.1-flash-image-preview:429 Your prepayment credits are depleted. Please go to AI Studio | gemini-3-pro-image-preview:429 Your prepayment credits are depleted. Please` | — | — |
 
 > 🔴 **Quelque chose ne marche pas** — le détail est dans le tableau, avec la cause exacte.
 
@@ -33,14 +33,14 @@
 |---|---|---|
 | nvidia | [build.nvidia.com/](https://build.nvidia.com/) | ✅ répond |
 | cerebras | [cloud.cerebras.ai/](https://cloud.cerebras.ai/) | ✅ répond |
+| huggingface | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | ✅ répond |
 | glm | [open.bigmodel.cn/](https://open.bigmodel.cn/) | ✅ répond |
 | perplexity (déjà à toi) | [www.perplexity.ai/settings/api](https://www.perplexity.ai/settings/api) | 🟡 refuse les robots (le lien marche pour toi) |
-| huggingface | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) | ✅ répond |
-| scaleway | [console.scaleway.com/](https://console.scaleway.com/) | ✅ répond |
 | xai (déjà à toi) | [console.x.ai/](https://console.x.ai/) | ✅ répond |
 | sambanova | [cloud.sambanova.ai/](https://cloud.sambanova.ai/) | ✅ répond |
-| qwen | [modelstudio.console.alibabacloud.com/](https://modelstudio.console.alibabacloud.com/) | ✅ répond |
+| scaleway | [console.scaleway.com/](https://console.scaleway.com/) | ✅ répond |
 | nebius | [studio.nebius.com/](https://studio.nebius.com/) | ✅ répond |
+| qwen | [modelstudio.console.alibabacloud.com/](https://modelstudio.console.alibabacloud.com/) | ✅ répond |
 
 > ✅ Tous les liens répondent — aucun ne t'enverra dans le mur.
 
