@@ -1,5 +1,70 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
+
+- `main` fusionné dans la branche (4 conflits de journaux résolus en gardant les deux côtés ; les deux
+  leçons « 216 » de main deviennent 216/217, les miennes 218 (GitLab) et 219 (Vercel)).
+- Le job `tests` GitLab (seul endroit où `npm run test:ci` tourne à chaque push) a rougi sur
+  `test:ci-no-stampede` : `audit-live.yml`, arrivé de main, avait un groupe de concurrence fixe
+  **avec** annulation → un push d'une branche effaçait le balayage d'une autre. Corrigé :
+  `cancel-in-progress: false` (file d'attente sur la cible partagée, le motif que la garde autorise).
+  Gate 5/5 en local. Cette garde ne tourne pas sur GitHub à chaque push : sans le miroir GitLab, ce
+  rouge serait resté invisible.
+- Job `tests` GitLab, 2ᵉ rouge : `test:all` lance Chromium et l'image `node:20` n'en a pas
+  (« Executable doesn't exist … headless_shell »). Job passé sur `mcr.microsoft.com/playwright:v1.56.0-noble`
+  (même version que `devDependencies`), sans téléchargement à chaque run. 3ᵉ rouge : sur cette image
+  `npm install` plante (`edgesOut`, même bug que sur GitHub) → `--legacy-peer-deps`.
+- Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
+  profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
+  il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
+  `tools/smoke/audit-live.mjs` : `/__arbre/status` sert les fiches (119, D1) + un hash bidon est refusé
+  (`code_invalide`) + opt-in `ARBRE_CODE_SHA256` (empreinte, secret CI, jamais le code) pour entrer et
+  compter les cartes ; absent → dit que les cartes ne sont pas comptées (prouvé hors ligne par
+  `verify-domaine`). Harnais local 6 scénarios discriminant. Lingua ❌ dans le même run : session Lingua.
+- Vercel : la correction de domaine-audit (`tools/agent/vercel.json`, plus aucune prévisualisation
+  hors `main`) est maintenant dans ma branche → le contrôle rouge qui bloquait la PR #3674 n'a plus
+  de raison de revenir.
+
+---
+
+## 6 septembre 2026 (matin, session arbre) — Arbre v3.18 « Munegu » : le thème monégasque accentué, dans l'app et sur le poster
+
+**Demande Kevin** : *« Accentue le thème spécialité monégasque, Monaco. Va plus loin. »* puis *« Continu »*.
+
+**Fait** (`arbre/index.html` v3.18 + `sw.js`, branche `claude/sarzance-family-tree-3jxi7i`) :
+- **Vocabulaire vérifié avant de l'écrire** (pages du Comité National des Traditions Monégasques et chroniques
+  « A lenga munegasca » via recherche web ; les sites eux-mêmes sont bloqués depuis l'agent) : *Munegu* = Monaco,
+  *àrburu* = arbre, *famiya* = famille. Devise : *Deo Juvante*. Règnes des Princes (Honoré V 1819 → Albert II 2005-…)
+  aux dates officielles.
+- **App** : ruban **fuselé de gueules et d'argent** (les losanges de Monaco) sous l'en-tête ; badge **◆** sur chaque
+  personne née en Principauté (liste + tri « ◆ Monaco (N) » dans Personnes) ; dans la fiche, lignes **🇲🇨 Munegu**
+  (né/décédé en Principauté) et **👑 Règne** (« né sous Albert Ier (1889-1922) ») ; dans la vue Arbre, chaque
+  « Gén. N » porte le règne du Prince (année médiane des naissances de la rangée) ; dans Réglages, section
+  **🇲🇨 Munegu** (nés / % / décédés à Monaco, naissances par règne, lieux, 3 liens : registres de la Mairie ≥ 1900,
+  Journal de Monaco, Traditions monégasques). Lieux reconnus : Monaco, Monte-Carlo, La Condamine, Fontvieille,
+  Monaco-Ville, Moneghetti, Larvotto, Munegu, Principauté.
+- **Poster** : **cadre fuselé rouge/blanc** sur tout le pourtour + filet doré ; sous-titre *« Àrburu de famiya ·
+  Principauté de Monaco »* (seulement si quelqu'un est né à Monaco) ; losange ◆ sur les cartes ET les médaillons des
+  nés en Principauté, entrée de légende « né(e) en Principauté de Monaco (N) » ; sous chaque « Gén. N » : « sous
+  Rainier III (1949-2005) » ; pied : *Munegu · Deo Juvante*.
+- **Vérifié en VRAI navigateur** (famille synthétique, 2 racines nées « Monaco » / « Monte-Carlo ») :
+  `verify-poster.mjs` **154/154** (16 combos × cadre + devise, N badges = N nés à Monaco, sous-titre présent
+  seulement si N>0, 1 à 5 règnes par poster ; PDF A1 + mosaïques), `verify-domaine.mjs` tout vert, captures iPhone
+  (arbre, liste, fiche, Réglages, poster A1) relues à l'œil ; gates `arbre-poster` (+8 contrôles Munegu),
+  `arbre-prive`, `no-pin-leak`, `no-conflicts`, `pipeline-sessions` verts.
+- **Bug attrapé par la capture** : `irow` est locale à la fiche → passée en paramètre (`mcFicheRows(p,irow)`), sinon
+  la fiche plantait (« irow is not defined ») — visible seulement en ouvrant une fiche en vrai.
+
+**Trouvé en chemin — pourquoi la PR #3674 ne fusionnait plus** : le robot répond « merge auto refusé (protection) »
+depuis que le contrôle **Vercel** est ROUGE sur chaque commit (« Resource is limited — more than 100 deployments
+per day »). Toutes les sessions poussent, chaque push déclenche un déploiement Vercel inutile (Vercel ne sert
+rien de ce dépôt en production, prod = GitHub Pages / Cloudflare), le quota gratuit saute, et le contrôle rouge
+bloque **toutes** les PR. Correctif : `vercel.json` → `ignoreCommand` ignore aussi `arbre/**`, `tools/arbre/**`,
+`services/**`, `tests/**`, `pipeline/**`, `audit/**`, `.gitlab-ci.yml`, `tools/gitlab/**`, `tools/pipeline/**`,
+et `vercel.json` lui-même (un push qui ne touche que ça = Vercel « skipped » = neutre). Leçon #219.
+
+---
+
 ## 6 septembre 2026 — « Concertation d'IA gratuites pour analyser les questions, va plus loin »
 
 **Demande Kevin** : *« Fais une concertation d'IA gratuites pour analyser les questions par
@@ -271,7 +336,7 @@ annotations non — c'est la règle écrite au fait n°16) :
 `cmcteams-departs`. Ma session inscrite `domaine-audit`. Deux branches Lingua font le même travail
 (m030). Messages déposés : m026 (toutes : les 4 canaux + 5 crons), m027 (apex-chat : 1 cron `*/5`
 rendrait 3 places), m028 (domain-kdmc : uptime en ligne, monaco-sync mort, rag), m029
-(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #216, SESSIONS-ET-BRANCHES
+(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #217, SESSIONS-ET-BRANCHES
 « état réel au 5.09 ».
 
 **Reste dit franchement** : le passage uptime toutes les 2 h dépend d'Outlook, à vérifier au prochain
@@ -309,9 +374,21 @@ comme tes autres branches. Tout sur GitHub, comme avant, avec tous les noms, dat
   no-conflicts, docs-frais, pipeline-sessions, patrimoine-prive 8/8, no-pin-leak — **tous verts**.
 - Leçon **#215** (copie manuelle de données = vérifier par somme de contrôle par morceau).
 
+**Suite (17h10-17h40) — « Pipeline toutes tes branches. Arrête de demander. »** : conflits de fusion avec `main`
+résolus en gardant les deux côtés (leçon renumérotée #215, message m027) → **PR #3670 fusionnée par le robot**
+(`main` = 899e09b9) → **routeur déployé avec la liaison D1** (run 33980608977 **vert**, 1 min 03) : le domaine sert
+l'arbre v3.14. Miroir GitLab : branche poussée, **GitLab main réaligné** sur GitHub main (e9e52b1b, sans force, les
+3 fichiers propres à GitLab conservés, 0 job déclenché). **Piège mesuré** : le premier push d'une branche sur GitLab
+fait valoir « oui » à TOUTES les règles `changes:` → publier-site, recherches-patrimoine, liens-reels… sont partis
+(~7 min brûlées, pipeline 2823049053), et `tests` échouait de toute façon (`npm ci` sans `package-lock.json`).
+Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, bouton manuel pour
+`tests` sur une branche nouvelle, repli `npm install`) — leçon **#218**. **Prouvé au push suivant** (pipeline 2823055271) : seul
+`conformite` part (22 s), 0 job à fichier-signal, 0 publication. **Sondé en vrai depuis GitLab** (job `sonder-url`, pipeline 2823067545, 17h40) :
+`https://arbre.kd-mc.com/__arbre/status` → `{ok:true, code:true, seed:true, count:119, seedVersion:63, source:"d1"}` —
+le domaine sert bien l'arbre v3.14 depuis la base D1. (Le `HEAD` de la sonde répond 404 : normal, la route n'accepte que `GET`.)
+
 **Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été
-publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO). PR à ouvrir/fusionner (API GitHub bloquée ici →
-lien compare + message pipeline m027).
+publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO).
 
 **Non rapatrié (volontaire)** : `ETAT_RECONSTRUCTION.md`, `exposition-demande.txt`, `publier-demande.txt` (journal
 d'infra GitLab dépassé + fichiers-signaux CI GitLab, sans objet sur GitHub).

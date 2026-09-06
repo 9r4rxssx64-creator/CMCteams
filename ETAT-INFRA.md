@@ -482,6 +482,14 @@ caractères, 8/8 identiques au fichier source ; 6 morceaux corrigés avant assem
 42/42 (mock D1, précédence KV, D1 en panne), navigateur `verify-domaine.mjs` 23/23. Reste pour Kevin : **changer le
 code famille** (l'ancienne empreinte est dans l'historique public).
 
+**Déployé (5.09, 17h19)** : PR #3670 fusionnée par le robot (`main` 899e09b9) → `deploy-kdmc-router.yml` run
+33980608977 **vert** (1 min 03) : le routeur en production porte la liaison `ARBRE_DB`. Miroir GitLab : branche
+et `main` alignés (e9e52b1b, sans force). **Piège GitLab mesuré le même jour** : le premier push d'une branche fait
+valoir « oui » à toutes les règles `changes:` (publier-site, recherches-patrimoine, liens-reels sont partis pour un
+simple miroir, ~7 min) — corrigé dans `.gitlab-ci.yml` (`*pas-sur-nouvelle-branche`, `compare_to: main`, repli
+`npm install` car le dépôt n'a pas de `package-lock.json`). Leçon #218. **Vérifié en production** (17h40, sonde GitLab `sonder-url`) :
+`GET https://arbre.kd-mc.com/__arbre/status` → `count:119, seedVersion:63, source:"d1"`.
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
