@@ -3,6 +3,14 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+
+### 5 septembre 2026 — garde Vercel (mails d'échec)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/vercel-config.test.mjs` | Empêche les deux erreurs qui t'envoyaient un mail « Preview deployment failed » à chaque push (clé interdite dans `vercel.json`, `ignoreCommand` > 256 caractères) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/vercel-config.test.mjs) |
+| `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
+
 ## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
 
 | Fichier | À quoi ça sert | Liens |

@@ -7,8 +7,12 @@ J'avais ajouté une clé `"_note"` dans `tools/agent/vercel.json` pour expliquer
 Vercel refuse toute clé inconnue et compte ça comme une erreur de build — donc un mail à chaque
 push, sur toutes les branches. Cause lue mot pour mot côté Vercel (`errorMessage` du déploiement,
 alors que les journaux de build étaient vides : l'échec est **avant** le build) :
-`should NOT have additional property "_note"`. Clé retirée, l'explication vit désormais dans le
-commit et dans la leçon #218.
+`should NOT have additional property "_note"`. Clé retirée — et le push suivant a échoué sur une
+**deuxième** contrainte du même schéma : `ignoreCommand` ne peut pas dépasser **256 caractères** (le
+mien en faisait 406, à cause des messages en clair). Version finale : **161 caractères**, testée dans un
+vrai dépôt git sur les 6 cas (branche/main × historique absent / dossier inchangé / dossier modifié).
+L'explication vit maintenant dans `tools/agent/README-vercel.md`, et une garde CI
+(`npm run test:vercel-config`, prouvée par 3 sabotages) empêche que ça revienne.
 
 **Les « 6 workers en panne »** : ils ne l'étaient pas. Les 6 étaient des adresses `*.workers.dev`,
 toutes en 404 **après 10-21 ms**, pendant que les 26 adresses `kd-mc.com` répondaient normalement —
