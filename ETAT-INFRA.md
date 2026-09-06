@@ -691,6 +691,18 @@ Qui tient les 5 : **apex-chat-api : 4** (`0 */1`, `*/5`, `0 9`, `0 3` — `messa
 - Une PR « BLOCKED » peut l'être **par `main`** : la fusion #3647 avait cassé `apex-plugins-catalog.ts` (7 × TS1117) et bloquait *toutes* les PR suivantes. Reproduire `npx tsc --noEmit` sur `main` en local avant d'accuser sa branche ; réparer main **dans la PR**.
 - Après fusion, le bot **dispatche lui-même** chaque `deploy-*.yml` dont un `services/<x>` a changé (vu : `Deploy KDMC Uptime #3` sur main) — la fusion par `GITHUB_TOKEN` ne déclenchant pas les `push`.
 
+### ⚠️ MESURE CONTRAIRE le 6.09 : l'API GitHub RÉPOND depuis certaines sessions — remesurez chez vous
+
+Le tableau ci-dessus dit « API GitHub : ❌ 403 » (mesuré le 5.09 depuis trois sessions). **Depuis la
+session « cmcteams-pdf » le 6.09, elle RÉPOND** : `get_me` renvoie le compte `9r4rxssx64-creator`,
+et les outils MCP GitHub (créer une PR, la fusionner, lire un run) sont disponibles. Ce n'est donc
+pas une propriété du dépôt ni du compte : **c'est une propriété de VOTRE session**.
+
+Conséquence pratique, et elle compte : quand l'API répond, **on ne laisse pas une PR ouverte en
+attendant le robot** (refusé par la protection de branche, m019 point 4) — on la crée et on la
+fusionne soi-même par l'API, zéro clic pour Kevin. Avant d'écrire « je ne peux pas ouvrir de PR »,
+faites l'appel : le fait n°16 dit lui-même « refais-les chez toi, ne généralise pas ».
+
 ### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
 
 Le registre disait `cmcteams → claude/cmcteams-clicking-issue-rmli6m` ; le travail CMCteams réel est sur `claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE), inscrit ce jour comme `cmcteams-departs`. Deux branches Lingua (`lingua-connexion-honnete`, `lingua-prenom-nom`) font **le même travail**, dont une avec `node_modules` commité (m030). Ma session est inscrite comme `domaine-audit`. Avant de commencer : `git fetch --prune` + `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/` — les branches du jour, pas celles du registre.

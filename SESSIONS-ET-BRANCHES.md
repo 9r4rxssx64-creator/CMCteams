@@ -5,19 +5,24 @@
 > GitLab maintenant jusqu'à nouvel ordre »*.
 > À lire au démarrage, avec `ETAT-INFRA.md` (les 7 faits).
 
-## ⚡ La cause unique — et la seule action qui débloque TOUT
+## ⚡ PÉRIMÉ — ne redemandez PLUS le clic du connecteur GitHub (mis à jour le 6.09)
 
-Plusieurs sessions rapportent **exactement la même erreur** :
+> Cette section demandait à Kevin de retaper l'autorisation du connecteur GitHub. **C'est faux
+> depuis le 2.09 et inutile depuis le 4.09** — on le laisse écrit ici pour que personne ne le
+> ressorte des archives.
 
-> *« Authentication failed while accessing the repository "9r4rxssx64-creator/CMCteams". …
-> verify the integration is **authorized** for it. »*
+Ce que l'erreur *« Authentication failed … verify the integration is authorized »* voulait
+vraiment dire : le **compte GitHub était SUSPENDU** (2.09), pas l'autorisation de l'application.
+Le tap du connecteur ne débloquait rien (message m005). **Le support a levé la restriction le
+4.09 à 16h34 UTC** (message m016) : `git fetch`/`push` marchent depuis un conteneur avec les
+identifiants du harnais, **rien à coller**, et les Actions tournent de nouveau.
 
-Ce n'est pas « le dépôt a disparu » : c'est **l'autorisation de l'application Claude sur le dépôt**
-qui est tombée. Un seul geste la rétablit, pour **toutes** les sessions à la fois :
+**Aujourd'hui : on publie par GitHub.** `git push -u origin claude/…` → PR → **fusion par l'API**
+(le bot auto-merge est refusé par la protection de branche, message m019 point 4 — essayez la
+fusion par l'API depuis votre session, ne demandez pas un clic à Kevin). GitLab ne sert plus
+qu'à une remise à niveau occasionnelle (`ETAT-INFRA.md` fait n°13).
 
-**https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1**
-
-**Aucune session ne doit le redemander à Kevin une nouvelle fois.** C'est écrit ici, une fois.
+**Aucune session ne doit redemander ce clic à Kevin.** C'est écrit ici, une fois.
 
 ## 🔗 Le pipeline entre sessions — lis-le avant de commencer
 
@@ -56,6 +61,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Reverse-engineering / consolidation | `claude/reverse-engineer-app-consolidation-t0y4u5` | 🟢 travail prêt |
 | Audit du domaine + surveillance | `claude/surveillance-domaine-26-adresses` | ✅ fusionnée dans main le 5.09 (PR #3652) — suite en cours sur la même branche |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
+| CMCteams — fidélité au PDF (planning/équipes/départs) | `claude/verify-cmcteams-light-data-rzlvau` | 🟢 septembre 2026 : 248/248 personnes et 7 440/7 440 cellules identiques au PDF, des deux côtés (6.09) |
 
 ## 📅 État RÉEL mesuré le 5.09 (16h40) — `git fetch --prune` puis `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/`
 
@@ -67,6 +73,7 @@ Le registre ci-dessus date du 2.09 : les branches ont bougé. **367 branches `cl
 | `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
 | `claude/lingua-connexion-honnete` | +3 | connexion PRÉNOM + NOM sans perdre les anciens comptes | `lingua/app.js` |
 | `claude/lingua-prenom-nom` | +1 | **le même travail** que la précédente (+ un lien `node_modules` commité par erreur) — message m030 | `lingua/app.js` |
+| `claude/verify-cmcteams-light-data-rzlvau` | +2 | le PDF relu **sans le parser de l'app** : 3 défauts que « app == light » ne pouvait pas voir (v9.894 / light v1.40) — message m037/m038 | parser d'import d'`index.html`, `tools/shared/planning-seed.js`, `tools/departs/boards-gen.js`, `tests/verify-pdf-vs-surfaces.mjs` |
 
 Avant de commencer une session : **regarde les branches du jour, pas celles du tableau** — et inscris la tienne (`node tools/pipeline/pipeline.mjs enregistrer …`), sinon les autres ne te voient pas.
 

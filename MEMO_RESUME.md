@@ -53,6 +53,27 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 
 **Leçon** : #220 dans `LESSONS.md`.
 
+**Pipeline + relecture des docs (même jour, sur demande de Kevin)** :
+- Session inscrite au registre commun sous **`cmcteams-pdf`** (elle n'y était pas) + ajoutée à
+  `SESSIONS-ET-BRANCHES.md`. Garde `test:pipeline-sessions` : 8 OK / 0 FAIL.
+- **3 messages déposés** : m037 → `cmcteams-departs` (je régénère `boards-gen.js` et passe la page
+  Départs en v1.40 : fusionnez `main` avant de repousser), m038 → `cmcteams` (les 4 endroits touchés
+  dans le parser d'`index.html` + le diff exact des données), m039 → **toutes** (un test « A == B »
+  ne voit rien quand A et B se trompent pareil ; et les listes de mois figées).
+- **`main` fusionné** dans la branche (30 commits de retard) : 3 conflits résolus (APP_VER,
+  `sw.js`, `test:ci`), version **v9.894**, les 4 nouveaux tests IA de `main` conservés.
+- **Leçon renumérotée #217 → #220** : `main` avait déjà un #217 (message m015 : lire le dernier
+  numéro sur la lignée PUBLIÉE avant d'écrire). ⚠️ Constat au passage : `LESSONS.md` porte
+  **20 numéros en double** (#79, #80, #98, #106, #111, #139-142, #150, #153, #173-175, #197, #213,
+  #216-219), séquelle de la réunion des deux lignées. Je ne les renumérote PAS : des dizaines de
+  renvois (« leçon #142 ») pointent dessus, y compris dans `CLAUDE.md`.
+- **`SESSIONS-ET-BRANCHES.md` corrigé** : sa section « la seule action qui débloque TOUT » demandait
+  encore à Kevin de retaper l'autorisation du connecteur GitHub — **périmé depuis le 2.09, inutile
+  depuis le 4.09** (m005/m016). Réécrite pour que personne ne le ressorte.
+- **`ETAT-INFRA.md` fait n°16 complété** : il annonce « API GitHub = 403 depuis une session » ;
+  **depuis celle-ci elle RÉPOND** (`get_me` OK, PR et fusion par l'API possibles). C'est une
+  propriété de la session, pas du dépôt — donc PR créée et fusionnée sans clic Kevin.
+
 
 ## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
 
