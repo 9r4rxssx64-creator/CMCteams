@@ -61,7 +61,27 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch all branches
-        run: git fetch origin --prune
+        run: |
+          # CAUSE RACINE du nettoyage qui ne nettoyait rien (trouvée 2026-09-06) :
+          # `actions/checkout` pose un refspec MONO-BRANCHE
+          # (+refs/heads/main:refs/remotes/origin/main). Un simple
+          # `git fetch origin --prune` ne ramène donc QUE main : la ligne
+          # suivante, `git branch -r --merged origin/main | grep origin/claude/`,
+          # ne voit AUCUNE branche, le compteur vaut 0, et le job se termine en
+          # vert sans avoir rien supprimé. C'est pour ça que 370 branches
+          # claude/* s'étaient accumulées dont 240 déjà fusionnées.
+          # `fetch-depth: 0` ne corrige PAS ça : il donne l'historique complet
+          # de la branche cochée, pas les autres branches.
+          git remote set-branches origin '*'
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*'
+          TOTAL=$(git branch -r | grep -c 'origin/claude/' || echo 0)
+          echo "Branches claude/* réellement visibles après fetch : $TOTAL"
+          # Garde anti-« faux vert » : 0 branche visible = le fetch a échoué,
+          # ce n'est PAS « rien à nettoyer ». On échoue bruyamment.
+          if [ "$TOTAL" = "0" ]; then
+            echo "::error::0 branche claude/* visible — le fetch n'a pas ramené les branches distantes. Nettoyage abandonné (ne pas conclure « rien à faire »)."
+            exit 1
+          fi
 
       - name: Find merged claude/* branches (incl. squash-merged detection)
         id: find
@@ -151,7 +171,27 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch all branches
-        run: git fetch origin --prune
+        run: |
+          # CAUSE RACINE du nettoyage qui ne nettoyait rien (trouvée 2026-09-06) :
+          # `actions/checkout` pose un refspec MONO-BRANCHE
+          # (+refs/heads/main:refs/remotes/origin/main). Un simple
+          # `git fetch origin --prune` ne ramène donc QUE main : la ligne
+          # suivante, `git branch -r --merged origin/main | grep origin/claude/`,
+          # ne voit AUCUNE branche, le compteur vaut 0, et le job se termine en
+          # vert sans avoir rien supprimé. C'est pour ça que 370 branches
+          # claude/* s'étaient accumulées dont 240 déjà fusionnées.
+          # `fetch-depth: 0` ne corrige PAS ça : il donne l'historique complet
+          # de la branche cochée, pas les autres branches.
+          git remote set-branches origin '*'
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*'
+          TOTAL=$(git branch -r | grep -c 'origin/claude/' || echo 0)
+          echo "Branches claude/* réellement visibles après fetch : $TOTAL"
+          # Garde anti-« faux vert » : 0 branche visible = le fetch a échoué,
+          # ce n'est PAS « rien à nettoyer ». On échoue bruyamment.
+          if [ "$TOTAL" = "0" ]; then
+            echo "::error::0 branche claude/* visible — le fetch n'a pas ramené les branches distantes. Nettoyage abandonné (ne pas conclure « rien à faire »)."
+            exit 1
+          fi
 
       - name: Find stale claude/* branches (> 30 days)
         id: stale
