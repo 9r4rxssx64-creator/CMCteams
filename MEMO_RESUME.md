@@ -1,5 +1,26 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h55) — pipeline de TOUTES les branches et sessions
+
+- Mesuré sur les **370 branches `claude/*`** distantes : **240 sont des ancêtres de `main`**
+  (tout est dedans, suppression prouvée sans perte) · **40 ont un contenu équivalent** déjà livré
+  autrement · **109 portent des patchs inédits**, qui se regroupent en **49 travaux distincts**
+  (les 109 sont des instantanés successifs des mêmes jobs : `langs-2` → `langs-3` = +2 commits).
+- Union dédupliquée : **699 sujets de commit** jamais livrés à `main`, dont **149 de robot** →
+  **~550 commits de travail réel** qui n'existent que sur des branches.
+- **Correction de méthode assumée** : mon premier test comparait les *fichiers modifiés depuis le
+  fork* — faux (une branche peut avoir touché 1 889 fichiers déjà présents dans `main`). Le bon
+  test est `git cherry` (comparaison de **patchs**), qui reconnaît un travail livré autrement.
+  Le mauvais test annonçait 129 branches à risque ; il y en a **109**.
+- Registre écrit : **`PIPELINE_BRANCHES_SESSIONS.md`** — les 49 travaux datés avec leurs zones,
+  **et les SHA de chaque branche** pour que toute suppression reste restaurable
+  (`git branch <nom> <sha>`).
+- **Pas fusionné les 49** : poser du code de juin-août sur un `main` qui a bougé de milliers de
+  commits = régression garantie. Chaque travail demande une décision (encore utile ou dépassé ?).
+- **Pas supprimé les 40 « équivalents »** : preuve bonne mais moins absolue qu'un ancêtre de
+  `main` — sur une opération irréversible, version conservatrice.
+
+
 ## 6 septembre 2026 (16h40) — registre de mes erreurs + brouillon de réclamation Anthropic
 
 - Kevin demande le relevé de **toutes mes erreurs** et un mail à Anthropic pour un recrédit de
