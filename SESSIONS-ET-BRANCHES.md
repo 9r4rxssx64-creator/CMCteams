@@ -54,6 +54,21 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Crypto trading bot | `claude/crypto-trading-bot-irrfu6` | 🟢 travail prêt |
 | Free APIs | `claude/free-apis-analysis-c4sy5d` | 🟢 travail prêt |
 | Reverse-engineering / consolidation | `claude/reverse-engineer-app-consolidation-t0y4u5` | 🟢 travail prêt |
+| Audit du domaine + surveillance | `claude/surveillance-domaine-26-adresses` | ✅ fusionnée dans main le 5.09 (PR #3652) — suite en cours sur la même branche |
+| CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
+
+## 📅 État RÉEL mesuré le 5.09 (16h40) — `git fetch --prune` puis `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/`
+
+Le registre ci-dessus date du 2.09 : les branches ont bougé. **367 branches `claude/*`** sur origin, **12 touchées le 5.09**, dont **8 déjà fusionnées** dans `main` par le robot (capcut-mini-versions, fix-mois-ouverture, apex-chat-mfa-faceid, sarzance-family-tree, apex-chat-secu-numero-public, apex-ultra-review-crew, cuisine-6-recettes, fix-messages-photo — leur travail est en prod, sauf déploiement worker en échec, voir `ETAT-INFRA.md` fait n°16) et **4 encore devant main** :
+
+| Branche | Avance | Ce qu'elle fait | Territoire |
+|---|---|---|---|
+| `claude/surveillance-domaine-26-adresses` | +1 | déploiements uptime/rag qui disent la vérité (annotations), cron d'Outlook → uptime | `services/kdmc-uptime`, `services/kdmc-outlook` (6 lignes), 2 `deploy-*.yml` |
+| `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
+| `claude/lingua-connexion-honnete` | +3 | connexion PRÉNOM + NOM sans perdre les anciens comptes | `lingua/app.js` |
+| `claude/lingua-prenom-nom` | +1 | **le même travail** que la précédente (+ un lien `node_modules` commité par erreur) — message m030 | `lingua/app.js` |
+
+Avant de commencer une session : **regarde les branches du jour, pas celles du tableau** — et inscris la tienne (`node tools/pipeline/pipeline.mjs enregistrer …`), sinon les autres ne te voient pas.
 
 ## 🚦 Ce que chaque session fait, dans cet ordre
 

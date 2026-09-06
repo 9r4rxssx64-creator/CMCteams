@@ -34,7 +34,196 @@ per day »). Toutes les sessions poussent, chaque push déclenche un déploiemen
 rien de ce dépôt en production, prod = GitHub Pages / Cloudflare), le quota gratuit saute, et le contrôle rouge
 bloque **toutes** les PR. Correctif : `vercel.json` → `ignoreCommand` ignore aussi `arbre/**`, `tools/arbre/**`,
 `services/**`, `tests/**`, `pipeline/**`, `audit/**`, `.gitlab-ci.yml`, `tools/gitlab/**`, `tools/pipeline/**`,
-et `vercel.json` lui-même (un push qui ne touche que ça = Vercel « skipped » = neutre). Leçon #217.
+et `vercel.json` lui-même (un push qui ne touche que ça = Vercel « skipped » = neutre). Leçon #219.
+
+---
+
+## 5 septembre 2026 — Lingua : « j'ai pourtant un compte » réparé pour de vrai
+
+**Kevin, capture à l'appui** : prénom + code sur `kdmc-site.pages.dev` → « Aucune
+sauvegarde pour ce prénom + code 🤔 ». Sa phrase : *« j'ai pourtant un compte »*.
+Il avait raison : le compte existait, l'application mentait.
+
+### Cause mesurée (lue dans le code, pas supposée)
+`enterWithCredentials` (`lingua/app.js`) renvoyait **le même résultat** dans deux
+situations opposées : (a) le serveur a répondu « rien trouvé », (b) le serveur
+**n'a pas répondu du tout**. La progression en ligne passe par `/__lingua/load`
+(worker **kdmc-router**), joignable **uniquement** via `lingua.kd-mc.com` — domaine
+indisponible. Donc `fetch` échouait, le `.catch` retombait dans le cas « rien
+trouvé », et l'écran annonçait une perte de compte là où il n'y avait qu'un
+serveur injoignable. **Mensonge d'interface** — exactement ce qu'interdit la règle
+« toujours détailler les erreurs, cause exacte ».
+
+### Le test existait depuis le 3.09 — le correctif, non
+`tests/verify-lingua-connexion-honnete.mjs` documentait déjà le diagnostic, mais
+`app.js` n'avait **jamais** été corrigé : ni `injoignable:true`, ni `localNames`.
+Le test n'avait donc jamais pu passer. Écrire le test ne répare rien.
+
+### Corrigé
+Trois cas désormais **distincts** : serveur injoignable → *« ne répond pas — ta
+progression n'est pas perdue »* · serveur OK mais vide → *« aucune sauvegarde »*
++ les prénoms réellement présents sur l'appareil (cas « je me suis trompé de
+prénom ») · sauvegarde trouvée → on entre.
+
+### Preuve
+Vrai navigateur, serveur simulé : **8 OK / 0 FAIL**. **Discriminant prouvé** :
+correctif retiré → **3 FAIL**, et le test reproduit mot pour mot le message que
+Kevin a vu. Restauré → 8/8.
+
+### Deuxième mensonge du même type, trouvé et corrigé (même jour)
+Le routeur renvoie `{ok:false, reason:'kv_absent'}` **en 200** quand son stockage
+est indisponible (repli volontaire). Le client repliait ça sur « aucune
+sauvegarde » : le serveur ne peut pas lire, et on annonce à l'utilisateur qu'il
+n'a pas de compte. Corrigé, et le cas est désormais couvert par le test.
+**10 OK / 0 FAIL.**
+
+### ⚠️ Correction d'une supposition (mesurée, pas devinée)
+Le commentaire du test — et ma première version de ce mémo — affirmaient que
+`lingua.kd-mc.com` était « indisponible ». **Jamais vérifié.** Mesuré le 5.09 :
+- le DNS **résout** (`lingua.kd-mc.com` → même IP que `kd-mc.com`) ;
+- la route `custom_domain` est bien déclarée dans `services/kdmc-router/wrangler.toml` ;
+- le CORS de `/__lingua/*` est ouvert à **toutes** les origines (donc venir de
+  `pages.dev` n'est pas le problème).
+
+Je ne peux pas atteindre le domaine depuis cette session (politique réseau), mais
+c'est **ma** limite — pas une panne prouvée. Le commentaire du test a été corrigé.
+
+### Piste du compte de Kevin → confirmée, et c'est devenu le correctif suivant
+La clé du compte en ligne était `sha256(norm(saisie) + ":" + code)` (`cloudKeyFor`) :
+la casse et les accents étaient normalisés, **mais pas les mots**. `kevin` et
+`kevin desarzens` produisaient donc **deux clés différentes** — sa sauvegarde
+pouvait exister sous un autre libellé. Traité ci-dessous.
+
+---
+
+## 5 septembre 2026 (suite) — Lingua : la connexion demande PRÉNOM + NOM
+
+**Kevin** : *« Ajoute nom et prénom pour la connexion, si 2 personnes ont le même
+prénom ça va poser problème. »* Il a raison, et c'est déjà une **règle absolue du
+dépôt** (« LOGIN TOUJOURS PRÉNOM + NOM ») que Lingua était seule à ne pas suivre :
+deux « Kevin » avec le même code tombaient sur **le même compte**.
+
+### Ce qui change
+- L'écran de connexion et celui de création ont **deux champs** (prénom, nom).
+  Un seul mot est refusé, avec un message clair : *« Entre ton prénom ET ton nom »*.
+- La clé du compte en ligne devient `sha256(prénom+nom triés : code)`. Les mots
+  sont **triés** → « Kevin Desarzens » et « Desarzens Kevin » ouvrent le **même**
+  compte : on n'impose pas l'ordre à l'utilisateur.
+
+### Jamais régresser : les anciens comptes restent retrouvables
+Tous les comptes créés **avant** cette règle sont enregistrés sous l'ancienne clé
+(souvent le prénom seul). Ils seraient devenus introuvables du jour au lendemain.
+La connexion interroge donc les clés **dans l'ordre** — nouvelle, puis anciennes —
+et s'arrête à la première sauvegarde trouvée. Une fois retrouvée, elle est
+**réécrite sous la clé prénom + nom** : la connexion suivante tombe directement
+dessus. « Serveur injoignable » n'est retenu que si **aucune** clé n'a pu être lue.
+
+### Un bug trouvé par le test lui-même
+Le nom contenu dans la sauvegarde restaurée (souvent un prénom seul, d'avant la
+règle) **écrasait** le nom complet qu'on venait de saisir : le compte repartait
+donc sous l'ancienne clé et **ne migrait jamais**. Corrigé à la racine dans
+`_applySnapshot` — on ne remplace plus jamais un prénom+nom par un mot unique.
+
+### Preuve
+`tests/verify-lingua-connexion-honnete.mjs`, vrai navigateur, serveur simulé :
+**20 OK / 0 FAIL** (6 cas, dont « ancienne clé retrouvée + migrée » et « prénom
+seul refusé avant tout appel réseau »). **Discriminant prouvé** : les trois
+comportements retirés → **7 FAIL**, et le test reproduit la faille exacte
+(« Bienvenue kevin ! » alors que le nom manque). Restauré → 20/20.
+## 5 septembre 2026 (nuit) — le journal ne bloque plus les fusions automatiques (pilote « union »)
+
+**Ce qui s'est passé** : Kevin a prévenu « d'autres branches travaillent sur le domaine ». Vérifié sur
+les 133 branches ouvertes : personne ne touchait le livre de cuisine, mais **9 chevauchements sur 10**
+entre branches venaient d'un seul fichier, `MEMO_RESUME.md` — toutes les sessions écrivent une section
+en tête, au même endroit. Résultat mesuré : la branche Lingua (`claude/lingua-connexion-honnete`,
+poussée à 12h00, 8 min après ma fusion de 11h52) avait un conflit sur le journal et la fusion
+automatique la laissait dehors. Je l'ai réparée à la main (main fusionné, les deux journaux gardés,
+le test Lingua lit le code depuis `KDMC_ADMIN_CODE` comme sur main)… et **8 minutes plus tard une
+autre fusion (#3670, arbre) recréait le conflit**. Une course perdue d'avance tant que la cause reste.
+
+**La cause, et la correction de fond** :
+- `.gitattributes` : `MEMO_RESUME.md`, `KEVIN_INVENTORY.md`, `LESSONS.md` en `merge=union` = git garde
+  les deux côtés, sans marqueur. Prouvé sur la vraie branche Lingua : le journal se fusionne seul,
+  **seul le vrai conflit de code reste** (jamais résolu à l'aveugle).
+- `auto-merge-claude.yml` : nouvelle étape **« Rattraper main avant la PR »** — sur le runner, git
+  fusionne main dans la branche (union sur les journaux, `.git/info/attributes` en ceinture pour les
+  branches nées avant le réglage), pousse le résultat sans forcer, puis la PR se fusionne proprement.
+  Conflit sur du code → on annule, on prévient, la PR reste ouverte. Push par `GITHUB_TOKEN` = pas
+  de boucle.
+- Doublon repéré : `claude/lingua-prenom-nom` = copie en 1 commit de `lingua-connexion-honnete`
+  (0 ligne de différence) **plus un lien `node_modules` vers un chemin de machine** — à ne pas fusionner.
+
+**Leçon** : #216 dans `LESSONS.md`. Règle : un fichier où tout le monde écrit au même endroit doit
+être déclaré en `union` le jour où on le crée, pas après la 10ᵉ collision.
+## 5 septembre 2026 (17h20) — « Où en est l'audit ? » : ultra-review indépendante appliquée, livrables écrits
+
+**Kevin** : *« Où en est le "fais ton audit" ? Lance un ultra-review indépendant maximal. Vérifie et
+mets tout à jour, connecteurs, secrets, api. »*
+
+**Verdict honnête du relecteur « complétude »** : l'audit du domaine était **à la lecture** (8 axes
+sur 11 non exécutés, aucun livrable `audit/`). Corrigé dans l'heure : `audit/2026-09-05/00→06`,
+`audit-live.yml` rendu **déclenchable par push** (+ bot/beatbot/autorisations, écarts en
+annotations) et lancé, `audit:improvements` (0 hausse, 6 améliorations chiffrées) et
+`audit:stability` (0 FAIL) exécutés. Clics/a11y : pas de playwright ici → CI.
+
+**Trois relecteurs (sécurité, SRE, complétude) — tout le sûr est appliqué (4c4a469)** : 2 P0
+(réveil worker→worker = 1042 → Service Binding ; notifications qui n'ont jamais pu partir →
+`/send-all`), `/run` protégé par clé dérivée + 1/5 min, état en KV partagé (le Cache API est par
+datacenter), plus de prod déployée depuis `claude/**`, wrangler épinglé sans scripts, jeton
+Cloudflare limité aux étapes wrangler, id de compte masqué, `grep||true` sous pipefail, garde de
+couverture durcie (2 sabotages). Leçon #213 et fait n°16 **corrigés** (le `claude/**` était une
+mauvaise idée pour un déploiement).
+
+**Runs lus** : uptime **vert** (26/32 OK — les 6 workers « en panne », cause au prochain smoke) ;
+RAG : `code 10000` = **le jeton Cloudflare n'a pas le droit Vectorize** → 1 clic Kevin
+(KEVIN_ACTIONS_TODO). Sonar C = 2 findings, corrigés. Semgrep : illisible d'ici.
+
+**Connecteurs mesurés** : Cloudflare ✅, Railway ✅ (2 projets), Sentry ✅ (org kdmc), Supabase 0,
+Netlify 0, GitHub ❌ absent. **Secrets** : 101 noms consommés par les workflows, **47 absents de la
+liste documentée**, dont **3 jeux de noms différents pour App Store Connect** → `06-SECRETS-CONNECTEURS.md`.
+
+**Lu ensuite (19h20)** : audit LIVE réel = **27/28 surfaces OK**, seule `arbre.kd-mc.com` échoue au
+contrôle profond (v3.17 sert ses données par le domaine — session arbre prévenue, m034). Tout est
+fusionné dans `main` (#3667). **Vercel** (mail d'échec reçu par Kevin) : le projet `kdmc-agent-monaco`
+faisait un déploiement par push de chaque branche (40 aujourd'hui, tous annulés/erreur, production
+annulée à chaque fois, mail à chaque échec) → `tools/agent/vercel.json` : rien hors `main`.
+
+**Reste** : lire `audit-live` (annotations) et le prochain passage de la sonde via Outlook
+(`modified_on`) ; Vectorize (Kevin) ; 6 workers « en panne » à qualifier ; Semgrep à lire.
+
+---
+
+## 5 septembre 2026 (16h45) — PR fusionnée, deux déploiements rouges ENFIN lisibles, et le pipeline des branches
+
+**Kevin** : *« Attention d'autres branches travaillent sur le domaine. Fais le pipeline de toutes tes
+branches… Elles ne sont pas toutes au courant de tous les accès, outils, liens, apps, manière de
+travailler. »*
+
+**Fusion** : PR #3652 est dans `main` (5c8a300) dès que le pré-contrôle tsc a été vert — SonarQube
+« C » et Semgrep ne bloquent pas. Post-fusion, le robot a lui-même lancé `Deploy KDMC Uptime` sur main.
+
+**Les deux rouges, cause lue en annotation** (le résumé du run est invisible sans connexion, les
+annotations non — c'est la règle écrite au fait n°16) :
+- **uptime** : code téléversé (Cloudflare `modified_on` 16:32) puis `Workers Free limit of 5 cron
+  triggers per account` → 4 crons Apex Chat + 1 Outlook. Fait : `crons = []` dans son wrangler.toml,
+  et le cron d'**Outlook** (`0 */2`) appelle son `/run` (6 lignes fail-open). Passage toutes les 2 h.
+- **rag** : `Vectorize index 'apex-memory' not found [10159]` — la création échouait en silence
+  (`|| true`). Fait : la création dit pourquoi elle échoue et le run s'arrête là, avec la raison.
+  Cause probable : droit Vectorize absent du jeton `CLOUDFLARE_API_TOKEN` → **à lire au prochain run**.
+
+**Pipeline des branches (mesuré, `git for-each-ref`)** : 12 branches du jour, 8 déjà fusionnées,
+4 devant main. Le registre disait `cmcteams → cmcteams-clicking-issue` ; le vrai travail est sur
+`claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE dans le dépôt, session Opus) → inscrite
+`cmcteams-departs`. Ma session inscrite `domaine-audit`. Deux branches Lingua font le même travail
+(m030). Messages déposés : m026 (toutes : les 4 canaux + 5 crons), m027 (apex-chat : 1 cron `*/5`
+rendrait 3 places), m028 (domain-kdmc : uptime en ligne, monaco-sync mort, rag), m029
+(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #217, SESSIONS-ET-BRANCHES
+« état réel au 5.09 ».
+
+**Reste dit franchement** : le passage uptime toutes les 2 h dépend d'Outlook, à vérifier au prochain
+`modified_on`/état `/` du worker ; Vectorize : attendre l'annotation du prochain run (droit du jeton =
+1 clic Kevin sur le jeton Cloudflare, s'il le faut — pas avant d'avoir lu). Option non prise : Workers
+Paid (5 $/mois, 250 crons) — décision Kevin, pas nécessaire aujourd'hui.
 
 ---
 
@@ -74,7 +263,7 @@ l'arbre v3.14. Miroir GitLab : branche poussée, **GitLab main réaligné** sur 
 fait valoir « oui » à TOUTES les règles `changes:` → publier-site, recherches-patrimoine, liens-reels… sont partis
 (~7 min brûlées, pipeline 2823049053), et `tests` échouait de toute façon (`npm ci` sans `package-lock.json`).
 Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, bouton manuel pour
-`tests` sur une branche nouvelle, repli `npm install`) — leçon **#216**. **Prouvé au push suivant** (pipeline 2823055271) : seul
+`tests` sur une branche nouvelle, repli `npm install`) — leçon **#218**. **Prouvé au push suivant** (pipeline 2823055271) : seul
 `conformite` part (22 s), 0 job à fichier-signal, 0 publication. **Sondé en vrai depuis GitLab** (job `sonder-url`, pipeline 2823067545, 17h40) :
 `https://arbre.kd-mc.com/__arbre/status` → `{ok:true, code:true, seed:true, count:119, seedVersion:63, source:"d1"}` —
 le domaine sert bien l'arbre v3.14 depuis la base D1. (Le `HEAD` de la sonde répond 404 : normal, la route n'accepte que `GET`.)
@@ -320,7 +509,7 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    échouait **depuis le 13/08** (dossier `public/` exigé par `[assets]` jamais fabriqué) → aucun
    secret poussé au routeur pendant 3 semaines ; corrigé (PR #3661), run vert, secret
    `KDMC_ADMIN_PIN_SHA256` posé, 26 sous-domaines en 200. Sonde live ajoutée (PR #3663) + garde
-   `test:wrangler-assets` (dans `test:ci`). Détail : ETAT-INFRA fait n°15 (suite), leçon #214.
+   `test:wrangler-assets` (dans `test:ci`). Détail : ETAT-INFRA fait n°15 (suite), leçon #216.
    **Reste à Kevin** : se connecter UNE fois avec le nouveau code sur departs.kd-mc.com (moi je
    prouve le refus d'un mauvais code, pas l'acceptation du bon — je ne le connais pas, c'est voulu).
 2b. 👤 **RAG (mémoire Apex)** : le secret y est, mais son déploiement échoue car le jeton
@@ -335,9 +524,11 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 5. 🤖 **Page Départs : « admin » cosmétique côté données** — elle écrit dans Firebase avec un jeton
    anonyme (`auth != null`), alors que la grande app a `cmcFbRoleAuth` (jeton de rôle via
    `/login-cmc`). À aligner (message m021 envoyé à la session CMCteams ; leur territoire).
-6. 🤖 **Reprendre le tri du rapport `security-suite`** (gitleaks/TruffleHog sur l'historique) là où
-   il s'est arrêté : le code admin était le 1er vrai positif ; vérifier qu'il n'en reste pas
-   d'autre, et lister les faux positifs avec preuve (clé Firebase Web = publique par conception).
+6. ✅ **DÉJÀ FAIT (vérifié 5.09 17h35)** — le tri complet est écrit dans ETAT-INFRA fait n°15,
+   « Autres résultats du tri » : TruffleHog **0 secret vivant** / 153 candidats · gitleaks 188 =
+   fausses clés de test, alphabet base64, clé Firebase Web (publique par conception), allowlist ·
+   zizmor 2 `workflow_run` légitimes · 0 injection `${{ github.event.* }}`. Le code admin était
+   le seul vrai positif. Rien à reprendre.
 
 ### 🔴 P1 — le site et les deux dépôts
 7. 🤖 **5 pages du site portent des noms** (l'app CMCteams, ses plannings, l'arbre) — dit par
@@ -347,17 +538,18 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
    (0 minute au repos).
-9. 🔗 **domain-kdmc m'attend** : ajouter un job CI « état des sessions » dans `.gitlab-ci.yml`
-   (mon territoire). Réponse à écrire dans `pipeline/sessions.json` une fois fait.
+9. ✅ **FAIT 5.09 17h30** — job `etat-sessions` ajouté dans `.gitlab-ci.yml` (stage `etat`, sans
+   secret : `pipeline.mjs verifier` puis `etat`, tourne quand le registre change ou en bouton) ;
+   m002 clos. Prendra effet sur GitLab à la prochaine remise à niveau.
 10. 🔗 **lingua m'attend** : 3 de leurs workflows programmés déplacés (pas supprimés) + j'ai pris
     LEUR version de `lingua/app.js` — leur confirmer par message que tout est en ordre de leur côté.
 11. 🔗 **free-apis m'attend** : secrets VUS en vrai — `CEREBRAS_API_KEY` existe déjà, il ne reste
     que **2 comptes à créer** (à leur préciser lesquels, cf. CLAUDE.md liste des 50 secrets).
-12. 🤖 **`tools/pipeline/pousser.sh`** : il fait `git update-ref refs/remotes/origin/<cible>` —
-    faux quand `origin` = GitHub (c'est le cas depuis le 4.09). À corriger : pousser vers GitLab en
-    URL inline, ne toucher à aucun repère `origin/*`. Et le RAPPEL de début de session dit encore
-    « Publier : GITLAB_TOKEN=… ./tools/pipeline/pousser.sh » : à mettre à jour (GitHub est la voie
-    de publication ; GitLab ne reçoit qu'une remise à niveau occasionnelle).
+12. ✅ **FAIT 5.09 17h30** — `pousser.sh` ne touche plus `origin/*` quand `origin` est GitHub
+    (il le dit) ; le RAPPEL de début de session affiche la vraie voie : `git push origin` → PR →
+    fusion API (GitHub), GitLab = remise à niveau occasionnelle.
+12b. ℹ️ Courrier arbre m022/m023/m025 **clos** : la branche `claude/sarzance-family-tree-3jxi7i`
+    est à 0 commit d'avance, v3.15/v3.16/v3.17 déjà dans `main` — rien à ouvrir.
 13. 🤖 **4 tests rouges pré-existants sur `main`**, pas les miens mais à ne pas laisser traîner :
     `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
     Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
@@ -366,8 +558,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
 15. 👤 **la-detente** : combien de gilets, et broderie logo seul ou logo + prénoms ?
 16. 👤 **meta** : compte développeur Apple (99 $/an) — oui ou non ?
-17. 👤 **m003** : la réponse au support GitHub est prête (3 conditions remplies) — c'est Kevin qui
-    l'envoie.
+17. ✅ **PÉRIMÉ** — m003 (réponse au support GitHub) : GitHub a levé la restriction le 4.09 à
+    16h34 UTC (ETAT-INFRA fait n°10). Ne plus le redemander à Kevin.
 
 ### ℹ️ Rien à faire, mais à savoir
 - Le miroir `kdmc-site.pages.dev` est **propre** (20/20 sondes en 404, job GitLab `16324368313`),

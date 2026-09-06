@@ -242,6 +242,22 @@ etat-du-domaine:
   script:
     - 'sh tools/gitlab/etat.sh'
 
+# État des SESSIONS Claude (registre pipeline/sessions.json) : qui bloque, qui attend Kevin,
+# courrier ouvert — sans aucun secret. Remplace l'ancien claude-todo-watcher (cron GitHub,
+# interdit depuis le 15/08). Tourne quand le registre change, ou en bouton. Demandé par m002.
+etat-sessions:
+  stage: etat
+  image: node:20
+  needs: []
+  allow_failure: true
+  rules:
+    - changes: ["pipeline/sessions.json"]
+      when: on_success
+    - when: manual
+  script:
+    - 'node tools/pipeline/pipeline.mjs verifier'
+    - 'node tools/pipeline/pipeline.mjs etat'
+
 # Renaissance des workers sur le nouveau compte — a la demande, jamais automatique.
 renaitre-workers:
   stage: publier

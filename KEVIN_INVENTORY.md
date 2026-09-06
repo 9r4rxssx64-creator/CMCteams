@@ -12,6 +12,15 @@
 | `tools/arbre/verify-poster.mjs` · `tests/arbre-poster.test.mjs` | 154 contrôles en vrai navigateur (cadre, badges = nés à Monaco, règnes, devise) + 8 contrôles hors ligne dans le gate. | [Navigateur](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) · [Gate](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
 | `vercel.json` | Vercel ne se déploie plus pour l'arbre, les workers, les tests, le pipeline ou la CI GitLab : c'est ce qui épuisait le quota gratuit (100/jour) et **bloquait toutes les fusions** (contrôle rouge sur chaque PR). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/vercel.json) |
 
+## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.gitattributes` | Dit à git que `MEMO_RESUME.md`, `KEVIN_INVENTORY.md` et `LESSONS.md` se fusionnent en **gardant les deux côtés** (« union »). Plus jamais de conflit sur le journal entre deux sessions. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitattributes) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.gitattributes) |
+| `.github/workflows/auto-merge-claude.yml` (étape « Rattraper main avant la PR ») | L'automate fusionne d'abord `main` dans ta branche (journaux en union), pousse, puis fusionne la PR. Un conflit sur du **code** l'arrête proprement avec un avertissement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) · [runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/auto-merge-claude.yml) |
+| Branche `claude/lingua-connexion-honnete` | Réparée à la main 2 fois (main fusionné, journaux gardés, test Lingua branché sur `KDMC_ADMIN_CODE`). Avec ce réglage, la prochaine fois se fera toute seule. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-connexion-honnete) |
+| Branche `claude/lingua-prenom-nom` | **Doublon** de la précédente (même code, 0 différence) + un lien `node_modules` vers un chemin de machine : à laisser au nettoyage, ne pas fusionner. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-prenom-nom) |
+
 ## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
 
 | Fichier | À quoi ça sert | Liens |
@@ -27,6 +36,12 @@
 
 | Fichier | À quoi ça sert | Liens |
 |---|---|---|
+| `ETAT-INFRA.md` — **fait n°16** | Pour TOUTES les sessions : ce qu'une session peut atteindre (4 canaux mesurés), **le compte Cloudflare gratuit n'a que 5 crons et ils sont pris**, comment prouver un déploiement (`modified_on`), ce que fait vraiment le robot auto-merge | [lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/ETAT-INFRA.md) |
+| `services/kdmc-outlook/worker.js` (6 lignes) | Son cron (toutes les 2 h) **réveille la surveillance** du domaine, faute de place pour un cron à elle | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-outlook/worker.js) |
+| `pipeline/sessions.json` (m026→m030) | Le courrier aux autres branches : les 4 canaux, les 5 crons, Vectorize, les 2 branches Lingua en double | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/pipeline/sessions.json) · [carte des branches](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/SESSIONS-ET-BRANCHES.md) |
+| `audit/2026-09-05/` (00→06) | **L'audit du domaine, écrit** : inventaire, 32 fonctions et leur couverture, résultats mesurés, findings (2 P0 + 4 P1 corrigés, ce qui reste), journal + auto-critique, **secrets & connecteurs** (47 noms à confirmer, 3 jeux de noms App Store) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/audit/2026-09-05) |
+| `.github/workflows/audit-live.yml` | **Le balayage LIVE** (28 surfaces, vrai navigateur) part maintenant **tout seul** au push, écarts en annotations | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/audit-live.yml) |
+| `.github/workflows/deploy-kdmc-rag.yml` | Si l'index Vectorize manque, le run **le dit** (annotation) et s'arrête avant de déployer | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-rag.yml) |
 | `services/kdmc-uptime/worker.js` | **La sonde** : toutes les heures, les **26 sous-domaines + 6 workers**. Alerte l'iPhone quand une adresse tombe et quand elle revient. L'ancienne n'en voyait que 13, et elle est éteinte depuis le 14/08 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/worker.js) |
 | `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
 | `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
