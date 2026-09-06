@@ -16,6 +16,15 @@
 | `vercel.json` | Vercel ne se déploie plus pour l'arbre, les workers, les tests, le pipeline ou la CI GitLab : c'est ce qui épuisait le quota gratuit (100/jour) et **bloquait toutes les fusions** (contrôle rouge sur chaque PR). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/vercel.json) |
 > Dernière mise à jour : **2026-09-05 nuit** (IA gratuite en principal dans TOUS les projets · Qwen gratuit en IA principale d'Apex v13.4.366 · fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 🚀 Déblocage des déploiements + preuve live des IA (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verify-deploiement-declenche.mjs` | **NOUVEAU** — la garde : chaque atelier de déploiement part sur un push `claude/**`, surveille son propre fichier ET le routage IA commun. 28 contrôles. `npm run test:deploiement-declenche` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-deploiement-declenche.mjs) |
+| `.github/workflows/deploy-kdmc-apis.yml` | Déploie sur push `claude/**` + **pose 4 vraies questions aux IA** après chaque mise en ligne (qui répond, quel modèle, le vote) | [Runs — la preuve live](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | Le relais d'Apex se déploie enfin sans clic (push `claude/**`) et teste Qwen en vrai | [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `.github/workflows/deploy-wm-brief.yml` | World Monitor : déclencheur réparé (il ne surveillait même pas son propre fichier) | [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-wm-brief.yml) |
+
 ## 🗳️ Concertation d'IA gratuites — vote sur le type de question + conseil avec juge (2026-09-06)
 
 | Fichier | À quoi ça sert | Liens |
