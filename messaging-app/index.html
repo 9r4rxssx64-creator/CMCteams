@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.285",
+  "softwareVersion": "v1.1.286",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.285';
+const __APEX_CHAT_VERSION__ = 'v1.1.286';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.285</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.286</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -657,7 +657,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.285</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.286</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -8281,8 +8281,13 @@ K._wsDiagnose = async function(convId){
   K._wsDiagRunning = true;
   try{
     const base = API_BASE + '/api/conversations/' + encodeURIComponent(convId) + '/ws-diag';
-    // 1) Test du chemin EXACT du WebSocket : token en query param, sans header
-    const r = await fetch(base + '?token=' + encodeURIComponent(K.token), { cache: 'no-store' });
+    // 1) Test du chemin EXACT du WebSocket : identité dans l'URL, sans en-tête.
+    //    v1.1.286 : ticket à usage unique (repli ?token= si serveur pas à jour).
+    const diagTicket = await K._wsTicket();
+    const diagCred = diagTicket
+      ? '?ticket=' + encodeURIComponent(diagTicket)
+      : '?token=' + encodeURIComponent(K.token);
+    const r = await fetch(base + diagCred, { cache: 'no-store' });
     const d = await r.json().catch(() => ({}));
     console.log('[ws-diag]', JSON.stringify(d));
 
@@ -8343,14 +8348,37 @@ K._wsDiagnose = async function(convId){
   }
 };
 
+// v1.1.286 (audit P2a) — Une URL de WebSocket se retrouve dans les journaux du
+// serveur, l'historique du navigateur et parfois l'en-tête Referer. Y mettre le
+// jeton de SESSION revient à y écrire le mot de passe. On échange donc le jeton
+// (envoyé en en-tête, jamais dans une URL) contre un TICKET à usage unique
+// valable 60 s. Un ticket qui fuite est déjà mort.
+// Repli sur ?token= si le serveur n'a pas encore la route (jamais couper le WS).
+K._wsTicket = async function(){
+  try{
+    const r = await fetch(API_BASE + '/api/auth/ws-ticket', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + K.token },
+      cache: 'no-store'
+    });
+    if(!r.ok) return null;
+    const d = await r.json().catch(() => null);
+    return (d && d.ok && d.ticket) ? d.ticket : null;
+  }catch(_e){ return null; }
+};
+
 K._openWs = async function(convId){
   if(K.ws){ try{K.ws.close()}catch(_e){_safeCatch('silent',_e)}; K.ws = null; }
   if(!K.user || !K.token) return;
 
   try{
+    const ticket = await K._wsTicket();
+    const cred = ticket
+      ? 'ticket=' + encodeURIComponent(ticket)
+      : 'token=' + encodeURIComponent(K.token);   // repli : serveur pas à jour
     const wsUrl = API_BASE.replace(/^https?/, 'wss') +
       `/api/conversations/${encodeURIComponent(convId)}/ws` +
-      `?token=${encodeURIComponent(K.token)}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
+      `?${cred}&uid=${encodeURIComponent(K.user.id)}&conv=${encodeURIComponent(convId)}`;
 
     K.ws = new WebSocket(wsUrl);
     K._wsConvId = convId;   // v1.1.173 : conv liée au WS courant (pour flush outbox)
@@ -12521,9 +12549,10 @@ K._runDiag = async function(){
         // 2) WebSocket sur la 1ère conv
         const cid = convs[0] && convs[0].id;
         if(cid){
+          const tkt = await K._wsTicket();   // v1.1.286 : ticket à usage unique
           const wsRes = await new Promise((resolve)=>{
             let done=false; const to=setTimeout(()=>{ if(!done){done=true;try{ws.close()}catch(_){}; resolve({ok:false, detail:'timeout 6s (WS ne s\'ouvre pas)'});} },6000);
-            const wsUrl = API_BASE.replace(/^https?/,'wss')+'/api/conversations/'+encodeURIComponent(cid)+'/ws?token='+encodeURIComponent(K.token)+'&uid='+encodeURIComponent(K.user.id);
+            const wsUrl = API_BASE.replace(/^https?/,'wss')+'/api/conversations/'+encodeURIComponent(cid)+'/ws?'+(tkt?('ticket='+encodeURIComponent(tkt)):('token='+encodeURIComponent(K.token)))+'&uid='+encodeURIComponent(K.user.id);
             let ws; try{ ws=new WebSocket(wsUrl); }catch(e){ clearTimeout(to); return resolve({ok:false, detail:e.message}); }
             ws.addEventListener('open', ()=>{ if(!done){done=true;clearTimeout(to);try{ws.close()}catch(_){}; resolve({ok:true, detail:'connexion temps réel OK'});} });
             ws.addEventListener('close', (e)=>{ if(!done){done=true;clearTimeout(to); resolve({ok:false, detail:'fermé code '+e.code+' '+(e.reason||'')}); } });
