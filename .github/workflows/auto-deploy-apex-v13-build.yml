@@ -10,7 +10,7 @@ name: Auto-deploy Apex v13 build to apex-ai-v13/
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'apex-ai/v13/**'
       - '!apex-ai/v13/dist/**'
