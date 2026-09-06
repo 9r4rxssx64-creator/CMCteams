@@ -1,5 +1,26 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (15h30, session Apex Chat) — PR #3671 débloquée : c'était un conflit, pas une revue
+
+- **Correction d'une affirmation fausse que j'ai faite deux fois** : la PR #3671 n'attendait **aucune
+  revue de Kevin**. Le robot d'auto-merge a fini par écrire sa cause exacte (leçon #214) :
+  `{"mergeable": false, "mergeable_state": "dirty"}`, `reviews: []` → **conflit avec `main`** sur
+  `LESSONS.md`. Zéro clic Kevin. C'était mon travail depuis le début (leçon #223).
+- `main` fusionné dans `claude/apex-chat-mfa-faceid` : 81 fichiers, un seul conflit (`LESSONS.md`,
+  résolu en gardant les deux côtés ; mes leçons renumérotées **#221/#222** après la #220 de main).
+  `messaging-app/index.html` a fusionné sans conflit et le correctif P1 est intact (0 occurrence des
+  motifs interdits).
+- Re-prouvé après fusion : **1098/1098** tests vitest (56 fichiers) et **5/5** en vrai Chromium
+  (`test:runtime-admin` : onglet Admin masqué au boot, masqué pour « Kevin DESARZENS » sans
+  `is_admin` serveur, affiché seulement quand le serveur l'accorde, 0 exception JS).
+- `.github/AUTOMERGE-DIAGNOSTIC.md` retiré : artefact transitoire du robot, sa cause est réglée et
+  consignée dans LESSONS.md.
+- Reste de l'audit Apex Chat : **P2a** (jeton de session dans l'URL WebSocket → ticket à usage unique,
+  `workers/api-worker.js:148`) et **P2b** (CORS `*` → liste d'origines ; les 4 workers calculent CORS
+  **une fois au chargement du module**, donc refonte des 4 pipelines de réponse — non livré tant que
+  ce n'est pas câblé de bout en bout, erreur #28).
+
+
 ## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
 
 - `main` fusionné dans la branche (4 conflits de journaux résolus en gardant les deux côtés ; les deux
