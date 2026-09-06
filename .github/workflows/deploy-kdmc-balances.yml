@@ -2,7 +2,7 @@ name: Deploy kdmc-balances Worker
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'claude/**']
     paths:
       - "services/kdmc-balances/**"
       - ".github/workflows/deploy-kdmc-balances.yml"

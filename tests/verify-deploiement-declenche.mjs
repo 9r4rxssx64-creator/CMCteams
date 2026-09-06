@@ -19,7 +19,7 @@
  *
  * Lancer : node tests/verify-deploiement-declenche.mjs
  */
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 
 const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
@@ -80,6 +80,58 @@ for (const { nom, wf } of IA) {
   const sansCom = bloc.split('\n').map((l) => l.replace(/#.*$/, '')).join('\n');
   chk(!/ref:\s*main\b/.test(sansCom),
     `${nom} : le checkout n'est PAS épinglé sur main (sinon le push déploie l'ancien code = faux vert)`);
+}
+
+/* ── 3 ter. LA MÊME EXIGENCE, SUR TOUS LES DÉPLOIEMENTS ─────────────────────
+   Kevin 2026-09-06 « que dois-je faire pour que tu sois autonome, et tes autres
+   branches aussi ? ». Mesuré ce jour-là : 34 workflows de déploiement, mais
+   seulement 7 partaient sur un push `claude/**` — les 27 autres m'obligeaient à
+   attendre une fusion. Étendus à tous ceux qui ont un déclencheur `push` DÉJÀ
+   filtré par `paths` (pas de volume ajouté : le compte a été suspendu pour ça).
+
+   Trois EXCLUSIONS volontaires, tranchées par Kevin — le cliquet ci-dessous
+   empêche qu'on les ouvre par distraction :
+     • deploy-firebase-rules / deploy-cmcteams-rules → droits d'accès aux
+       DONNÉES : une branche inachevée ne doit jamais pouvoir les réécrire ;
+     • deploy (GitHub Pages) → publie le VRAI site, et sans filtre `paths` :
+       l'ouvrir publierait le site à chaque push de n'importe quelle branche. */
+const INTERDITS = ['deploy-firebase-rules', 'deploy-cmcteams-rules', 'deploy'];
+console.log('— 3 ter. Tous les déploiements : autonomes, sauf les 3 exclus volontairement —');
+for (const nom of INTERDITS) {
+  const y = lire(`.github/workflows/${nom}.yml`);
+  if (!y) continue;
+  chk(!/branches:[\s\S]{0,160}?claude\/\*\*/.test(y),
+    `${nom} : reste sur main (décision Kevin — données/site public, jamais depuis une branche)`);
+}
+/* Et la règle du faux vert (§3 bis) vaut pour TOUS ceux qui PUBLIENT, pas seulement
+   la chaîne IA. « Publier » = mettre quelque chose en ligne : wrangler, firebase,
+   vercel, Pages, netlify. On ne regarde QUE ceux-là, sinon on crie au loup sur des
+   workflows qui lisent `main` pour de bonnes raisons — vécu à l'écriture de ce test :
+   `branch-coordinator.yml` écoute claude/** et fait `ref: main` EXPRÈS, parce qu'il
+   COMPARE les branches à main ; il ne déploie rien. Un garde qui hurle sur du
+   légitime finit par être ignoré (faux positif = aussi nuisible qu'un faux négatif).
+
+   ⚠️ CONNU, NON TRAITÉ ICI : `firebase-rules-auto-apply.yml` publie les règles RTDB
+   et écoute `claude/**` (il ne se déclenche que si on modifie volontairement le
+   marker rules-deploy-request.json). Ça date d'avant la décision de Kevin
+   « pas les règles depuis une branche » — signalé à Kevin, pas changé sans son
+   accord : c'est aujourd'hui le seul moyen d'appliquer les règles sans qu'il clique. */
+const PUBLIE = /wrangler\s+(deploy|pages\s+deploy|versions\s+upload)|wrangler-action|firebase\s+deploy|vercel\s+(deploy|--prod)|actions\/deploy-pages|netlify\s+deploy/i;
+{
+  const tous = readdirSync('.github/workflows').filter((f) => f.endsWith('.yml'));
+  let vus = 0;
+  for (const f of tous) {
+    const y = lire(`.github/workflows/${f}`);
+    if (!/branches:[\s\S]{0,160}?claude\/\*\*/.test(y)) continue;
+    if (!PUBLIE.test(y)) continue;
+    vus++;
+    const bloc = (y.match(/uses:\s*actions\/checkout@[^\n]*\n(?:[^\n]*\n){0,6}/) || [''])[0];
+    const sansCom = bloc.split('\n').map((l) => l.replace(/#.*$/, '')).join('\n');
+    if (/ref:\s*main\b/.test(sansCom)) {
+      chk(false, `${f} : écoute claude/** MAIS met en ligne main (faux vert, leçon #231)`);
+    }
+  }
+  chk(vus >= 20, `au moins 20 mises en ligne partent depuis une branche claude/** (vu : ${vus})`);
 }
 
 console.log('— 4. La preuve live existe-t-elle ? (un déploiement vert ne prouve rien, leçon #95) —');

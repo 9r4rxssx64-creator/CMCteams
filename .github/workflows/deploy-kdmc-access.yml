@@ -11,7 +11,7 @@ name: Deploy kdmc-access (journal « qui se connecte »)
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'services/kdmc-access/**'
       - '.github/workflows/deploy-kdmc-access.yml'
