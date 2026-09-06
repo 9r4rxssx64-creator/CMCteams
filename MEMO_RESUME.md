@@ -5908,3 +5908,47 @@ d'inventer une image.
 Tests : 39/0 (déploiements) · 27/0 (poses de danse, 2 nouveaux cas) ·
 secrets, actions, dépôt public, destinations, routage IA → tous verts.
 Leçons #232 et #233.
+
+## 2026-09-06 (nuit) — Le connecteur refusé, remplacé par mieux
+
+GitHub a refusé **deux fois** le connecteur Actions (l'adresse que je t'avais donnée
+n'accepte pas la méthode d'Anthropic — ma suggestion était mauvaise). Tu as dit
+« Go » pour le contournement : **c'est fait**.
+
+### Ce qui existe maintenant
+
+Quand une mise en ligne rate, la CI — qui, elle, a le droit de lire son propre
+journal — en extrait la cause exacte et l'**écrit dans le dépôt** :
+`audit/deploiements-rates.md`. Un « git pull » me la rend lisible, et tu l'as
+sous les yeux. Même principe que le contrôle des IA gratuites, qui a servi à
+trouver la panne des poses de danse ce soir.
+
+Ce que tu y liras, pour chaque panne : le déploiement concerné, la branche, le
+commit, **quel job et quelle étape ont lâché**, et les lignes du journal qui
+disent pourquoi — pas les 3000 lignes de bruit.
+
+### Ce qui a été évité
+
+- **Zéro modification** des 23 déploiements : un seul fichier les écoute de
+  l'extérieur. Rien ne peut casser ce qui marche déjà.
+- **Zéro volume ajouté** : il ne tourne QUE sur échec. Aucune exécution
+  programmée (c'est le volume qui a fait suspendre le compte le 15/08).
+- **Zéro mail en cascade** : son commit porte `[skip ci]`.
+- **Zéro clic pour toi**, maintenant et plus tard.
+
+### Vérifié, pas supposé
+
+Le rédacteur a été testé **hors CI** sur un vrai journal `wrangler` en échec :
+il remonte bien `Authentication error [code: 10000]` — la ligne qui dit
+*pourquoi*. Premier essai, il la jetait ; corrigé et retesté.
+
+Garde : `test:deploiement-declenche` → **46 contrôles, 0 échec**, prouvée
+discriminante par 3 sabotages (retirer un déploiement de la surveillance ·
+le faire écrire quand tout va bien · retirer le `[skip ci]`). Un 4ᵉ sabotage a
+révélé que mon contrôle `[skip ci]` se contentait d'un **commentaire** —
+corrigé, il exige maintenant la vraie commande.
+
+⚠️ **Il ne sera actif qu'une fois fusionné dans `main`** : GitHub n'exécute ce
+type de surveillance que depuis la branche principale. Le bot s'en charge.
+
+Leçon #234.

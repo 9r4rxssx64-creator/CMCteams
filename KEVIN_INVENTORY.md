@@ -2111,3 +2111,20 @@ quelle — il faut l'emballer en app native (je le fais en CI sur un Mac GitHub)
 refuse les coquilles vides autour d'un site : les candidates crédibles sont **CMCteams**,
 **Apex Chat** et **Lingua**, qui ont un vrai contenu propre.
 
+
+---
+
+## 🧾 Journal des déploiements ratés (2026-09-06)
+
+Le connecteur GitHub Actions a été **refusé deux fois par GitHub** → je ne peux pas lire
+les journaux de la CI. Ce filet le remplace : quand une mise en ligne rate, la CI lit le
+journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic pour toi.
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| Le journal (à lire) | La cause exacte des dernières pannes, en français | [audit/deploiements-rates.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/deploiements-rates.md) |
+| Le déclencheur | Écoute les 23 mises en ligne, n'agit **que** sur échec | [journal-deploiements.yml](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/journal-deploiements.yml) |
+| Le rédacteur | Trie le journal brut et n'en garde que ce qui explique | [journal-deploiement.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/journal-deploiement.py) |
+| Le garde | Vérifie que les 23 restent surveillées, sans volume ni spam | [verify-deploiement-declenche.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-deploiement-declenche.mjs) |
+
+**Rien dans le journal = tout va bien.** Il ne se remplit que sur panne.
