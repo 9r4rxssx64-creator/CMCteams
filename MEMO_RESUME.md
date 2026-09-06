@@ -1,5 +1,189 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (17h20) — le correctif du nettoyeur est sur `main`, mais le nettoyage n'a pas encore tourné
+
+- Mesuré : le correctif est bien dans `main` (2 occurrences de `remote set-branches`), et pourtant
+  **370 branches** 6 min après la fusion. Le nettoyage n'a pas eu lieu sur ce cycle.
+- **Explication la plus probable** (déduite, pas observée — l'API GitHub est fermée à cette
+  session, je ne peux pas lire les journaux d'exécution) : le déclencheur `push` du workflow est
+  **mort par construction** — le fichier le dit lui-même, le push de l'auto-merge utilise
+  `GITHUB_TOKEN` et un push fait avec ce jeton **ne déclenche aucun workflow**. Reste le
+  déclencheur `workflow_run`, qui part **après** l'auto-merge : au moment où il est parti, la
+  version du fichier utilisée était probablement encore **celle d'avant le correctif**.
+- **Test décisif** : le prochain auto-merge doit utiliser la version corrigée. Je pousse donc un
+  nouveau lot et je regarde si le compte de branches baisse. Si oui → prouvé. Si non → le seul
+  canal restant est le bouton « Run workflow » (je ne peux pas déclencher un workflow : API 403),
+  et je le dirai plutôt que de laisser croire que c'est réglé.
+## 6 septembre 2026 (soir, clôture) — vérifié EN VRAI sur kd-mc.com, connecté comme Kevin
+
+Dernière étape : j'ai lancé **« Vérif RÉELLE (connecté en tant que Kevin) »** sur le vrai
+domaine ([run 34046798307](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34046798307),
+Chromium réel, session admin U11804, captures d'écran en artifact). **27 surfaces sur 28 vertes.**
+
+| Surface | Résultat |
+|---|---|
+| **CMCteams** `cmcteams.kd-mc.com` | ✅ page montée, **session admin U11804** reconnue |
+| **CMCteams light** `cmcteams-light.kd-mc.com` | ✅ page montée, **session admin U11804** reconnue |
+| **Départs** `departs.kd-mc.com` | ✅ page montée |
+| Apex AI, Apex Chat, Coffre, Arbre, boutiques, Créa Studio, World Monitor, OSINT, Cüjina… | ✅ |
+| **KDMC Lingua** `lingua.kd-mc.com` | ❌ **seule surface rouge** |
+
+**Ce que ça prouve, et ce que ça ne prouve pas** — à dire honnêtement : ça prouve que les
+trois surfaces CMCteams **se chargent en production** et que la session admin fonctionne. Ça ne
+vérifie pas à l'écran « septembre affiche bien 248 personnes » : cette partie-là est prouvée par
+`npm run test:pdf-fidelite`, qui relit les vrais PDF **sans le parser de l'app** et compare aux
+données réellement déployées (248/248 · 7 440/7 440 des deux côtés).
+
+**Le seul rouge tranche une question laissée ouverte.** Au m046 j'écrivais que le rouge Lingua
+pouvait être « un état de test incomplet **ou** un vrai P0 ». C'est tranché : **vrai P0**.
+`page.fill: Timeout 30000ms exceeded` **sur le site en production** — la page ne se monte pas
+assez pour qu'on puisse seulement remplir un champ. Même signature que le test hors ligne. Un
+utilisateur peut donc tomber sur une page vide, sans message, sans erreur visible. Transmis en
+**m051** avec le lien du run et les captures.
+
+**PR #3696 fusionnée à la main par l'API** après **4 refus consécutifs** du bot : sa fenêtre de
+revue de 6 minutes est plus longue que l'intervalle entre deux avancées de `main`, donc la PR
+redevenait « dirty » avant chaque tentative. Aucune revue n'était exigée (`reviews: []`), le
+contenu était uniquement documentaire.
+
+
+## 6 septembre 2026 (soir, dernier point) — août 2026 : MOREL F, cause CERNÉE (et une erreur de ma part corrigée)
+
+**D'abord une correction que je me dois de faire.** En creusant, j'ai cru un moment que l'app
+**inventait** un planning pour MOREL F. **C'était faux, et l'erreur était la mienne** : dans les
+données générées, la clé `2026-8` est **septembre** (30 jours), pas août — les mois sont indexés
+à partir de 0. J'ai donc comparé le **septembre** de l'app à la **ligne d'août** du PDF. Rien ne
+correspondait, forcément. Vérifié depuis, sans ambiguïté :
+
+| Clé | Mois réel | MOREL F |
+|---|---|---|
+| `2026-8` | septembre (30 j) | **30 cellules** ✅ |
+| `2026-7` | août (31 j) | **absent** ❌ |
+| `2026-6` | juillet (31 j) | **31 cellules** ✅ |
+
+Ma garde `test:pdf-fidelite` disait donc **juste** depuis le début : MOREL F manque **uniquement**
+en août, et rien n'est inventé.
+
+**Ce qui est maintenant établi, et c'est nouveau.** Sa ligne existe bel et bien dans le PDF d'août,
+**parfaitement formée** — page 5, `y=786,48` :
+
+```
+BRTP+E.  MOREL F  16  31  CP ×15  14/19'c  RH  19/3c  20/5c  19/4c  16/3c  14/19c
+                          RH  R  22/6c  19/4'c  16/3'c  14/19'c  RH  R  20/5*
+```
+
+31 cellules : congés les jours 1-15, horaires les jours 16-31. Le format est celui que le parser
+sait lire (`BRTP+E.` = code poste, nom, `16`, `31`, puis les codes ; la règle `fromDay=1` de la
+v8.54 ignore volontairement le « 16 31 », qui n'est qu'une indication visuelle).
+
+**La mesure qui cerne la cause** : dans **la même section** (« Chefs black Jack »), sur **la même
+page**, les lignes suivantes sont capturées sans problème —
+
+| Ligne de la section | y | Résultat en août |
+|---|---|---|
+| **1ʳᵉ — MOREL F** | 786,48 | **absent** |
+| 2ᵉ — COSTAGLIOLI J | 772,92 | 31 cellules ✅ |
+| 3ᵉ — FAUTRIER M | 759,36 | 31 cellules ✅ |
+
+Donc ce n'est ni le format de sa ligne, ni la section, ni la page : c'est **la première ligne de
+données après l'en-tête de section** qui se perd. Piste concrète pour la suite : sur cette page,
+le titre « Chefs black Jack » (y=800,88) et les **deux** lignes d'en-tête « Colonne… » (y=799,32
+et 799,20) sont à moins de 1,8 pt les unes des autres et sont donc **réunies en une seule ligne**
+par le regroupement par proximité — l'en-tête occupe une bande de plus que d'habitude, et la
+première ligne de données qui suit paraît en faire les frais.
+
+**Je m'arrête là et je le consigne** plutôt que de toucher au parser en fin de session : le mois
+que Kevin a donné (septembre) est vérifié à 100 % des deux côtés, et une modification du
+regroupement des lignes touche **les trois mois à la fois**. La prochaine session a désormais
+l'endroit exact, la ligne exacte, et un cas témoin (2ᵉ et 3ᵉ lignes de la même section) pour
+prouver le correctif par comparaison.
+
+
+## 6 septembre 2026 (soir, fin) — les 3 rouges de la PR #3682 : aucun n'est le mien, et l'un cache une règle absolue non tenue
+
+La PR est passée de `dirty` à **`unstable`** (conflit résolu). Il restait trois checks rouges,
+tous les trois dans `messaging-app/` — un dossier que **je ne touche pas** : `git diff --stat
+origin/main HEAD -- messaging-app/` est **vide**, les fichiers sont identiques octet pour octet.
+
+| Rouge | À qui | Cause exacte (mesurée) |
+|---|---|---|
+| `e2e (iphone-se)` + `e2e (iphone-safari)` | `apex-chat` | j'ai lancé le workflow sur **`main` non touché** ([run 34045680228](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34045680228), sha `292b136`) : **même résultat exactement** — les 2 WebKit rouges, `pixel-android` et `chromium-desktop` verts. Le test attend 0 erreur de page et en reçoit une : `…/api/system/config due to access control checks` = un **refus CORS**, daté du commit `9233c783` de 16h00 (« CORS restreint aux origines réelles, audit P2b »). WebKit remonte le refus en erreur de page, Chromium non. Message **m048** |
+| `Sync Apex Chat (messaging-app)` | `apex-chat` | la sentinelle qui garantit « **MAJ auto forcée** » est **morte**, et le décalage qu'elle devait empêcher est déjà là. Voir ci-dessous |
+
+### La sentinelle morte — c'est le vrai sujet
+
+`messaging-app-cache-sync.yml` existe pour tenir une règle **absolue** de Kevin :
+`CACHE_VERSION` = `APP_VER`, toujours, sinon la PWA iOS sert l'ancien code et Kevin ne peut pas
+vider son cache. Elle est censée **corriger et commiter toute seule**. Elle ne l'a jamais fait.
+
+**Mesuré sur `main`** : `__APEX_CHAT_VERSION__` = `v1.1.288`, `sw.js` = `v1.1.288`, splash et
+topbar = `v1.1.288` — mais **`lib/sw-handlers.js` = `v1.1.285`**. Trois versions de retard.
+
+**Pourquoi** : son étape de détection tourne sous `bash -e` et lit six versions par
+`VAR=$(grep -oE '…' | head -1 | grep -oE '…')`. L'une cherche `data-version="v…"` dans
+`messaging-app/index.html` — un attribut qui **n'existe pas** (0 occurrence, et `git log -S` ne
+trouve **aucun** commit l'ayant jamais ajouté : la garde est **née morte**). Un `grep` sans
+correspondance sort en **1**, le code de sortie de `VAR=$(…)` est celui de la substitution, et
+`-e` **tue l'étape à la 4ᵉ ligne, avant le moindre `echo`** — d'où un job rouge de 13 s dont le
+journal ne contient aucune ligne utile, donc jamais lu. Reproduit ici à l'identique.
+Les **6 derniers passages** (runs 375→380, sur deux branches) sont rouges.
+Correctif proposé (2 lignes, `|| true`) envoyé à `apex-chat`, **non appliqué** : leur terrain,
+et ils poussent toutes les 15 minutes. Leçon **#230**.
+
+### Autre chose vérifiée au passage, utile à tous
+
+`npm run test:ci` **ne tourne dans aucun workflow GitHub** : `grep -rn "npm run test:ci"
+.github/workflows/` ne renvoie rien. Le seul endroit où il tourne à chaque push est le job
+`tests` de **GitLab** (`.gitlab-ci.yml` ligne 58). Mes deux gardes y sont donc, comme toutes les
+autres — je le dis plutôt que de laisser croire qu'elles passent sur une PR GitHub. Message **m049**.
+Et **non**, il ne faut pas ajouter un workflow GitHub qui lance `test:ci` : il est rouge dès le
+départ à cause de trois rouges d'autres sessions, ça rendrait **chaque** PR rouge.
+
+### Numérotation des leçons — une collision de plus rattrapée
+
+Ma leçon sur le PDF portait encore le **221**, alors que `main` en a déjà deux (doublon
+préexistant, pas le mien, laissé tel quel). Elle devient **#231** (`main` a publié un #229 pendant
+la session). La leçon du jour est **#230**.
+## 6 septembre 2026 (17h05) — POURQUOI 370 branches : le nettoyeur automatique était aveugle
+
+- Cause racine trouvée : `cleanup-stale-branches.yml` existe, se déclenche bien après chaque
+  auto-merge, et a la bonne logique — mais `actions/checkout` pose un refspec **mono-branche**
+  (`+refs/heads/main:refs/remotes/origin/main`). Son `git fetch origin --prune` ne ramenait donc
+  **que `main`** → `git branch -r --merged | grep origin/claude/` ne voyait **aucune** branche →
+  `count=0` → **job vert, 0 suppression**, pendant des mois. `fetch-depth: 0` ne corrige pas ça :
+  il donne l'historique de la branche cochée, pas les autres branches.
+- **Fix livré** : `git remote set-branches origin '*'` + fetch avec refspec explicite, **sur les
+  deux jobs**, plus une **garde anti-faux-vert** : 0 branche visible après fetch → le job
+  **échoue bruyamment** au lieu de conclure « rien à faire ». Leçon **#227**.
+- **Je ne peux pas supprimer de branche distante depuis cette session** : le relais git coupe la
+  connexion sur un refspec de suppression (3 essais, `send-pack: unexpected disconnect`), alors
+  que le proxy est sain (`recentRelayFailures: []`) et que les pushs de commits passent. L'API
+  GitHub est fermée (403) et `gh` est absent. **Le canal qui a les droits, c'est la CI** — d'où le
+  correctif du workflow plutôt qu'un contournement de mon côté.
+- Le workflow se déclenche **sur push dans `main` du fichier lui-même** : la fusion de ce
+  correctif le lancera donc, et il supprimera les 231 branches fusionnées de plus de 7 jours.
+
+
+## 6 septembre 2026 (16h55) — pipeline de TOUTES les branches et sessions
+
+- Mesuré sur les **370 branches `claude/*`** distantes : **240 sont des ancêtres de `main`**
+  (tout est dedans, suppression prouvée sans perte) · **40 ont un contenu équivalent** déjà livré
+  autrement · **109 portent des patchs inédits**, qui se regroupent en **49 travaux distincts**
+  (les 109 sont des instantanés successifs des mêmes jobs : `langs-2` → `langs-3` = +2 commits).
+- Union dédupliquée : **699 sujets de commit** jamais livrés à `main`, dont **149 de robot** →
+  **~550 commits de travail réel** qui n'existent que sur des branches.
+- **Correction de méthode assumée** : mon premier test comparait les *fichiers modifiés depuis le
+  fork* — faux (une branche peut avoir touché 1 889 fichiers déjà présents dans `main`). Le bon
+  test est `git cherry` (comparaison de **patchs**), qui reconnaît un travail livré autrement.
+  Le mauvais test annonçait 129 branches à risque ; il y en a **109**.
+- Registre écrit : **`PIPELINE_BRANCHES_SESSIONS.md`** — les 49 travaux datés avec leurs zones,
+  **et les SHA de chaque branche** pour que toute suppression reste restaurable
+  (`git branch <nom> <sha>`).
+- **Pas fusionné les 49** : poser du code de juin-août sur un `main` qui a bougé de milliers de
+  commits = régression garantie. Chaque travail demande une décision (encore utile ou dépassé ?).
+- **Pas supprimé les 40 « équivalents »** : preuve bonne mais moins absolue qu'un ancêtre de
+  `main` — sur une opération irréversible, version conservatrice.
+
 ## 6 septembre 2026 — « Pourquoi tu es bloqué par GitHub ? Trouve des solutions »
 
 **Le blocage, mesuré** (pas supposé) :
@@ -121,7 +305,7 @@ Les trois formes s'affichent enfin : `[js] Cannot read x of null` · `[warn] HTT
 `[_resolve-ia-key] Unexpected end of JSON input`.
 
 **Garde** : `npm run test:journal-erreurs` (13 contrôles, dans `test:ci`), prouvée discriminante.
-Leçon **#227**.
+Leçon **#232**.
 
 
 ## 6 septembre 2026 — SEPTEMBRE 2026 V2 vérifié EN RÉEL contre le PDF : 3 vrais défauts trouvés et corrigés
