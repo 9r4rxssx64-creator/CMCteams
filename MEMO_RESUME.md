@@ -258,7 +258,7 @@ Les trois formes s'affichent enfin : `[js] Cannot read x of null` · `[warn] HTT
 `[_resolve-ia-key] Unexpected end of JSON input`.
 
 **Garde** : `npm run test:journal-erreurs` (13 contrôles, dans `test:ci`), prouvée discriminante.
-Leçon **#227**.
+Leçon **#232**.
 
 
 ## 6 septembre 2026 — SEPTEMBRE 2026 V2 vérifié EN RÉEL contre le PDF : 3 vrais défauts trouvés et corrigés
