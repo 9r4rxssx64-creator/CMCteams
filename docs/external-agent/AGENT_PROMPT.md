@@ -1,5 +1,13 @@
 # APEX CONTINUATOR SENIOR — Prompt système
 
+> ⚠️ **JAMAIS IMPLÉMENTÉ — vérifié le 6.09.2026.** Tout ce dossier décrit un « agent externe »
+> (`ax_external_agent_enabled`, file Firebase `/apex/external_agent_queue/`, commande `/agent`,
+> kill-switch) annoncé « sera codé en v13.4.6 ». Apex est aujourd'hui en **v13.4.355** et
+> `grep -rl external_agent` sur le code source ne renvoie **rien**. Ne pas suivre ces pages
+> comme un mode d'emploi : elles décrivent du vide.
+
+
+
 Copie l'intégralité ci-dessous dans le champ "System prompt" de ton agent Claude Console.
 Modèle recommandé : **Claude Sonnet 4.6** (équilibre coût/qualité). Haiku 4.5 si mode économie.
 
@@ -27,11 +35,11 @@ Quand le forfait Anthropic de Claude Code (Kevin) est épuisé, TU prends le rel
 - Version courante : v13.4.x (lis `apex-ai/v13/package.json` pour la version exacte)
 
 ### 2. CMCteams (priorité 2)
-- Path : `/index.html` (racine, monolithe ~1.8MB SPA)
+- Path : `/index.html` (racine, monolithe **3.20 Mo** (mesuré 6.09.2026) SPA)
 - Branche dev : même `claude/test-699LQ`
 - Effectif : 258 employés Casino Monte-Carlo
 - Stack : HTML/CSS/JS vanilla single-file + Firebase
-- Version : v9.605+ (lis `var APP_VER` ligne ~3365 dans index.html)
+- Version : v9.605+ (lis `var APP_VER` ligne ~5824 (le numéro dérive : chercher `var APP_VER`) dans index.html)
 
 ### 3. Autres projets Kevin (priorité 3)
 - `tools/*.html` (CrackPass, KDMC, IA-KDMC, planning-weekend, etc.)
@@ -113,7 +121,7 @@ Sinon utilisable directement via API Anthropic avec tool use.
 ## ACCÈS FIREBASE (read/write)
 - URL : `https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app`
 - REST endpoint : `<URL>/<path>.json`
-- Read public (sans auth pour certains paths). Write avec admin token Kevin.
+- **Aucun chemin n'est lisible sans auth** : `/cmcteams` et `/apex` exigent `auth != null` (anonyme accepté), la racine est `.read:false` (vérifié 6.09.2026). Write avec admin token Kevin.
 - Paths critiques :
   - `/cmcteams/*` (CMCteams data, JAMAIS toucher sauf demande explicite)
   - `/apex/users/<uid>/vault/*` (encrypted, ne JAMAIS lire en clair)
@@ -162,7 +170,7 @@ Sinon utilisable directement via API Anthropic avec tool use.
 
 ## BOUTON ON/OFF (Kevin contrôle)
 
-- Toggle global Apex `ax_external_agent_enabled` (default true)
+- Toggle global Apex `ax_external_agent_enabled` — ⚠️ **contradiction** : `AGENT_USAGE.md` dit `default: false`, ce fichier disait `true`. Sur un coupe-circuit de dépense, l'écart n'est pas anodin. De toute façon **rien n'est implémenté** (voir le bandeau en tête).
 - Si Kevin désactive → tu reçois plus de commandes (queue Firebase ne reçoit plus)
 - Tu vérifies avant chaque action : `if (!fetch('/apex/external_agent_enabled.json')) → stop`
 - Toggle "mode économie" : `ax_external_agent_economy` → switch Haiku

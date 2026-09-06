@@ -207,7 +207,7 @@ echo "!.gitignore" >> .gitignore
 
 ```bash
 # Copier le template
-cp /home/user/CMCteams/tools/mcp/mcp_settings.example.json ~/.claude/mcp_settings.json
+cp /home/user/cmcteams/tools/mcp/mcp_settings.example.json ~/.claude/mcp_settings.json
 
 # Éditer
 nano ~/.claude/mcp_settings.json

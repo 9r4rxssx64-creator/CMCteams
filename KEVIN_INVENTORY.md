@@ -1,7 +1,22 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
+
+### 6 septembre 2026 — garde « aucun secret écrit dans un document »
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/no-secret-in-docs.test.mjs` | **Nouveau.** Cherche « une étiquette de secret suivie d'une valeur » dans les 822 `.md` du dépôt — donc il attrape aussi les secrets qu'on ne connaît pas encore, contrairement à gitleaks (préfixes connus) et à `no-admin-pin-leak` (code admin seulement). Il ne cite jamais la valeur trouvée, seulement l'endroit. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/no-secret-in-docs.test.mjs) |
+| `audit/03-FINDINGS.md` | Les 2 points que je n'ai **pas** corrigés exprès et qui demandent ta décision : les noms de tiers dans le dépôt public (F-P1) et le DPA Firebase dont la région n'est pas prouvée (F-P2) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/03-FINDINGS.md) |
+| `docs/DPA-Firebase.md` | Le document RGPD dont j'ai retiré la fausse certitude « données en Europe » + la vérification en 1 clic | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/docs/DPA-Firebase.md) |
+
+> ⚠️ **À faire par toi, les deux :** régénérer `AGENT_SECRET` sur Vercel (projet `kdmc-agent-monaco`)
+> et changer le code famille de l'arbre via `changeCode()` dans l'app. Les avoir masqués ne les
+> efface **pas** de l'historique git.
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
 
 ### 5 septembre 2026 — garde Vercel (mails d'échec)

@@ -1,5 +1,89 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 — relecture de TOUS les `.md` : deux secrets trouvés en clair (à RÉGÉNÉRER)
+
+Kevin : *« Relis tous les .md »*, deux fois. J'ai relu les **1160** fichiers Markdown du dépôt,
+y compris ~40 que personne n'avait jamais ouverts (`docs/`, `design/`, `SETUP_FOR_LATER/`,
+`_PROJECTS_KDMC/`…). **87 fichiers corrigés** en 7 passes.
+
+### ⚠️ Le plus important : deux secrets étaient écrits en clair, dans un dépôt PUBLIC
+
+| Secret | Où | Ce qu'il ouvre |
+|---|---|---|
+| `AGENT_SECRET` | `_PROJECTS_KDMC/e-KDMC/NOTES_USER.md`, `TODO_KEVIN.md` | c'est **la seule** protection de `/api/cron` et `/api/sentry-test` de l'agent déployé (`tools/agent/api/cron.js:12`). Le lire = déclencher les cycles de l'agent, qui appellent l'API Anthropic → **dépense réelle sur ton compte** |
+| Code famille de l'arbre | `arbre/PASSATION-ARBRE.md` | `sha256("arbre::"+code)` **EST** le chemin Firebase (`arbre/index.html:302`), et l'app se connecte en anonyme → le connaître = **lire et écrire tout l'arbre**, donc les données de personnes vivantes |
+
+Je les ai remplacés par `‹secret …›`. **Ça ne suffit pas** : masquer **n'efface pas l'historique
+git**. Les deux sont à considérer comme **connus de tous**, donc :
+
+1. **`AGENT_SECRET` → à régénérer sur Vercel** (projet `kdmc-agent-monaco`).
+2. **Code famille → à changer dans l'app** (fonction `changeCode()` de l'arbre).
+
+Aucun garde ne les voyait : `no-admin-pin-leak` ne cherche que le code **admin**, et `gitleaks`
+ne connaît que des préfixes publiés (`sk-`, `ghp_`…) — ces deux-là sont des chaînes libres. J'ai
+donc écrit un garde qui cherche une **forme** et pas une valeur : « une étiquette de secret,
+suivie d'une valeur » → `npm run test:no-secret-in-docs` (**822 fichiers, 0 fuite**), câblé dans
+`test:ci`. Il attrapera aussi les futurs secrets qu'on ne connaît pas encore. Prouvé
+discriminant : il retrouve les deux fuites réinjectées, et reste muet sur l'arbre propre.
+
+### Trois « faux verts » démasqués (une vérification qui ne vérifiait rien)
+
+- **Le contrôle JS de `.claude/settings.json`** échouait *à chaque exécution* pour deux raisons :
+  un chemin en dur `/home/user/CMCteams` (majuscules — n'existe pas sur Linux) et un motif qui
+  attrapait le bloc `<script type="application/ld+json">` → `SyntaxError` systématique. Corrigé,
+  puis **prouvé par sabotage** : code propre → « JS OK — 4 blocs » ; code cassé → erreur.
+- **La « MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT » de CLAUDE.md** lançait `node --check` sur
+  `apex-ai/index.html`… qui fait **80 octets** (Apex v12 est archivé). Elle passait au vert sans
+  rien contrôler. Elle vise maintenant le vrai mono-fichier (`index.html`) + `tsc`/`vitest` pour Apex v13.
+- **8 skills** pointaient vers `apex-ai/v13/src/` — un dossier qui **n'existe pas**. 12 chemins
+  de services morts corrigés (chaque cible vérifiée présente, chaque source vérifiée absente).
+
+### Un cron GitHub interdit était copiable-collable dans un skill
+
+`.claude/skills/audit-parity-v12-v13.md` contenait un `schedule: cron` prêt à l'emploi — alors
+que c'est le **volume** de crons (~97/jour) qui a fait suspendre le compte le 15/08. Remplacé par
+`workflow_dispatch` + le rappel de l'incident. C'était le dernier `schedule:` de `.claude/`.
+
+### Ce que j'ai refusé de corriger, exprès
+
+- **Les noms de collègues et de proches dans le dépôt public** : les masquer dans 15 documents
+  serait du théâtre, puisqu'ils sont dans le **code livré** (29 mentions des Pit Boss et 261
+  entrées d'effectif dans `index.html`). C'est une décision à prendre, pas un caviardage —
+  3 options chiffrées dans `audit/03-FINDINGS.md` (F-P1).
+- **Le DPA Firebase** affirmait « données en Europe, pas de transfert hors UE » alors que
+  l'adresse réellement appelée par le code déployé est la forme **américaine**
+  (`…firebaseio.com`, et un relevé Lighthouse prouve qu'elle répond). Je n'ai pas d'accès à la
+  console Google : je n'affirme **ni** l'un **ni** l'autre — j'ai retiré la fausse certitude et
+  écrit la vérification en 1 clic. **Ce document ne doit servir d'argument RGPD devant personne
+  tant que Kevin n'a pas ouvert la console** (F-P2).
+- **Le renommage des secrets App Store** (le workflow lit `ASC_*`, les vrais secrets s'appellent
+  `APPSTORE_*`) : la correspondance est incertaine et un 3ᵉ secret manque — renommer à l'aveugle
+  serait pire que documenter. Documenté dans le skill.
+
+### Aussi corrigé (chiffres qui avaient dérivé)
+
+`CLAUDE.md` : v9.741 → **v9.891 / v13.4.355** · taille `index.html` 1,80 Mo → **3,20 Mo** ·
+121 → **145 workflows** · 258 → **261 entrées d'effectif** · « 7 docs racine » → **8** (les 8 sont
+maintenant nommés). Plus : les 5 documents `docs/external-agent/` marqués « JAMAIS IMPLÉMENTÉ »,
+les comptes de crons (5→3, ~5000→~65/mois), l'URL Vercel, `tests/README.md` (2 → **21 suites**),
+et la contradiction de stratégie de branches d'IA-KDMC (« comme CMCteams » était **faux** : 918
+branches `claude/*` ici).
+
+### Vérifié (sorties réelles)
+
+`test:no-secret-in-docs` **822 fichiers / 0 fuite** · `test:no-pin-leak` **957 fichiers / 0 fuite
+dans le code servi** · `test:vercel-config` **5 OK / 0 FAIL** · `test:destinations-workflows`
+**14 github · 22 gitlab · 7 worker · 6 jamais** · `test:uptime-couverture` **6 OK / 0 FAIL** ·
+`test:ios-config` **38 OK**.
+
+**Reste ouvert pour Kevin** : les 2 secrets à régénérer (ci-dessus) · les règles Firebase des
+boutiques ouvertes en écriture sans condition · `deploy-apex-chat.yml` qui déploie la prod depuis
+n'importe quelle branche `claude/**` · `arbre/research/ACTES-VERIF.md` (dates et lieux de
+naissance de ~18 personnes vivantes + une adresse, dans un dépôt public) · `CLAUDE.md` qui pèse
+533 Ko alors qu'il porte sa propre règle « garder CLAUDE.md < 45 Ko ».
+
+---
+
 ## 5 septembre 2026 (19 h) — les deux « pannes » du soir étaient deux fausses alertes
 
 **Le mail Vercel qui revenait** : ce n'était plus l'ancien filtre, c'était **mon commentaire**.

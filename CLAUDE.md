@@ -2490,7 +2490,8 @@ Audit obligatoire :
 - Identity section présente dans system prompt → sinon alarme
 - Top 50 facts user courant disponibles → sinon refetch Firebase
 - Top 10 lessons cross-session injectées → sinon refetch
-- 7 docs racine sync (CLAUDE.md, NOTES_USER, etc.) → sinon refetch GitHub raw
+- 8 docs racine sync (CLAUDE.md, NOTES_USER, MEMO_RESUME, KEVIN_INVENTORY,
+  KEVIN_ACTIONS_TODO, MEMORY_PERSISTENT, APEX_HANDOFF, CLAUDE_FEED) → sinon refetch GitHub raw
 - Knowledge graph entities (Kevin, Laurence, projets) présentes Pinecone/MCP Memory
 
 Si une vérification fail → escalade Claude Code via `ax_claude_todo` immédiat.

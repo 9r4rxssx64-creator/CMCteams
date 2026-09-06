@@ -36,13 +36,13 @@ Le contenu collé est **classé automatiquement** (clé API, IBAN, lien… déte
 | `coffre-fort/memo/02-liens-utiles.pdf` | Mémo : dashboards/consoles/billing |
 | `coffre-fort/memo/03-liens-projets.pdf` | Mémo : adresses **kd-mc.com** + actuelle + dépôt de chaque projet |
 | `coffre-fort/memo/04-adresses-kdmc.pdf` | Mémo : cartographie du domaine **kd-mc.com** (sites + serveurs) |
-| `tools/memo-pdf/generate_pdfs.py` | Générateur des 3 PDF |
+| `tools/memo-pdf/generate_pdfs.py` | Générateur des **4** PDF (`build_secrets`, `build_links`, `build_projects`, `build_addresses` — seule la docstring du script disait 3) |
 | `services/coffre-r2/` | Worker Cloudflare R2 (upload/download chiffré) |
 | `.github/workflows/deploy-coffre-r2.yml` | Crée le bucket + déploie + écrit l'URL dans config.json (auto) |
 | `tests/coffre/e2e.test.mjs` | Test réel Playwright (crypto + setup + lock/unlock + persistance) |
 
 ## Tests réels
-`node tests/coffre/e2e.test.mjs` → 9/9 ✅ (round-trip crypto, création, ajout, verrou, reload, déverrouillage, rejet mauvaise phrase).
+`node tests/coffre/e2e.test.mjs` → le total est celui qu'affiche l'exécution (**13** appels `ok()` dans le fichier au 6.09.2026 ; « 9/9 » était périmé) (round-trip crypto, création, ajout, verrou, reload, déverrouillage, rejet mauvaise phrase).
 
 ## Déploiement R2 (autonome)
 Au push, `deploy-coffre-r2.yml` crée le bucket `coffre-vault` (`wrangler r2 bucket create`),

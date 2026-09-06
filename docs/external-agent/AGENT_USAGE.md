@@ -1,5 +1,13 @@
 # APEX CONTINUATOR — Utilisation depuis Apex chat + bouton ON/OFF
 
+> ⚠️ **JAMAIS IMPLÉMENTÉ — vérifié le 6.09.2026.** Tout ce dossier décrit un « agent externe »
+> (`ax_external_agent_enabled`, file Firebase `/apex/external_agent_queue/`, commande `/agent`,
+> kill-switch) annoncé « sera codé en v13.4.6 ». Apex est aujourd'hui en **v13.4.355** et
+> `grep -rl external_agent` sur le code source ne renvoie **rien**. Ne pas suivre ces pages
+> comme un mode d'emploi : elles décrivent du vide.
+
+
+
 ## Comment piloter l'agent depuis Apex chat (comme tu me parles)
 
 ### Setup côté Apex (sera codé en v13.4.6)

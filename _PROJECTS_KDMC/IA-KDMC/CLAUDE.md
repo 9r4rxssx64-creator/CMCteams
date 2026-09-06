@@ -44,13 +44,16 @@ Communes aux 3 projets de Kevin :
 7. **Erreurs connues documentées** ici, ne jamais les reproduire
 8. **TodoWrite obligatoire** pour chaque demande
 9. **Validation post-commit** : syntax check + tests avant push
-10. **Branche unique `main`** — pas d'autres branches, comme CMCteams
+10. **Branche unique `main`** pour CE projet — pas d'autres branches.
+    ⚠️ **« comme CMCteams » était FAUX** (corrigé 6.09.2026) : CMCteams travaille au contraire
+    sur des branches `claude/*` (918 branches au 6.09.2026), jamais en poussant sur `main`
+    directement. Ne pas copier ce point-là depuis CMCteams.
 
 ---
 
 ## 🧰 Outils à utiliser (réflexes)
 
-- Claude API (modèle `claude-opus-4-6` ou `claude-haiku-4-5-20251001`)
+- Claude API (modèle `claude-opus-5` ou `claude-haiku-4-5-20251001`)
 - Prompt caching pour économiser tokens
 - Tool use custom (fonctions métier)
 - Web search si pertinent
