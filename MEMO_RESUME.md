@@ -150,6 +150,11 @@
   fois pour la raison **inverse** : ce test vérifie ce que l'app fait *quand l'IA n'est pas joignable*, et
   ne tenait que parce que le sandbox n'a pas de réseau. Sur le runner l'IA répond → sous-titres produits →
   rouge. L'indisponibilité est maintenant **forcée** au lieu d'être subie : 37/0 ici.
+
+**Où en est `test:ci` sur le runner GitLab** : le job `tests` est passé de **65 s (échec immédiat)** à
+**877 s**, toute la classe « le test dépend de l'état du réseau » étant traitée. Le rouge restant est
+`test:lingua-voix`, et **il échoue aussi ici** (même ligne 92, même `TimeoutError` : le bouton 🔊 n'apparaît
+pas dans les 15 s) — donc ce n'est pas du non-déterminisme, c'est un vrai écart, **session Lingua**.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
