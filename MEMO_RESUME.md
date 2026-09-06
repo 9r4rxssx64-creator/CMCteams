@@ -51,7 +51,7 @@ discriminant par sabotage** (une cellule modifiée → écart nommé ; une perso
 MANQUANT »). Trouvé au passage : `compare-app-vs-light-teams` avait sa liste de mois **figée sur
 juillet/août** → septembre n'était jamais comparé ; elle est maintenant **déduite des boards**.
 
-**Leçon** : #220 dans `LESSONS.md`.
+**Leçon** : #221 dans `LESSONS.md`.
 
 **Pipeline + relecture des docs (même jour, sur demande de Kevin)** :
 - Session inscrite au registre commun sous **`cmcteams-pdf`** (elle n'y était pas) + ajoutée à
@@ -62,7 +62,7 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   ne voit rien quand A et B se trompent pareil ; et les listes de mois figées).
 - **`main` fusionné** dans la branche (30 commits de retard) : 3 conflits résolus (APP_VER,
   `sw.js`, `test:ci`), version **v9.894**, les 4 nouveaux tests IA de `main` conservés.
-- **Leçon renumérotée #217 → #220** : `main` avait déjà un #217 (message m015 : lire le dernier
+- **Leçon renumérotée #217 → #220 → #221** (deux collisions successives pendant la session) : `main` avait déjà un #217 (message m015 : lire le dernier
   numéro sur la lignée PUBLIÉE avant d'écrire). ⚠️ Constat au passage : `LESSONS.md` porte
   **20 numéros en double** (#79, #80, #98, #106, #111, #139-142, #150, #153, #173-175, #197, #213,
   #216-219), séquelle de la réunion des deux lignées. Je ne les renumérote PAS : des dizaines de
