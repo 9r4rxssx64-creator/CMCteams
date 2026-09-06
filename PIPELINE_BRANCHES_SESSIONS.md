@@ -436,3 +436,49 @@ pourquoi la version automatique ne fait rien — et je pourrai finir le travail 
 - **Rien n'est en danger** : les 240 branches candidates à la suppression sont des ancêtres de
   `main` (leur contenu y est déjà), et chaque SHA est noté ici, donc tout reste restaurable.
 - Le ménage est de l'**hygiène**, pas de la valeur : 371 branches encombrent, elles ne perdent rien.
+
+---
+
+## Compactage — état final honnête (21h40)
+
+### Ce qui est prouvé
+
+| Fait | Preuve |
+|---|---|
+| Le nettoyeur **voit** enfin les branches | compte-rendu du robot : **371 vues** (avant : 0) |
+| Le mécanisme de compte-rendu **fonctionne** | fichier écrit et poussé par le robot à 20 h 44 |
+| **235 suppressions tentées, 235 échecs** | 371 vues − 136 gardées − 0 supprimée |
+| Trois identités ont refusé | relais git (connexion coupée) · connecteur (**lecture seule**, `403` en écriture) · jeton de CI (les 235 échecs) |
+| Aucune donnée en danger | les 235 sont des **ancêtres de `main`** : leur contenu y est déjà, et chaque SHA est noté plus haut |
+
+### Ce que je ne sais toujours pas
+
+**Le nom exact du verrou.** J'ai livré la capture d'erreur qui le donnera, mais aucun nouveau
+compte-rendu n'est arrivé depuis. Pour savoir pourquoi, il faudrait le **journal d'exécution** —
+et c'est précisément ce que je ne peux pas atteindre :
+
+```
+déclencher un workflow (API)      : HTTP 403
+lire un journal d'exécution (API) : HTTP 403
+outil Actions dans le connecteur  : aucun
+```
+
+### J'arrête de tâtonner — et voici pourquoi
+
+Le compactage est de l'**hygiène** : 374 branches encombrent, elles ne perdent rien. J'ai déjà
+consommé plusieurs cycles dessus, et chaque nouvelle tentative sans journal revient à **deviner**.
+Continuer coûterait du forfait pour du rangement — exactement le travers que Kevin me reproche.
+
+### Le chemin le plus court, et il tient en un clic
+
+**▶️ [Lancer « Compact stale claude/* branches »](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/cleanup-stale-branches.yml)**
+→ « Run workflow » · branche `main` · `dry_run` = `false`
+
+Ce workflow porte le correctif de cécité (vérifié présent sur `main`). Deux issues, toutes deux utiles :
+
+- **il supprime** → le ménage est fait, et il repartira seul à chaque livraison ;
+- **il échoue** → son journal, que *toi* tu peux lire, **nomme le verrou**. Colle-moi la ligne
+  d'erreur et je termine sans autre clic.
+
+C'est un vrai clic — pas un que j'aurais pu m'épargner : déclencher un workflow et lire un journal
+sont les deux seules choses qu'aucun de mes trois accès ne permet.
