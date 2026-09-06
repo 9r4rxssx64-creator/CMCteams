@@ -1,5 +1,18 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (23h50) — le compte-rendu du robot n'était jamais publié
+
+- La livraison a bien tourné (demande #3716 ouverte à 23 h 30, fusionnée à 23 h 36) et l'étape de
+  ménage aussi — **mais rien n'a changé** : toujours 375 branches, aucun compte-rendu.
+- **Cause trouvée** : la dernière ligne publiait le compte-rendu par un `push` sur la branche…
+  qui avait bougé entre-temps (elle venait d'être fusionnée). GitHub rejette, et le rejet était
+  **encore avalé**. Le fichier existait, mais seulement dans la machine du robot. Leçon **#236** —
+  troisième fois en douze heures que le même travers réapparaît, à trois endroits différents.
+- **Correctif poussé** : le compte-rendu s'écrit maintenant **directement sur `main` par l'API**
+  (aucun rebase possible), et un échec de publication est **rapporté**, pas avalé.
+- **Donc** : à la prochaine livraison, `.github/CLEANUP-REPORT.md` sur `main` dira soit
+  « 231 supprimées », soit **le message exact du refus du jeton de CI**. Rien à faire de ton côté.
+
 ## 6 septembre 2026 (23h30) — je m'étais trompé : c'était déjà fait, et le verrou a un nom
 
 - **Correction de ce que j'ai écrit à 21 h 40** : j'avais conclu que l'étape de ménage n'avait

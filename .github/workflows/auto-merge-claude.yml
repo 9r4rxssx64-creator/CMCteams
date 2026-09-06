@@ -404,11 +404,22 @@ jobs:
 
           echo "::notice::Menage : $DEL branche(s) supprimee(s)/$TOTAL vues, $CLOSED annulation(s) fermee(s)."
 
-          git add "$REP" 2>/dev/null || true
-          if ! git diff --cached --quiet 2>/dev/null; then
-            git commit -m "menage: $DEL branche(s), $CLOSED annulation(s) fermee(s) [skip ci]" >/dev/null 2>&1 || true
-            git push origin "HEAD:${{ steps.src.outputs.branch }}" >/dev/null 2>&1 || echo "::warning::push du compte-rendu echoue"
-          fi
+          # ---------- 3) Publier le compte-rendu SANS passer par un push ----------
+          # Un `git push HEAD:<branche>` echoue des que la branche a bouge
+          # pendant le job (c'est exactement ce qui s'est passe le 6.09 : le
+          # compte-rendu etait ecrit, jamais publie, et l'echec etait avale par
+          # `>/dev/null 2>&1` — le meme defaut que la lecon #232, une couche
+          # au-dessus). L'API de contenu ecrit le fichier directement sur main,
+          # sans rebase possible, et on RAPPORTE son erreur au lieu de l'avaler.
+          B64=$(base64 -w0 "$REP" 2>/dev/null || base64 "$REP" | tr -d '\n')
+          SHA=$(gh api "repos/${GITHUB_REPOSITORY}/contents/.github/CLEANUP-REPORT.md?ref=main" \
+                  --jq .sha 2>/dev/null || true)
+          if [ -n "$SHA" ]; then SHA_ARG=(-f "sha=$SHA"); else SHA_ARG=(); fi
+          PUB=$(gh api -X PUT "repos/${GITHUB_REPOSITORY}/contents/.github/CLEANUP-REPORT.md" \
+                  -f "message=menage: $DEL branche(s), $CLOSED annulation(s) fermee(s) [skip ci]" \
+                  -f "content=$B64" -f "branch=main" "${SHA_ARG[@]}" 2>&1) \
+            && echo "::notice::Compte-rendu publie sur main." \
+            || echo "::error::Publication du compte-rendu ECHOUEE : $(echo "$PUB" | head -3)"
 
       - name: Notify on failure
         if: failure()
