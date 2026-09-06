@@ -465,6 +465,23 @@ domaine : sans empreinte publiée, personne n'entre. Gardes : `npm run test:arbr
 (21 contrôles, famille **synthétique**). **Ce qui a été public une fois le reste** (historique
 Git) : Kevin doit **publier une fois** depuis son iPhone puis **changer le code famille**.
 
+### Suite (5.09 nuit) — amorce D1 : le domaine sert l'arbre v3.14 sans publication préalable
+
+L'arbre v3.7→v3.14 (8 versions, 119 personnes, seedVersion 63) ne vivait que sur GitLab (`kdmc-group/Kdmc-project`,
+main). Récupéré avec le jeton de Kevin (lecture seule, jamais écrit sur disque), le **code** est porté dans v3.17 et
+les **données** sont déposées dans une base **Cloudflare D1** dédiée, `kdmc-arbre`
+(id `a10e750d-de49-47b5-b1d8-0e937eccbec8`, table `kv(k, v, saved_at)` : `codehash` = empreinte 64-hex du code
+famille actuel, `seed` = les 119 fiches en JSON, 96 443 caractères, `json_valid`). Le routeur lit **KV d'abord, D1 en
+repli** (`arbreD1` / `arbreCodehash` / `arbreSeedOut`, champ `source:'kv'|'d1'` dans `/__arbre/status`, fail-open si
+la liaison manque) ; liaison `[[d1_databases]] binding = "ARBRE_DB"` dans `services/kdmc-router/wrangler.toml`.
+Conséquence : **dès le déploiement du routeur, un nouvel appareil reçoit l'arbre complet en tapant le code** — plus
+d'étape « Publier » obligatoire ; Kevin peut toujours publier depuis Outils (le KV prend alors le dessus). Les
+appareils existants (seedVersion 56) se mettent à niveau seuls au démarrage (`refreshFromDomain`, 1 GET, photos
+locales gardées, fantômes purgés). Intégrité du dépôt D1 prouvée par **somme de contrôle par morceau** (8 × 12 055
+caractères, 8/8 identiques au fichier source ; 6 morceaux corrigés avant assemblage). Tests : `arbre.test.mjs`
+42/42 (mock D1, précédence KV, D1 en panne), navigateur `verify-domaine.mjs` 23/23. Reste pour Kevin : **changer le
+code famille** (l'ancienne empreinte est dans l'historique public).
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
@@ -583,6 +600,26 @@ dossiers **servis** : ni l'empreinte, ni la doc.
 | 14 scripts e2e qui **tapent** le code sur une vraie surface lisent `KDMC_ADMIN_CODE` (repli : l'ancien code de test, sans valeur après rotation). | `node --check` × 14 |
 | Page **`tools/empreinte/`** : calcule l'empreinte du nouveau code **sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub. | 0 requête réseau (CSP `connect-src 'none'`) |
 
+**Suite du 5.09, 16h — le code a été CHANGÉ par Kevin, et la rotation a révélé un 2ᵉ trou** :
+en relançant les 6 déploiements qui lisent le secret, **celui du routeur a échoué** — et
+l'historique montre qu'il échouait **depuis le 13/08** (dernier vert), 4 rouges d'affilée
+(04/09, 05/09 ×3) sur la même ligne : `assets.directory … public does not exist`. Le
+`wrangler.toml` exige `./public` depuis le 14/08 (bouée de secours de la suspension), dossier
+gitignoré fabriqué par `prepare-secours.mjs`, **que le workflow ne lançait jamais**. Conséquence
+réelle : **aucun secret poussé au routeur pendant 3 semaines** — l'étape « hash du PIN admin »
+vient APRÈS le deploy, donc sautée : sans ce correctif, l'ancien code (public) serait resté
+valable sur kd-mc.com malgré la rotation. Corrigé (PR #3661 : étape `prepare-secours --leger`
+avant `wrangler deploy`) → run `33978224559` **vert**, `✨ Uploaded secret KDMC_ADMIN_PIN_SHA256`,
+26 sous-domaines en 200, `/__admin/accounts` → 403 `need_admin_code`. Les 4 autres workers
+(access, monaco, outlook, proxy Apex) ont reçu le secret du premier coup ; **RAG** l'a reçu aussi
+(`✨ Uploaded secret`) mais son deploy échoue pour une autre raison : le jeton Cloudflare n'a pas
+la permission **Vectorize** (`Authentication error 10000` sur `vectorize create`) — à ajouter
+côté Cloudflare quand la mémoire RAG servira. **Prévention** : `npm run test:wrangler-assets`
+(dans `test:ci`, prouvé discriminant) — tout worker avec `[assets]` non versionné doit avoir une
+étape qui le fabrique avant `wrangler deploy` ; et `live-verify-departs` sonde désormais
+`POST /__admin/login` avec un code bidon (attendu `code_invalide`, jamais
+`admin_pin_not_configured`). Leçon #214.
+
 **Où vit le code, réellement** : UN secret GitHub, `APEX_ADMIN_PIN_SHA256`, poussé par les
 workflows vers **6 workers** (routeur `KDMC_ADMIN_PIN_SHA256`, admin.kd-mc.com, monaco, outlook,
 rag, proxy Apex). Les pages Départs / Messages suivent désormais le routeur → **changer le
@@ -602,3 +639,50 @@ message laissé (`pipeline/sessions.json`, m021).
 propre fichier d'allowlist · zizmor `dangerous-triggers: 2` = deux `workflow_run` légitimes
 (`cleanup-stale-branches`, `poolpilot-tuya-diag`) déclenchés par nos propres workflows, pas par
 un inconnu · aucun `${{ github.event.* }}` interpolé dans un `run:` (0 injection de modèle).
+
+---
+
+## 📡 Fait n°16 — CE QU'UNE SESSION PEUT ATTEINDRE, et le plan Cloudflare gratuit est PLEIN (5.09.2026, session « Audit du domaine »)
+
+*Kevin : « Tu as tout. Vérifie » puis « elles ne sont pas toutes au courant de tous les accès, outils, liens ».*
+Tout ce qui suit est **mesuré** depuis une session le 5.09 (les commandes sont données : refais-les chez toi, ne généralise pas).
+
+### Les 4 canaux, et ce qu'ils donnent vraiment
+
+| Canal | Depuis l'agent | Ce que ça permet |
+|---|---|---|
+| **API GitHub** `api.github.com/repos/…` | ❌ 403 « GitHub access is not enabled for this session » (`/user` répond, `/repos` non) — même constat sessions arbre et Départs | rien : ni PR, ni dispatch, ni lecture de run par l'API. `gh` n'est pas installé. |
+| **`git push` / `git fetch`** | ✅ | pousser sa branche ; **déclencher un workflow par `push`** (`branches: ['claude/**']` + `paths`) — pour des workflows de **lecture** (vérif live, audit) ; **pas pour un déploiement** : la prod ne se déploie que depuis `main`, et le bot auto-merge dispatche lui-même les `deploy-*.yml` après fusion (relecture sécu 05/09) ; relire ce qu'un workflow a **écrit dans le dépôt** (schéma `verif-live-rapport.yml`, session Départs). |
+| **WebFetch sur `github.com`** (pages HTML) | ✅ | page d'une PR (état, checks, commentaires du bot), liste des runs d'un workflow, **page d'un run avec ses ANNOTATIONS** (`::error::`, `::warning::`, `::notice::`). ❌ **pas** les logs bruts, ❌ **pas** le résumé du run (`$GITHUB_STEP_SUMMARY`) — vérifié sur le run 33978145725 : résumé invisible, annotation lue. Cache 15 min : ajouter `?x=N` pour relire. |
+| **Connecteur Cloudflare** (`workers_list`, `workers_get_worker_code`, docs) | ✅ | **`modified_on` de chaque worker = la preuve qu'un déploiement a eu lieu** ; lire le code réellement en ligne ; chercher la doc. ❌ pas de déploiement, pas de liste des crons/Vectorize. |
+| **kd-mc.com, `*.workers.dev`, `github.io`, `raw`…** | ❌ 403 CONNECT (sauf `raw.githubusercontent.com`, m006) | → la CI, elle, a le réseau ouvert. |
+
+**Règle qui en découle** : ce qu'un workflow doit dire à une session s'écrit **en annotations** (10 par type et par étape) ou **dans un fichier du dépôt** — jamais seulement dans le résumé ou les logs. `deploy-kdmc-uptime.yml` et `deploy-kdmc-rag.yml` remontent les lignes d'erreur de `wrangler` en `::error::` depuis le commit dc12933 ; c'est ainsi que les deux causes ci-dessous ont été lues.
+
+### Un run vert ne prouve rien, `modified_on` si
+
+`Deploy KDMC RAG` a un run **manuel vert** sur `main` le 5.09 ; le connecteur Cloudflare donne `kdmc-rag` **modifié le 08/07**. Le déploiement n'a pas eu lieu (leçon #95, encore). Avant d'écrire « déployé », lire `modified_on`.
+
+### Le compte Cloudflare gratuit : 5 cron triggers, TOUS pris
+
+`wrangler deploy` de `kdmc-uptime` : le code est **téléversé** (modified_on 16:32) puis
+`✘ [ERROR] Trigger configuration was only partially updated: This account has reached the Workers Free limit of 5 cron triggers per account` → code 1, run rouge, **worker en ligne sans cron**.
+Qui tient les 5 : **apex-chat-api : 4** (`0 */1`, `*/5`, `0 9`, `0 3` — `messaging-app/workers/wrangler.toml`) + **kdmc-outlook : 1** (`0 */2`). `kdmc-monaco` l'avait déjà constaté (« code 10072 ») et se faisait réveiller par un cron **GitHub** — rangé le 15/08, donc sa synchro est morte aussi.
+
+**Ce qui est fait** : `kdmc-uptime` n'a plus de `[triggers]` (`crons = []`, ce qui *retire* explicitement) ; c'est le cron de **kdmc-outlook** qui appelle son `/run` toutes les 2 h (6 lignes fail-open). **Ce qui rendrait 3 places** : Apex Chat garde un seul cron `*/5` et aiguille ses 4 jobs sur l'heure (message m027). **Ce qui rendrait 250 places** : Workers Paid (5 $/mois) — décision Kevin, pas nécessaire aujourd'hui.
+
+**Règle** : plus aucun `[triggers] crons` dans un nouveau `wrangler.toml` sans avoir compté les places ; un worker périodique se fait appeler par un cron existant.
+
+### RAG : l'index Vectorize `apex-memory` n'existe pas
+
+`wrangler deploy` de `kdmc-rag` : `Vectorize binding 'VEC' references index 'apex-memory' which was not found [code: 10159]`. Le workflow tentait de le créer **en silence** (`|| true`, journal jamais montré). Depuis ce commit la création dit pourquoi elle échoue (droit Vectorize absent du jeton `CLOUDFLARE_API_TOKEN`, probable — Vectorize est bien disponible sur le plan gratuit) et le run s'arrête **avant** le déploiement, avec la raison en annotation.
+
+### Le robot auto-merge, mesuré le 5.09
+
+- Il fusionne **dès que « Auto PR Review » (tsc + tests changés) est vert**. SonarQube « Quality Gate C » et Semgrep sont **consultatifs** : PR #3652 fusionnée avec eux rouges.
+- Une PR « BLOCKED » peut l'être **par `main`** : la fusion #3647 avait cassé `apex-plugins-catalog.ts` (7 × TS1117) et bloquait *toutes* les PR suivantes. Reproduire `npx tsc --noEmit` sur `main` en local avant d'accuser sa branche ; réparer main **dans la PR**.
+- Après fusion, le bot **dispatche lui-même** chaque `deploy-*.yml` dont un `services/<x>` a changé (vu : `Deploy KDMC Uptime #3` sur main) — la fusion par `GITHUB_TOKEN` ne déclenchant pas les `push`.
+
+### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
+
+Le registre disait `cmcteams → claude/cmcteams-clicking-issue-rmli6m` ; le travail CMCteams réel est sur `claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE), inscrit ce jour comme `cmcteams-departs`. Deux branches Lingua (`lingua-connexion-honnete`, `lingua-prenom-nom`) font **le même travail**, dont une avec `node_modules` commité (m030). Ma session est inscrite comme `domaine-audit`. Avant de commencer : `git fetch --prune` + `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/` — les branches du jour, pas celles du registre.

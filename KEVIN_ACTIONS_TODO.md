@@ -4,45 +4,72 @@
 > les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
 > « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
 >
-> Tes 4 gestes, dans l'ordre : ① changer le code admin (ci-dessous) · ② révoquer le jeton GitLab
-> `glpat-wD6Q…` · ③ dire aux autres sessions : accès Cloudflare « 9r4 », nombre de gilets +
-> broderie, compte développeur Apple oui/non · ④ envoyer la réponse prête au support GitHub (m003).
+> Tes gestes, dans l'ordre : ① ~~changer le code admin~~ ✅ fait 16h18 → **vérifie-le une fois sur
+> departs.kd-mc.com** (ci-dessous) · ② révoquer le jeton GitLab `glpat-wD6Q…` · ③ dire aux autres
+> sessions : accès Cloudflare « 9r4 », nombre de gilets + broderie, compte développeur Apple oui/non
+> · ④ envoyer la réponse prête au support GitHub (m003).
 
 ---
 
+## ☁️ 1 clic (5.09 17h) — donner le droit « Vectorize » au jeton Cloudflare, sinon la mémoire d'Apex (RAG) ne se déploie jamais
+
+Le déploiement de `kdmc-rag` échoue avec la vraie raison, enfin lisible :
+`Authentication error [code: 10000] … Please ensure it has the correct permissions` sur
+`/vectorize/v2/indexes`. Le jeton `CLOUDFLARE_API_TOKEN` (celui des secrets GitHub) sait
+déployer des workers, mais **n'a pas le droit Vectorize**. Je ne peux pas modifier un jeton
+Cloudflare à ta place.
+
+### ▶️ 2 gestes, 1 minute
+1. Ouvre **[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)**
+   → le jeton utilisé par GitHub (celui qui a « Workers Scripts : Edit ») → **Modifier**
+   → ajoute la permission **Compte › Vectorize › Edit** → **Continuer** → **Enregistrer**.
+   (Le jeton garde la même valeur : rien à changer dans GitHub.)
+2. Écris-moi « vectorize fait » : je relance le déploiement, l'index `apex-memory` se crée
+   tout seul et `/health` d'Apex passe à `hasVec:true`.
+
+*Sans ça : Apex fonctionne (mémoire fail-open), mais sans souvenirs longs.*
+
+---
+
+## ✅ FAIT (5.09.2026, 16h35) — ton nouveau code admin est en place sur le domaine
+
 ## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
 
-Ton code admin (celui à 6 chiffres) était écrit **en clair dans 68 fichiers** de ton dépôt
-GitHub — qui est **public** — et son empreinte était dans la page Départs. Tout ça est
-retiré, et plus aucune page ne garde le code ; mais **ce qui a été public une fois le reste**
-(l'historique Git le garde). Le seul vrai correctif : **un nouveau code**. Je ne peux pas le
-faire à ta place : le nouveau code ne doit passer **ni par moi, ni par un message, ni par un
-journal public**.
 
-### ▶️ 3 gestes, 2 minutes
-1. **Choisis** un nouveau code — **8 chiffres**, pas 6 (dix fois plus long à forcer par mille).
-2. Ouvre **[kd-mc.com/CMCteams/tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/)**,
-   tape le code, **« Copier l'empreinte »**. Le calcul se fait sur ton iPhone, rien n'est envoyé.
-3. Ouvre **[le secret APEX_ADMIN_PIN_SHA256](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)**
-   → **Update** → colle l'empreinte → **Save**.
+Tu as changé le code (« fait » à 16h18). J'ai relancé les 6 déploiements : **le routeur
+kd-mc.com, admin.kd-mc.com, Monaco, Outlook et le proxy Apex ont le nouveau secret**. En route,
+j'ai trouvé que le déploiement du routeur **échouait depuis le 13 août** sans que personne ne le
+voie — sans ce correctif, l'ancien code (public) serait resté valable sur ton domaine. C'est
+corrigé, prouvé (déploiement vert, 26 adresses répondent, un mauvais code est refusé), et un
+garde empêche que ça revienne.
 
-Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, admin.kd-mc.com,
-Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
-**Messages** suivent le routeur toutes seules.
+### ▶️ 1 geste, 20 secondes — vérifie toi-même
+Ouvre **[departs.kd-mc.com](https://departs.kd-mc.com)** → 🔒 → tape ton **nouveau** code →
+« Mode admin activé ». Moi je prouve qu'un mauvais code est refusé ; **toi seul** peux prouver
+que le bon est accepté (je ne le connais pas, c'est voulu). Si ça refuse : dis-moi « refusé ».
 
-### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
-L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :
-les données sont servies par le domaine à qui tape le code. Il faut les y **mettre une fois**,
-depuis ton iPhone (le seul endroit où elles sont complètes) :
-1. Ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet **Outils** → **📤 Publier
-   l'arbre sur le domaine (admin)** → tape ton code admin (il part au domaine, rien n'est gardé).
-   Tu dois voir « 📤 Arbre publié : N personnes ».
-2. Toujours dans **Outils** → **Changer le code** de la famille : l'ancienne empreinte a été
-   publique (elle était dans le fichier), donc l'ancien code ne vaut plus rien. Repartage le
-   nouveau aux cousins. L'ancien chemin en ligne est effacé automatiquement.
+### 🔸 Un jour, quand la mémoire RAG d'Apex servira (pas urgent)
+Le déploiement du worker RAG échoue parce que ton jeton Cloudflare n'a pas la permission
+**Vectorize**. Cloudflare → Profil → **Jetons d'API** → le jeton utilisé par GitHub → Modifier →
+ajouter **Vectorize : Edit**. Ensuite je relance le déploiement.
 
-Tant que le geste 1 n'est pas fait : **tes appareils marchent** (ils ont tout en mémoire),
-mais un **nouvel** appareil verrait « Arbre pas encore publié sur le domaine ».
+### 🌳 Puis l'arbre (5.09 nuit) — 1 geste, 30 secondes, dès que la branche est en ligne
+L'arbre (arbre.kd-mc.com, v3.17) ne contient **plus aucune personne** dans son fichier public :
+les données sont servies par le domaine à qui tape le code. **Bonne nouvelle : tu n'as plus à
+les publier toi-même.** J'ai retrouvé sur GitLab la version complète (v3.14, **119 personnes**,
+avec les corrections d'août : fiches fantômes retirées, familles BRICCO / MAGNANI / BEAUMELLE)
+et je l'ai **déposée dans la base du domaine** (Cloudflare D1, vérifiée fiche par fiche). Donc :
+- un **nouvel** appareil reçoit l'arbre complet dès qu'il tape le code ;
+- **tes appareils** se mettent à jour tout seuls à l'ouverture (ils récupèrent les fiches
+  corrigées, gardent tes photos et commentaires).
+
+Il reste **un seul geste** : ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet
+**Outils** → **Changer le code** de la famille. L'ancienne empreinte a été publique (elle était
+dans le fichier sur GitHub), donc l'ancien code ne vaut plus rien. Repartage le nouveau aux
+cousins. L'ancien chemin en ligne est effacé automatiquement.
+
+*(Le bouton **📤 Publier** dans Outils reste là : si un jour tu veux remplacer l'arbre du domaine
+par celui de ton iPhone, il écrase ce que j'ai déposé.)*
 
 ### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
 - **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.

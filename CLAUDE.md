@@ -82,7 +82,7 @@ sans garder l'ancien ordre en secours ; proposer Qwen pour une image ou pour une
 > Ai-je une preuve qu'il répond, sans réseau ET en vrai ? »*
 
 S'applique : Apex v13 (référence), CMCteams, Apex Chat, Lingua, World Monitor, Créa, Finances,
-le relais du domaine, tous projets présents et futurs. Leçons **#214, #215**.
+le relais du domaine, tous projets présents et futurs. Leçons **#217, #218**.
 
 ---
 
