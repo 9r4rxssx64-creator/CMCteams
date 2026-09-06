@@ -41,6 +41,10 @@ workflow:
 
 tests:
   stage: tests
+  # Image Playwright = MÊME version que devDependencies (1.56.0) : navigateurs déjà là.
+  # Sur node:20 nu, test:all plantait (« Executable doesn't exist … headless_shell »,
+  # mesuré 6.09 14h56, job 16332428451) — on ne télécharge pas 150 Mo à chaque run.
+  image: mcr.microsoft.com/playwright:v1.56.0-noble
   cache:
     key: npm-$CI_COMMIT_REF_SLUG
     paths: [node_modules/]

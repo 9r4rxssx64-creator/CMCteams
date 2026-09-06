@@ -81,7 +81,7 @@
       "maj": "2026-09-06",
       "attend_kevin": "changer le code famille (Outils → Changer le code) ; révoquer le jeton GitLab glpat-wD6Q…",
       "attend_session": null,
-      "note": "v3.18 « Munegu » : thème monégasque accentué (ruban fuselé, badge ◆ nés en Principauté, règne du Prince par génération, section Munegu dans Réglages, poster à cadre fuselé + Àrburu de famiya + Deo Juvante). Vérifié navigateur 154/154. Trouvé : Vercel en quota (100/jour) rougit chaque PR → fusions bloquées ; vercel.json ignore désormais arbre/services/tests/pipeline/CI GitLab. PR #3674 en attente du prochain run du robot. main fusionné (16h45) ; audit-live : contrôle arbre refait (status + refus mauvais code + secret opt-in), garde anti-empilement réparée."
+      "note": "v3.18 « Munegu » : thème monégasque accentué (ruban fuselé, badge ◆ nés en Principauté, règne du Prince par génération, section Munegu dans Réglages, poster à cadre fuselé + Àrburu de famiya + Deo Juvante). Vérifié navigateur 154/154. Trouvé : Vercel en quota (100/jour) rougit chaque PR → fusions bloquées ; vercel.json ignore désormais arbre/services/tests/pipeline/CI GitLab. PR #3674 en attente du prochain run du robot. main fusionné (16h45) ; audit-live : contrôle arbre refait (status + refus mauvais code + secret opt-in), garde anti-empilement réparée. Job tests GitLab passé sur l'image Playwright 1.56.0 (node:20 nu n'a pas de navigateur)."
     },
     "lingua": {
       "titre": "Duolingo reverse-engineering",
