@@ -56,9 +56,9 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 **Pipeline + relecture des docs (même jour, sur demande de Kevin)** :
 - Session inscrite au registre commun sous **`cmcteams-pdf`** (elle n'y était pas) + ajoutée à
   `SESSIONS-ET-BRANCHES.md`. Garde `test:pipeline-sessions` : 8 OK / 0 FAIL.
-- **3 messages déposés** : m037 → `cmcteams-departs` (je régénère `boards-gen.js` et passe la page
-  Départs en v1.40 : fusionnez `main` avant de repousser), m038 → `cmcteams` (les 4 endroits touchés
-  dans le parser d'`index.html` + le diff exact des données), m039 → **toutes** (un test « A == B »
+- **3 messages déposés** : m038 → `cmcteams-departs` (je régénère `boards-gen.js` et passe la page
+  Départs en v1.40 : fusionnez `main` avant de repousser), m039 → `cmcteams` (les 4 endroits touchés
+  dans le parser d'`index.html` + le diff exact des données), m040 → **toutes** (un test « A == B »
   ne voit rien quand A et B se trompent pareil ; et les listes de mois figées).
 - **`main` fusionné** dans la branche (30 commits de retard) : 3 conflits résolus (APP_VER,
   `sw.js`, `test:ci`), version **v9.894**, les 4 nouveaux tests IA de `main` conservés.
@@ -76,7 +76,7 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   correctif faisait **rejeter le fichier par le schéma** — le build sortait en erreur avant même de
   lire l'`ignoreCommand`, donc Kevin recevait toujours un mail d'échec à **chaque push de chaque
   session**. Note déplacée dans `tools/agent/README.md`, `vercel.json` remis aux 6 clés légales.
-  Message **m040** à `studio-crea` (leur terrain). Règle : `vercel.json` n'accepte ni commentaire ni
+  Message **m041** à `studio-crea` (leur terrain). Règle : `vercel.json` n'accepte ni commentaire ni
   clé inconnue.
   **Et il y avait un DEUXIÈME motif de refus, puis un TROISIÈME fichier** : une fois `_note` retirée,
   Vercel a dit la suite — *« `ignoreCommand` should NOT be longer than 256 characters »* (elle en
@@ -115,6 +115,9 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   par accident (pas de réseau). Test rendu honnête : clé embarquée neutralisée pour ce cas + page hors
   ligne. **Leçon transversale** : un test qui passe ici parce que le réseau est coupé n'est pas un test
   qui passe — le runner GitLab (réseau ouvert) le révèle, GitHub ne lançait plus ces tests.
+  6ᵉ : `test:garro-cp` 5/3 (MIRANDA 0 cellule) — même classe (1,8 s fixes + réseau) ; corrigé pareil,
+  et `test:code-legends` (2,2 s fixes) par précaution. Chaîne locale (après v788) : 0 échec réel, seuls
+  `pdfjs-dist`/`axe-core` manquent ici (pas de `npm install` dans le sandbox) — le runner les a.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
