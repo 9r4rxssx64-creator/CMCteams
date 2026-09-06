@@ -8,15 +8,21 @@
 > Voilà le vrai « resté en rade ». Je n'ai pu le voir qu'après avoir découvert — parce que Kevin
 > me l'a dit — que le connecteur GitHub fonctionnait (leçon #229).
 
+> **MISE À JOUR 2026-09-06, 21 h 48 UTC — les 18 annulations sont FERMÉES.**
+> Elles l'ont été par le robot de fusion (`github-actions[bot]`), une par une, entre
+> **21 h 48 min 17 s et 21 h 48 min 46 s**, avec le commentaire prévu. Vérifié en interrogeant
+> GitHub : **0 PR `revert/auto-rollback-*` encore ouverte**, **27 ouvertes au total** (contre 46).
+> Chacune est **réouvrable en un clic** si tu veux en revoir une.
+
 ## Le compte
 
-| Catégorie | Nombre | Ce qu'il faut en faire |
-|---|---:|---|
-| 🔴 **Auto-rollback** (annulations automatiques) | **18** | **NE JAMAIS FUSIONNER** — voir ci-dessous |
-| 🟠 **Sessions Claude** | **20** | à trier une par une |
-| 🟡 **Dependabot** (mises à jour de dépendances) | **5** | à jour ou à fermer |
-| ⚪ **Builds auto-deploy** | **3** | obsolètes |
-| | **46** | |
+| Catégorie | Ce matin | Maintenant | Ce qu'il faut en faire |
+|---|---:|---:|---|
+| 🔴 **Auto-rollback** (annulations automatiques) | 18 | **0** | ✅ **fermées** — le danger est levé |
+| 🟠 **Sessions Claude** | 20 | **19** | à trier une par une (décision Kevin) |
+| 🟡 **Dependabot** (mises à jour de dépendances) | 5 | **5** | à jour ou à fermer |
+| ⚪ **Builds auto-deploy** | 3 | **3** | obsolètes |
+| | 46 | **27** | |
 
 ---
 

@@ -482,3 +482,56 @@ Ce workflow porte le correctif de cécité (vérifié présent sur `main`). Deux
 
 C'est un vrai clic — pas un que j'aurais pu m'épargner : déclencher un workflow et lire un journal
 sont les deux seules choses qu'aucun de mes trois accès ne permet.
+
+---
+
+## Suite — 23 h 30 : le verrou a enfin un nom, et les 18 annulations sont fermées
+
+### 1. Les 18 annulations dormantes : **fermées**, pour de vrai
+
+Ce n'était plus « prévu », c'est **fait et vérifié** :
+
+| Mesure | Valeur |
+|---|---|
+| PR `revert/auto-rollback-*` encore ouvertes | **0** |
+| Fermées le | **2026-09-06, entre 21 h 48 min 17 s et 21 h 48 min 46 s UTC** |
+| Par qui | `github-actions[bot]` — l'étape « Ménage » du robot de fusion |
+| Avec quel mot | le commentaire exact que j'avais écrit (« annulation jamais appliquée… Réouvrable en un clic ») |
+| Pull requests ouvertes restantes | **27** (contre 46 ce matin) |
+
+Vérifié en interrogeant GitHub directement, pas déduit. Chaque fermeture est **réversible en un
+clic** si Kevin veut revoir l'une d'elles.
+
+### 2. Le verrou de suppression des branches : **mesuré, nommé**
+
+Je l'ai tenté moi-même, en capturant la sortie au lieu de l'avaler :
+
+```
+$ git push origin --delete claude/actions-done-doc
+error: RPC failed; HTTP 403 curl 22 The requested URL returned error: 403
+send-pack: unexpected disconnect while reading sideband packet
+fatal: the remote end hung up unexpectedly
+Everything up-to-date
+```
+
+**Traduction** : mon accès git de session sait **ajouter** des commits (je pousse toute la
+journée), il n'a **pas le droit d'effacer une référence**. GitHub répond `403` à la demande de
+suppression, et git termine par un trompeur « Everything up-to-date » — c'est ce mot qui m'a fait
+tourner en rond.
+
+Ce n'est pas non plus le pare-feu de l'environnement : son journal de refus
+(`recentRelayFailures`) est **vide**, donc le `403` vient bien de GitHub, contre mon jeton.
+Le mode d'emploi de ce pare-feu est explicite sur ce point : un `403` **se rapporte, il ne se
+contourne pas**. Je ne le contourne donc pas.
+
+### 3. Ce qui reste, et pourquoi ce n'est plus un tâtonnement
+
+| Question | Réponse |
+|---|---|
+| Combien de branches sont supprimables aujourd'hui ? | **231** — toutes déjà entièrement dans `main`, plus de 7 jours sans activité |
+| Risque à les supprimer ? | **aucun** : leur contenu est dans `main`, et chaque SHA est listé plus haut |
+| Qui peut les supprimer ? | le **jeton de la CI** (`contents: write`), pas moi |
+| Pourquoi la CI n'y arrivait pas ? | **on ne le sait pas encore** — mais le compte-rendu du robot avale l'erreur dans son ancienne version |
+| Qu'est-ce qui change maintenant ? | la version **corrigée** (qui écrit la cause exacte) est sur cette branche ; la prochaine exécution du robot **écrira le message d'erreur du jeton de CI** dans `.github/CLEANUP-REPORT.md`, ou supprimera les 231 |
+
+Autrement dit : plus rien à deviner. La prochaine livraison répond d'elle-même.

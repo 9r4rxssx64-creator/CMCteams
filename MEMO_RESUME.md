@@ -1,5 +1,28 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (23h30) — je m'étais trompé : c'était déjà fait, et le verrou a un nom
+
+- **Correction de ce que j'ai écrit à 21 h 40** : j'avais conclu que l'étape de ménage n'avait
+  pas tourné, parce que le compte-rendu sur `main` n'avait pas bougé. **Faux.** Elle a tourné à
+  **21 h 47**, et son compte-rendu a été poussé **sur la branche d'exécution**, pas sur `main` —
+  je regardais au mauvais endroit (leçon **#234**).
+- ✅ **Les 18 annulations dormantes sont FERMÉES** — le 6 septembre entre **21 h 48 min 17 s et
+  21 h 48 min 46 s UTC**, par `github-actions[bot]`, avec le commentaire prévu. Vérifié en
+  interrogeant GitHub : **0 `revert/auto-rollback-*` ouverte**, **27 PR ouvertes** (contre 46).
+  Réouvrables en un clic. Le danger « une annulation fusionnée par erreur retire du code livré »
+  est **levé**.
+- ✅ **Le verrou des branches a un nom** — mesuré en lançant la commande moi-même :
+  `git push origin --delete …` → **`HTTP 403`**, puis un trompeur `Everything up-to-date`.
+  Mon accès git de session sait **ajouter** des commits, pas **effacer** une référence. Ce n'est
+  pas le pare-feu (son journal de refus est vide) : c'est GitHub contre mon jeton. Leçon **#235**.
+- **Reste** : **231 branches** supprimables (toutes déjà entièrement dans `main`, > 7 jours,
+  aucun contenu en danger). Seul le **jeton de la CI** peut les effacer. La version corrigée du
+  ménage — celle qui **écrit la cause exacte** au lieu de l'avaler — est maintenant sur la
+  branche : **la prochaine livraison supprimera les 231, ou nommera par écrit le refus du jeton
+  de CI**. Plus rien à deviner, et **aucun clic** demandé à Kevin.
+- **Toujours à trancher par Kevin** : les **19 PR de sessions Claude** (avril → septembre),
+  une décision par PR — c'est le seul endroit où je ne peux pas choisir à sa place.
+
 ## 6 septembre 2026 (21h40) — compactage : j'arrête, état honnête + 1 clic
 
 - **Prouvé** : le nettoyeur **voit** enfin (371 branches, contre 0 avant), le mécanisme de
