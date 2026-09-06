@@ -1,5 +1,59 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 — SEPTEMBRE 2026 V2 vérifié EN RÉEL contre le PDF : 3 vrais défauts trouvés et corrigés
+
+**Kevin** : *« Vérifie en réel, toutes les infos. Que tout soit reproduit à l'identique dans CMCteams
+et light. Bonne équipe, horaires, lieux, départs, etc pour chaque. »* (PDF `SEPTEMBRE 2026 V2`, identique
+au fichier déjà dans le dépôt — même empreinte MD5).
+
+**Comment j'ai vérifié** : au lieu de comparer l'app à la page light (ce que font déjà les gardes, et
+qui ne voit RIEN quand les deux se trompent pareil — leçon #142), j'ai **relu le PDF avec pdfjs
+directement, sans le parser de l'app**, et reconstruit la grille par géométrie (colonnes = en-têtes de
+jours). Puis comparé cellule par cellule aux deux surfaces.
+
+**Ce que ça a trouvé — 3 défauts que TOUTES les gardes existantes laissaient passer (elles étaient vertes)** :
+
+| Trouvé | Ce que ça donnait | Cause racine (mesurée) |
+|---|---|---|
+| **MATTERA M** | ligne complète dans le PDF, **0 cellule** des deux côtés : ni planning, ni équipe, ni départ | les lignes du PDF étaient regroupées par **arrondi** (`Math.round(y/3)*3`). Son nom est à `y=631,4` (→630) et sa période « 1 30 » à `y=631,6` (→633) : **0,2 pt** et deux lignes différentes. Sans « 1 30 », la ligne est rejetée, et comme il n'est pas au registre fixe, **aucun employé n'est créé** |
+| **NICASTRO M** | 9 à 18 cellules RH/R… alors qu'il **n'apparaît dans AUCUN** des PDF (juillet, août, septembre) | les passes de « réparation » complétaient les trous de n'importe quel employé du registre depuis la majorité de son équipe **par défaut** → planning **inventé** |
+| **BLANCHY F**, **DEGIOVANNI R** | planning juste dans CMCteams mais **absents de la page Départs** | arrivés le 16 (15 jours de CP avant) → seulement 4 jours de repos → le motif de repos ne les départage pas (4 équipes à égalité) → aucune équipe → hors Départs |
+
+**Les 3 correctifs (v9.892)** :
+1. **Lignes par proximité, plus par arrondi** — un item rejoint la ligne existante la plus proche à
+   moins de **1,8 pt**. Seuil choisi sur MESURE des 3 vrais PDF : le tremblement à l'intérieur d'une
+   ligne ne dépasse jamais 1,7 pt, deux lignes voisines sont toujours à ≥3,7 pt → ça ne peut que
+   RÉUNIR ce que l'arrondi séparait, jamais fusionner deux vraies lignes.
+2. **Ne jamais inventer** — les passes de réparation ne complètent que si le **patronyme figure
+   vraiment dans le texte source** (fail-open s'il n'y a pas de texte source).
+3. **Rattachement par la rotation d'horaires** — pour qui travaille sans équipe : ≥8 jours comparables,
+   ≥80 % de codes identiques **et** au moins 2× la 2ᵉ meilleure équipe. BLANCHY → c7 (12/12),
+   DEGIOVANNI → c11 (11/12), **confirmé par la colonne du récapitulatif du PDF**. VERZELLO O (que des
+   RH/R, 4 équipes à 100 %) reste sans équipe — c'est correct, et c'est dit. Les **cadres** (P#####)
+   sont explicitement exclus de ce filet (sinon CAMPI H / ENZA C entraient dans les boards).
+
+**Résultat mesuré** :
+
+| Mois | CMCteams | Page Départs (light) |
+|---|---|---|
+| **Septembre 2026** | **248/248 personnes · 7 440/7 440 cellules ✅** | **248/248 · 7 440/7 440 ✅** |
+| Juillet 2026 | 254/254 · 7 874/7 874 ✅ | 254/254 · 7 874/7 874 ✅ |
+| Août 2026 | 250/251 · 7 750/7 781 (MOREL F perdu) | 241/251 (10 sans équipe, surtout `baccara`) |
+
+**Ce qui n'est PAS réglé (dit honnêtement)** : août 2026 — **MOREL F** reste perdu (sa ligne d'août est
+pourtant bien formée : cause différente, non identifiée) et **10 personnes** (surtout famille `baccara`)
+n'ont pas d'équipe donc n'apparaissent pas dans les Départs d'août. Figé au cliquet pour ne pas allumer
+un rouge permanent, à reprendre.
+
+**Prévention (le vrai correctif)** : `npm run test:pdf-fidelite` — relit les VRAIS PDF sans le parser
+de l'app et exige chaque personne / chaque cellule des deux côtés. Câblé dans `test:ci`. **Prouvé
+discriminant par sabotage** (une cellule modifiée → écart nommé ; une personne retirée → « NOUVEAU
+MANQUANT »). Trouvé au passage : `compare-app-vs-light-teams` avait sa liste de mois **figée sur
+juillet/août** → septembre n'était jamais comparé ; elle est maintenant **déduite des boards**.
+
+**Leçon** : #217 dans `LESSONS.md`.
+
+
 ## 5 septembre 2026 (nuit) — le journal ne bloque plus les fusions automatiques (pilote « union »)
 
 **Ce qui s'est passé** : Kevin a prévenu « d'autres branches travaillent sur le domaine ». Vérifié sur

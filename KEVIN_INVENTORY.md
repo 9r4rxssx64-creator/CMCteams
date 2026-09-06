@@ -3,6 +3,18 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+
+## 📄 Septembre 2026 vérifié EN RÉEL contre le PDF — session 2026-09-06 (branche `claude/verify-cmcteams-light-data-rzlvau`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verify-pdf-vs-surfaces.mjs` **(nouveau)** | **Le garde qui manquait.** Relit les VRAIS PDF avec pdfjs **sans passer par le parser de l'app**, reconstruit la grille par géométrie, et exige que CHAQUE personne et CHAQUE cellule se retrouvent à l'identique dans CMCteams **et** dans la page Départs. C'est ce qui a trouvé MATTERA M (disparu), NICASTRO M (planning inventé) et BLANCHY F / DEGIOVANNI R (sans équipe). `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) |
+| `tests/fixtures/pdf-fidelite-baseline.json` **(nouveau)** | Le **cliquet** : la liste des manques CONNUS d'août (MOREL F + 10 sans équipe). Le test échoue si un manque NOUVEAU apparaît — jamais de faux rouge sur l'existant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/pdf-fidelite-baseline.json) |
+| `index.html` (v9.892) | 3 correctifs : lignes du PDF regroupées par **proximité** (1,8 pt) et non par arrondi · les passes de réparation **n'inventent plus** de planning pour qui n'est pas dans le PDF · rattachement d'équipe par la **rotation d'horaires** quand les jours de repos ne suffisent pas (cadres exclus). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
+| `tests/compare-app-vs-light-teams.mjs` | Sa liste de mois était **figée sur juillet/août** → septembre n'était jamais comparé. Elle est désormais **déduite des boards générés** : tout nouveau mois est couvert automatiquement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/compare-app-vs-light-teams.mjs) |
+| `tools/shared/planning-seed.js` · `tools/departs/boards-gen.js` | Régénérés depuis les vrais PDF. Septembre : **248/248 personnes, 7 440/7 440 cellules identiques au PDF des deux côtés**. | [seed](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/shared/planning-seed.js) · [boards](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/departs/boards-gen.js) |
+| `LESSONS.md` (leçon #217) | 0,2 pt d'écart dans un PDF = une personne qui disparaît ; et pourquoi un test « app == light » ne peut jamais le voir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/LESSONS.md) |
+
 ## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
 
 | Fichier | À quoi ça sert | Liens |

@@ -5821,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.891";
+var APP_VER="v9.892";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -39898,13 +39898,35 @@ function _doExtractPdfLines(file,onDone,onErr){
               }
             }
             var TOL=3,rowMap={};
+            // v9.892 (Kevin 2026-09-06 « vérifie en réel, tout à l'identique ») —
+            // LIGNES PAR PROXIMITÉ, PAS PAR ARRONDI. Deux items d'une MÊME ligne peuvent
+            // tomber de part et d'autre d'une frontière d'arrondi : dans SEPTEMBRE 2026 V2,
+            // « .BRTP MATTERA M » est à y=631,4 (→630) et sa période « 1 30 » à y=631,6
+            // (→633) : 0,2 pt d'écart, deux lignes différentes. La ligne du nom perd son
+            // « 1 30 », le parser la rejette, et comme MATTERA M n'est pas au registre fixe
+            // AUCUN employé n'est créé → la personne disparaît du planning, des équipes et
+            // des départs (règle ABSOLUE « tout le monde a un planning si son nom est dans
+            // le PDF »). Correctif : un item rejoint la ligne EXISTANTE la plus proche si
+            // elle est à moins de _ROWTOL. Mesuré sur les 3 PDF réels : le tremblement
+            // À L'INTÉRIEUR d'une ligne ne dépasse jamais 1,7 pt, et deux lignes voisines
+            // sont toujours distantes d'au moins 3,7 pt → 1,8 pt ne peut JAMAIS fusionner
+            // deux vraies lignes, et ne peut que RÉUNIR ce que l'arrondi avait séparé.
+            var _ROWTOL=1.8;
+            function _cmcRowKey(yRaw){
+              var snapped=Math.round(yRaw/TOL)*TOL;
+              if(rowMap[snapped])return snapped;
+              var near=null,bd=1e9;
+              for(var k in rowMap){var d=Math.abs(Number(k)-yRaw);if(d<bd){bd=d;near=Number(k);}}
+              if(near!==null&&bd<=_ROWTOL)return near;
+              return snapped;
+            }
             var _ti=0;
             // v9.766 — Items GEOMETRIQUES bruts (x/y/str/w/h) pour parsers T1 valides.
             // Coordonnees PDF.js originales (pas arrondies par TOL).
             var _geoItems=[];
             tc.items.forEach(function(it){
               if(it.str===undefined){return;} // marked content
-              var y=Math.round(it.transform[5]/TOL)*TOL;
+              var y=_cmcRowKey(it.transform[5]);
               var x=it.transform[4];
               var t=(it.str||"").replace(/\s+/g," ").trim();
               var col=_colorMap[_ti]||null;
@@ -40701,6 +40723,76 @@ function _cmcFallbackUnassignedTeams(iy,im){
     });
     if(_rescued){console.info("[v9.823 rescue] "+_rescued+" emp(s) travaillant rattaché(s) à leur équipe (overlap repos)");try{ls("cmc_e",A.employees);}catch(_){}if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}}
   }catch(_rescErr){console.warn("[v9.823 rescue]",_rescErr&&_rescErr.message);}
+  // v9.892 (Kevin 2026-09-06 « bonne équipe … pour chaque ») — DERNIER FILET :
+  // rattachement par la ROTATION D'HORAIRES, pas par les jours de repos.
+  // Vécu septembre 2026 : BLANCHY F et DEGIOVANNI R arrivent le 16 (les 15 premiers
+  // jours en CP). Sur une demi-période ils n'ont que 4 jours de repos → le motif de
+  // repos les rend IMPOSSIBLES à départager (Jaccard 0,40 à 0,44 à égalité sur 4
+  // équipes) et ils restaient « sans équipe » : présents dans le planning CMCteams,
+  // ABSENTS de la page Départs. Leurs HORAIRES, eux, sont sans ambiguïté :
+  // BLANCHY = 12/12 codes de c7 (2e meilleure 33 %), DEGIOVANNI = 11/12 de c11
+  // (2e 33 %) — confirmé indépendamment par la colonne du récapitulatif du PDF
+  // (toute la colonne de BLANCHY est en c7, celle de DEGIOVANNI en c11).
+  // Exigences volontairement STRICTES pour ne jamais deviner : ≥8 jours comparables,
+  // ≥80 % de codes identiques, et au moins 2× la 2e meilleure équipe. VERZELLO O
+  // (que des RH/R, 4 équipes à 100 %) reste donc sans équipe — c'est correct.
+  // teamHistory = regroupement d'affichage, jamais une cellule du PDF → ne viole pas
+  // « reproduction à l'identique ».
+  try{
+    var _absH={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
+    var _hMembers={};
+    A.employees.forEach(function(_e){
+      if(!_e||!_e.teamHistory)return;var tid=_e.teamHistory[key];
+      if(!tid||_absH[tid])return;(_hMembers[tid]=_hMembers[tid]||[]).push(_e.id);
+    });
+    var _hNbDays=new Date(iy,im+1,0).getDate();
+    var _hMaj={};
+    Object.keys(_hMembers).forEach(function(tid){
+      var m={},mem=_hMembers[tid];
+      for(var d=1;d<=_hNbDays;d++){
+        var f={};mem.forEach(function(id){var c=(ov[id]||{})[d];if(c)f[c]=(f[c]||0)+1;});
+        var ks=Object.keys(f);if(!ks.length)continue;
+        ks.sort(function(a,b){return f[b]-f[a];});
+        if(f[ks[0]]*2>mem.length)m[d]=ks[0];
+      }
+      _hMaj[tid]=m;
+    });
+    var _hAbs={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,CDH:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,CLM:1,ABS:1,FL:1,HD:1,HC:1,MT:1,CEO:1,CSC:1,CSS:1};
+    var _hFixed=0;
+    A.employees.forEach(function(_e){
+      if(!_e||!isEmpActive(_e,iy,im))return;
+      // Les CADRES (Pit Boss / Superviseur / Inspecteur, id P#####, 2e PDF séparé) ne
+      // font PAS partie des équipes chefs/employés (Kevin 2026-07-09 « il ne peut plus y
+      // avoir de cadre présent dans les plannings ») — sans ce garde, CAMPI H et ENZA C
+      // se retrouvaient rattachés à une équipe de travail et apparaissaient dans les
+      // boards de la page Départs (garde npm run test:no-cadres).
+      if(/^P\d/.test(String(_e.id||"")))return;
+      if(String(_e.family||"").indexOf("cadre")>=0)return;
+      if(_e.role==="pit"||_e.role==="sup"||_e.role==="insp"||_e.role==="cadre")return;
+      if(_e.teamHistory&&_e.teamHistory[key])return;
+      if(_workedCount(_e.id)<5)return;
+      var mine=ov[_e.id]||{},wd=[];
+      Object.keys(mine).forEach(function(d){var c=String(mine[d]||"").toUpperCase();if(c&&!_hAbs[c])wd.push(d);});
+      if(wd.length<8)return;
+      var sc=[];
+      Object.keys(_hMaj).forEach(function(tid){
+        var okN=0,tot=0;
+        wd.forEach(function(d){var m=_hMaj[tid][d];if(m!==undefined){tot++;if(m===mine[d])okN++;}});
+        if(tot>=8)sc.push({tid:tid,r:okN/tot,ok:okN,tot:tot});
+      });
+      if(!sc.length)return;
+      sc.sort(function(a,b){return b.r-a.r;});
+      var second=sc.length>1?sc[1].r:0;
+      if(sc[0].r<0.8)return;
+      if(second>0&&sc[0].r<second*2)return;
+      if(!_e.teamHistory)_e.teamHistory={};_e.teamHistory[key]=sc[0].tid;
+      var _famT=null;A.employees.some(function(_o){if(_o&&_o.teamHistory&&_o.teamHistory[key]===sc[0].tid&&_o.id!==_e.id){_famT=(_o.familyHistory||{})[key]||_o.family||null;return true;}return false;});
+      if(!_e.familyHistory)_e.familyHistory={};if(!_e.familyHistory[key]&&_famT)_e.familyHistory[key]=_famT;
+      _hFixed++;
+      console.info("[v9.892 rotation] "+_e.name+" → "+sc[0].tid+" ("+sc[0].ok+"/"+sc[0].tot+" horaires identiques, 2e="+(second*100).toFixed(0)+"%)");
+    });
+    if(_hFixed){console.info("[v9.892 rotation] "+_hFixed+" emp(s) rattaché(s) par la rotation d'horaires");try{ls("cmc_e",A.employees);}catch(_){}if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}}
+  }catch(_rotErr){console.warn("[v9.892 rotation]",_rotErr&&_rotErr.message);}
   return{ok:true,assigned:assigned+absenceAssigned,consolidated:reattributed};
 }
 // ═══════════════════════════════════════════════════════════════════════════
@@ -43143,6 +43235,35 @@ function doImport(){
       return maj;
     }
     // v8.57 : grouper TOUS les employés actifs (BJ + roulettes + CMC)
+    // v9.892 (Kevin 2026-09-06 « vérifie en réel, tout à l'identique ») — NE JAMAIS
+    // INVENTER UN PLANNING. Les passes de consensus/réparation ci-dessous complètent les
+    // personnes mal parsées à partir de la majorité de leur équipe. Elles complétaient
+    // AUSSI des personnes qui ne figurent PAS DU TOUT dans le PDF : NICASTRO M est absent
+    // des PDF de juillet, août ET septembre 2026 et recevait pourtant 9 à 18 cellules
+    // RH/R « majoritaires » — un planning inventé (règle « reproduction à l'identique :
+    // chaque cellule doit correspondre à un code observé dans le texte source »).
+    // Filtre : on ne complète que si le PATRONYME apparaît réellement dans le texte
+    // source. Volontairement généreux (patronyme seul) pour ne jamais priver de
+    // réparation quelqu'un dont l'initiale est écrite autrement dans le PDF.
+    // FAIL-OPEN : texte source vide (import JSON/CSV) → aucun filtrage, comportement
+    // d'avant inchange.
+    var _cmcSrcUp="";
+    try{ _cmcSrcUp=String(typeof txt==="string"?txt:"").toUpperCase(); }catch(_su){}
+    var _cmcInSrcCache={};
+    function _cmcNameInSource(emp){
+      if(!_cmcSrcUp)return true;
+      var n=String(emp&&emp.name||"").toUpperCase().replace(/\s+/g," ").trim();
+      if(!n)return false;
+      if(_cmcInSrcCache[n]!==undefined)return _cmcInSrcCache[n];
+      var ok=_cmcSrcUp.indexOf(n)>=0;
+      if(!ok){
+        var sp=n.lastIndexOf(" ");
+        var fam=(sp>0&&n.length-sp<=4)?n.slice(0,sp):n;
+        ok=fam.length>=3&&_cmcSrcUp.indexOf(fam)>=0;
+      }
+      _cmcInSrcCache[n]=ok;
+      return ok;
+    }
     var teamGroups={};
     A.employees.forEach(function(emp){
       if(!isEmpActive(emp,iy,im)) return;
@@ -43185,6 +43306,7 @@ function doImport(){
       if(cleanSources.length===0) return;
       // Membres à remplir : < 5 codes OU outlier
       var toFill=members.filter(function(emp){
+        if(!_cmcNameInSource(emp))return false; // v9.892 — absent du PDF = pas de planning inventé
         var d=A.overrides[key][emp.id]||{};
         return Object.keys(d).length<5||outlierIds.indexOf(emp.id)>=0;
       });
@@ -43255,6 +43377,7 @@ function doImport(){
     }
     A.employees.forEach(function(emp){
       if(!isEmpActive(emp,iy,im)) return;
+      if(!_cmcNameInSource(emp)) return; // v9.892 — absent du PDF = pas de planning inventé
       var dayMap=A.overrides[key][emp.id]||{};
       if(Object.keys(dayMap).length>=days) return; // planning complet → ok
       // Chercher des sources dans l'équipe courante (peut maintenant inclure des membres remplis)
