@@ -1,5 +1,57 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (soir, dernier point) — août 2026 : MOREL F, cause CERNÉE (et une erreur de ma part corrigée)
+
+**D'abord une correction que je me dois de faire.** En creusant, j'ai cru un moment que l'app
+**inventait** un planning pour MOREL F. **C'était faux, et l'erreur était la mienne** : dans les
+données générées, la clé `2026-8` est **septembre** (30 jours), pas août — les mois sont indexés
+à partir de 0. J'ai donc comparé le **septembre** de l'app à la **ligne d'août** du PDF. Rien ne
+correspondait, forcément. Vérifié depuis, sans ambiguïté :
+
+| Clé | Mois réel | MOREL F |
+|---|---|---|
+| `2026-8` | septembre (30 j) | **30 cellules** ✅ |
+| `2026-7` | août (31 j) | **absent** ❌ |
+| `2026-6` | juillet (31 j) | **31 cellules** ✅ |
+
+Ma garde `test:pdf-fidelite` disait donc **juste** depuis le début : MOREL F manque **uniquement**
+en août, et rien n'est inventé.
+
+**Ce qui est maintenant établi, et c'est nouveau.** Sa ligne existe bel et bien dans le PDF d'août,
+**parfaitement formée** — page 5, `y=786,48` :
+
+```
+BRTP+E.  MOREL F  16  31  CP ×15  14/19'c  RH  19/3c  20/5c  19/4c  16/3c  14/19c
+                          RH  R  22/6c  19/4'c  16/3'c  14/19'c  RH  R  20/5*
+```
+
+31 cellules : congés les jours 1-15, horaires les jours 16-31. Le format est celui que le parser
+sait lire (`BRTP+E.` = code poste, nom, `16`, `31`, puis les codes ; la règle `fromDay=1` de la
+v8.54 ignore volontairement le « 16 31 », qui n'est qu'une indication visuelle).
+
+**La mesure qui cerne la cause** : dans **la même section** (« Chefs black Jack »), sur **la même
+page**, les lignes suivantes sont capturées sans problème —
+
+| Ligne de la section | y | Résultat en août |
+|---|---|---|
+| **1ʳᵉ — MOREL F** | 786,48 | **absent** |
+| 2ᵉ — COSTAGLIOLI J | 772,92 | 31 cellules ✅ |
+| 3ᵉ — FAUTRIER M | 759,36 | 31 cellules ✅ |
+
+Donc ce n'est ni le format de sa ligne, ni la section, ni la page : c'est **la première ligne de
+données après l'en-tête de section** qui se perd. Piste concrète pour la suite : sur cette page,
+le titre « Chefs black Jack » (y=800,88) et les **deux** lignes d'en-tête « Colonne… » (y=799,32
+et 799,20) sont à moins de 1,8 pt les unes des autres et sont donc **réunies en une seule ligne**
+par le regroupement par proximité — l'en-tête occupe une bande de plus que d'habitude, et la
+première ligne de données qui suit paraît en faire les frais.
+
+**Je m'arrête là et je le consigne** plutôt que de toucher au parser en fin de session : le mois
+que Kevin a donné (septembre) est vérifié à 100 % des deux côtés, et une modification du
+regroupement des lignes touche **les trois mois à la fois**. La prochaine session a désormais
+l'endroit exact, la ligne exacte, et un cas témoin (2ᵉ et 3ᵉ lignes de la même section) pour
+prouver le correctif par comparaison.
+
+
 ## 6 septembre 2026 (soir, fin) — les 3 rouges de la PR #3682 : aucun n'est le mien, et l'un cache une règle absolue non tenue
 
 La PR est passée de `dirty` à **`unstable`** (conflit résolu). Il restait trois checks rouges,
