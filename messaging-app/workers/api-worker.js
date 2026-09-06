@@ -166,7 +166,10 @@ async function consumeWsTicket(env, payload) {
   }
 }
 
-async function getAuthUser(request, env) {
+// `opts.allowMediaTicket` : autorise en plus un TICKET MÉDIA (`?mt=`) — activé
+// UNIQUEMENT par la route qui sert les fichiers, pour qu'un ticket média ne
+// puisse rien faire d'autre que servir un média (audit P2c, v1.1.288).
+async function getAuthUser(request, env, opts) {
   const auth = request.headers.get('Authorization') || '';
   let token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   // WebSocket : le navigateur ne peut PAS poser de header Authorization sur un
@@ -175,24 +178,31 @@ async function getAuthUser(request, env) {
   // une URL fuite (journaux serveur, historique, Referer) — un ticket qui fuite
   // est déjà mort. ?token= reste accepté UNE version pour ne pas couper les
   // apps encore en cache (règle : jamais casser la connexion).
-  let ticketMode = false;
+  let mode = 'session';
   if (!token) {
     try {
       const qs = new URL(request.url).searchParams;
       const tkt = qs.get('ticket');
-      if (tkt) { token = tkt; ticketMode = true; }
+      const mt = opts && opts.allowMediaTicket ? qs.get('mt') : null;
+      if (tkt) { token = tkt; mode = 'ws'; }
+      else if (mt) { token = mt; mode = 'media'; }
       else token = qs.get('token');
     } catch (_) {}
   }
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
   if (!payload || !payload.sub) return null;
-  if (ticketMode) {
-    // Doit être un vrai ticket, et non déjà utilisé.
+  if (mode === 'ws') {
+    // Doit être un vrai ticket WebSocket, et non déjà utilisé.
     if (!(await consumeWsTicket(env, payload))) return null;
-  } else if (payload.typ === 'wstkt') {
-    // Un ticket ne vaut JAMAIS jeton de session (header Bearer ou ?token=) :
-    // sinon le ticket redeviendrait une clé d'API complète.
+  } else if (mode === 'media') {
+    // Ticket média : réutilisable pendant sa courte durée de vie (une photo est
+    // relue à chaque affichage), mais valable NULLE PART ailleurs.
+    if (payload.typ !== 'mtkt') return null;
+  } else if (payload.typ) {
+    // Un jeton TYPÉ (ticket WS, ticket média, invitation magique…) ne vaut
+    // JAMAIS jeton de session : sinon il redeviendrait une clé d'API complète.
+    // Les jetons de session, eux, n'ont pas de champ `typ`.
     return null;
   }
   // Vérif SÛRE (colonnes toujours présentes) — JAMAIS contournée même si une
@@ -1655,7 +1665,9 @@ export async function handleMediaUpload(request, env) {
 }
 
 async function handleMediaGet(id, request, env) {
-  const auth = await getAuthUser(request, env);
+  // Seule route à accepter un ticket média (?mt=) : le jeton de session n'a
+  // plus à voyager dans l'attribut `src` de chaque image (audit P2c).
+  const auth = await getAuthUser(request, env, { allowMediaTicket: true });
   if (!auth) return err('Non authentifié', 401);
   if (!env.APEX_CHAT_MEDIA) return err('Stockage média indisponible', 503, 'no_r2');
   const row = await env.APEX_CHAT_DB.prepare('SELECT r2_key, mime, owner_id FROM media WHERE id=?').bind(id).first();
@@ -1674,7 +1686,7 @@ async function handleMediaGet(id, request, env) {
   const h = new Headers();
   h.set('Content-Type', row.mime || obj.httpMetadata?.contentType || 'application/octet-stream');
   h.set('Cache-Control', 'private, max-age=31536000');
-  h.set('Access-Control-Allow-Origin', '*');
+  // (l'en-tête CORS est posé par applyCors selon l'origine — audit P2b)
   return new Response(obj.body, { status: 200, headers: h });
 }
 
@@ -3807,6 +3819,18 @@ async function handleWsTicket(request, env) {
   return json({ ok: true, ticket, exp: (now + 60) * 1000 });
 }
 
+// POST /api/auth/media-ticket — même principe que le ticket WebSocket, mais
+// RÉUTILISABLE pendant 5 min : une photo est relue à chaque affichage (aperçu,
+// plein écran, re-rendu), donc un ticket à usage unique la casserait. Il ne
+// vaut que sur la route des médias. Audit P2c (v1.1.288).
+async function handleMediaTicket(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const now = Math.floor(Date.now() / 1000);
+  const ticket = await signJWT({ sub: auth.sub, typ: 'mtkt', iat: now, exp: now + 300 }, env.JWT_SIGN_KEY);
+  return json({ ok: true, ticket, exp: (now + 300) * 1000 });
+}
+
 async function handleWsConversation(convId, request, env) {
   const upgradeHeader = request.headers.get('Upgrade');
   if (upgradeHeader !== 'websocket') return err('Upgrade WebSocket requis', 426);
@@ -5597,6 +5621,7 @@ const _workerHandler = {
       // Ticket WS à usage unique (audit P2a) — le jeton de session reste dans
       // le header, seul le ticket éphémère part dans l'URL du WebSocket.
       if (path === '/api/auth/ws-ticket' && method === 'POST') return await handleWsTicket(request, env);
+      if (path === '/api/auth/media-ticket' && method === 'POST') return await handleMediaTicket(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
       // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
