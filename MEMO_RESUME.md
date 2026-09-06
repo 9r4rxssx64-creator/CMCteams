@@ -1,5 +1,11 @@
 # MEMO_RESUME — état de session
 
+> 📌 **Ce que Kevin doit faire est ailleurs** : la liste complète et priorisée vit dans
+> **`KEVIN_ACTIONS_TODO.md`** (refaite le 6.09.2026). En tête : 4 mots de passe à remplacer
+> (ils sont dans l'historique public du dépôt), puis 7 questions dont une simple réponse me
+> débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
+
+
 ## 6 septembre 2026 — relecture de TOUS les `.md` : deux secrets trouvés en clair (à RÉGÉNÉRER)
 
 Kevin : *« Relis tous les .md »*, deux fois. J'ai relu les **1160** fichiers Markdown du dépôt,

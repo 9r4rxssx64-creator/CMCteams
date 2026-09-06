@@ -1,5 +1,81 @@
 # 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
 
+> **Refait le 6.09.2026** (Kevin : « Note tout dans les actions à faire par prio »).
+> Tout ce qui dépend de toi est ci-dessous, dans l'ordre. Le reste de ce fichier est
+> l'historique, tu n'as pas besoin de le lire.
+>
+> **Beaucoup de lignes ne demandent qu'une RÉPONSE** — tu dis oui, je fais le travail
+> (section 🟠). Les seules où tu dois vraiment cliquer sont marquées 👆.
+
+---
+
+## 🔴 URGENT — 4 mots de passe sont connus de tout le monde
+
+Ils étaient écrits en clair dans le dépôt, qui est **public**. Je les ai masqués, mais
+**masquer ne les efface pas** : l'historique du dépôt garde tout. Tant qu'ils ne sont pas
+**remplacés**, il faut les considérer comme connus.
+
+| # | Quoi | Pourquoi ça presse | Toi |
+|---|---|---|---|
+| 1 | **Régénérer `AGENT_SECRET`** | C'est la **seule** protection de ton agent en ligne. Qui l'a peut lancer ses cycles — et chaque cycle appelle l'IA, donc **c'est ton argent** | 👆 |
+| 2 | **Changer le code famille de l'arbre** | Ce code **est** l'adresse des données. Qui l'a peut **lire et modifier tout l'arbre** — donc les infos de personnes vivantes | 👆 |
+| 3 | **Révoquer le jeton GitLab** `glpat-wD6Q…` | Demandé par la session « arbre ». Un jeton qui traîne = un accès en écriture au dépôt | 👆 |
+| 4 | **Changer ton mot de passe Sentry** — *seulement si tu avais copié celui que le guide proposait* | Un document public **suggérait un mot de passe précis**. S'il est le tien, il est publié | 👆 |
+
+**Comment faire, une par une :**
+
+1. **Agent** → [Vercel, projet `kdmc-agent-monaco`](https://vercel.com/g7vrdynktn-5574s-projects/kdmc-agent-monaco/settings/environment-variables) → la variable `AGENT_SECRET` → **Edit** → mets une nouvelle valeur longue → **Save**. Puis dis-moi « agent fait », je vérifie que l'agent répond toujours.
+2. **Arbre** → ouvre [arbre.kd-mc.com](https://arbre.kd-mc.com) → **Outils** → **Changer le code**. L'app s'occupe de tout, tes données ne bougent pas.
+3. **GitLab** → [gitlab.com, jetons d'accès](https://gitlab.com/-/user_settings/personal_access_tokens) → celui qui commence par `glpat-wD6Q` → **Révoquer**.
+4. **Sentry** → [sentry.io, sécurité du compte](https://sentry.io/settings/account/security/) → change le mot de passe.
+
+---
+
+## 🟠 UNE RÉPONSE SUFFIT — je fais le travail derrière
+
+Rien à installer, rien à configurer. Tu réponds, je m'occupe du reste.
+
+| # | Ma question | Ce que je fais avec ta réponse |
+|---|---|---|
+| 5 | **Le dépôt est public et contient les noms de tes collègues et de tes proches** (261 noms d'effectif, les 6 Pit Boss, le nom de Laurence). Trois choix : **(a)** on assume, **(b)** je remplace les noms par des matricules dans l'app et la correspondance part dans Firebase (chantier, mais c'est le vrai correctif), **(c)** on passe le dépôt en privé (le plus rapide, mais ça casse la publication du site — je mesure d'abord). | J'exécute l'option choisie |
+| 6 | **Les boutiques peuvent être modifiées par n'importe qui.** Deux règles Firebase autorisent l'écriture **sans aucune condition**. Je les ferme ? | Je durcis les règles et je vérifie que les boutiques marchent toujours |
+| 7 | **N'importe quelle branche de travail peut déployer la production d'Apex Chat.** Je restreins à `main` seulement ? | Je corrige le déploiement |
+| 8 | **`arbre/research/ACTES-VERIF.md`** contient les dates et lieux de naissance d'environ **18 personnes vivantes** + une adresse — dans un dépôt public. Je le retire du dépôt ? | Je le sors et je le remplace par une note |
+| 9 | **Compte développeur Apple à 99 $/an** : oui ou non ? *(demandé par la session « meta »)* | Sans lui, aucune app ne peut aller sur l'App Store |
+| 10 | **Gilets** : combien, et broderie logo seul ou logo + prénoms ? *(session « la détente »)* | La commande part |
+| 11 | **Accès au compte Cloudflare « 9r4 »** *(session « domain kdmc »)* | Elle débloque son travail |
+
+---
+
+## 👆 UN SEUL CLIC TECHNIQUE
+
+| # | Quoi | Pourquoi |
+|---|---|---|
+| 12 | Sur [tes jetons Cloudflare](https://dash.cloudflare.com/profile/api-tokens) → le jeton qui a « Workers Scripts : Edit » → **Modifier** → ajouter **Compte › Vectorize › Edit** → **Enregistrer**. Puis écris-moi **« vectorize fait »**. | Sans ce droit, la **mémoire longue d'Apex** ne se déploie jamais. Apex marche, mais il oublie. Le jeton garde la même valeur : rien à changer ailleurs. |
+
+---
+
+## ⚪ QUAND TU VEUX — rien ne casse en attendant
+
+| # | Quoi | Détail |
+|---|---|---|
+| 13 | **Vérifier où sont stockées tes données Firebase** | Ouvre [la console](https://console.firebase.google.com/project/kdmc-clients/database/kdmc-clients-default-rtdb/data) : la région est écrite à côté du nom. Ton document RGPD affirme « Europe » alors que l'adresse réellement appelée par l'app est la forme **américaine**. Je ne peux pas trancher d'ici. **Tant que ce n'est pas vérifié, ce document ne doit servir d'argument devant personne.** Dis-moi ce que tu vois, je réécris le document. |
+| 14 | **Secrets App Store mal nommés** | Le déploiement cherche `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_PRIVATE_KEY`, tes vrais secrets s'appellent `APPSTORE_API_ISSUER` / `APPSTORE_API_KEY` / `APPLE_TEAM_ID`. Il tournerait donc **à vide, sans rien dire**. Je n'ai pas renommé : la correspondance est incertaine et il en manque un troisième. À reprendre ensemble. |
+| 15 | **`CLAUDE.md` pèse 533 Ko** | Il porte sa propre règle « garder CLAUDE.md sous 45 Ko », et il est rechargé en entier à chaque message. Découpage à faire — je peux m'en charger, dis-moi juste quand. |
+
+---
+
+## ✅ CE QUE TU N'AS PLUS À FAIRE (ne reviens pas dessus)
+
+- ~~**Envoyer la réponse au support GitHub**~~ — **PÉRIMÉ** : GitHub a rouvert le compte le
+  **4.09 à 16h34** (fait n°10 d'`ETAT-INFRA.md`). Il n'y a plus rien à envoyer.
+- ~~**Changer le code admin**~~ — fait le 5.09, et les 6 déploiements ont le nouveau secret.
+- ~~**Cliquer le connecteur GitHub**~~ — périmé depuis la réouverture.
+
+---
+
+# 📜 Historique (ancien contenu de ce fichier)
+
 > **5.09.2026 12:50 — « Note toutes les tâches pour plus tard »** : la liste COMPLÈTE (les tiennes,
 > les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
 > « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
