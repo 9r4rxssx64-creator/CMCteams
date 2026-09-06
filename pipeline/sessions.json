@@ -276,6 +276,16 @@
       "maj": "2026-09-06",
       "attend_kevin": null,
       "attend_session": null
+    },
+    "secrets-guard": {
+      "titre": "Garde anti-fuite de secrets (branche annexe de domaine-audit)",
+      "branche": "claude/secrets-guard-main",
+      "sujet": "Branche MINIMALE partie de main : 4 secrets en clair dans le dépôt PUBLIC (AGENT_SECRET ×2, code famille arbre, mot de passe Sentry suggéré) + la garde test:no-secret-in-docs corrigée — elle en ratait 3 sur 4 contre les vraies valeurs. Même session que domaine-audit.",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-06",
+      "attend_kevin": null,
+      "attend_session": null
     }
   },
   "messages": [

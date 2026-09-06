@@ -58,6 +58,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Reverse-engineering / consolidation | `claude/reverse-engineer-app-consolidation-t0y4u5` | 🟢 travail prêt |
 | Audit du domaine + surveillance | `claude/surveillance-domaine-26-adresses` | ✅ fusionnée dans main le 5.09 (PR #3652) — suite en cours sur la même branche |
 | Correctif Vercel (annexe de la précédente) | `claude/vercel-config-main` | 🔴 **urgent, à fusionner** — partie de `main` le 6.09, 4 fichiers. Répare les 2 `vercel.json` refusés par le schéma Vercel : tant qu'elle n'est pas dans `main`, **chaque push de chaque branche envoie un mail d'échec à Kevin**. Voir message m036. |
+| Garde anti-fuite de secrets (annexe) | `claude/secrets-guard-main` | 🔴 **urgent, à fusionner** — partie de `main` le 6.09. 4 secrets encore en clair sur `main` (dépôt PUBLIC) + la garde qui les attrape. Voir message m036. |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
 
 ## 📅 État RÉEL mesuré le 5.09 (16h40) — `git fetch --prune` puis `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/`
