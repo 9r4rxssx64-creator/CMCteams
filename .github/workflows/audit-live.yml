@@ -28,7 +28,7 @@ on:
   #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 concurrency:
   group: audit-live
-  cancel-in-progress: true
+  cancel-in-progress: false   # cible partagée (le vrai domaine) : on fait la file, on n'efface pas le balayage d'une autre branche (garde test:ci-no-stampede)
 
 jobs:
   audit:

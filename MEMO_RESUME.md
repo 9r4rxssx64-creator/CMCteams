@@ -1,5 +1,21 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
+
+- `main` fusionné dans la branche (4 conflits de journaux résolus en gardant les deux côtés ; les deux
+  leçons « 216 » de main deviennent 216/217, les miennes 218 (GitLab) et 219 (Vercel)).
+- Le job `tests` GitLab (seul endroit où `npm run test:ci` tourne à chaque push) a rougi sur
+  `test:ci-no-stampede` : `audit-live.yml`, arrivé de main, avait un groupe de concurrence fixe
+  **avec** annulation → un push d'une branche effaçait le balayage d'une autre. Corrigé :
+  `cancel-in-progress: false` (file d'attente sur la cible partagée, le motif que la garde autorise).
+  Gate 5/5 en local. Cette garde ne tourne pas sur GitHub à chaque push : sans le miroir GitLab, ce
+  rouge serait resté invisible.
+- Vercel : la correction de domaine-audit (`tools/agent/vercel.json`, plus aucune prévisualisation
+  hors `main`) est maintenant dans ma branche → le contrôle rouge qui bloquait la PR #3674 n'a plus
+  de raison de revenir.
+
+---
+
 ## 6 septembre 2026 (matin, session arbre) — Arbre v3.18 « Munegu » : le thème monégasque accentué, dans l'app et sur le poster
 
 **Demande Kevin** : *« Accentue le thème spécialité monégasque, Monaco. Va plus loin. »* puis *« Continu »*.
