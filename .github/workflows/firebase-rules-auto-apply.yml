@@ -4,8 +4,15 @@ name: Firebase Rules auto-apply (marker)
 # change (pattern CLAUDE.md « auto-trigger via push » — zéro clic Kevin, utilisable
 # même quand le dispatch API n'est pas disponible depuis la session Claude Code).
 #
-# Déclenche sur push du marker (branches claude/* = pushes authentifiés qui déclenchent
-# les workflows, contrairement aux merges du bot en GITHUB_TOKEN) + main (édition directe).
+# ⛔ `main` UNIQUEMENT — décision Kevin du 2026-09-06 (« prudent : tout sauf les règles »).
+# Les règles RTDB commandent les DROITS D'ACCÈS À SES DONNÉES : elles ne doivent jamais
+# être publiées depuis une branche de travail inachevée. Ce workflow écoutait `claude/**`
+# avant cette décision — retiré le 2026-09-06 (leçon #232).
+#
+# ⚠️ ZÉRO CLIC QUAND MÊME : je modifie le marker sur ma branche, le bot d'auto-fusion
+# l'amène dans `main`, et CE push sur `main` déclenche l'application des règles.
+# Kevin n'a rien à cliquer — on passe seulement par la case `main`, comme il l'a demandé.
+#
 # Anti-spam : paths-filtré sur le SEUL marker → ne tourne que quand on le modifie.
 # Sécurité : valeurs du marker validées (whitelist stricte) avant exécution ;
 # le script deploy-rules.cjs vérifie ensuite l'état publié + probes 401 anonymes.
@@ -14,7 +21,6 @@ on:
   push:
     branches:
       - main
-      - 'claude/**'
     paths:
       - 'tools/firebase/rules-deploy-request.json'
 

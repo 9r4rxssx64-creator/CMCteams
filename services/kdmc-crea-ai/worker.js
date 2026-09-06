@@ -560,9 +560,22 @@ const I2V = {
 };
 const BG = { owner: 'black-forest-labs', name: 'flux-schnell', input: (prompt, ratio) => ({ prompt: prompt, aspect_ratio: ratio || '1:1', num_outputs: 1, output_format: 'png' }) };
 
+/* Replicate répond ses erreurs au format RFC 7807 : { title, detail, status }.
+   `detail` est la SEULE phrase qui dit POURQUOI (« limite du palier gratuit »,
+   « plafond de dépense atteint », « trop de requêtes »…). Vécu le 2026-09-06 :
+   le rapport n'affichait que `model_429` — impossible de savoir s'il fallait
+   attendre ou recharger. Règle « toujours détailler les erreurs, cause exacte ». */
+function raisonReplicate(j, statut) {
+  const d = (j && (j.detail || j.title || j.error)) || '';
+  const t = String(d).replace(/\s+/g, ' ').trim().slice(0, 160);
+  return statut + (t ? ': ' + t : '');
+}
 async function latestVersion(owner, name, token) {
   const r = await fetch(`https://api.replicate.com/v1/models/${owner}/${name}`, { headers: { Authorization: `Token ${token}` } });
-  if (!r.ok) throw new Error('model_lookup_' + r.status);
+  if (!r.ok) {
+    const j = await r.json().catch(() => null);
+    throw new Error('model_lookup_' + raisonReplicate(j, r.status));
+  }
   const j = await r.json();
   const v = j && j.latest_version && j.latest_version.id;
   if (!v) throw new Error('no_version');
@@ -574,7 +587,12 @@ async function createPrediction(version, input, token) {
     headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ version, input })
   });
-  const pred = await res.json();
+  const pred = await res.json().catch(() => null);
+  /* Un 4xx/5xx n'a PAS de champ `error` : sans ce contrôle, l'objet d'erreur
+     repartait dans la boucle d'attente et ressortait en « model_429 » nu,
+     sans la raison. On coupe ici, avec la phrase de Replicate. */
+  if (!res.ok) throw new Error('create_' + raisonReplicate(pred, res.status));
+  if (!pred) throw new Error('create_reponse_illisible');
   if (pred.error) throw new Error('create_' + pred.error);
   return pred;
 }
