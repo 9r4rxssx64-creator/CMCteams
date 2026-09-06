@@ -4708,3 +4708,28 @@ Validé : 1086/1086 tests verts, JS syntax OK. Leçon #216. Findings P1 → ✅ 
 
 Reste audit Apex Chat : P2a (jeton WS dans l'URL, api-worker.js:148), P2b (CORS `*`
 workers/lib/cors.js), mensonges doc (README post-quantum, package.json version).
+
+## 2026-09-06 — Apex Chat : vérité doc (P2) + état des P2 restants
+
+**Corrigé (zéro risque, viole une règle ABSOLUE « vérité, rien de faux »)** :
+`messaging-app/README.md` annonçait « chiffrement militaire post-quantum (PQXDH) »
+et « serveur aveugle » — **les deux FAUX**, mesuré : le chiffrement réel est
+ECDH P-256 + HKDF-SHA256 + AES-GCM-256 + PBKDF2 100k, **zéro Kyber / zéro ML-KEM**
+(`PQXDH` n'est qu'un texte de remplissage `'PENDING_PQXDH'` en base) ; et le
+serveur n'est pas « aveugle » en mode A (kdmc_admin membre invisible).
+`package.json` : 1.1.262 → **1.1.285** (23 versions de retard).
+Garde câblée : `tests/unit/no-false-security-claims.test.js` (README + primitives
+réelles + parité version package.json ⇄ index.html).
+
+**P2 restants — décision motivée, PAS livrés dans cette PR** :
+- **P2b CORS `*`** : les 4 workers calculent le CORS **au chargement du module**
+  (constantes), pas par requête → une liste blanche d'origines exige de refactorer
+  le pipeline de réponse des 4 workers. Valeur réelle FAIBLE (l'auth est en
+  `Authorization: Bearer`, pas en cookie → pas de CSRF ; l'audit le dit lui-même),
+  risque de casser le chat MOYEN. Interdit d'ajouter un helper non câblé
+  (erreur #28). → à faire comme changement dédié, après le merge de P1.
+- **P2a jeton dans l'URL du WebSocket** : correctif = ticket court à usage unique
+  (nouvel endpoint + client + worker). Touche le cœur du chat → à faire seul,
+  avec e2e, jamais empilé sur une PR bloquée.
+
+**Bloquant** : PR #3671 attend l'approbation propriétaire de Kevin (CODEOWNERS `*`).
