@@ -3,7 +3,7 @@
 > Kevin 2026-09-02 : *« Sois sûr de ne rien oublier, lier ou perdre de chaque session.
 > Et le pipeline entre elles toutes et les futures. Le domaine et divers aussi. »*
 >
-> À lire au démarrage, avec `ETAT-INFRA.md` (les 7 faits) et `SESSIONS-ET-BRANCHES.md` (la carte).
+> À lire au démarrage, avec `ETAT-INFRA.md` (les 16 faits) et `SESSIONS-ET-BRANCHES.md` (la carte).
 
 ## Pourquoi ce pipeline existe
 
@@ -92,8 +92,8 @@ remet à jour le repère local `origin/<ta branche>` **après** un push accepté
 
 ## Se rappeler tout, sans tout relire
 
-138 règles, 174 leçons, 93 skills, 129 scripts, 4 hooks, 17 sessions : personne ne relit
-ça à chaque fois — c'est comme ça qu'on refait une erreur déjà écrite.
+Des centaines de règles, de leçons, de skills, de scripts et une vingtaine de sessions :
+personne ne relit ça à chaque fois — c'est comme ça qu'on refait une erreur déjà écrite.
 
 ```bash
 node tools/pipeline/rappel.mjs                  # le rappel (compact)

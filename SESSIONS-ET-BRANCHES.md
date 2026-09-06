@@ -3,21 +3,23 @@
 > Écrit le 2.09.2026 depuis la session « Studio créa ». Kevin : *« pointe toutes tes branches pour
 > que je puisse continuer à travailler sur chacune d'entre elles, comme avant »* et *« tout par
 > GitLab maintenant jusqu'à nouvel ordre »*.
-> À lire au démarrage, avec `ETAT-INFRA.md` (les 7 faits).
+> À lire au démarrage, avec `ETAT-INFRA.md` (les 16 faits).
 
-## ⚡ La cause unique — et la seule action qui débloque TOUT
+## ⚡ ~~La cause unique — et la seule action qui débloque TOUT~~ — PÉRIMÉ depuis le 4.09.2026
 
-Plusieurs sessions rapportent **exactement la même erreur** :
+> **⛔ NE REDEMANDE PLUS CETTE ACTION À KEVIN.** Le blocage décrit ci-dessous appartient à la
+> suspension (15.08 → 4.09). **GitHub a rouvert le 4.09 à 16h34 UTC** — fait n°10 d'`ETAT-INFRA.md`,
+> qui marque déjà ce lien comme **périmé**. Les deux documents se contredisaient : une session neuve
+> lisait celui-ci en premier et redemandait à Kevin un clic explicitement interdit ailleurs.
+> Texte gardé pour l'histoire, barré pour l'action.
 
-> *« Authentication failed while accessing the repository "9r4rxssx64-creator/CMCteams". …
-> verify the integration is **authorized** for it. »*
+~~Plusieurs sessions rapportaient exactement la même erreur :~~
 
-Ce n'est pas « le dépôt a disparu » : c'est **l'autorisation de l'application Claude sur le dépôt**
-qui est tombée. Un seul geste la rétablit, pour **toutes** les sessions à la fois :
+> ~~*« Authentication failed while accessing the repository "9r4rxssx64-creator/CMCteams". …
+> verify the integration is **authorized** for it. »*~~
 
-**https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1**
-
-**Aucune session ne doit le redemander à Kevin une nouvelle fois.** C'est écrit ici, une fois.
+~~L'autorisation de l'application Claude sur le dépôt était tombée. Le geste qui la rétablissait :
+`https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1`~~
 
 ## 🔗 Le pipeline entre sessions — lis-le avant de commencer
 
@@ -74,8 +76,11 @@ Avant de commencer une session : **regarde les branches du jour, pas celles du t
 
 1. **Teste ton propre accès** — ne généralise ni un succès ni un 403 :
    `git ls-remote origin`
-2. **Ça répond** → travaille sur GitHub comme avant. Mais sache que **rien n'y est publié en ligne**
-   (GitHub Pages est mort, fait n°1) : pour mettre en ligne, passe par GitLab ou par une archive.
+2. **Ça répond** → travaille sur GitHub comme avant, **et publie depuis GitHub** : depuis le
+   4.09.2026 le site vivant vient de GitHub (fait n°11 d'`ETAT-INFRA.md`). Le fait n°1
+   (« GitHub Pages est mort ») date de la suspension et ne s'applique plus.
+   **GitLab = miroir de secours + ce que GitHub interdit** (jobs à la demande qui appellent
+   l'extérieur), pas le chemin de publication — l'y envoyer consomme ses 400 min/mois pour rien.
 3. **403** → **GitLab**, dépôt `kdmc-group/Kdmc-project` :
    ```bash
    git push "https://oauth2:<JETON>@gitlab.com/kdmc-group/Kdmc-project.git" HEAD:<ta-branche>

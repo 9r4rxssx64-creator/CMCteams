@@ -75,7 +75,7 @@ messaging-app/
 | `user_tardieu_sandrine` | `sandrine` | Sandrine TARDIEU | — | Client (test) | Non |
 | `user_tardieu_christophe` | `christophe` | Christophe TARDIEU | — | Client (test) | Non |
 
-**PIN admin** : `‹code admin›` (modifiable). **PIN clients test** : `2026` (à changer 1ère connexion).
+**PIN admin** : `‹code admin›` (modifiable). **PIN clients test** : ‹défini hors dépôt› (à changer à la 1ère connexion).
 
 **Contact mutuel pré-créé** : Kevin ↔ Laurence avec une conversation DM `conv_kevin_laurence` opérationnelle Day 1.
 

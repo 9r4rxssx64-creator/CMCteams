@@ -369,7 +369,7 @@ Cohérent avec règle CLAUDE.md "🔄 PIPELINE SELF-HEALING TOTAL CROSS-APP".
 
 ### Sandrine TARDIEU + Christophe TARDIEU — Clients test
 - **ID** : `user_tardieu_sandrine` + `user_tardieu_christophe`
-- **PIN** : `2026` (à changer 1ère connexion)
+- **PIN** : ‹défini hors dépôt› (à changer à la 1ère connexion)
 - **Rôle** : `client` (compte gratuit)
 
 ## 🌐 URLs et services existants à brancher (extraits KEVIN_INVENTORY)

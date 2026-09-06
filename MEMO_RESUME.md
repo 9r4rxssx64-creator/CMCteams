@@ -4902,3 +4902,43 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
 - Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
+
+---
+
+### 2026-09-06 — Relecture de tous les .md (demande Kevin « Relis tous les .md »)
+
+**5 relectures parallèles** (docs infra racine · audit/ + clayscore/ · `.claude/skills|commands|agents` ·
+archives/ + docs projets · passe 1 déjà committée en `cb6dfc26f`). Chaque signalement re-vérifié
+par moi-même avant correction — plusieurs étaient exacts, aucun appliqué sur confiance.
+
+**Corrigé (données sensibles, dépôt PUBLIC)** :
+- Mobile privé de Kevin publié dans **5 lignes / 2 fichiers** (`audit/apex-chat/03-FINDINGS.md`,
+  `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`) — il servait de critère d'admin → `‹tél. admin›`.
+- Mot de passe en clair proposé dans `archives/GUIDE_IPHONE.md` → remplacé par « génère-le ».
+- PIN de comptes de test `2026` documenté (README + PROJECT_MEMO messaging-app) → masqué.
+
+**Corrigé (documents qui envoyaient une session au mauvais endroit)** :
+- `SESSIONS-ET-BRANCHES.md` disait « la seule action qui débloque TOUT = le lien connecteur GitHub »
+  alors qu'`ETAT-INFRA.md` fait n°10 l'interdit → bloc barré + renvoi. Idem « rien n'est publié en
+  ligne, passe par GitLab » → faux depuis le 4.09 (et ça brûlait les 400 min/mois GitLab).
+- `ETAT-INFRA.md` se contredisait (fait n°3 « seul site vivant = Pages » vs fait n°11 « le site vient
+  de GitHub ») → fait n°3 barré + en-tête corrigé (« 16 faits », pas 6).
+- `KEVIN_SECOURS_DEPLOIEMENT.md` : l'étape 4 disait de mettre `services/kdmc-router/*` en
+  « Build watch paths » — exactement ce que l'avertissement du haut interdit (désactive le parachute
+  **en silence**) → étape alignée sur l'avertissement.
+- `MIGRATION_GITLAB.md` : le lien « Variables du projet » ouvrait les **jetons personnels** → vraie
+  page CI/CD.
+- `REMETTRE_EN_LIGNE.md` : ligne « 111 » du routeur (réelle : ~309, cherchée par contenu désormais),
+  `kd-mc-sites.zip` inexistant (remplacé par la commande qui fabrique le paquet), test de preuve
+  signalé cassé (référence git sur branche supprimée).
+
+**Chiffres faux corrigés (mesurés)** : rangement des 49 automatisations GitLab 24→**22** et
+Worker 5→**7** (`DESTINATIONS.json`, 2 documents) · workflows actifs 143→**145** · workflows rangés
+42→**35**. Compteurs qui dérivent (leçons/skills/sessions/« 7 faits ») **retirés** au lieu d'être
+re-figés — `PIPELINE-SESSIONS.md` promet lui-même « chaque chiffre est compté à l'instant ».
+
+**Outillage réparé** : le hook de validation JS de `.claude/settings.json` avait **deux** défauts —
+chemin `/home/user/CMCteams` (majuscules, dossier inexistant → jamais exécuté) **et** concaténation
+de TOUS les `<script>`, y compris le bloc `application/ld+json`, qui faisait échouer le parse à tous
+les coups. Corrigé (`$CLAUDE_PROJECT_DIR` + `<script>` nus seulement) et **prouvé discriminant** :
+fichier sain → « JS OK », accolade sabotée → `SyntaxError` remontée.

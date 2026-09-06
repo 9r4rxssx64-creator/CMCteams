@@ -93,7 +93,7 @@ panne du 2.09 ; ils sont **26** depuis — liste vérifiée par `npm run test:up
 Facultatif : les tests tournent sans aucune clé. Ce n'est utile que pour
 remettre en ligne les Workers depuis GitLab.
 
-**▶️ [Variables du projet GitLab](https://gitlab.com/-/user_settings/personal_access_tokens)** → *Settings → CI/CD → Variables*, en cochant **Masked** :
+**▶️ [Variables CI/CD du projet GitLab](https://gitlab.com/kdmc-group/Kdmc-project/-/settings/ci_cd)** → section *Variables*, en cochant **Masked** :
 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, puis les clés d'IA au besoin.
 
 ---
@@ -109,7 +109,7 @@ remettre en ligne les Workers depuis GitLab.
 | Tests | 126 workflows | tests au push, **0 exécution programmée** |
 | Surveillances, générations d'images | GitHub Actions | **à déplacer vers un Worker** |
 
-**Rien n'est perdu** : les 42 workflows retirés sont conservés dans
+**Rien n'est perdu** : les 35 workflows retirés sont conservés dans
 `.github/workflows-desactives/`, et tout l'historique (395 commits) part sur
 GitLab.
 
