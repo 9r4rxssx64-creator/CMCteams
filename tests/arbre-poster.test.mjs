@@ -50,6 +50,16 @@ ok(/MAXPX=16e6/.test(block), 'Image HD plafonnée à 16 Mpx (limite canvas iPhon
 const raw = block.match(/'\s*\+\s*(p\.(nom|prenom)|full\(p\)|sub|b\.label|lab|pr\.title)\s*\+\s*'</g) || [];
 ok(raw.length === 0, 'Aucune donnée de personne écrite brute dans le SVG (esc/_fitText partout)', raw.length ? raw.slice(0, 3).join(' | ') : `${(block.match(/esc\(/g) || []).length} appels à esc()`);
 ok(/function _fitText[^]*?esc\(txt\)/.test(block), '_fitText échappe son texte');
+// 9bis. Munegu (v3.18) : thème monégasque défini ET câblé (cadre fuselé, badge, règnes, section Réglages)
+ok(/function isMonacoPlace\(/.test(html) && /function bornInMonaco\(/.test(html) && /function reignOf\(/.test(html), 'Munegu : isMonacoPlace / bornInMonaco / reignOf définies');
+ok(/var MC_REIGNS=\[\["Honoré V",1819,1841\],\["Florestan Ier",1841,1856\],\["Charles III",1856,1889\],\["Albert Ier",1889,1922\],\["Louis II",1922,1949\],\["Rainier III",1949,2005\],\["Albert II",2005,9999\]\]/.test(html), 'Munegu : règnes des Princes de Monaco (dates officielles, Honoré V → Albert II)');
+ok(/id="pfus"/.test(html) && /\+mcPosterDefs\(base\)/.test(block) && /s\+=mcPosterFrame\(pp,base\)/.test(block), 'Poster : cadre fuselé de gueules et d\'argent (pattern #pfus + mcPosterFrame câblé)');
+ok(/if\(bornInMonaco\(p\)\)c\+=/.test(block) && (block.match(/mcLozengeSVG\(/g) || []).length >= 4, 'Poster : losange ◆ sur les cartes ET les médaillons des personnes nées à Monaco, légende, règne par génération');
+ok(/sous '\+esc\(reignLabel\(r\)\)/.test(block), 'Poster : chaque génération située « sous » le règne du Prince (année médiane)');
+ok(/Munegu · Deo Juvante/.test(block) && /Àrburu de famiya · Principauté de Monaco/.test(block), 'Poster : devise Deo Juvante + « Àrburu de famiya » (vocabulaire vérifié)');
+ok(/\+mcBadge\(p\)\+/.test(html) && /info\+=mcFicheRows\(p,irow\);/.test(html) && /mcToolsHTML\(\)\+/.test(html) && /<div id="mcRibbon"/.test(html), 'App : badge ◆ (liste), lignes Munegu/Règne (fiche), section Réglages, ruban fuselé — tous câblés');
+ok(/#mcRibbon\{/.test(html) && /--mc:#c8102e/.test(html), 'CSS : ruban fuselé + couleur gueules de Munegu');
+
 // 9. l'outil de vérification réelle existe
 ok(fs.existsSync(path.join(ROOT, 'tools', 'arbre', 'verify-poster.mjs')), 'tools/arbre/verify-poster.mjs présent (vérification en vrai navigateur)');
 

@@ -140,7 +140,9 @@ L.push(`│ Session : ${moi ? `${moi.titre} (${monId})` : `⚠ branche « ${bran
 if (moi) L.push(`│ Terrain : ${(moi.surfaces || []).join(', ') || '—'}`);
 L.push(`│ Git     : ${branche} · ${nonPousses ? `⚠ ${nonPousses} commit(s) à pousser` : 'tout est publié ✓'}`
   + ` · ${saleté} fichier(s) en cours`);
-L.push(`│ Publier : GITLAB_TOKEN=… ./tools/pipeline/pousser.sh   (origin = ${remoteOrigin.includes('gitlab') ? 'GitLab' : 'GitHub, remis par le harnais — sans effet, le script vise GitLab en dur'})`);
+L.push(remoteOrigin.includes('gitlab')
+  ? `│ Publier : GITLAB_TOKEN=… ./tools/pipeline/pousser.sh   (origin = GitLab)`
+  : `│ Publier : git push -u origin ${branche} → PR → fusion par l'API (GitHub, voie normale depuis le 4.09) · GitLab = remise à niveau occasionnelle seulement (ETAT-INFRA fait n°13)`);
 L.push('╰──────────────────────────────────────────────────────────────────────');
 
 /* CE QUE JE DOIS — jamais tronqué */

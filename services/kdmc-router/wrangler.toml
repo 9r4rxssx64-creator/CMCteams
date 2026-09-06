@@ -66,6 +66,11 @@ run_worker_first = true
 binding = "ACCOUNTS"
 id = "8cfa33a28ac045adb7b7a9556ca8a073"
 
+# Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+# Workers AI (binding AI, 0 clé) sert le coach Lingua via services/_shared/ia-route.js.
+[ai]
+binding = "AI"
+
 # Arbre généalogique — AMORCE des données (fait n°12) : base D1 `kdmc-arbre` créée le 5.09.2026,
 # table kv(k,v,saved_at) avec `codehash` (empreinte du code famille) et `seed` (l'arbre v3.14, texte).
 # Le routeur y lit SEULEMENT si KV ACCOUNTS (arbre:codehash / arbre:seed = publication depuis

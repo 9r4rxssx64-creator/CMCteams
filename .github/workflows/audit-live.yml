@@ -7,9 +7,19 @@ name: Audit LIVE (vraies pages kd-mc.com dans un navigateur)
 # réseau bloquée / CORS / 4xx-5xx vers un host projet, exception JS, page vide.
 # (Le blocage CORS de la commande Printify aurait été capté ici — leçon #131.)
 #
-# Déclenché à la main (« fais ton audit ») + 1×/semaine (anti-spam mails).
+# Déclenché à la main (« fais ton audit ») ET par push sur claude/** quand ce balayage ou
+# sa liste de surfaces change (05/09 : depuis une session, l'API GitHub est fermée → le
+# bouton est injoignable, le push est le seul déclencheur — fait n°16 d'ETAT-INFRA.md).
+# Lecture seule sur le domaine, aucun déploiement, aucun secret : un push depuis une
+# branche ne peut rien casser. Les écarts remontent en ANNOTATIONS (lisibles sans connexion).
 on:
   workflow_dispatch: {}
+  push:
+    branches: ['claude/**', main]
+    paths:
+      - 'tools/smoke/audit-live.mjs'
+      - '.github/workflows/audit-live.yml'
+      - 'audit/live-demande.txt'   # fichier-signal : le toucher relance le balayage
   # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
   #    GitHub a suspendu le compte : « repositories that use GitHub Actions
   #    solely to interact with 3rd party websites […] or for general
@@ -18,7 +28,7 @@ on:
   #    rien ne tourne tout seul. Ne PAS remettre de cron ici.
 concurrency:
   group: audit-live
-  cancel-in-progress: true
+  cancel-in-progress: false   # cible partagée (le vrai domaine) : on fait la file, on n'efface pas le balayage d'une autre branche (garde test:ci-no-stampede)
 
 jobs:
   audit:
@@ -30,11 +40,29 @@ jobs:
         with: { node-version: '22' }
       - name: Install Playwright Chromium
         run: |
-          npm init -y >/dev/null 2>&1 || true
-          npm i -D playwright@^1.48.0
+          # Le package.json de la racine fait planter npm (« Cannot read properties of null
+          # (reading 'edgesOut') », résolution des peer deps — mesuré 05/09 : ce run échouait
+          # en 28 s sans une seule ligne utile). --legacy-peer-deps passe ; version = celle
+          # des devDependencies (1.56.0), sans toucher au package.json.
+          npm i --no-save --no-audit --no-fund --legacy-peer-deps playwright@1.56.0
           npx playwright install --with-deps chromium
       - name: Balayage LIVE de toutes les surfaces
-        run: node tools/smoke/audit-live.mjs "https://kd-mc.com"
+        shell: bash -eo pipefail {0}
+        env:
+          # OPTIONNEL : empreinte SHA-256 du code famille de l'arbre (jamais le code). Absent →
+          # l'arbre est contrôlé sans entrer (domaine sert les fiches + mauvais code refusé) ;
+          # présent → le balayage entre et compte aussi les cartes. Masqué par GitHub.
+          ARBRE_CODE_SHA256: ${{ secrets.ARBRE_CODE_SHA256 }}
+        run: |
+          set +e
+          node tools/smoke/audit-live.mjs "https://kd-mc.com" 2>&1 | tee /tmp/live.log
+          RC=${PIPESTATUS[0]}
+          set -e
+          # Annotations : 10 par type et par étape → les lignes bloquantes en ::error::,
+          # le verdict par surface en ::notice::.
+          { grep -E 'BLOQUANT|❌|FAIL|pageerror|ERR_FAILED' /tmp/live.log || true; } | head -10 | while IFS= read -r L; do echo "::error::live ▸ $L"; done
+          { grep -E '^(✅|🟢|OK|\[OK\])|surfaces? OK|/[0-9]+ OK' /tmp/live.log || true; } | tail -10 | while IFS= read -r L; do echo "::notice::live ▸ $L"; done
+          exit "$RC"
       - name: Captures d'écran + rapport (toujours, même en échec)
         if: always()
         uses: actions/upload-artifact@v4

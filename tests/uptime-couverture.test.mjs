@@ -30,10 +30,23 @@ const OK = (m) => { ok++; console.log('  OK   ' + m); };
 const FAIL = (m) => { fail++; console.log('  FAIL ' + m); };
 
 /** Hôtes déclarés dans la table ROUTES du routeur. */
+// Seules les lignes ENTIÈREMENT en commentaire sont retirées (un `/*` peut apparaître dans
+// une valeur de route — un retrait des blocs /* */ avalait 13 routes sur 26, mesuré 05/09).
+const sansCommentaires = (src) => src.replace(/^[ \t]*\/\/.*$/gm, '');
+
 function hostsDuRouteur() {
-  const src = readFileSync(ROUTER, 'utf8');
+  // Relecture 05/09 : une route COMMENTÉE (`// 'deces.kd-mc.com': …`) était lue comme
+  // vivante → faux rouge, ou pire, on sondait une adresse morte. Commentaires retirés d'abord.
+  const src = sansCommentaires(readFileSync(ROUTER, 'utf8'));
   const bloc = src.match(/const ROUTES = \{([\s\S]*?)\n\};/);
   if (!bloc) throw new Error("table ROUTES introuvable dans " + ROUTER);
+  // Une route ajoutée HORS du bloc (ROUTES['x'] = …, Object.assign(ROUTES, …)) échapperait
+  // à la comparaison en silence → refusée.
+  const apres = src.slice(src.indexOf(bloc[0]) + bloc[0].length);
+  // (une LECTURE `ROUTES[host]` est normale ; seule une ÉCRITURE est refusée)
+  if (/ROUTES\s*\[[^\]]+\]\s*=[^=]|Object\.assign\(\s*ROUTES|delete\s+ROUTES\s*\[/.test(apres)) {
+    throw new Error('ROUTES est modifiée hors de son littéral — la garde ne peut plus la comparer');
+  }
   // (?:sous-domaine\.)* → capture aussi le domaine NU « kd-mc.com ».
   // Une première version exigeait un préfixe et comptait 25 au lieu de 26 :
   // un parseur qui rate une entrée fait passer la garde au vert pour rien.
@@ -42,7 +55,7 @@ function hostsDuRouteur() {
 
 /** Hôtes surveillés par kdmc-uptime. */
 function hostsDeLaSonde() {
-  const src = readFileSync(UPTIME, 'utf8');
+  const src = sansCommentaires(readFileSync(UPTIME, 'utf8'));
   const bloc = src.match(/const SITES = \[([\s\S]*?)\n\];/);
   if (!bloc) throw new Error("liste SITES introuvable dans " + UPTIME);
   return [...bloc[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
@@ -86,6 +99,43 @@ if (!fantomes.length) {
 const doublons = sonde.filter((h, i) => sonde.indexOf(h) !== i);
 if (!doublons.length) OK('aucun doublon dans la liste surveillée');
 else FAIL('doublons : ' + [...new Set(doublons)].join(', '));
+
+
+/* Les workers sondés existent-ils dans le dépôt ? Un nom sans wrangler.toml = une cible
+   fantôme (panne permanente inventée). apex-secrets-proxy est construit par
+   sync-apex-secrets-to-cf-worker.yml, sans wrangler.toml : exception NOMMÉE. */
+import { readdirSync, statSync, existsSync } from 'node:fs';
+function workersDeLaSonde() {
+  const src = sansCommentaires(readFileSync(UPTIME, 'utf8'));
+  const bloc = src.match(/const WORKERS = \[([\s\S]*?)\n\];/);
+  return bloc ? [...bloc[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : [];
+}
+function nomsWranglerToml() {
+  const noms = new Set();
+  const walk = (d, depth) => {
+    if (depth > 4) return;
+    let entries = [];
+    try { entries = readdirSync(d); } catch { return; }
+    for (const e of entries) {
+      if (e === 'node_modules' || e.startsWith('.')) continue;
+      const f = join(d, e);
+      let st; try { st = statSync(f); } catch { continue; }
+      if (st.isDirectory()) walk(f, depth + 1);
+      else if (e === 'wrangler.toml') {
+        const m = readFileSync(f, 'utf8').match(/^name\s*=\s*"([^"]+)"/m);
+        if (m) noms.add(m[1]);
+      }
+    }
+  };
+  walk(join(ROOT, 'services'), 0); walk(join(ROOT, 'tools'), 0); walk(join(ROOT, 'messaging-app'), 0);
+  return noms;
+}
+const SANS_TOML = new Set(['apex-secrets-proxy']);
+const workers = workersDeLaSonde();
+const connus = nomsWranglerToml();
+const inconnus = workers.filter((w) => !connus.has(w) && !SANS_TOML.has(w));
+if (workers.length && !inconnus.length) OK(`les ${workers.length} workers sondés existent dans le dépôt (wrangler.toml ou exception nommée)`);
+else FAIL(`worker(s) sondé(s) sans wrangler.toml dans le dépôt : ${inconnus.join(', ') || '(liste WORKERS vide)'} — cible fantôme = panne inventée`);
 
 console.log(`\n=== ${ok} OK / ${fail} FAIL ===`);
 process.exit(fail ? 1 : 0);

@@ -1,7 +1,71 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05 nuit** (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🇲🇨 L'arbre aux couleurs de Monaco — session 2026-09-06 matin (arbre v3.18 « Munegu », branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.18) | Ruban fuselé rouge/blanc, badge ◆ sur les nés en Principauté (liste, fiche, poster), règne du Prince sous chaque génération (arbre + poster), section **🇲🇨 Munegu** dans Réglages (compteurs, naissances par règne, lieux, registres de la Mairie, Journal de Monaco, Traditions monégasques), poster à cadre fuselé + *Àrburu de famiya* + *Deo Juvante*. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `tools/arbre/fixture-famille.mjs` | La famille synthétique a maintenant 2 racines nées « Monaco » / « Monte-Carlo » (fictif) pour vérifier badges et règnes sans donnée réelle. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/fixture-famille.mjs) |
+| `tools/arbre/verify-poster.mjs` · `tests/arbre-poster.test.mjs` | 154 contrôles en vrai navigateur (cadre, badges = nés à Monaco, règnes, devise) + 8 contrôles hors ligne dans le gate. | [Navigateur](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) · [Gate](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
+| `tools/smoke/audit-live.mjs` | Le balayage live contrôle l'arbre **sans code** : le domaine sert les fiches (`/__arbre/status`), un mauvais code est refusé ; secret optionnel `ARBRE_CODE_SHA256` pour compter aussi les cartes. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/smoke/audit-live.mjs) · [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/audit-live.yml) |
+| `.gitlab-ci.yml` (job `tests`) · `.github/workflows/cmc-runtime-audit.yml` | Les tests navigateur tournent enfin quelque part : GitLab (image Playwright) et GitHub (le cache npm sans lockfile les faisait échouer en 17 s). | [GitLab CI](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) · [Pipelines](https://gitlab.com/kdmc-group/Kdmc-project/-/pipelines) · [GitHub](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/cmc-runtime-audit.yml) |
+| `tests/runtime-audit-everyone-has-planning.mjs` · `…-v788-fb-auth.mjs` · `…-garro-cp.mjs` · `…-code-legends.mjs` | Attendent la fin réelle de l'import et coupent le réseau : mêmes résultats sur ton iPhone, ici, et sur un runner lent. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/runtime-audit-everyone-has-planning.mjs) |
+| `vercel.json` | Vercel ne se déploie plus pour l'arbre, les workers, les tests, le pipeline ou la CI GitLab : c'est ce qui épuisait le quota gratuit (100/jour) et **bloquait toutes les fusions** (contrôle rouge sur chaque PR). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/vercel.json) |
+> Dernière mise à jour : **2026-09-05 nuit** (IA gratuite en principal dans TOUS les projets · Qwen gratuit en IA principale d'Apex v13.4.366 · fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🗳️ Concertation d'IA gratuites — vote sur le type de question + conseil avec juge (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | `analyseQuestion` (3 voix gratuites votent le type), `councilText` (voix + juge gratuit), `routeSmart` (les deux puis le routage) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | 14 tests dont 5 sur la concertation (vote, désaccord → repli, action → Anthropic, conseil, juge mort) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais vote puis conseille par défaut ; `POST /ai/analyse` = le vote seul | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.285) | Chat admin : vote + conseil quand Workers AI est là | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse actu = conseil de 3 voix + juge (moins d'inventions) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) |
+| `index.html` (CMCteams v9.893) | Badge « Concertation gratuite · N avis » quand un conseil a répondu | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `apex-ai/v13/services/ai/crew-experts.ts` (Apex v13.4.367) | Les voix de l'équipe d'experts = gratuites d'abord, Anthropic membre + chef d'orchestre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+
+## 🆓 « Pareil dans mes autres projets » — IA gratuite en principal partout (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | **NOUVEAU — LE routage IA commun** : qui répond en premier selon la question (Qwen gratuit, Anthropic, Gemini, Perplexity…), secours en chaîne, réponse qui nomme toujours le moteur. Importé par chaque worker | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | **NOUVEAU** — la garde du module (9 tests, hors ligne). `npm run test:ia-route` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais **apis.kd-mc.com/ai** devient le hub commun (Qwen d'abord, bascule par question, ancienne chaîne en secours). Bug corrigé : le vrai hôte GitHub Pages passe enfin | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `index.html` (CMCteams v9.892) | Le chat IA envoie les questions courantes au relais gratuit ; planning/outils/actions restent à Anthropic ; **marche sans clé pour les employés** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `tests/verify-cmc-ia-gratuite.mjs` | **NOUVEAU** — la garde CMCteams (26 contrôles : la fonction de décision est extraite du vrai fichier et exécutée). `npm run test:cmc-ia-gratuite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cmc-ia-gratuite.mjs) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.284) | Qwen pour le chat, résumés, traductions, reformulations ; Anthropic pour agir et chercher | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) |
+| `messaging-app/tests/unit/api-worker-ia-qwen.test.js` | **NOUVEAU** — 8 tests Apex Chat (Qwen répond, action → Anthropic, secours, cause exacte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-ia-qwen.test.js) |
+| `services/kdmc-router/worker.js` + `wrangler.toml` | Coach Lingua sur Qwen (multilingue) d'abord ; binding Workers AI ajouté au routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/lingua-ia.test.mjs` | **NOUVEAU** — la garde du coach (Qwen nommé, secours, fail-open). `npm run test:lingua-ia` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/lingua-ia.test.mjs) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse World Monitor par Qwen, Anthropic en secours (clé devenue optionnelle) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-wm-brief.yml) |
+| `services/kdmc-crea-ai/worker.js` | Paroles / compositions : Qwen Workers AI en tête (Qwen3 récents), les 18 moteurs à clé en secours, toutes les causes de bascule visibles | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tools/finances/index.html` (v0.15.0) | Qwen en tête du « gratuit d'abord » | [ouvrir](https://finances.kd-mc.com) · [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/finances/index.html) |
+
+## 🆓 Qwen gratuit en IA principale + bascule auto par question — Apex v13.4.366 (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | **Le relais Apex** (sa source est dans ce fichier) : sert maintenant **Qwen sans clé** via Workers AI, route `/qwen/…`, PIN obligatoire, 4 modèles essayés dans l'ordre, réponse au format OpenAI, raisonnement `<think>` filtré. L'étape « Verify deploy » fait un **vrai appel Qwen** et écrit `qwen HTTP <code>` dans le journal | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/sync-apex-secrets-to-cf-worker.yml) · [Runs (la preuve live)](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `apex-ai/v13/services/ai/ai-routing-policy.ts` | **Qui répond à quoi** : Qwen en tête pour général/résumé/traduction, Anthropic pour code/raisonnement/créatif et **toute action**, Gemini pour les images, Perplexity pour la recherche, Groq pour la vitesse. Les gratuits passent devant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-routing-policy.ts) |
+| `apex-ai/v13/services/ai/ai-router.ts` | Qwen déclaré comme fournisseur (adresse = le relais lui-même, 0 clé) et inséré dans la chaîne de secours juste après Anthropic | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-router.ts) |
+| `apex-ai/v13/services/ai/crew-experts.ts` | Qwen dans l'équipe d'experts (spécialité multilingue) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+| `apex-ai/v13/features/chat/chat-misc-wiring.ts` | Le libellé du mode ⚡ « Gratuit malin » explique la bascule en clair | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/features/chat/chat-misc-wiring.ts) |
+| `tests/verify-apex-proxy-qwen.mjs` | **NOUVEAU** — la preuve sans réseau : extrait le relais du workflow, le fait tourner avec un Workers AI simulé, 17 contrôles (PIN, formats, filtre `<think>`, modèle mort → suivant, cause exacte). `npm run test:apex-proxy-qwen` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-apex-proxy-qwen.mjs) |
+| `apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` | **NOUVEAU** — la garde : Qwen reste principal, la bascule par question tient, et un fournisseur ne peut plus être oublié dans une liste (13 tests, 3 sabotages prouvés) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts) |
+| `LESSONS.md` · `CLAUDE.md` | Leçon **#217** + règle « Qwen gratuit en IA principale + bascule auto » | [LESSONS](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/LESSONS.md) · [CLAUDE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE.md) |
+
+## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.gitattributes` | Dit à git que `MEMO_RESUME.md`, `KEVIN_INVENTORY.md` et `LESSONS.md` se fusionnent en **gardant les deux côtés** (« union »). Plus jamais de conflit sur le journal entre deux sessions. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitattributes) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.gitattributes) |
+| `.github/workflows/auto-merge-claude.yml` (étape « Rattraper main avant la PR ») | L'automate fusionne d'abord `main` dans ta branche (journaux en union), pousse, puis fusionne la PR. Un conflit sur du **code** l'arrête proprement avec un avertissement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) · [runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/auto-merge-claude.yml) |
+| Branche `claude/lingua-connexion-honnete` | Réparée à la main 2 fois (main fusionné, journaux gardés, test Lingua branché sur `KDMC_ADMIN_CODE`). Avec ce réglage, la prochaine fois se fera toute seule. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-connexion-honnete) |
+| Branche `claude/lingua-prenom-nom` | **Doublon** de la précédente (même code, 0 différence) + un lien `node_modules` vers un chemin de machine : à laisser au nettoyage, ne pas fusionner. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-prenom-nom) |
 
 ## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
 
@@ -18,6 +82,12 @@
 
 | Fichier | À quoi ça sert | Liens |
 |---|---|---|
+| `ETAT-INFRA.md` — **fait n°16** | Pour TOUTES les sessions : ce qu'une session peut atteindre (4 canaux mesurés), **le compte Cloudflare gratuit n'a que 5 crons et ils sont pris**, comment prouver un déploiement (`modified_on`), ce que fait vraiment le robot auto-merge | [lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/ETAT-INFRA.md) |
+| `services/kdmc-outlook/worker.js` (6 lignes) | Son cron (toutes les 2 h) **réveille la surveillance** du domaine, faute de place pour un cron à elle | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-outlook/worker.js) |
+| `pipeline/sessions.json` (m026→m030) | Le courrier aux autres branches : les 4 canaux, les 5 crons, Vectorize, les 2 branches Lingua en double | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/pipeline/sessions.json) · [carte des branches](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/SESSIONS-ET-BRANCHES.md) |
+| `audit/2026-09-05/` (00→06) | **L'audit du domaine, écrit** : inventaire, 32 fonctions et leur couverture, résultats mesurés, findings (2 P0 + 4 P1 corrigés, ce qui reste), journal + auto-critique, **secrets & connecteurs** (47 noms à confirmer, 3 jeux de noms App Store) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/audit/2026-09-05) |
+| `.github/workflows/audit-live.yml` | **Le balayage LIVE** (28 surfaces, vrai navigateur) part maintenant **tout seul** au push, écarts en annotations | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/audit-live.yml) |
+| `.github/workflows/deploy-kdmc-rag.yml` | Si l'index Vectorize manque, le run **le dit** (annotation) et s'arrête avant de déployer | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-rag.yml) |
 | `services/kdmc-uptime/worker.js` | **La sonde** : toutes les heures, les **26 sous-domaines + 6 workers**. Alerte l'iPhone quand une adresse tombe et quand elle revient. L'ancienne n'en voyait que 13, et elle est éteinte depuis le 14/08 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/worker.js) |
 | `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
 | `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |

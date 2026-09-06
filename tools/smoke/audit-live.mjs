@@ -47,29 +47,63 @@ const SURFACES = [
   { url: 'https://coffre.' + ROOT + '/', name: 'Coffre-fort', selKey: 'body' },
   { url: 'https://departs.' + ROOT + '/', name: 'Départs', selKey: 'body' },
   { url: 'https://cmcteams-light.' + ROOT + '/', name: 'CMCteams light', selKey: 'body' },
+  // 3 sous-domaines du routeur qui n'étaient JAMAIS balayés (audit domaine 05/09 : 25/26 →
+  // 26/26 + les 2 pages admin). bot/beatbot/autorisations répondent 401/403 sans session :
+  // c'est le verrou qui marche (authGated), pas une panne — l'audit est anonyme.
+  { url: 'https://bot.' + ROOT + '/', name: 'Bot crypto (tableau de bord)', selKey: 'body' },
+  { url: 'https://beatbot.' + ROOT + '/', name: 'Beatbot (robot piscine, admin)', selKey: 'body' },
+  { url: 'https://autorisations.' + ROOT + '/', name: 'Autorisations (admin)', selKey: 'body' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
-      // Déverrouille (code famille MAIFFRET déjà par défaut) et VÉRIFIE que l'arbre rend
-      // vraiment des cartes — un arbre vide (bug d'agencement) échoue ici. (bug « tjs pas d'arbre » v2.4)
-      //
-      // FAUX POSITIF corrigé le 2026-08-07 : on comptait `.tnode`, la classe du SEUL style
-      // « clair ». L'app rend par défaut le style parchemin, dont les cartes portent `.tmed`
-      // → le contrôle criait « arbre vide » alors que 81 cartes s'affichaient (reproduit en
-      // local : `_RENDERSTYLE==='med'`, 81 `.tmed`, 0 erreur JS). Un contrôle lié à un nom de
-      // classe cosmétique casse au moindre changement de style. On compte donc ce qui prouve
-      // vraiment le rendu, indépendamment du style : les cartes cliquables de la scène
-      // (`#stage [data-open]`), présentes dans TOUS les styles.
-      try { await page.evaluate(() => { sessionStorage.setItem('arbre_unlocked','1'); localStorage.setItem('arbre_trust','1'); }); } catch {}
-      await page.reload({ waitUntil: 'load' }).catch(()=>{});
+      // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
+      // code famille se vérifie sur le domaine (POST /__arbre/unlock) et n'existe NULLE PART
+      // dans le dépôt (règle « le code ne s'écrit nulle part »). L'ancien contrôle posait
+      // `arbre_unlocked=1` et comptait les cartes — il rougissait (« reste bloqué sur le code »)
+      // depuis que le code par défaut a été retiré, à juste titre : SANS le code, le bon état
+      // est justement la grille. Ce qui se prouve sans secret, et qui est ce qui compte :
+      //   (1) le domaine SERT l'arbre : /__arbre/status → ok + code posé + jeu de données
+      //       présent + count > 0 (source d1/kv) — c'est le repli D1 en production ;
+      //   (2) la grille est VIVANTE : un mauvais hash (64 hex bidons) est REFUSÉ par le
+      //       domaine avec `code_invalide` (pas `codehash_requis` = code non posé, pas 5xx) ;
+      //   (3) le rendu des cartes ne se prouve qu'avec le code → OPT-IN : secret CI
+      //       `ARBRE_CODE_SHA256` (empreinte, jamais le code) ; absent → on le DIT, et le
+      //       rendu reste prouvé hors ligne par tools/arbre/verify-domaine.mjs (fixture).
+      const st = await page.evaluate(async () => {
+        try { const r = await fetch('/__arbre/status', { cache: 'no-store' }); return { http: r.status, j: await r.json() }; }
+        catch (e) { return { http: 0, err: String(e && e.message || e) }; }
+      });
+      const j = (st && st.j) || {};
+      if (st.http !== 200 || !j.ok) return { ok:false, note:'/__arbre/status HTTP ' + st.http + ' ' + JSON.stringify(j).slice(0, 120) + (st.err ? ' ' + st.err : '') };
+      if (!j.code) return { ok:false, note:'aucun code famille posé sur le domaine (status.code=false) — personne ne peut entrer' };
+      if (!j.seed || !(j.count > 0)) return { ok:false, note:'le domaine ne sert AUCUNE fiche (seed=' + j.seed + ', count=' + j.count + ', source=' + (j.source || '?') + ')' };
+      const bad = await page.evaluate(async () => {
+        try {
+          const r = await fetch('/__arbre/unlock', { method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+            body: JSON.stringify({ hash: 'f'.repeat(64) }) });
+          return { http: r.status, j: await r.json() };
+        } catch (e) { return { http: 0, err: String(e && e.message || e) }; }
+      });
+      const bj = (bad && bad.j) || {};
+      if (bj.ok === true) return { ok:false, note:'GRAVE : un hash bidon a OUVERT l\'arbre (/__arbre/unlock ok=true)' };
+      if (bj.reason !== 'code_invalide' && bj.reason !== 'trop_d_essais') return { ok:false, note:'/__arbre/unlock ne refuse pas comme attendu : HTTP ' + bad.http + ' ' + JSON.stringify(bj).slice(0, 120) };
+      const gate = await page.evaluate(() => !!(document.querySelector('#gate') && !document.querySelector('#gate').classList.contains('hidden')));
+      const ver = await page.evaluate(() => (document.querySelector('#ver') || {}).textContent || '').catch(() => '');
+      const base = j.count + ' fiches servies (' + (j.source || '?') + ', seedVersion ' + (j.seedVersion || '?') + ') · grille ' + (gate ? 'affichée' : 'ABSENTE') + ' · mauvais code refusé (' + bj.reason + ')' + (ver ? ' · ' + ver : '');
+      if (!gate) return { ok:false, note: base + ' — la grille devrait être affichée sans code' };
+      const codeHash = (process.env.ARBRE_CODE_SHA256 || '').trim().toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(codeHash)) return { ok:true, note: base + ' · cartes non comptées (secret ARBRE_CODE_SHA256 absent — rendu prouvé hors ligne par verify-domaine)' };
+      // Opt-in : avec l'empreinte du code, on entre vraiment et on compte les cartes
+      // (`#stage [data-open]`, présentes dans tous les styles — faux positif .tnode du 07/08).
+      await page.evaluate((h) => { localStorage.setItem('arbre_codehash', h); localStorage.setItem('arbre_trust', '1'); sessionStorage.setItem('arbre_unlocked', '1'); }, codeHash);
+      await page.reload({ waitUntil: 'load' }).catch(() => {});
       await page.waitForTimeout(4500);
       const r = await page.evaluate(() => ({
-        ver: (document.querySelector('#ver')||{}).textContent||'',
         cartes: document.querySelectorAll('#stage [data-open]').length,
         style: (typeof window._RENDERSTYLE !== 'undefined') ? String(window._RENDERSTYLE) : '?',
         gate: !!(document.querySelector('#gate') && !document.querySelector('#gate').classList.contains('hidden')),
       }));
-      if (r.gate) return { ok:false, note:'reste bloqué sur le code (gate)' };
-      if (r.cartes < 1) return { ok:false, note:'AUCUNE carte rendue — arbre vide ('+r.ver+', style '+r.style+')' };
-      return { ok:true, note: r.cartes+' cartes · style '+r.style+' · '+r.ver };
+      if (r.gate) return { ok:false, note: base + ' · avec ARBRE_CODE_SHA256 : reste bloqué sur la grille (empreinte fausse ou périmée ?)' };
+      if (r.cartes < 1) return { ok:false, note: base + ' · avec ARBRE_CODE_SHA256 : AUCUNE carte rendue (empreinte fausse/périmée, ou arbre vide — style ' + r.style + ')' };
+      return { ok:true, note: base + ' · ' + r.cartes + ' cartes rendues (style ' + r.style + ')' };
     } },
   /* Belles adresses ajoutées le 2026-08-13 (Kevin « pourquoi les adresses ne sont pas
      pareilles ») : elles doivent RÉELLEMENT répondre, pas seulement exister au routeur. */
