@@ -1,5 +1,30 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (soir, suite) — la barrière est vraiment relancée : 2 rouges restants, aucun n'est le mien
+
+Le test e2e est **vert en CI réelle** : workflow « Tests E2E + Validation », run
+[34044348745](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34044348745),
+**success** sur le head fusionné — et **54/54 (100 %)** en local sur les 6 appareils (avant : 49/54).
+Vercel est passé **success** deux fois de suite (« Canceled by Ignored Build Step ») : le mail
+d'échec s'arrête pour de bon.
+
+`npm run test:ci` s'arrête encore, mais sur **deux rouges qui viennent de `main`**, pas de moi.
+Vérifié avant d'accuser quoi que ce soit — `git diff --name-only origin/main...HEAD` ne montre
+**aucun** fichier Lingua ni routeur, et un **worktree sur `origin/main` non touché** reproduit le
+même échec.
+
+| Rouge | À qui | Cause exacte (mesurée) |
+|---|---|---|
+| `test:lingua-voix` | Lingua | l'app lève `Cannot read properties of undefined (reading 'u0-0')` et rend un **écran vide** (22 caractères) quand on ouvre la page avec un compte dont le cours est choisi → le bouton 🔊 n'apparaît jamais → le test attend 15 s. Reste à trancher : état de test incomplet, ou **vrai P0** (écran vide au retour de l'utilisateur). Message **m046** |
+| `test:router-secours` (43/6) | `domain-kdmc` | déjà signalé par `arbre` au m037 (sous-domaines absents de la copie de secours) |
+| `test:bascule` | routeur / `domain-kdmc` | une **référence git en dur** (`github/claude/capcut-mini-versions-66tfum`) qui n'existe sur aucun clone frais → git sort en 128 et le test **plante**. Message **m047** |
+
+**Le vrai enseignement (leçon #228)** : `test:ci` est une chaîne de `&&` — le premier rouge
+**arrête tout le reste**, donc plus aucune session ne voit la fin de sa propre barrière. J'ai
+relancé le reste **en deux morceaux** pour prouver que mon travail passe : 20+12+17+27+29+12+16+63
+contrôles verts entre les deux rouges, puis les 15 derniers gardes.
+
+
 ## 6 septembre 2026 (soir) — le test e2e rougissait « 5 erreurs runtime :  |  | » : quatre défauts empilés (v9.895)
 
 Le workflow `tests` sortait **49/54 PASS** avec, en guise d'explication, un message **vide**. Reproduit
@@ -22,7 +47,7 @@ Les trois formes s'affichent enfin : `[js] Cannot read x of null` · `[warn] HTT
 `[_resolve-ia-key] Unexpected end of JSON input`.
 
 **Garde** : `npm run test:journal-erreurs` (13 contrôles, dans `test:ci`), prouvée discriminante.
-Leçon **#225**.
+Leçon **#227**.
 
 
 ## 6 septembre 2026 — SEPTEMBRE 2026 V2 vérifié EN RÉEL contre le PDF : 3 vrais défauts trouvés et corrigés
