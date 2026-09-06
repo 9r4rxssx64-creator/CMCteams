@@ -141,6 +141,11 @@
   rouge à la fois — chaque aller-retour coûte 4 min de runner — j'ai fait l'inventaire : **13 tests de
   `test:ci`** important un planning avec le réseau **ouvert**. Réseau coupé dans les 13 (aucun n'a besoin
   du CDN, aucun n'avait de route), attente stable pour `repro-vplan`. **14 tests relancés ici : 14 verts.**
+  **Puis 6 tests qui servent la page depuis un serveur local** (`127.0.0.1`) attendaient `networkidle` :
+  sur un runner avec réseau, la page rappelle Firebase en boucle, `networkidle` n'arrive **jamais** →
+  timeout 30 s. Réseau externe coupé **en laissant passer le serveur local**, et `networkidle` → `load`.
+  6 verts ici. (Piège évité : le filtre `^https?://` attrape aussi `http://127.0.0.1` — les 13 premiers
+  chargent en `file://`, donc ils n'étaient pas concernés ; vérifié un par un avant de pousser.)
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
