@@ -1,5 +1,22 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (17h35) — le nettoyeur ne DÉMARRAIT pas : greffé dans l'auto-merge
+
+- Après le correctif de cécité (#227), **370 branches avant, 370 après** deux cycles de fusion et
+  12 min de surveillance. Le correctif était bon : **le workflow ne démarrait pas du tout**.
+- **Les deux déclencheurs sont morts**, chacun pour une raison de plateforme :
+  (a) `push` sur `main` → le merge est poussé par l'auto-merge avec `GITHUB_TOKEN`, et **un push
+  fait avec ce jeton ne déclenche aucun workflow** (c'était écrit en commentaire dans le fichier,
+  je l'ai lu et j'ai quand même annoncé à Kevin « la fusion le lancera » — erreur de ma part) ;
+  (b) `workflow_run` → ne part **que si le workflow déclencheur a tourné sur la branche par
+  défaut**, or l'auto-merge tourne `on: push: branches: claude/**`, donc jamais sur `main`.
+  Zéro exécution depuis le 2026-05-20.
+- **Fix** : pas de troisième déclencheur (cron interdit depuis la suspension du 15/08) — le
+  nettoyage est **greffé dans l'auto-merge**, le seul workflow dont j'ai la **preuve** qu'il
+  tourne (mes branches sont fusionnées). Garde-fous : uniquement des **ancêtres de `main`**,
+  **inactifs depuis 7 jours**, jamais la branche en cours, `continue-on-error` (un nettoyage ne
+  doit jamais faire échouer une livraison), **SHA journalisé** à chaque suppression.
+- Leçon **#228**. Preuve attendue : le compte de branches doit baisser à la prochaine fusion.
 ## 6 septembre 2026 (soir) — « applique tout pour tes autres branches » : mesuré, outillé, transmis
 
 Kevin : *« Applique tout pour tes autres branches et qu'elles soient au courant de tes modifs. »*
