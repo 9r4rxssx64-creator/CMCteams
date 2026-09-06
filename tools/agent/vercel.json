@@ -25,6 +25,5 @@
     "api/cron.js": {
       "maxDuration": 60
     }
-  },
-  "_note": "05/09/2026 : 40 deploiements Vercel en une journee (un par push de chaque branche claude/*), tous CANCELED ou ERROR, production main annulee a chaque nouveau push, et un mail d'echec a Kevin a chaque fois. L'ancienne commande `git diff --quiet HEAD^ HEAD -- .` sortait en erreur (HEAD^ absent du clone Vercel) → Vercel le compte comme un build error. Regle : l'agent est un cron de PRODUCTION (crons ci-dessous ne tournent qu'en production sur le plan Hobby) → aucune previsualisation, jamais ; sur main, deploiement seulement si ce dossier a change."
+  }
 }

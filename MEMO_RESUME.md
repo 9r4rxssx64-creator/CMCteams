@@ -70,6 +70,14 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 - **`SESSIONS-ET-BRANCHES.md` corrigé** : sa section « la seule action qui débloque TOUT » demandait
   encore à Kevin de retaper l'autorisation du connecteur GitHub — **périmé depuis le 2.09, inutile
   depuis le 4.09** (m005/m016). Réécrite pour que personne ne le ressorte.
+- **Vercel : le correctif du 5.09 était annulé par sa propre note.** Le bot Vercel a échoué sur ma
+  PR avec la vraie raison : *« The vercel.json schema validation failed … should NOT have additional
+  property `_note` »*. La clé `_note` ajoutée dans `tools/agent/vercel.json` pour EXPLIQUER le
+  correctif faisait **rejeter le fichier par le schéma** — le build sortait en erreur avant même de
+  lire l'`ignoreCommand`, donc Kevin recevait toujours un mail d'échec à **chaque push de chaque
+  session**. Note déplacée dans `tools/agent/README.md`, `vercel.json` remis aux 6 clés légales.
+  Message **m040** à `studio-crea` (leur terrain). Règle : `vercel.json` n'accepte ni commentaire ni
+  clé inconnue.
 - **`ETAT-INFRA.md` fait n°16 complété** : il annonce « API GitHub = 403 depuis une session » ;
   **depuis celle-ci elle RÉPOND** (`get_me` OK, PR et fusion par l'API possibles). C'est une
   propriété de la session, pas du dépôt — donc PR créée et fusionnée sans clic Kevin.
