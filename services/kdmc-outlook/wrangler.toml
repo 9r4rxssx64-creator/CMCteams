@@ -11,8 +11,15 @@ binding = "ACCOUNTS"
 id = "8cfa33a28ac045adb7b7a9556ca8a073"
 
 # Récupération automatique des nouvelles factures Outlook (incrémental) toutes les 2 h.
+# Ce cron prête aussi sa place à la surveillance du domaine (plan gratuit : 5 crons par
+# compte, tous pris — services/kdmc-uptime/wrangler.toml) : scheduled() appelle POST /run
+# de kdmc-uptime par le Service Binding ci-dessous, en premier, fail-open.
 [triggers]
 crons = ["0 */2 * * *"]
+
+[[services]]
+binding = "UPTIME"
+service = "kdmc-uptime"
 
 # Secret injecté par le workflow deploy-kdmc-outlook.yml (réutilise APEX_ADMIN_PIN_SHA256).
 # KDMC_ADMIN_PIN_SHA256 = sha256(code admin) → protège /setup, /config, /connect, /sync.

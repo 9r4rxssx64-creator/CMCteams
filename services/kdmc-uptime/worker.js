@@ -16,20 +16,44 @@
  *
  * CONTRAINTES DU COMPTE (respectées, pas devinées)
  * ------------------------------------------------
- * - ZÉRO binding : les Durable Objects échouent au démarrage sur ce compte
- *   (error 1042, leçons #132/#133) et les KV à id placeholder cassent
- *   `wrangler deploy` (commentaire de services/kdmc-router/wrangler.toml).
- *   → l'état entre deux passages vit dans le Cache API, disponible sans
- *     aucun binding. Il est évictable : c'est assumé, voir plus bas.
- * - Fail-open partout : sans jeton de notification le worker continue de
- *   sonder et de servir son état. Une surveillance qui tombe en panne
- *   parce qu'un secret manque ne surveille rien.
+ * - Pas de Durable Object (error 1042 sur ce compte, leçons #132/#133), pas de
+ *   KV à id placeholder (ça casse `wrangler deploy`). L'état vit dans le KV
+ *   ACCOUNTS déjà provisionné du compte (même namespace que le routeur, Outlook,
+ *   Monaco — id réel dans wrangler.toml), préfixe `upt:`. Repli Cache API si le
+ *   binding manque. Pourquoi pas le Cache API seul (relecture 05/09) : il est
+ *   PAR DATACENTER → un passage lancé depuis un autre lieu ne voyait pas l'état
+ *   précédent, chaque panne était « nouvelle » à chaque fois → notification à
+ *   chaque passage, jamais de « de retour ».
+ * - Fail-open sur la notification : sans jeton le worker continue de sonder et
+ *   de servir son état. Une surveillance qui tombe en panne parce qu'un secret
+ *   manque ne surveille rien.
+ * - Pas de cron à lui (plan gratuit : 5 par compte, tous pris) : le cron de
+ *   kdmc-outlook appelle /run toutes les 2 h par Service Binding.
  *
  * ENDPOINTS
- *   GET /         → état complet du dernier passage (JSON)
- *   GET /health   → {ok:true} (pour être soi-même surveillé)
- *   GET /run      → force un passage maintenant (utile pour le smoke test)
+ *   GET  /         → état du dernier passage (JSON, public, sans URL internes)
+ *   GET  /health   → {ok:true} (pour être soi-même surveillé)
+ *   POST /run      → force un passage. Réservé : en-tête x-uptime-key =
+ *                    sha256(UPTIME_RUN_KEY + ':uptime-run'), 1 passage / 5 min.
+ *                    Public, c'était un amplificateur ×33 sur le quota gratuit
+ *                    (100 000 requêtes/jour, tout le compte) + push en rafale.
  */
+
+const RUN_MIN_INTERVAL_MS = 5 * 60 * 1000;
+const LASTRUN_URL = 'https://kdmc-uptime.internal/lastrun/v1';
+const KV_STATE_KEY = 'upt:state:v1';
+
+async function sha256hex(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** La clé attendue sur /run : dérivée du secret, jamais le secret lui-même sur le fil. */
+async function expectedRunKey(env) {
+  const base = env && env.UPTIME_RUN_KEY;
+  if (!base) return null;
+  return sha256hex(base + ':uptime-run');
+}
 
 /* ------------------------------------------------------------------ *
  * LES CIBLES
@@ -122,8 +146,11 @@ async function probe(t) {
     });
     const ms = Date.now() - started;
     const code = res.status;
+    try { if (res.body) await res.body.cancel(); } catch (_) { /* rien */ }
     // 401/403 sur une page admin = verrou qui fonctionne, donc en bonne santé.
-    const ok = code < 400 || (t.adminGated && (code === 401 || code === 403));
+    // 429 sur un worker = il est VIVANT et se protège (apex-v13-backend limite par IP
+    // avant /health) : ce n'est pas une panne.
+    const ok = code < 400 || (t.adminGated && (code === 401 || code === 403)) || (t.kind === 'worker' && code === 429);
     return { id: t.id, url: t.url, kind: t.kind, code: String(code), ms, ok };
   } catch (e) {
     const ms = Date.now() - started;
@@ -143,7 +170,13 @@ async function probe(t) {
   }
 }
 
-async function readState() {
+async function readState(env) {
+  try {
+    if (env && env.ACCOUNTS) {
+      const s = await env.ACCOUNTS.get(KV_STATE_KEY, 'json');
+      if (s) return s;
+    }
+  } catch (_) { /* KV indisponible → repli cache */ }
   try {
     const hit = await caches.default.match(STATE_URL);
     if (!hit) return null;
@@ -153,7 +186,10 @@ async function readState() {
   }
 }
 
-async function writeState(state) {
+async function writeState(env, state) {
+  try {
+    if (env && env.ACCOUNTS) await env.ACCOUNTS.put(KV_STATE_KEY, JSON.stringify(state));
+  } catch (_) { /* best-effort */ }
   try {
     await caches.default.put(
       STATE_URL,
@@ -178,15 +214,20 @@ async function notify(env, title, body) {
   const token = env && env.KDMC_PUSH_TOKEN;
   if (!url || !token) return { sent: false, why: 'push non configuré' };
   try {
-    const r = await fetch(url.replace(/\/+$/, '') + '/send', {
+    // /send-all + {payload:{…}} : c'est le contrat réel d'apex-push-worker (le routeur fait
+    // pareil, kdmc-router/worker.js). Relecture 05/09 : /send + {title, body} répondait
+    // 400 « no_userIds » → aucune notification n'était jamais partie.
+    const r = await fetch(url.replace(/\/+$/, '') + '/send-all', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         authorization: 'Bearer ' + token,
       },
-      body: JSON.stringify({ title, body }),
+      body: JSON.stringify({ payload: { title, body, tag: 'kdmc-uptime', url: 'https://kdmc-uptime.9r4rxssx64.workers.dev/' } }),
     });
-    return { sent: r.ok, code: r.status };
+    const out = { sent: r.ok, code: r.status };
+    if (!r.ok) out.why = (await r.text().catch(() => '')).slice(0, 120);
+    return out;
   } catch (e) {
     return { sent: false, why: String((e && e.message) || e).slice(0, 120) };
   }
@@ -195,14 +236,14 @@ async function notify(env, title, body) {
 async function runPass(env) {
   const list = targets();
   const results = [];
-  // Par paquets de 8 : 32 requêtes d'un coup depuis un worker se font
-  // étrangler, et une sonde étranglée invente des pannes.
-  for (let i = 0; i < list.length; i += 8) {
-    const chunk = list.slice(i, i + 8);
+  // Par paquets de 6 = la limite de connexions simultanées d'un worker : au-delà,
+  // la 7e attend en file pendant que son chrono de 12 s court déjà → faux « timeout ».
+  for (let i = 0; i < list.length; i += 6) {
+    const chunk = list.slice(i, i + 6);
     results.push(...(await Promise.all(chunk.map(probe))));
   }
 
-  const prev = await readState();
+  const prev = await readState(env);
   const prevDown = new Set((prev && prev.down) || []);
   const down = results.filter((r) => !r.ok).map((r) => r.id);
   const nowDown = new Set(down);
@@ -217,7 +258,7 @@ async function runPass(env) {
     down,
     results,
   };
-  await writeState(state);
+  await writeState(env, state);
 
   let push = { sent: false, why: 'rien à signaler' };
   if (tombees.length) {
@@ -237,16 +278,33 @@ async function runPass(env) {
   return { ...state, tombees, revenues, push };
 }
 
-function json(obj, status) {
-  return new Response(JSON.stringify(obj, null, 2), {
-    status: status || 200,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store',
-      'access-control-allow-origin': '*',
-      'x-content-type-options': 'nosniff',
-    },
-  });
+function json(obj, status, opts) {
+  const headers = {
+    'content-type': 'application/json; charset=utf-8',
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+  };
+  // CORS ouvert seulement sur les lectures publiques (/ et /health), jamais sur /run.
+  if (opts && opts.cors) headers['access-control-allow-origin'] = '*';
+  return new Response(JSON.stringify(obj, null, 2), { status: status || 200, headers });
+}
+
+/** Vue publique de l'état : ni URL internes (recensement), ni détails d'erreur longs. */
+function publicView(state) {
+  return {
+    ...state,
+    results: (state.results || []).map(({ url, detail, ...r }) => (detail ? { ...r, detail: String(detail).slice(0, 80) } : r)),
+  };
+}
+
+/** Anti-rafale : au plus un passage toutes les 5 min (best-effort, Cache API par lieu). */
+async function tooSoon() {
+  try {
+    const hit = await caches.default.match(LASTRUN_URL);
+    if (hit && Date.now() - Number(await hit.text()) < RUN_MIN_INTERVAL_MS) return true;
+    await caches.default.put(LASTRUN_URL, new Response(String(Date.now()), { headers: { 'cache-control': 'max-age=300' } }));
+  } catch (_) { /* pas de cache → on laisse passer */ }
+  return false;
 }
 
 export default {
@@ -258,26 +316,31 @@ export default {
     const path = new URL(request.url).pathname;
 
     if (path === '/health') {
-      return json({ ok: true, service: 'kdmc-uptime', cibles: targets().length });
+      return json({ ok: true, service: 'kdmc-uptime', cibles: targets().length }, 200, { cors: true });
     }
 
     if (path === '/run') {
+      if (request.method !== 'POST') return json({ ok: false, error: 'POST requis' }, 405);
+      const expected = await expectedRunKey(env);
+      if (!expected) return json({ ok: false, error: 'UPTIME_RUN_KEY non configuré sur le worker' }, 503);
+      if ((request.headers.get('x-uptime-key') || '') !== expected) return json({ ok: false, error: 'non autorisé' }, 401);
+      if (await tooSoon()) return json({ ok: false, error: 'trop tôt : 1 passage / 5 min' }, 429);
       return json(await runPass(env));
     }
 
     if (path === '/' || path === '') {
-      const state = await readState();
+      const state = await readState(env);
       if (!state) {
         return json({
           ok: true,
           etat: 'aucun passage enregistré pour le moment',
-          note: "Le premier passage a lieu au prochain déclenchement horaire, ou tout de suite via /run.",
+          note: 'Le prochain passage est déclenché toutes les 2 h par le cron de kdmc-outlook.',
           cibles: targets().length,
-        });
+        }, 200, { cors: true });
       }
-      return json({ ok: true, ...state });
+      return json({ ok: true, ...publicView(state) }, 200, { cors: true });
     }
 
-    return json({ ok: false, error: 'chemin inconnu', chemins: ['/', '/health', '/run'] }, 404);
+    return json({ ok: false, error: 'chemin inconnu', chemins: ['/', '/health', 'POST /run'] }, 404);
   },
 };
