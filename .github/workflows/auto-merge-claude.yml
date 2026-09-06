@@ -306,83 +306,93 @@ jobs:
           echo "done"
 
       # ------------------------------------------------------------------
-      #  Compactage des branches — GREFFÉ ICI EXPRÈS (2026-09-06)
+      #  MENAGE AUTOMATIQUE — greffe ici expres (2026-09-06)
       #
-      #  Il existe un workflow dédié (cleanup-stale-branches.yml). Il n'a
-      #  JAMAIS tourné tout seul, pour une raison de plateforme : son
-      #  déclencheur `workflow_run` ne part que si le workflow déclencheur a
-      #  tourné sur la branche PAR DÉFAUT — or l'auto-merge tourne sur
-      #  `claude/**`. Et son déclencheur `push` est mort lui aussi : un push
-      #  fait avec GITHUB_TOKEN ne déclenche aucun workflow.
-      #  Résultat mesuré : 370 branches accumulées, dont 240 déjà fusionnées.
+      #  Pourquoi dans CE workflow et pas ailleurs :
+      #   - cleanup-stale-branches.yml existe mais n'a JAMAIS demarre : son
+      #     declencheur `push` est mort (un push par GITHUB_TOKEN ne declenche
+      #     rien) et son `workflow_run` aussi (il exige que le workflow
+      #     declencheur ait tourne sur la branche PAR DEFAUT ; l'auto-merge
+      #     tourne sur claude/**). Lecons #227 et #228.
+      #   - depuis une session agent, le connecteur GitHub LIT mais n'ECRIT pas
+      #     (403 « Resource not accessible by integration ») et la suppression
+      #     d'une reference est refusee par le relais git. Lecons #229/#230.
+      #  Ici on a `contents: write` ET `pull-requests: write`, et ce workflow
+      #  tourne pour de vrai a chaque livraison.
       #
-      #  On met donc le nettoyage DANS le seul workflow dont on a la preuve
-      #  qu'il tourne. Pas de cron (interdit : suspension du compte le 15/08).
-      #  Quelques secondes ajoutées à une exécution qui a déjà lieu.
+      #  Le compte-rendu est ECRIT DANS LE DEPOT : sans lui, « rien a faire »
+      #  et « je n'ai rien vu » produisent la meme ligne verte (lecon #103).
       # ------------------------------------------------------------------
-      - name: Compacter les branches claude/* deja fusionnees
+      - name: Menage (branches fusionnees + annulations dormantes)
         if: always()
-        continue-on-error: true          # ne doit JAMAIS faire echouer un merge
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -u
-          # actions/checkout pose un refspec MONO-BRANCHE : sans ces 2 lignes
-          # on ne voit que main et on croit qu'il n'y a rien a nettoyer.
-          git remote set-branches origin '*'
-          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet
-          TOTAL=$(git branch -r | grep -c 'origin/claude/' || echo 0)
-          echo "Branches claude/* visibles : $TOTAL"
-          if [ "$TOTAL" = "0" ]; then
-            echo "::warning::0 branche visible — fetch incomplet, on ne conclut PAS « rien a faire »."
-            exit 0
-          fi
-          CUT=$(date -u -d '7 days ago' +%s)
-          COURANTE="${{ steps.src.outputs.branch }}"
-          DEL=0; GARDE=0
-          for b in $(git branch -r | sed 's|^ *||' | grep '^origin/claude/'); do
-            NAME="${b#origin/}"
-            case "$NAME" in
-              main|master|develop|production|claude/test-699LQ) GARDE=$((GARDE+1)); continue ;;
-            esac
-            [ "$NAME" = "$COURANTE" ] && { GARDE=$((GARDE+1)); continue; }
-            # 1) doit etre un ANCETRE de main : chacun de ses commits y est deja.
-            git merge-base --is-ancestor "$b" origin/main 2>/dev/null || { GARDE=$((GARDE+1)); continue; }
-            # 2) et sans activite depuis 7 jours, pour ne pas gener une session en cours.
-            TS=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
-            [ "$TS" -ge "$CUT" ] && { GARDE=$((GARDE+1)); continue; }
-            # Le SHA est journalise : la suppression reste restaurable
-            # (git branch <nom> <sha>), cf. PIPELINE_BRANCHES_SESSIONS.md.
-            echo "[SUPPR] $NAME $(git rev-parse --short "$b")"
-            git push origin --delete "$NAME" >/dev/null 2>&1 && DEL=$((DEL+1)) || echo "::warning::echec suppression $NAME"
-          done
-          echo "::notice::Compactage : $DEL branche(s) supprimee(s), $GARDE gardee(s) sur $TOTAL."
-
-          # Le journal d'execution n'est PAS lisible depuis une session agent
-          # (le connecteur GitHub n'expose aucun outil Actions). On ecrit donc
-          # le compte-rendu DANS le depot — meme motif que le diagnostic
-          # d'auto-merge, qui a permis ce matin de trouver la vraie cause d'un
-          # refus en 30 secondes au lieu de la deviner.
           REP=".github/CLEANUP-REPORT.md"
           mkdir -p .github
-          {
-            echo "# Compte-rendu du compactage des branches"
-            echo
-            echo "Genere le $(date -u '+%Y-%m-%d %H:%M UTC') par auto-merge-claude.yml."
-            echo
-            echo "| Mesure | Valeur |"
-            echo "|---|---:|"
-            echo "| Branches \`claude/*\` vues apres fetch | $TOTAL |"
-            echo "| Supprimees | $DEL |"
-            echo "| Gardees (recentes, non-ancetres, ou protegees) | $GARDE |"
-            echo
-            echo "Si \`vues\` vaut 0 : le fetch n'a pas ramene les branches."
-            echo "Si \`vues\` est correct mais \`supprimees\` vaut 0 : soit tout est"
-            echo "deja propre, soit le jeton n'a pas le droit de supprimer une"
-            echo "reference — c'est CE cas qu'il faut distinguer, et que ce"
-            echo "fichier rend enfin visible."
-          } > "$REP"
+          echo "# Compte-rendu du menage automatique" > "$REP"
+          echo "" >> "$REP"
+          echo "Genere le $(date -u '+%Y-%m-%d %H:%M UTC') par auto-merge-claude.yml." >> "$REP"
+          echo "" >> "$REP"
+
+          # ---------- 1) Branches deja entierement dans main ----------
+          git remote set-branches origin '*' || true
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet || true
+          TOTAL=$(git branch -r 2>/dev/null | grep -c 'origin/claude/' || echo 0)
+          DEL=0; GARDE=0
+          echo "## Branches" >> "$REP"
+          echo "" >> "$REP"
+          if [ "$TOTAL" = "0" ]; then
+            echo "**0 branche visible apres le fetch** — le fetch a echoue, on ne conclut PAS \"rien a faire\"." >> "$REP"
+          else
+            CUT=$(date -u -d '7 days ago' +%s)
+            COURANTE="${{ steps.src.outputs.branch }}"
+            for b in $(git branch -r | sed 's|^ *||' | grep '^origin/claude/'); do
+              NAME="${b#origin/}"
+              case "$NAME" in main|master|develop|production|claude/test-699LQ) GARDE=$((GARDE+1)); continue ;; esac
+              [ "$NAME" = "$COURANTE" ] && { GARDE=$((GARDE+1)); continue; }
+              git merge-base --is-ancestor "$b" origin/main 2>/dev/null || { GARDE=$((GARDE+1)); continue; }
+              TS=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
+              [ "$TS" -ge "$CUT" ] && { GARDE=$((GARDE+1)); continue; }
+              if git push origin --delete "$NAME" >/dev/null 2>&1; then
+                DEL=$((DEL+1)); echo "- supprimee \`$NAME\` (\`$(git rev-parse --short "$b")\`)" >> "$REP"
+              else
+                echo "- ECHEC suppression \`$NAME\` — jeton sans droit de supprimer une reference ?" >> "$REP"
+              fi
+            done
+            echo "" >> "$REP"
+            echo "| vues | supprimees | gardees |" >> "$REP"
+            echo "|---:|---:|---:|" >> "$REP"
+            echo "| $TOTAL | $DEL | $GARDE |" >> "$REP"
+          fi
+
+          # ---------- 2) Annulations automatiques dormantes ----------
+          # Ces PR ont ete ouvertes pour ANNULER une livraison. Aucune n'a jamais
+          # ete appliquee (verifie : leurs commits ne sont pas dans main), et la
+          # fonctionnalite visee est toujours vivante. Les FERMER ne retire donc
+          # rien du produit ; les laisser ouvertes, c'est garder des mines qu'un
+          # merge accidentel ferait exploser. Fermer est reversible.
+          echo "" >> "$REP"
+          echo "## Annulations automatiques dormantes" >> "$REP"
+          echo "" >> "$REP"
+          CLOSED=0; RESTE=0
+          for pr in $(gh pr list --state open --limit 200 --json number,headRefName \
+                        --jq '.[] | select(.headRefName | startswith("revert/auto-rollback-")) | .number' 2>/dev/null); do
+            if gh pr close "$pr" --comment "Fermee automatiquement : annulation jamais appliquee (ses commits ne sont pas dans main) et la fonctionnalite visee est toujours en place. La fusionner aujourd'hui RETIRERAIT du code livre depuis. Reouvrable en un clic. Voir PULL_REQUESTS_OUVERTES.md." >/dev/null 2>&1; then
+              CLOSED=$((CLOSED+1)); echo "- fermee #$pr" >> "$REP"
+            else
+              RESTE=$((RESTE+1)); echo "- ECHEC fermeture #$pr" >> "$REP"
+            fi
+          done
+          echo "" >> "$REP"
+          echo "**$CLOSED fermee(s), $RESTE en echec.**" >> "$REP"
+
+          echo "::notice::Menage : $DEL branche(s) supprimee(s)/$TOTAL vues, $CLOSED annulation(s) fermee(s)."
+
           git add "$REP" 2>/dev/null || true
           if ! git diff --cached --quiet 2>/dev/null; then
-            git commit -m "compactage: compte-rendu $DEL supprimee(s) / $TOTAL vues [skip ci]" >/dev/null 2>&1 || true
+            git commit -m "menage: $DEL branche(s), $CLOSED annulation(s) fermee(s) [skip ci]" >/dev/null 2>&1 || true
             git push origin "HEAD:${{ steps.src.outputs.branch }}" >/dev/null 2>&1 || echo "::warning::push du compte-rendu echoue"
           fi
 
