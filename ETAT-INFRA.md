@@ -490,6 +490,15 @@ simple miroir, ~7 min) — corrigé dans `.gitlab-ci.yml` (`*pas-sur-nouvelle-br
 `npm install` car le dépôt n'a pas de `package-lock.json`). Leçon #218. **Vérifié en production** (17h40, sonde GitLab `sonder-url`) :
 `GET https://arbre.kd-mc.com/__arbre/status` → `count:119, seedVersion:63, source:"d1"`.
 
+**6.09 (après-midi)** : PR #3674 et #3681 fusionnées par le robot (arbre v3.18 « Munegu », Vercel qui ne bloque plus,
+audit live de l'arbre refait sans code). Le job `tests` GitLab tourne désormais **pour de vrai** (image Playwright
+1.56.0, `npm install --legacy-peer-deps`) : il a révélé que `test:ci` rougissait sans que personne le voie —
+`cmc-runtime-audit.yml` (GitHub) échouait en 17 s depuis longtemps (`cache: npm` sans lockfile, réparé). Rendus
+déterministes : `everyone-has-planning`, `v788`, `garro-cp`, `code-legends` (attente stable + hors ligne).
+**Reste rouge, signalé aux sessions propriétaires** : `test:departs-sync` (page Départs ≠ parser, juillet-août →
+cmcteams-departs), `test:router-secours` (kdmc-home/*, shops absents de la copie de secours → domain-kdmc),
+`test:improvements-guard` (une règle ajoutée sans garde, 19 → 20). Leçon #220.
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
