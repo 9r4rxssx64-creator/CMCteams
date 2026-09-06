@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "maj": "2026-09-05",
+  "maj": "2026-09-06",
   "note": "Registre COMMUN des sessions Claude Code de Kevin + boîte aux lettres entre elles. Écrit/lu via tools/pipeline/pipeline.mjs — ne pas éditer à la main. Vit sur GitLab main : c'est la seule surface que TOUTES les sessions voient.",
   "sessions": {
     "studio-crea": {
@@ -78,10 +78,10 @@
         "arbre"
       ],
       "etat": "actif",
-      "maj": "2026-09-05",
+      "maj": "2026-09-06",
       "attend_kevin": "changer le code famille (Outils → Changer le code) ; révoquer le jeton GitLab glpat-wD6Q…",
       "attend_session": null,
-      "note": "v3.17 fusionnée dans main (PR #3670 → 899e09b9). Routeur déployé avec liaison D1 (run 33980608977 vert) : le domaine sert l'arbre v3.14. Miroir GitLab : branche poussée, GitLab main réaligné (e9e52b1b, sans force). Piège trouvé et corrigé : 1er push d'une branche sur GitLab = toutes les règles changes: vraies (publier-site etc. partis) + npm ci sans lockfile → .gitlab-ci.yml corrigé (leçon #216)."
+      "note": "v3.18 « Munegu » : thème monégasque accentué (ruban fuselé, badge ◆ nés en Principauté, règne du Prince par génération, section Munegu dans Réglages, poster à cadre fuselé + Àrburu de famiya + Deo Juvante). Vérifié navigateur 154/154. Trouvé : Vercel en quota (100/jour) rougit chaque PR → fusions bloquées ; vercel.json ignore désormais arbre/services/tests/pipeline/CI GitLab. PR #3674 en attente du prochain run du robot."
     },
     "lingua": {
       "titre": "Duolingo reverse-engineering",

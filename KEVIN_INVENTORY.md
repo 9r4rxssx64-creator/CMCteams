@@ -1,7 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05 nuit** (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-06 matin** (arbre v3.18 « Munegu » : thème Monaco · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🇲🇨 L'arbre aux couleurs de Monaco — session 2026-09-06 matin (arbre v3.18 « Munegu », branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.18) | Ruban fuselé rouge/blanc, badge ◆ sur les nés en Principauté (liste, fiche, poster), règne du Prince sous chaque génération (arbre + poster), section **🇲🇨 Munegu** dans Réglages (compteurs, naissances par règne, lieux, registres de la Mairie, Journal de Monaco, Traditions monégasques), poster à cadre fuselé + *Àrburu de famiya* + *Deo Juvante*. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `tools/arbre/fixture-famille.mjs` | La famille synthétique a maintenant 2 racines nées « Monaco » / « Monte-Carlo » (fictif) pour vérifier badges et règnes sans donnée réelle. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/fixture-famille.mjs) |
+| `tools/arbre/verify-poster.mjs` · `tests/arbre-poster.test.mjs` | 154 contrôles en vrai navigateur (cadre, badges = nés à Monaco, règnes, devise) + 8 contrôles hors ligne dans le gate. | [Navigateur](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) · [Gate](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
+| `vercel.json` | Vercel ne se déploie plus pour l'arbre, les workers, les tests, le pipeline ou la CI GitLab : c'est ce qui épuisait le quota gratuit (100/jour) et **bloquait toutes les fusions** (contrôle rouge sur chaque PR). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/vercel.json) |
 
 ## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
 
