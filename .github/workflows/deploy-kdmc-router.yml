@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with: { ref: main, fetch-depth: 1 }
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with: { node-version: 22 }
 
       # Garde BLOQUANTE : on ne déploie pas un routeur dont la voix ou le repli sont cassés.
