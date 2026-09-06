@@ -1,5 +1,22 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (17h55) — nettoyage des branches : j'arrête de tâtonner, il reste 1 clic
+
+- Trois causes trouvées et corrigées (nettoyeur aveugle #227 · deux déclencheurs morts #228 ·
+  ma branche bloquée par un conflit). Toutes réelles. **Et pourtant : 371 branches, inchangé**,
+  alors que ma branche fusionne bien (`fusionne=oui` sur 18 min de surveillance).
+- **Je ne connais pas la 4ᵉ cause et je n'en invente pas une.** Il me faudrait le journal
+  d'exécution ; l'API GitHub est fermée à cette session (403 re-mesuré), `gh` absent, et la
+  suppression directe de branche est refusée par le relais git. Trois canaux, tous mesurés.
+- **Décision : j'arrête la boucle d'essais.** J'ai consommé 4 cycles (~1 h) sur de l'**hygiène**.
+  La question de Kevin — *est-ce qu'un travail est resté en rade ?* — est **répondue** et
+  documentée (49 travaux datés + SHA). Les 371 branches encombrent, elles ne perdent rien.
+- **Il reste 1 clic**, et c'en est un vrai (impossibilité technique, pas paresse) :
+  Actions → « Compact stale claude/* branches » → Run workflow, `dry_run=false`. Le workflow
+  porte le correctif de cécité, donc lancé à la main il verra les branches — et son journal
+  dira enfin pourquoi la version automatique ne fait rien.
+
+
 ## 6 septembre 2026 (17h35) — le nettoyeur ne DÉMARRAIT pas : greffé dans l'auto-merge
 
 - Après le correctif de cécité (#227), **370 branches avant, 370 après** deux cycles de fusion et
