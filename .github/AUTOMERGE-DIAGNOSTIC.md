@@ -1,6 +1,6 @@
 # Diagnostic auto-merge — PR #3694 (claude/sarzance-family-tree-3jxi7i)
 
-Généré le 2026-09-06 16:33 UTC par auto-merge-claude.yml.
+Généré le 2026-09-06 16:47 UTC par auto-merge-claude.yml.
 Ce fichier existe parce que le merge automatique a été REFUSÉ.
 
 ## Cause exacte renvoyée par GitHub
