@@ -1,5 +1,27 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h40) — registre de mes erreurs + brouillon de réclamation Anthropic
+
+- Kevin demande le relevé de **toutes mes erreurs** et un mail à Anthropic pour un recrédit de
+  forfait. Livré : **`ERREURS_CLAUDE_CODE.md`** (registre factuel) + **brouillon Gmail** vers
+  `support@anthropic.com` (non envoyé — Kevin relit et envoie).
+- Règle que je me suis fixée pour ce dossier : **uniquement ce qui est écrit et vérifiable dans le
+  dépôt**, avec la référence fichier:ligne. Rien de reconstitué de mémoire, rien d'exagéré — un
+  dossier qui gonfle se retourne contre celui qui l'envoie.
+- Chiffres retenus (tous déjà écrits avant aujourd'hui) : **225 leçons** dont **65 aveux
+  explicites** · **126 commits de correctif** en 3 mois · **18 versions en 6 h** (CLAUDE.md:4911) ·
+  **25 versions de « protections » qui bloquaient le login**, 97/100 annoncé contre **42/100 réel**
+  (CLAUDE.md:4284) · **12 correctifs sur 16 orphelins**, +5 au lieu de +40 (CLAUDE.md:3075) ·
+  **1 h perdue** sur un cache non incrémenté (CLAUDE.md:4990) · mesure fausse **85/102 → 41**
+  (CLAUDE.md:875) · les deux erreurs du jour (leçons #223 et #225).
+- **Limites déclarées dans le document ET dans le mail** (section 5) : je n'ai accès qu'à ce dépôt,
+  pas à l'historique complet des sessions (le chiffre réel est donc un **minimum**) ; je ne peux
+  pas chiffrer les jetons (mesure côté Anthropic) ; une grande partie du travail livré est correcte
+  et n'est pas dans ce registre ; les pertes non imputables à Claude (suspension GitHub d'août,
+  quotas tiers) sont **explicitement exclues**.
+- Aucun secret dans le mail (ni code admin, ni numéro de téléphone, ni jeton) — vérifié.
+
+
 ## 6 septembre 2026 (16h30) — vérification LIVE : le worker de production a bien été redéployé
 
 - Mesuré via le connecteur Cloudflare (pas déduit) : worker **`apex-chat-api`**,
