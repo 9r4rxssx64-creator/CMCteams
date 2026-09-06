@@ -1,5 +1,97 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (20h45) — preuve sur les 18 annulations, et le connecteur qui va et vient
+
+- **Vérifié au lieu de supposer** : les 3 annulations échantillonnées ont **1 commit HORS de
+  `main`** → **elles n'ont jamais été appliquées**. Contre-vérification : la règle Face ID (que
+  l'une d'elles voulait retirer) est **toujours sur `main`**. Donc **les fermer ne retire rien du
+  produit** — opération neutre pour le code et réversible.
+- **Je n'ai pas pu les fermer** : le connecteur GitHub s'est **déconnecté** en plein travail.
+  Ce n'est pas anecdotique — **c'est exactement ce qui m'a fait croire ce matin que « l'API
+  GitHub était fermée »**. Les serveurs d'outils se sont déconnectés/reconnectés **au moins
+  4 fois** sur cette seule session. Leçon **#230** : une capacité se re-vérifie **au moment de
+  s'en servir**, et quand l'outil est là il faut **agir tout de suite**, pas planifier.
+- Ma PR **#3710 est fusionnée dans `main`** ✅ (registres, correctifs et leçons livrés).
+- **Compactage : toujours aucun compte-rendu déposé** et **371 branches**. Conforme à ma décision
+  d'arrêter de tâtonner : j'ai posé le mécanisme qui *fera parler* le robot, je ne relance pas de
+  cycle d'essais à l'aveugle.
+
+
+## 6 septembre 2026 (20h30) — le VRAI « resté en rade » : 46 pull requests ouvertes
+
+- Avec le connecteur GitHub (que j'ignorais avoir, leçon #229) : **46 PR ouvertes**, la plus
+  ancienne du **21 avril**. C'est le bon angle — une branche qui traîne ne veut souvent rien
+  dire, **une PR ouverte est une session qui a fini et demandé l'intégration**.
+- **🔴 Le point grave : 18 PR d'AUTO-ANNULATION dorment dans le dépôt.** Ouvertes automatiquement
+  pour retirer une livraison jugée fautive sur le moment, jamais fermées. **Fusionnée aujourd'hui,
+  l'une d'elles retirerait du code livré depuis** (Face ID, activation IA, commandes cliquables,
+  corrections P0 de sécurité). Recommandation : les **fermer** (réversible), pas les fusionner.
+- **🟠 20 PR de sessions Claude** jamais intégrées (avril → septembre). Les 4 dernières
+  (5-6 sept.) sont des sessions probablement encore vivantes, donc normales.
+- **🟡 5 Dependabot** (8 juin) · **⚪ 3 builds auto obsolètes**.
+- Registre : **`PULL_REQUESTS_OUVERTES.md`**, tout est listé avec numéro, date, branche, sujet.
+- **Je n'ai rien fermé ni fusionné** : fusionner du code de plusieurs mois sur le `main` actuel =
+  régression assurée ; fermer 18 PR touche visiblement au dépôt. Décisions de Kevin, préparées.
+- Ma PR **#3710** est `mergeable_state: clean` — elle passe par le pipeline normal (je ne la
+  fusionne pas à la main, sinon mon étape de compactage ne tournerait pas).
+
+
+## 6 septembre 2026 (20h10) — Kevin avait raison : le connecteur GitHub marche
+
+- **Erreur corrigée (leçon #229)** : j'ai répété toute la session que « l'API GitHub est fermée »,
+  en citant un vrai 403. La mesure était juste, **la conclusion fausse** : le 403 ne vaut que pour
+  l'**API REST brute via le proxy**. Le **connecteur GitHub (MCP) fonctionne** — `get_me` renvoie
+  le compte `9r4rxssx64-creator`. C'est Kevin qui a dû me le dire.
+- **Ce que ça a coûté** : ce matin, `pull_request_read` m'aurait donné `mergeable_state: "dirty"`
+  en une seconde, au lieu de quoi j'ai supposé une revue de propriétaire et réclamé un clic
+  inexistant (leçon #223). La cause de #223 était donc **en amont** : je n'avais pas inventorié
+  mes propres outils.
+- **Inventaire réel du connecteur** (mesuré) : ✅ lire branches/commits/fichiers/PR/issues ·
+  ✅ écrire fichiers, créer branches, créer/mettre à jour/**fusionner** des PR · ❌ **aucune
+  suppression de branche** · ❌ **aucun outil Actions** (ni déclenchement, ni lecture de journal).
+- Donc la conclusion pratique (« il reste 1 clic pour le nettoyage ») **tient toujours**, mais je
+  l'avais atteinte **par une prémisse fausse** — c'est une faute même quand le résultat est juste.
+- **Amélioration livrée** : l'étape de compactage greffée dans l'auto-merge **écrit désormais son
+  compte-rendu dans le dépôt** (`.github/CLEANUP-REPORT.md`) — vues / supprimées / gardées. Même
+  motif que le diagnostic d'auto-merge, qui a permis ce matin de trouver une vraie cause en
+  30 secondes au lieu de la deviner. Ça distinguera enfin « tout est déjà propre » de « le jeton
+  n'a pas le droit de supprimer une référence ».
+
+
+## 6 septembre 2026 (17h55) — nettoyage des branches : j'arrête de tâtonner, il reste 1 clic
+
+- Trois causes trouvées et corrigées (nettoyeur aveugle #227 · deux déclencheurs morts #228 ·
+  ma branche bloquée par un conflit). Toutes réelles. **Et pourtant : 371 branches, inchangé**,
+  alors que ma branche fusionne bien (`fusionne=oui` sur 18 min de surveillance).
+- **Je ne connais pas la 4ᵉ cause et je n'en invente pas une.** Il me faudrait le journal
+  d'exécution ; l'API GitHub est fermée à cette session (403 re-mesuré), `gh` absent, et la
+  suppression directe de branche est refusée par le relais git. Trois canaux, tous mesurés.
+- **Décision : j'arrête la boucle d'essais.** J'ai consommé 4 cycles (~1 h) sur de l'**hygiène**.
+  La question de Kevin — *est-ce qu'un travail est resté en rade ?* — est **répondue** et
+  documentée (49 travaux datés + SHA). Les 371 branches encombrent, elles ne perdent rien.
+- **Il reste 1 clic**, et c'en est un vrai (impossibilité technique, pas paresse) :
+  Actions → « Compact stale claude/* branches » → Run workflow, `dry_run=false`. Le workflow
+  porte le correctif de cécité, donc lancé à la main il verra les branches — et son journal
+  dira enfin pourquoi la version automatique ne fait rien.
+
+
+## 6 septembre 2026 (17h35) — le nettoyeur ne DÉMARRAIT pas : greffé dans l'auto-merge
+
+- Après le correctif de cécité (#227), **370 branches avant, 370 après** deux cycles de fusion et
+  12 min de surveillance. Le correctif était bon : **le workflow ne démarrait pas du tout**.
+- **Les deux déclencheurs sont morts**, chacun pour une raison de plateforme :
+  (a) `push` sur `main` → le merge est poussé par l'auto-merge avec `GITHUB_TOKEN`, et **un push
+  fait avec ce jeton ne déclenche aucun workflow** (c'était écrit en commentaire dans le fichier,
+  je l'ai lu et j'ai quand même annoncé à Kevin « la fusion le lancera » — erreur de ma part) ;
+  (b) `workflow_run` → ne part **que si le workflow déclencheur a tourné sur la branche par
+  défaut**, or l'auto-merge tourne `on: push: branches: claude/**`, donc jamais sur `main`.
+  Zéro exécution depuis le 2026-05-20.
+- **Fix** : pas de troisième déclencheur (cron interdit depuis la suspension du 15/08) — le
+  nettoyage est **greffé dans l'auto-merge**, le seul workflow dont j'ai la **preuve** qu'il
+  tourne (mes branches sont fusionnées). Garde-fous : uniquement des **ancêtres de `main`**,
+  **inactifs depuis 7 jours**, jamais la branche en cours, `continue-on-error` (un nettoyage ne
+  doit jamais faire échouer une livraison), **SHA journalisé** à chaque suppression.
+- Leçon **#228**. Preuve attendue : le compte de branches doit baisser à la prochaine fusion.
 ## 6 septembre 2026 (soir) — « applique tout pour tes autres branches » : mesuré, outillé, transmis
 
 Kevin : *« Applique tout pour tes autres branches et qu'elles soient au courant de tes modifs. »*
