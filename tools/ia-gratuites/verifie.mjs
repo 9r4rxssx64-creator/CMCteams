@@ -146,6 +146,16 @@ function pngTest(taille = 256) {
   ]);
 }
 
+/* La CAUSE EXACTE, jamais le message poli tout seul (règle « toujours
+   détailler les erreurs pour savoir la cause exacte »). Vécu le 2026-09-06 :
+   le rapport n'affichait que « Je n'ai pas pu fabriquer les poses », et il a
+   fallu relire le worker pour découvrir que c'était un simple dépassement de
+   délai. `detail` porte la vraie chaîne d'échecs (gemini… | edit#1:timeout…). */
+function cause(j) {
+  const d = String((j && (j.detail || j.error)) || '').replace(/\s+/g, ' ').trim();
+  return d ? '`' + d.slice(0, 220) + '`' : '';
+}
+
 async function testeEdition() {
   const photo = 'data:image/png;base64,' + pngTest().toString('base64');
   const essais = [
@@ -168,11 +178,11 @@ async function testeEdition() {
         const j = await r.json().catch(() => ({}));
         const n = (j.frames || []).length;
         bilan.edition.push({ nom: e.nom, etat: n >= 2 ? '✅ ' + n + ' poses' : '❌ ' + (j.message || j.error || 'vide'),
-          moteur: j.provider || moteur, payant: /replicate/.test(j.provider || ''), qualite });
+          detail: cause(j), moteur: j.provider || moteur, payant: /replicate/.test(j.provider || ''), qualite });
       } else {
         const j = await r.json().catch(() => ({}));
-        bilan.edition.push({ nom: e.nom, etat: '❌ ' + r.status, moteur: '',
-          detail: String(j.message || j.detail || j.error || '').slice(0, 200), payant: false, qualite: '' });
+        bilan.edition.push({ nom: e.nom, etat: '❌ ' + r.status + ' — ' + (j.message || j.error || 'sans message'),
+          detail: cause(j), moteur: '', payant: false, qualite: '' });
       }
     } catch (err) {
       bilan.edition.push({ nom: e.nom, etat: '❌ ' + String(err.message).slice(0, 70), moteur: '', payant: false, qualite: '' });
@@ -249,6 +259,9 @@ console.log('→ rapport écrit dans ' + SORTIE);
    une — c'est ce que Kevin voit dans l'app. */
 const grave = bilan.edition.filter((e) => e.etat.startsWith('❌'));
 if (grave.length) {
-  console.error('\n❌ ' + grave.length + ' transformation(s) cassée(s) : ' + grave.map((g) => g.nom).join(', '));
+  console.error('\n❌ ' + grave.length + ' transformation(s) cassée(s) :');
+  /* La cause exacte DANS le journal CI, pas seulement dans le rapport : c'est
+     la première chose qu'on lit quand le workflow passe au rouge. */
+  grave.forEach((g) => console.error('   • ' + g.nom + ' → ' + g.etat + (g.detail ? '\n     cause : ' + g.detail.replace(/`/g, '') : '')));
   process.exit(1);
 }

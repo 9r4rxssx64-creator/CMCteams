@@ -5681,3 +5681,63 @@ réelles + parité version package.json ⇄ index.html).
   avec e2e, jamais empilé sur une PR bloquée.
 
 **Bloquant** : PR #3671 attend l'approbation propriétaire de Kevin (CODEOWNERS `*`).
+
+## 2026-09-06 — « Poses de danse » : le rouge du contrôle IA gratuites est corrigé
+
+**Ce que Kevin voyait** : le workflow « Vérifie les IA gratuites » en rouge,
+`❌ une transformation d'image ne marche plus`. Dans le rapport :
+« poses de danse → 502 », alors que « figurine » réussissait juste au-dessus,
+avec **le même moteur** et **la même clé**.
+
+**Cause réelle (mesurée en lisant les deux chemins, pas supposée)** :
+`/frames` lançait ses 2 poses avec `Promise.all` et **34 s** de délai, quand
+`/magic` (qui réussissait) laisse **58 s** à son unique image. Une pose qui
+dépasse → `Promise.all` rejette → **la pose déjà réussie est jetée aussi** →
+0 image → 502, à une image du but.
+
+**Corrigé** (`services/kdmc-crea-ai/worker.js`) :
+- `Promise.allSettled` : ce qui a marché est gardé, chaque échec est nommé.
+- Délai **46 s** au lieu de 34, rendu abordable en espaçant les vérifications
+  à **4 s** (11 par pose au lieu de 19) → plus d'attente **à budget de
+  sous-requêtes Cloudflare égal**.
+- **Rattrapage** : s'il ne manque qu'une pose, elle est refaite SEULE.
+
+**Deuxième défaut, plus grave que le bug** : le rapport n'affichait que le
+message poli — il lisait `message || detail`, donc la cause exacte n'était
+**jamais** lue ; et côté worker `detail` était tronqué en commençant par les
+erreurs Gemini → on lisait « crédits épuisés » au lieu du vrai coupable.
+Corrigé : rapport = **message + cause exacte**, causes décisives en tête,
+et l'étape CI imprime la cause dans son `::error::` au lieu de renvoyer vers
+un fichier (règle « toujours détailler les erreurs, cause exacte »).
+
+**Preuve** : `npm run test:crea-frames` → **23/23** (cas E « une pose casse,
+l'autre est gardée » et F « les deux cassent → `edit#1` + `edit#2` nommés »),
+**prouvé discriminant** par sabotage (retour à `Promise.all` → 8 échecs).
+Gardes dépôt : no-pin-leak · actions-conformes · workflows-pipefail ·
+depot-public-sain · destinations-workflows · deploiement-declenche → toutes OK.
+Le push sur `claude/**` redéploie `kdmc-crea-ai` tout seul.
+
+## 2026-09-06 (suite) — Le déploiement était VERT mais mettait en ligne l'ancien code
+
+**Je me suis trompé et je le corrige** : j'ai annoncé « le push redéploie Créa AI
+tout seul » en me fiant à la **date** du worker sur Cloudflare (16:51 → 17:24).
+En lisant le code **réellement en ligne**, c'était encore l'ancienne version.
+
+**Cause** : `deploy-kdmc-crea-ai.yml` (et `deploy-kdmc-router.yml`) déclaraient bien
+`push: branches: [main, 'claude/**']`, mais leur `actions/checkout` était épinglé
+`with: { ref: main }` → le workflow **part** sur mon push, **tourne**, **réussit**…
+et déploie `main`. On écoute une branche, on publie l'autre.
+
+**Pourquoi ça n'avait pas sauté aux yeux hier** : les 4 autres workflows
+n'épinglent rien, et le travail Qwen était **déjà fusionné dans `main`** — le
+déploiement publiait donc le bon code **par coïncidence**.
+
+**Corrigé** : plus de `ref: main` sur ces 2 workflows.
+**Garde** : `test:deploiement-declenche` §3 bis — un workflow qui écoute
+`claude/**` ne peut plus épingler `ref: main`. **34/34**, discriminant prouvé
+(sabotage → 1 échec). Piège rencontré : la 1ʳᵉ version de la garde se déclenchait
+sur son **propre commentaire** → les commentaires sont retirés avant la recherche.
+
+**Règle que j'applique désormais** : après un déploiement, je vérifie **le code en
+ligne** (la ligne exacte du correctif), jamais seulement l'horodatage.
+Leçon #231.
