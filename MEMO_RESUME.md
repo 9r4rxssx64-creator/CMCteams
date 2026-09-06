@@ -1,5 +1,24 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (20h30) — le VRAI « resté en rade » : 46 pull requests ouvertes
+
+- Avec le connecteur GitHub (que j'ignorais avoir, leçon #229) : **46 PR ouvertes**, la plus
+  ancienne du **21 avril**. C'est le bon angle — une branche qui traîne ne veut souvent rien
+  dire, **une PR ouverte est une session qui a fini et demandé l'intégration**.
+- **🔴 Le point grave : 18 PR d'AUTO-ANNULATION dorment dans le dépôt.** Ouvertes automatiquement
+  pour retirer une livraison jugée fautive sur le moment, jamais fermées. **Fusionnée aujourd'hui,
+  l'une d'elles retirerait du code livré depuis** (Face ID, activation IA, commandes cliquables,
+  corrections P0 de sécurité). Recommandation : les **fermer** (réversible), pas les fusionner.
+- **🟠 20 PR de sessions Claude** jamais intégrées (avril → septembre). Les 4 dernières
+  (5-6 sept.) sont des sessions probablement encore vivantes, donc normales.
+- **🟡 5 Dependabot** (8 juin) · **⚪ 3 builds auto obsolètes**.
+- Registre : **`PULL_REQUESTS_OUVERTES.md`**, tout est listé avec numéro, date, branche, sujet.
+- **Je n'ai rien fermé ni fusionné** : fusionner du code de plusieurs mois sur le `main` actuel =
+  régression assurée ; fermer 18 PR touche visiblement au dépôt. Décisions de Kevin, préparées.
+- Ma PR **#3710** est `mergeable_state: clean` — elle passe par le pipeline normal (je ne la
+  fusionne pas à la main, sinon mon étape de compactage ne tournerait pas).
+
+
 ## 6 septembre 2026 (20h10) — Kevin avait raison : le connecteur GitHub marche
 
 - **Erreur corrigée (leçon #229)** : j'ai répété toute la session que « l'API GitHub est fermée »,
