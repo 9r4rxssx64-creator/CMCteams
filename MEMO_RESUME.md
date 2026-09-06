@@ -5833,3 +5833,37 @@ sur son **propre commentaire** → les commentaires sont retirés avant la reche
 **Règle que j'applique désormais** : après un déploiement, je vérifie **le code en
 ligne** (la ligne exacte du correctif), jamais seulement l'horodatage.
 Leçon #231.
+
+## 2026-09-06 (suite) — Tes branches déploient toutes seules (sauf les règles)
+
+Tu as tranché : **« prudent — tout sauf les règles »**. C'est fait.
+
+**Avant** : 7 mises en ligne partaient d'un push sur une de mes branches ;
+les autres attendaient une fusion dans `main` — donc t'attendaient, toi.
+**Maintenant** : **23**. Un push sur `claude/**` déploie le worker concerné,
+tout seul, sans clic.
+
+**Ce que je n'ai PAS touché, exprès :**
+- `deploy-firebase-rules` et `deploy-cmcteams-rules` → **droits d'accès à tes
+  données**. Ta décision. Ils restent sur bouton manuel.
+- `deploy.yml` (le vrai site public) → il n'a **aucun filtre de fichiers** :
+  l'ouvrir publierait le site à chaque push de n'importe quelle branche.
+
+**Ce que j'ai retiré de ma propre liste après relecture** (ils ne mettent rien
+en ligne, ils n'auraient fait qu'ajouter du bruit) :
+- `smoke-test-deploy` : il dort 3 minutes puis compare la version *en ligne*
+  à celle de la branche → avertissements faux depuis une branche.
+- `auto-deploy-vercel` : il ne déploie pas (Vercel s'en charge tout seul), il
+  t'envoie un **Telegram** → ça t'aurait spammé.
+
+**Verrou** : `test:deploiement-declenche` (38 contrôles) encode ta décision.
+Si une session future rouvre les règles aux branches → **échec immédiat**.
+Prouvé par sabotage : ouvrir `deploy-firebase-rules` → 1 échec ;
+ré-épingler Créa AI sur `main` → 2 échecs ; remis en état → 38/0.
+
+**Un point pour toi (je n'ai rien changé sans ton accord)** :
+`firebase-rules-auto-apply.yml` publie les règles Firebase **et écoute déjà
+`claude/**`** — c'est antérieur à ta décision d'aujourd'hui. Il ne se déclenche
+que si je modifie volontairement un fichier-marqueur, et c'est aujourd'hui mon
+seul moyen d'appliquer des règles sans que tu cliques. Dis-moi : je le ferme
+comme les deux autres, ou je le laisse ?

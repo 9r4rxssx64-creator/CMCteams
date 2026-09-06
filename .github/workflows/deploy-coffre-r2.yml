@@ -2,7 +2,7 @@ name: Deploy Coffre R2 Worker
 
 on:
   push:
-    branches: [ main, "claude/secure-vault-app-EN8yR" ]
+    branches: [ main, 'claude/**' ]   # 'claude/**' couvre l'ancienne branche nommée en dur
     paths:
       - "services/coffre-r2/**"
       - ".github/workflows/deploy-coffre-r2.yml"
