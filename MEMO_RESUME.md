@@ -150,6 +150,58 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 - **`ETAT-INFRA.md` fait n°16 complété** : il annonce « API GitHub = 403 depuis une session » ;
   **depuis celle-ci elle RÉPOND** (`get_me` OK, PR et fusion par l'API possibles). C'est une
   propriété de la session, pas du dépôt — donc PR créée et fusionnée sans clic Kevin.
+## 6 septembre 2026 (16h10, session Apex Chat) — P2c corrigé : plus de jeton dans l'URL des photos (v1.1.288)
+
+- Dernier point de l'audit Apex Chat. `K._mediaSrc` collait `?token=<jeton de session>` sur chaque
+  photo/vidéo → le jeton entrait dans le DOM, l'historique du navigateur et les journaux serveur.
+- **La recette du WebSocket ne s'appliquait pas** : une photo est **relue** à chaque affichage,
+  donc un ticket à usage unique casse la 2ᵉ vue. L'axe de protection change : au lieu de
+  « utilisable une fois », c'est **« utilisable nulle part ailleurs »** — ticket 5 min lu
+  **uniquement** par la route des médias (`allowMediaTicket`, passé par ce seul appelant).
+- **Durcissement structurel** : la garde `payload.typ === 'wstkt'` (liste de types interdits, qui
+  se périme) devient `payload.typ` → **tout jeton typé n'est pas une session**, puisque les jetons
+  de session n'ont pas de `typ`. Une propriété bat une liste à tenir à jour.
+- Client : `_mediaSrc` reste **synchrone** (appelée en plein rendu) → ticket en cache si valide,
+  sinon repli `?token=` **et** demande en arrière-plan : jamais d'image cassée. Ticket gardé 5 min
+  entier pour que les URL restent **stables** (sinon le cache du navigateur raterait à chaque
+  rendu : un correctif de sécurité aurait coûté des données à Kevin).
+- Preuve : `tests/unit/media-ticket-portee-limitee.test.js` (6 tests) — sert un média **3 fois**,
+  refusé en Bearer, refusé en `?token=`, **ignoré sur une autre route**, ticket WS ≠ ticket média.
+  **Discriminant par sabotage** : restriction de route retirée → 1 échec ; garde « jeton typé ≠
+  session » retirée → 2 échecs ; restauré → 12/12.
+- **1115/1115** tests, gate de couverture vert, navigateur réel **5/5**, 0 exception JS.
+- **Audit Apex Chat : tous les findings P0→P2 sont corrigés.** Restent deux nettoyages datés :
+  retirer le repli `?token=` (WebSocket **et** médias) une version après, quand les apps en cache
+  sont à jour.
+
+
+## 6 septembre 2026 (16h00, session Apex Chat) — P2b corrigé : le CORS n'est plus ouvert à tous (v1.1.287)
+
+- **Ce que `*` permettait vraiment** : l'auth passe par un en-tête `Bearer` et non par un cookie,
+  donc un site tiers ne pouvait **pas lire** les données de Kevin. Ce qu'il pouvait faire :
+  déclencher `send-otp` (**coût SMS réel**) et `check-phone` (**énumération de numéros**) depuis
+  les navigateurs de ses visiteurs. C'est ça qui est fermé.
+- **Correctif** : `ALLOWED_ORIGINS` = les origines **mesurées** (`apex-chat.kd-mc.com` d'après le
+  routeur, `9r4rxssx64-creator.github.io` d'après le workflow e2e, `kd-mc.com`/`www`, plus
+  localhost). `applyCors` renvoie l'origine si elle est autorisée, **retire** l'en-tête sinon,
+  **ajoute** `Vary: Origin` sans écraser l'existant, et **laisse passer un 101 tel quel** (une
+  réponse d'upgrade WebSocket n'est pas reconstructible).
+- **J'avais écarté ce correctif à tort** : j'avais écrit qu'il fallait « refondre 4 pipelines de
+  réponse ». Faux — chaque worker a **un seul `fetch` de tête**, donc une enveloppe de 4 lignes par
+  worker suffit et **aucune réponse ne peut échapper au filtre**. Leçon #225.
+- Preuve : `tests/unit/cors-origines-autorisees.test.js` + les 4 tests de routing mis à jour.
+  La liste est **dérivée des fichiers du dépôt** (canonical + workflow e2e) → oublier le vrai hôte
+  GitHub Pages fait échouer le test (leçon #218). **Discriminant par sabotage** : passe-plat → 3
+  échecs ; hôte Pages retiré → 2 échecs ; restauré → 47/47.
+- **1109/1109** tests, couverture `cors.js` **100 %** (gate 100 % sur `lib/` tenu), `api-worker.js`
+  83,35 % (plancher 80), navigateur réel **5/5**, 0 exception JS.
+- Piège noté : `happy-dom` **retire l'en-tête `Origin`** d'une Request (comme un vrai navigateur) —
+  réinjecté par un proxy de test `withOrigin`. Sans ça on croit que le correctif ne marche pas.
+- **Reste sur Apex Chat** : **P2c** (les URL de médias portent encore `?token=` — même défaut, mais
+  un média est relu plusieurs fois donc le ticket à usage unique ne convient pas tel quel) et le
+  retrait du repli `?token=` sur le WebSocket, une fois les apps à jour.
+
+
 ## 6 septembre 2026 (15h45, session Apex Chat) — PR #3671 fusionnée + P2a corrigé (v1.1.286)
 
 - **PR #3671 est dans `main`** (7 min 30 après le push). Vérifié sur `main` : 0 occurrence de
@@ -244,6 +296,10 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   timeout 30 s. Réseau externe coupé **en laissant passer le serveur local**, et `networkidle` → `load`.
   6 verts ici. (Piège évité : le filtre `^https?://` attrape aussi `http://127.0.0.1` — les 13 premiers
   chargent en `file://`, donc ils n'étaient pas concernés ; vérifié un par un avant de pousser.)
+  **Le job passe alors de 287 s à 766 s** (il va bien plus loin) et bute sur `test:crea-montage`, cette
+  fois pour la raison **inverse** : ce test vérifie ce que l'app fait *quand l'IA n'est pas joignable*, et
+  ne tenait que parce que le sandbox n'a pas de réseau. Sur le runner l'IA répond → sous-titres produits →
+  rouge. L'indisponibilité est maintenant **forcée** au lieu d'être subie : 37/0 ici.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans

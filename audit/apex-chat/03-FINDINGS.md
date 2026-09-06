@@ -158,10 +158,10 @@ retirée → 1 échec ; restauré → 6/6. Suite complète **1104/1104**, naviga
 
 ---
 
-## [P2c] Le jeton de session circule aussi dans les URL de médias
+## [P2c] Le jeton de session circule aussi dans les URL de médias — ✅ CORRIGÉ v1.1.288
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/index.html` (`K._mediaSrc`)
-- **Statut** : ✅ VÉRIFIÉ (lecture confirmée) — **non corrigé**
+- **Statut** : ✅ VÉRIFIÉ (lecture confirmée) → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.288)
 
 ```js
 return full + (full.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(K.token || '');
@@ -177,17 +177,85 @@ ticket court **réutilisable** dans sa fenêtre, plus un rafraîchissement côt�
 tout le rendu des médias : le livrer à l'aveugle dans le même commit que le WebSocket risquait de
 casser l'affichage des photos. À traiter comme une étape vérifiée à part.
 
+### ✅ Correctif appliqué — v1.1.288 (2026-09-06)
+
+La protection d'un ticket média n'est pas l'usage unique (impossible ici) mais sa **portée** :
+
+**Serveur** (`workers/api-worker.js`)
+- `POST /api/auth/media-ticket` → ticket `{typ:'mtkt', exp: +5 min}`, **réutilisable**.
+- `getAuthUser(request, env, { allowMediaTicket: true })` : le paramètre n'est passé que par
+  `handleMediaGet`. Un ticket média posé sur **n'importe quelle autre route** n'est même pas lu →
+  il ne sert **qu'**à afficher un fichier.
+- Durcissement généralisé au passage : **tout jeton portant un `typ`** (ticket WS, ticket média,
+  invitation magique) est refusé comme jeton de session. Les jetons de session, eux, n'ont pas de
+  `typ` — la règle est donc structurelle, pas une liste à tenir à jour.
+- L'autorisation de fond est inchangée : propriétaire, ou membre d'une conversation partagée.
+
+**Client** (`index.html`)
+- `K._ensureMediaTicket()` : un seul ticket en cache, demandé **dès la connexion** et renouvelé
+  30 s avant expiration ; les appels concurrents partagent la même requête.
+- `K._mediaSrc` reste **synchrone** : ticket valide → `?mt=` ; sinon repli `?token=` **et**
+  demande d'un ticket en arrière-plan → **jamais d'image cassée**.
+- Garder le même ticket 5 min garde les URL **stables**, donc le cache du navigateur efficace.
+
+**Preuve** — `tests/unit/media-ticket-portee-limitee.test.js`, 6 tests sur le vrai worker :
+ticket refusé sans session · sert un média **trois fois de suite** (réutilisable) · refusé en
+Bearer · refusé en `?token=` · **ignoré sur une autre route** · un ticket WebSocket n'est pas un
+ticket média · le client demande bien un ticket.
+**Discriminant prouvé par sabotage** : restriction de route retirée → 1 échec ; garde « jeton typé
+≠ session » retirée → 2 échecs (média **et** WebSocket) ; restauré → 12/12.
+Suite complète **1115/1115**, gate de couverture vert, navigateur réel **5/5**, 0 exception JS.
+
 ---
 
-## [P2] CORS ouvert à tous sur toute l'API
+## [P2] CORS ouvert à tous sur toute l'API — ✅ CORRIGÉ v1.1.287
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/workers/lib/cors.js:13`
-- **Statut** : ✅ VÉRIFIÉ
+- **Statut** : ✅ VÉRIFIÉ → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.287)
 
 `Access-Control-Allow-Origin: '*'` sur les 4 workers, y compris les routes admin. Le commentaire
 du fichier annonce déjà le durcissement par liste blanche — il n'a pas été fait.
 Atténuation réelle : l'authentification passe par `Authorization`, pas par cookie, donc pas de CSRF
 classique. Reste que n'importe quelle page peut appeler l'API avec un jeton volé.
+
+### ✅ Correctif appliqué — v1.1.287 (2026-09-06)
+
+**Ce que `*` permettait vraiment** (à dire honnêtement) : l'authentification étant portée par un
+en-tête `Bearer` et non par un cookie, un site tiers ne pouvait **pas lire** les données d'un
+utilisateur connecté. Ce qu'il pouvait faire : déclencher les routes **non authentifiées** depuis
+les navigateurs de ses visiteurs — `send-otp` (**coût SMS réel**) et `check-phone` (**énumération
+de numéros**). C'est ça qui est fermé.
+
+**Comment** — `workers/lib/cors.js`
+- `ALLOWED_ORIGINS` : les origines **mesurées**, pas devinées — `apex-chat.kd-mc.com` (domaine
+  canonique, `services/kdmc-router/worker.js:34`), `9r4rxssx64-creator.github.io` (hôte GitHub
+  Pages réel, celui que charge `apex-chat-e2e.yml`), `kd-mc.com` / `www.kd-mc.com` (le portail),
+  plus `localhost`/`127.0.0.1` pour le développement.
+- `applyCors(request, response)` renvoie l'origine demandeuse **si elle est autorisée**, et
+  **retire** l'en-tête sinon. Sans en-tête `Origin` (curl, Service Binding), rien n'est envoyé —
+  il n'y a pas de contrôle CORS à faire.
+- `Vary: Origin` **ajouté** (pas écrasé), sinon un cache pourrait servir à un site la réponse
+  autorisée d'un autre — et écraser un `Vary: Accept-Encoding` casserait la compression.
+- **Un upgrade WebSocket (101) est renvoyé tel quel** : sa réponse transporte un objet `webSocket`
+  non reconstructible, le recopier couperait le temps réel.
+
+**Où** : en **UN seul point par worker** — le `fetch` de tête des 4 workers est enveloppé
+(`const _workerHandler = {...}` puis `export default { ..._workerHandler, fetch: applyCors(...) }`).
+Aucun site d'appel n'est touché, donc aucune réponse ne peut échapper au filtre. C'est ce qui rend
+le correctif sûr : mon estimation initiale (« refondre 4 pipelines de réponse ») était fausse.
+
+**Preuve** — `tests/unit/cors-origines-autorisees.test.js` (5 tests) + les 4 tests de routing des
+workers mis à jour : origine autorisée renvoyée telle quelle · origine inconnue → aucun en-tête ·
+sans `Origin` → aucun en-tête · `Vary` cumulé · 101 renvoyé **à l'identique**. La liste est
+**dérivée des fichiers du dépôt** (canonical de `index.html` + `APEX_CHAT_URL` du workflow e2e),
+donc oublier le vrai hôte GitHub Pages fait échouer le test (leçon #218).
+**Discriminant prouvé par sabotage** : `applyCors` remis en passe-plat → 3 échecs ; hôte GitHub
+Pages retiré de la liste → 2 échecs ; restauré → 47/47.
+Suite complète **1109/1109**, couverture `cors.js` **100 %**, navigateur réel **5/5**.
+
+**Limite honnête** : le CORS est un contrôle **du navigateur**. Il n'empêche pas un appel direct
+(curl, script serveur) — ça, ce sont l'authentification et les limites de débit qui le tiennent.
+Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 
 ---
 

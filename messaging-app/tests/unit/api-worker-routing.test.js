@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import worker from '../../workers/api-worker.js';
-import { ENV, makeRequest, makeJWT, SECRET } from './api-worker-helpers.js';
+import { ENV, makeRequest, makeJWT, SECRET, withOrigin } from './api-worker-helpers.js';
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -13,9 +13,12 @@ beforeEach(() => {
 
 describe('api-worker — CORS + routing', () => {
   it('OPTIONS retourne CORS', async () => {
-    const r = await worker.fetch(makeRequest({ method: 'OPTIONS', path: '/api/anything' }), ENV());
-    expect(r.status).toBe(200);
-    expect(r.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    // v1.1.287 (audit P2b) : origine autorisée renvoyée, inconnue refusée.
+    const ok = await worker.fetch(withOrigin(makeRequest({ method: 'OPTIONS', path: '/api/anything' }), 'https://9r4rxssx64-creator.github.io'), ENV());
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('Access-Control-Allow-Origin')).toBe('https://9r4rxssx64-creator.github.io');
+    const ko = await worker.fetch(withOrigin(makeRequest({ method: 'OPTIONS', path: '/api/anything' }), 'https://evil.example'), ENV());
+    expect(ko.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 
   it('GET /health → ok', async () => {
