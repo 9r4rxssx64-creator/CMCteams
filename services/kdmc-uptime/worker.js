@@ -95,13 +95,21 @@ const SITES = [
   'cujina.kd-mc.com',
 ];
 
-/* Workers critiques : on sonde leur /health, pas leur racine. */
+/* Workers critiques : leur /health est sondé PAR LA CI (étape « Santé des workers »
+   de deploy-kdmc-uptime.yml), PAS d'ici — et c'est une contrainte, pas un choix.
+   MESURÉ le 5.09 (passage n°11) : les 6 adresses `*.workers.dev` répondaient 404 en
+   10-21 ms pendant que les 26 adresses du domaine répondaient normalement. 10-21 ms =
+   la requête n'est jamais sortie du réseau Cloudflare : un Worker n'atteint pas une
+   URL workers.dev du MÊME compte (même famille que l'erreur 1042 côté Outlook, qui a
+   exigé un Service Binding). Résultat : 6 fausses pannes à chaque passage — exactement
+   le genre d'alerte qu'on finit par ne plus lire.
+   Le runner GitHub, lui, a un vrai réseau : c'est lui qui les sonde et qui le prouve.
+   `apex-v13-backend` retiré : il n'existe pas sur le compte (workers_list du 5.09). */
 const WORKERS = [
   'apex-secrets-proxy',
   'kdmc-ais',
   'kdmc-live',
   'kdmc-rag',
-  'apex-v13-backend',
   'apex-auth-worker',
 ];
 
@@ -113,22 +121,15 @@ const ADMIN_GATED = new Set(['autorisations.kd-mc.com', 'beatbot.kd-mc.com']);
 const TIMEOUT_MS = 12000;
 const STATE_URL = 'https://kdmc-uptime.internal/state/v1';
 
+/* Ce que CE worker sonde : les 26 adresses du domaine — celles que Kevin ouvre
+   vraiment depuis son menu. Les workers passent par la CI (voir WORKERS ci-dessus). */
 function targets() {
-  const out = SITES.map((host) => ({
+  return SITES.map((host) => ({
     id: host,
     url: 'https://' + host + '/',
     kind: 'site',
     adminGated: ADMIN_GATED.has(host),
   }));
-  for (const w of WORKERS) {
-    out.push({
-      id: w,
-      url: 'https://' + w + '.9r4rxssx64.workers.dev/health',
-      kind: 'worker',
-      adminGated: false,
-    });
-  }
-  return out;
 }
 
 /** Sonde une cible. Ne jette jamais : une exception ici tuerait tout le passage. */

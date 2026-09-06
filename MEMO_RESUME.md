@@ -1,5 +1,31 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 (19 h) — les deux « pannes » du soir étaient deux fausses alertes
+
+**Le mail Vercel qui revenait** : ce n'était plus l'ancien filtre, c'était **mon commentaire**.
+J'avais ajouté une clé `"_note"` dans `tools/agent/vercel.json` pour expliquer le correctif ;
+Vercel refuse toute clé inconnue et compte ça comme une erreur de build — donc un mail à chaque
+push, sur toutes les branches. Cause lue mot pour mot côté Vercel (`errorMessage` du déploiement,
+alors que les journaux de build étaient vides : l'échec est **avant** le build) :
+`should NOT have additional property "_note"`. Clé retirée, l'explication vit désormais dans le
+commit et dans la leçon #218.
+
+**Les « 6 workers en panne »** : ils ne l'étaient pas. Les 6 étaient des adresses `*.workers.dev`,
+toutes en 404 **après 10-21 ms**, pendant que les 26 adresses `kd-mc.com` répondaient normalement —
+et le code en ligne de trois d'entre elles implémente bien `/health`. 10-21 ms = la requête n'est
+jamais sortie du réseau Cloudflare : **un Worker ne joint pas une URL workers.dev du même compte**
+(même famille que l'erreur 1042 qui avait imposé un Service Binding à Outlook). C'était un angle
+mort de l'observateur, pas une panne — et six fausses alarmes par passage, le meilleur moyen qu'on
+arrête de lire les alertes. La sonde ne garde donc que les 26 adresses du domaine (celles du menu
+de Kevin) ; les workers sont sondés **depuis le runner GitHub**, qui a un vrai réseau, dans une
+étape dédiée qui lit la même liste. `apex-v13-backend` retiré : il n'existe pas sur le compte.
+
+**Vérifié** : `worker.js` syntaxe OK · `vercel.json` JSON valide (5 clés, plus de `_note`) ·
+`test:uptime-couverture` **6 OK / 0 FAIL** (26 adresses ⇄ routeur, 5 workers ⇄ dépôt) ·
+la liste `WORKERS` est bien relue par l'étape CI (`apex-secrets-proxy kdmc-ais kdmc-live kdmc-rag
+apex-auth-worker`). Doublon de leçon #216 corrigé (l'une passe en #217).
+
+
 ## 5 septembre 2026 (nuit) — le journal ne bloque plus les fusions automatiques (pilote « union »)
 
 **Ce qui s'est passé** : Kevin a prévenu « d'autres branches travaillent sur le domaine ». Vérifié sur
