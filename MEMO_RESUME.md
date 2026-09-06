@@ -33,8 +33,8 @@ depuis que le contrôle **Vercel** est ROUGE sur chaque commit (« Resource is l
 per day »). Toutes les sessions poussent, chaque push déclenche un déploiement Vercel inutile (Vercel ne sert
 rien de ce dépôt en production, prod = GitHub Pages / Cloudflare), le quota gratuit saute, et le contrôle rouge
 bloque **toutes** les PR. Correctif : `vercel.json` → `ignoreCommand` ignore aussi `arbre/**`, `tools/arbre/**`,
-`services/**`, `tests/**`, `pipeline/**`, `audit/**`, `.gitlab-ci.yml`, `tools/gitlab/**`, `tools/pipeline/**`
-(un push qui ne touche que ça = Vercel « skipped » = neutre). Leçon #217.
+`services/**`, `tests/**`, `pipeline/**`, `audit/**`, `.gitlab-ci.yml`, `tools/gitlab/**`, `tools/pipeline/**`,
+et `vercel.json` lui-même (un push qui ne touche que ça = Vercel « skipped » = neutre). Leçon #217.
 
 ---
 
