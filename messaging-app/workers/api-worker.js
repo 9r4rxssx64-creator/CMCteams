@@ -42,7 +42,7 @@ import { corsHeaders, makeJson } from './lib/cors.js';
 import { giphySearchUrl, giphyTrendingUrl, mapGiphyResults } from '../lib/gif.js';
 /* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
    routage IA commun du domaine (Qwen Workers AI 0 clé d'abord, bascule par type de demande). */
-import { routeText, detectDomain, planChain, availableProviders } from '../../services/_shared/ia-route.js';
+import { routeText, routeSmart, detectDomain, planChain, availableProviders } from '../../services/_shared/ia-route.js';
 
 const CORS_HEADERS = {
   ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
@@ -4399,6 +4399,21 @@ Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
      action → Anthropic ; puis les autres en secours. Essais en séquence (8 s chacun), cause
      exacte conservée par fournisseur (règle « détailler les erreurs »). */
   const lastUser = [...messages].reverse().find((m) => m && m.role === 'user');
+  /* Kevin 2026-09-06 « concertation d'IA gratuites pour analyser les questions, va plus loin » :
+     quand Workers AI est là, plusieurs voix gratuites VOTENT le type de la question, et une
+     question difficile est répondue par un CONSEIL de voix + juge gratuit. Sinon (pas de binding),
+     l'heuristique locale décide et les fournisseurs à clé répondent dans l'ordre du domaine. */
+  if (env.AI) {
+    const r = await routeSmart(env, { messages: [{ role: 'system', content: sysPrompt }, ...messages], maxTokens: 1024, timeoutMs: 8000 });
+    if (r.ok) {
+      return json({
+        ok: true, content: r.text, provider: r.provider, model: r.model, domain: r.domain,
+        analyse: r.analyse ? { by: r.analyse.by, votes: r.analyse.votes, complexity: r.analyse.complexity } : null,
+        voices: r.voices || null, judge: r.judge || null,
+      });
+    }
+    return json({ error: 'Tous providers IA indisponibles. Reessaie dans 1 min.', domain: r.domain, tried: r.tried }, 503);
+  }
   const domain = detectDomain(lastUser ? String(lastUser.content || '') : '');
   const ordered = _iaOrdered(env, domain, {
     qwen: _callQwenIA, anthropic: _callAnthropicIA, groq: _callGroqIA, gemini: _callGeminiIA, deepseek: _callDeepSeekIA,

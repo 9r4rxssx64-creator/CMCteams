@@ -75,6 +75,21 @@ dossier) et déclare `[ai] binding = "AI"`. Garde : `npm run test:ia-route` (9 t
 Interdits : recopier la logique dans un worker (elle diverge, #142) ; mettre un moteur devant
 sans garder l'ancien ordre en secours ; proposer Qwen pour une image ou pour une action.
 
+### 6 bis. « Concertation d'IA gratuites » (Kevin 2026-09-06 « va plus loin »)
+- **Analyse par vote** : `analyseQuestion(env, texte)` — 3 voix gratuites (chaque modèle Qwen de
+  Workers AI = une voix, + Groq/Gemini/Mistral si clé) classent la question en parallèle, vote
+  majoritaire ; < 2 voix ou pas de majorité → regex. Une action détectée par les voix OU la regex
+  → `admin` (Anthropic + outils), toujours.
+- **Conseil + juge** : `councilText` — question difficile (raisonnement, créatif, complexité ≥ 3) :
+  N voix gratuites répondent, un juge Qwen fusionne (consensus gardé, affirmation isolée écartée,
+  contradictions signalées). Juge muet → 1re voix. 1 voix → pas de conseil.
+- **`routeSmart`** enchaîne les deux puis le routage classique ; la réponse expose `analyse.by`
+  (`concert`/`regex`), `votes`, `voices`, `judge`. Hub : `POST /ai` (défaut) et `POST /ai/analyse`.
+- Câblé : hub apis, Apex Chat, World Monitor (synthèse = conseil), CMCteams (badge « Concertation
+  gratuite · N avis »), Apex v13 (voix du crew gratuites d'abord, Anthropic chef d'orchestre).
+- Interdits : un vote sans repli déterministe ni délai ; un conseil sans juge qui laisse passer
+  une affirmation d'une seule voix ; retirer les outils à une action parce qu'un vote l'a mal étiquetée.
+
 ### 7. Test mental obligatoire avant de toucher au routage IA
 > *« Cette question va-t-elle à une IA gratuite quand une gratuite suffit ? Va-t-elle à l'IA la
 > plus PERTINENTE quand ça compte (outils, vision, raisonnement) ? Le fournisseur que j'ajoute

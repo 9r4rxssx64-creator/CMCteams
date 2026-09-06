@@ -44,6 +44,7 @@ chk(!!send && /iaEnabled&&\(iaApiKey\|\|_freeDom\)/.test(send[0]), '4. sans clé
 chk(/var CMC_IA_FREE_URL="https:\/\/apis\.kd-mc\.com\/ai";/.test(html), '4. le relais est apis.kd-mc.com/ai (Qwen Workers AI, 0 clé)');
 chk(/connect-src[^"]*https:\/\/apis\.kd-mc\.com/.test(html), '4. la CSP autorise apis.kd-mc.com (sinon « Load failed »)');
 chk(/d\.provider==="qwen"\?CMC_IA_FREE_LABEL/.test(html), '4. la réponse affiche qui a répondu (badge « Qwen · gratuit »)');
+chk(/d\.provider==="council"\?\("Concertation gratuite · "\+nVoix\+" avis"\)/.test(html), '4. un CONSEIL de voix gratuites est annoncé avec le nombre d\'avis (Kevin 2026-09-06)');
 chk(/iaEnabled&&navigator\.onLine\)\?cmcIaFreeDomain/.test(html), '4. le bouton ON/OFF de l\'IA (iaEnabled) coupe aussi le gratuit');
 chk(!/x-apex-pin/.test(send[0] || '') && !/cmc_ia_key/.test((html.match(/function cmcIaFreeAsk[\s\S]*?\n\}\n/) || [''])[0]), '4. aucun code admin ni clé n\'est envoyé au relais gratuit');
 

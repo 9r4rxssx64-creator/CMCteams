@@ -14,11 +14,16 @@ import worker from '../../workers/api-worker.js';
 
 beforeEach(() => { vi.restoreAllMocks(); });
 
+/* Les appels d'ANALYSE (concertation : plusieurs voix classent la question) sont distingués des
+   appels de RÉPONSE (system = celui du chat) — Kevin 2026-09-06 « concertation d'IA gratuites ». */
 const fakeAI = (opts = {}) => ({
   calls: [],
-  run(model) {
-    this.calls.push(model);
+  answerCalls() { return this.calls.filter((c) => !/classificateur/i.test(c.sys)); },
+  run(model, input) {
+    const sys = String((input.messages[0] || {}).content || '');
+    this.calls.push({ model, sys });
     if (opts.dead) throw new Error('No such model');
+    if (/classificateur/i.test(sys)) return { response: opts.analyse || 'je ne sais pas' };
     return { response: '<think>hmm</think>' + (opts.reply || 'Réponse Qwen') };
   },
 });
@@ -74,7 +79,28 @@ describe('POST /api/ia/chat (admin) — Qwen principal, Anthropic pour agir', ()
     expect(j.provider).toBe('qwen');
     expect(j.domain).toBe('general');
     expect(j.content).toBe('Il fait beau à Monaco.');
-    expect(AI.calls[0]).toBe('@cf/qwen/qwen3.8-27b');
+    expect(AI.answerCalls()[0].model).toBe('@cf/qwen/qwen3.8-27b');
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('CONCERTATION : 3 voix votent le type ; question difficile → conseil + juge gratuit, Anthropic pas appelé', async () => {
+    const AI = fakeAI({ analyse: '{"domain":"reasoning","needs_tools":false,"complexity":4,"lang":"fr"}', reply: 'avis' });
+    AI.run = ((orig) => function (model, input) {
+      if (/JUGE/.test(String(input.messages[0].content))) { this.calls.push({ model, sys: 'juge' }); return { response: 'Synthèse du conseil' }; }
+      return orig.call(this, model, input);
+    })(AI.run);
+    const env = userEnv({ AI, ANTHROPIC_API_KEY: 'k' });
+    globalThis.fetch = vi.fn(async () => new Response('{}', { status: 500 }));
+    const tok = await userToken();
+    const r = await worker.fetch(makeReq('POST', '/api/ia/chat', { messages: [{ role: 'user', content: 'explique-moi pourquoi les marées existent et comment la lune agit' }] }, tok), env);
+    const j = await r.json();
+    expect(r.status).toBe(200);
+    expect(j.analyse.by).toBe('concert');
+    expect(j.domain).toBe('reasoning');
+    expect(j.provider).toBe('council');
+    expect(j.judge).toBe('qwen');
+    expect(j.content).toBe('Synthèse du conseil');
+    expect(j.voices.filter((v) => v.ok).length).toBe(3);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
@@ -90,7 +116,7 @@ describe('POST /api/ia/chat (admin) — Qwen principal, Anthropic pour agir', ()
     const j = await r.json();
     expect(j.provider).toBe('anthropic');
     expect(j.domain).toBe('admin');
-    expect(AI.calls.length).toBe(0);
+    expect(AI.answerCalls().length).toBe(0, 'Qwen consulté pour ANALYSER, jamais pour AGIR');
   });
 
   it('Qwen mort → secours Anthropic ; tout mort → 503 avec la cause par fournisseur', async () => {

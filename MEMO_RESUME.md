@@ -1,5 +1,28 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 — « Concertation d'IA gratuites pour analyser les questions, va plus loin »
+
+**Demande Kevin** : *« Fais une concertation d'IA gratuites pour analyser les questions par
+exemple, va plus loin. »*
+
+**Ce qui change** (même module partagé, donc partout d'un coup) :
+- **Le type de chaque question est VOTÉ** par 3 IA gratuites en parallèle (chaque modèle Qwen
+  = une voix, plus Groq/Gemini si clé) au lieu d'être deviné par des mots-clés. Pas de
+  majorité ou trop lent → les mots-clés tranchent : jamais bloqué. Une demande d'action garde
+  toujours Anthropic et ses outils, quel que soit le vote.
+- **Les questions difficiles reçoivent un CONSEIL** : plusieurs voix gratuites répondent, un
+  juge gratuit garde ce qui fait consensus et écarte ce qu'une seule voix affirme (moins
+  d'inventions). Anthropic n'est plus appelé pour ça, seulement pour agir et en secours.
+- Où : relais apis.kd-mc.com (`/ai` + `/ai/analyse`), **Apex Chat v1.1.285**, **CMCteams
+  v9.893** (badge « Concertation gratuite · N avis »), World Monitor (la synthèse actu est
+  un conseil de 3 voix + juge), **Apex v13.4.367** (l'équipe d'experts = gratuites d'abord,
+  Anthropic chef d'orchestre).
+
+**Preuves** : module 14/14 · relais 31/31 · CMCteams 27/27 · Apex Chat 9/9 + 100/100 ·
+Apex orchestre + garde verts · tsc propre. Leçon **#219**.
+
+---
+
 ## 5 septembre 2026 (nuit) — « Pareil dans mes autres projets » : IA gratuite en principal partout
 
 **Demande Kevin** : *« Pareil dans mes autres projets. »* (après Qwen dans Apex, ci-dessous)

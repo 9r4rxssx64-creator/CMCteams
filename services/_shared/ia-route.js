@@ -257,6 +257,161 @@ export async function routeText(env, opts) {
   return { ok: false, text: '', provider: null, model: null, domain, tried, error: chain.length ? 'tous les moteurs ont échoué' : 'aucune IA disponible' };
 }
 
+/* ============================================================================
+ * CONCERTATION D'IA GRATUITES (Kevin 2026-09-06 « Fais une concertation d'IA gratuites
+ * pour analyser les questions par exemple, va plus loin »)
+ *
+ * 1. analyseQuestion : plusieurs VOIX gratuites (chaque modèle Qwen de Workers AI est une
+ *    voix, plus Groq/Gemini/Mistral/… si une clé existe) classent la question EN PARALLÈLE
+ *    (type, besoin d'outils, image, complexité, langue) → VOTE MAJORITAIRE. Moins de 2 voix
+ *    ou pas de majorité → l'heuristique par mots-clés tranche (jamais bloqué, 0 €).
+ * 2. councilText : pour une question difficile, N voix gratuites répondent en parallèle et un
+ *    JUGE gratuit (Qwen) fusionne : garde ce qui fait consensus, écarte ce qu'une seule voix
+ *    affirme sans appui, signale les désaccords. Une seule voix → sa réponse telle quelle.
+ *    Anthropic reste réservé aux ACTIONS (outils) et au secours quand le conseil échoue.
+ * ========================================================================== */
+
+export const DOMAINS = Object.keys(DOMAIN_PREFERENCES);
+
+const ANALYSE_SYSTEM = 'Tu es un classificateur. Réponds UNIQUEMENT par un JSON compact, sans texte autour : '
+  + '{"domain":<un de : ' + DOMAINS.join(', ') + '>,"needs_tools":<true si la demande exige d\'AGIR sur un système (lancer, déployer, modifier, envoyer, corriger, configurer, lire des données privées comme un planning ou une fiche) ; false pour une question, une explication, un texte>,'
+  + '"needs_vision":<true si une image ou photo doit être regardée>,"complexity":<1 à 5>,"lang":<code langue ISO de la question>}. '
+  + 'Règles : une demande d\'action → domain "admin". Du code → "code". Une image → "vision". Traduire → "translation". Résumer → "summary". Chercher une info récente sur le web → "search". Écrire/inventer → "creative". Réflexion longue → "reasoning". Sinon → "general".';
+
+/** Voix gratuites disponibles : chaque modèle Qwen de Workers AI compte pour une voix. */
+export function freeVoices(env, max) {
+  const out = [];
+  if (env && env.AI) for (const m of QWEN_MODELS) out.push({ provider: 'qwen', model: m });
+  for (const p of FREE_PROVIDERS) if (p !== 'qwen' && env && env[SECRET_NAMES[p]]) out.push({ provider: p, model: DEFAULT_MODELS[p] });
+  return out.slice(0, max || 3);
+}
+
+async function askVoice(env, voice, messages, o) {
+  const po = Object.assign({}, o, { model: voice.model });
+  if (voice.provider === 'qwen') {
+    const r = await env.AI.run(voice.model, { messages, max_tokens: o.maxTokens, temperature: o.temperature });
+    const text = stripThink(r && (r.response || (r.result && r.result.response) || r.text));
+    if (!text) throw new Error('réponse vide');
+    return { text, model: voice.model };
+  }
+  if (voice.provider === 'gemini') return callGemini(env[SECRET_NAMES.gemini], messages, po);
+  return callOpenAiLike(voice.provider, env[SECRET_NAMES[voice.provider]], messages, po);
+}
+
+function parseJsonLoose(text) {
+  const m = /\{[\s\S]*\}/.exec(String(text || '').replace(/```(?:json)?/g, ''));
+  if (!m) return null;
+  try { return JSON.parse(m[0]); } catch (_) { return null; }
+}
+
+function withDeadline(promise, ms) {
+  return Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('délai ' + ms + ' ms')), ms))]);
+}
+
+/**
+ * Concertation d'ANALYSE : { domain, needs_tools, needs_vision, complexity, lang, by, votes, voices }.
+ * by = 'concert' (vote majoritaire) ou 'regex' (repli). Ne lève jamais.
+ */
+export async function analyseQuestion(env, text, opts) {
+  const o = Object.assign({ voices: 3, timeoutMs: 6000 }, opts || {});
+  const fallback = detectDomain(text);
+  const base = { domain: fallback, needs_tools: fallback === 'admin', needs_vision: fallback === 'vision', complexity: String(text || '').length > 400 ? 3 : 1, lang: 'fr', by: 'regex', votes: {}, voices: [] };
+  const voices = freeVoices(env, o.voices);
+  if (voices.length < 2) return base;
+  const messages = [{ role: 'system', content: ANALYSE_SYSTEM }, { role: 'user', content: String(text || '').slice(0, 2000) }];
+  const settled = await Promise.allSettled(voices.map((v) => withDeadline(askVoice(env, v, messages, { maxTokens: 120, temperature: 0, timeoutMs: o.timeoutMs }), o.timeoutMs)));
+  const opinions = [];
+  settled.forEach((s, i) => {
+    const v = voices[i];
+    if (s.status !== 'fulfilled') { base.voices.push({ provider: v.provider, model: v.model, error: String(s.reason && s.reason.message || s.reason).slice(0, 80) }); return; }
+    const j = parseJsonLoose(s.value.text);
+    if (!j || !DOMAIN_PREFERENCES[j.domain]) { base.voices.push({ provider: v.provider, model: v.model, error: 'JSON illisible' }); return; }
+    opinions.push(j);
+    base.voices.push({ provider: v.provider, model: v.model, domain: j.domain, needs_tools: !!j.needs_tools, complexity: Number(j.complexity) || 1 });
+  });
+  if (opinions.length < 2) return base;
+  const votes = {};
+  for (const j of opinions) votes[j.domain] = (votes[j.domain] || 0) + 1;
+  const best = Object.entries(votes).sort((a, b) => b[1] - a[1]);
+  const majority = best[0][1] > opinions.length / 2 || (best.length === 1);
+  const needsTools = opinions.filter((j) => j.needs_tools).length > opinions.length / 2;
+  const needsVision = opinions.filter((j) => j.needs_vision).length > opinions.length / 2;
+  let domain = majority ? best[0][0] : fallback;
+  /* une ACTION exige des outils → admin, quelle que soit l'étiquette votée (sécurité) */
+  if (needsTools || fallback === 'admin') domain = 'admin';
+  if (needsVision && domain !== 'admin') domain = 'vision';
+  const complexity = Math.round(opinions.reduce((a, j) => a + (Number(j.complexity) || 1), 0) / opinions.length);
+  const lang = (opinions.map((j) => String(j.lang || '').toLowerCase().slice(0, 2)).filter(Boolean)[0]) || 'fr';
+  return { domain, needs_tools: domain === 'admin', needs_vision: needsVision, complexity, lang, by: majority ? 'concert' : 'regex', votes, voices: base.voices };
+}
+
+const JUDGE_SYSTEM = 'Tu es le JUGE d\'un conseil de plusieurs IA. On te donne la question et les réponses de chaque voix. '
+  + 'Rédige LA meilleure réponse finale, dans la langue de la question : garde ce qui fait consensus, écarte toute affirmation qu\'une seule voix avance sans appui, '
+  + 'si les voix se contredisent sur un fait, dis-le en une phrase. Ne mentionne pas les voix, ne commente pas ton travail, réponds directement.';
+
+/**
+ * CONSEIL de réponses : voix gratuites en parallèle + juge gratuit. Ne lève jamais :
+ * { ok, text, provider:'council', model:'<juge>', voices:[{provider,model,ok}], judge:'qwen'|'first' }.
+ */
+export async function councilText(env, opts) {
+  const o = Object.assign({ maxTokens: 800, temperature: 0.7, timeoutMs: 20000, voices: 3 }, opts || {});
+  let messages = Array.isArray(o.messages) ? o.messages.slice() : [];
+  if (!messages.length && o.prompt) messages = [{ role: 'user', content: String(o.prompt) }];
+  if (o.system && !messages.some((m) => m.role === 'system')) messages.unshift({ role: 'system', content: String(o.system) });
+  const voices = freeVoices(env, o.voices);
+  if (voices.length < 2) return { ok: false, text: '', provider: null, model: null, voices: [], error: 'moins de 2 voix gratuites' };
+  const settled = await Promise.allSettled(voices.map((v) => withDeadline(askVoice(env, v, messages, o), o.timeoutMs)));
+  const answers = [];
+  const report = settled.map((s, i) => {
+    const v = voices[i];
+    if (s.status === 'fulfilled') { answers.push({ voice: v, text: s.value.text }); return { provider: v.provider, model: v.model, ok: true }; }
+    return { provider: v.provider, model: v.model, ok: false, error: String(s.reason && s.reason.message || s.reason).slice(0, 80) };
+  });
+  if (!answers.length) return { ok: false, text: '', provider: null, model: null, voices: report, error: 'aucune voix n\'a répondu' };
+  if (answers.length === 1) return { ok: true, text: answers[0].text, provider: answers[0].voice.provider, model: answers[0].voice.model, voices: report, judge: 'none' };
+  const question = [...messages].reverse().find((m) => m.role === 'user');
+  const brief = 'QUESTION :\n' + String(question && question.content || '').slice(0, 3000) + '\n\n'
+    + answers.map((a, i) => 'RÉPONSE DE LA VOIX ' + (i + 1) + ' (' + a.voice.model.split('/').pop() + ') :\n' + a.text.slice(0, 3000)).join('\n\n');
+  const judgeMsgs = [{ role: 'system', content: JUDGE_SYSTEM + (o.system ? '\nConsignes du service : ' + String(o.system).slice(0, 1500) : '') }, { role: 'user', content: brief }];
+  try {
+    if (!env.AI) throw new Error('pas de juge Workers AI');
+    const j = await withDeadline(callQwen(env, judgeMsgs, { maxTokens: Math.max(o.maxTokens, 600), temperature: 0.3 }), o.timeoutMs);
+    return { ok: true, text: j.text, provider: 'council', model: j.model, voices: report, judge: 'qwen' };
+  } catch (e) {
+    /* juge muet → la première voix qui a répondu (jamais rien perdre), cause conservée */
+    return { ok: true, text: answers[0].text, provider: 'council', model: answers[0].voice.model, voices: report, judge: 'first', judge_error: String((e && e.message) || e).slice(0, 80) };
+  }
+}
+
+/* Domaines où un conseil de voix gratuites vaut mieux qu'une seule voix (question difficile). */
+export const COUNCIL_DOMAINS = ['reasoning', 'creative', 'long_context', 'general', 'summary'];
+
+/**
+ * Routage « concerté » : analyse par vote (si opts.analyse === 'concert'), puis conseil pour les
+ * questions difficiles (opts.council === true, ou 'auto' = domaine du conseil ET complexité ≥ 3),
+ * puis routeText classique. Ne lève jamais. Ajoute { analyse, council } au résultat.
+ */
+export async function routeSmart(env, opts) {
+  const o = Object.assign({ analyse: 'concert', council: 'auto' }, opts || {});
+  let messages = Array.isArray(o.messages) ? o.messages.slice() : [];
+  if (!messages.length && o.prompt) messages = [{ role: 'user', content: String(o.prompt) }];
+  const lastUser = [...messages].reverse().find((m) => m.role === 'user');
+  const text = o.text || (lastUser && lastUser.content) || '';
+  let analyse = null;
+  let domain = o.domain;
+  if (!domain) {
+    analyse = o.analyse === 'concert' ? await analyseQuestion(env, text, o) : null;
+    domain = analyse ? analyse.domain : detectDomain(text);
+  }
+  const wantCouncil = o.council === true || (o.council === 'auto' && COUNCIL_DOMAINS.includes(domain) && ((analyse && analyse.complexity >= 3) || String(text).length > 400));
+  if (wantCouncil && domain !== 'admin' && domain !== 'vision') {
+    const c = await councilText(env, Object.assign({}, o, { messages, domain }));
+    if (c.ok) return Object.assign(c, { domain, analyse, tried: [] });
+  }
+  const r = await routeText(env, Object.assign({}, o, { messages, domain }));
+  return Object.assign(r, { analyse });
+}
+
 /** Résumé lisible pour /health : qui répond en premier pour chaque type de question. */
 export function routingStatus(env) {
   const available = availableProviders(env);

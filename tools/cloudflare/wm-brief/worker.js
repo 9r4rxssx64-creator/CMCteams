@@ -16,7 +16,7 @@
  *
  * URL prod : https://wm-brief.9r4rxssx64.workers.dev  (sous-domaine du COMPTE — leçon #85)
  */
-import { routeText, availableProviders, routingStatus } from "../../../services/_shared/ia-route.js";
+import { routeText, councilText, availableProviders, routingStatus, freeVoices } from "../../../services/_shared/ia-route.js";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -89,18 +89,18 @@ async function handle(req, env, ctx) {
   const titles = await fetchTitles();
   if (!titles.length) return json({ error: "no_sources", detail: "Aucun titre récupéré (GDELT + HN indisponibles)" }, null, 502);
 
-  const r = await routeText(env, {
-    domain: "summary",
-    system: SYSTEM,
-    prompt: "Titres du moment :\n" + titles.slice(0, 26).join("\n"),
-    maxTokens: 320,
-    temperature: 0.3,
-  });
+  // Kevin 2026-09-06 « concertation d'IA gratuites… va plus loin » : la synthèse est écrite par
+  // un CONSEIL de voix gratuites (chaque modèle Qwen = une voix) puis un juge gratuit garde ce
+  // qui fait consensus (règle VÉRITÉ : une seule voix qui affirme seule est écartée). Moins de
+  // 2 voix → une seule IA via le routage commun. Anthropic reste le secours.
+  const ask = { domain: "summary", system: SYSTEM, prompt: "Titres du moment :\n" + titles.slice(0, 26).join("\n"), maxTokens: 320, temperature: 0.3 };
+  let r = freeVoices(env).length >= 2 ? await councilText(env, ask) : { ok: false };
+  if (!r.ok) r = await routeText(env, ask);
   if (!r.ok) {
     return json({ error: "ai", detail: r.error, tried: r.tried }, null, 502);
   }
 
-  const payload = { brief: r.text.trim(), sources: titles.length, provider: r.provider, model: r.model, ts: Date.now() };
+  const payload = { brief: r.text.trim(), sources: titles.length, provider: r.provider, model: r.model, voices: r.voices || null, judge: r.judge || null, ts: Date.now() };
   const resp = json(payload, { "Cache-Control": "public, max-age=" + TTL });
   if (cache) { try { ctx.waitUntil(cache.put(cacheKey, resp.clone())); } catch (e) {} }
   return resp;

@@ -3,6 +3,18 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-05 nuit** (IA gratuite en principal dans TOUS les projets · Qwen gratuit en IA principale d'Apex v13.4.366 · fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 🗳️ Concertation d'IA gratuites — vote sur le type de question + conseil avec juge (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | `analyseQuestion` (3 voix gratuites votent le type), `councilText` (voix + juge gratuit), `routeSmart` (les deux puis le routage) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | 14 tests dont 5 sur la concertation (vote, désaccord → repli, action → Anthropic, conseil, juge mort) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais vote puis conseille par défaut ; `POST /ai/analyse` = le vote seul | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.285) | Chat admin : vote + conseil quand Workers AI est là | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse actu = conseil de 3 voix + juge (moins d'inventions) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) |
+| `index.html` (CMCteams v9.893) | Badge « Concertation gratuite · N avis » quand un conseil a répondu | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `apex-ai/v13/services/ai/crew-experts.ts` (Apex v13.4.367) | Les voix de l'équipe d'experts = gratuites d'abord, Anthropic membre + chef d'orchestre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+
 ## 🆓 « Pareil dans mes autres projets » — IA gratuite en principal partout (2026-09-05, nuit)
 
 | Fichier | À quoi ça sert | Liens |

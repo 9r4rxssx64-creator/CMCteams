@@ -345,8 +345,10 @@ class CrewExpertsService {
       } catch { /* ignore */ }
     }
     out.add('anthropic'); /* toujours joignable (proxy) — jamais un crew vide */
-    /* Anthropic d'abord (chef d'orchestre), puis gratuits (qwen/groq/gemini/cerebras/openrouter), puis payants */
-    const order: CrewProvider[] = ['anthropic', 'qwen', 'groq', 'gemini', 'cerebras', 'openrouter', 'openai', 'mistral'];
+    /* v13.4.367 (Kevin 2026-09-06 « Fais une concertation d'IA gratuites ») : les VOIX du
+     * crew sont les gratuites d'abord (qwen/groq/gemini/cerebras/openrouter) ; Anthropic reste
+     * membre ET chef d'orchestre de la synthèse (conductorSynthesis), les payants en dernier. */
+    const order: CrewProvider[] = ['qwen', 'groq', 'gemini', 'cerebras', 'openrouter', 'anthropic', 'openai', 'mistral'];
     return order.filter((p) => out.has(p));
   }
 

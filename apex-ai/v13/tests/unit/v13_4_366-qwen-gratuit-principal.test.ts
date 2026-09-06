@@ -126,12 +126,13 @@ describe('v13.4.366 — câblage réel (déclaré ≠ déployé, #28)', () => {
     expect(src).toMatch(/case 'qwen':\s*\n\s*return 'qwen_cf'/);                /* coût 0 tracé */
   });
 
-  it('crew multi-IA : qwen fait partie des experts joignables (proxy actif), après Anthropic', async () => {
+  it('crew multi-IA (v13.4.367 « concertation d\'IA gratuites ») : les voix gratuites d\'abord, Anthropic reste membre + chef d\'orchestre', async () => {
     localStorage.clear();
     const { crewExperts } = await import('../../services/ai/crew-experts.js');
     const list = crewExperts.availableProviders();
-    expect(list[0]).toBe('anthropic');
-    expect(list).toContain('qwen');
+    expect(list[0]).toBe('qwen');
+    expect(list).toContain('anthropic');
+    expect(list.indexOf('anthropic')).toBeGreaterThan(list.indexOf('groq'));
   });
 
   it('bouton ⚡ : le libellé du mode par défaut dit Qwen', () => {

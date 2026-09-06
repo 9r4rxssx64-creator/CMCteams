@@ -72,7 +72,7 @@ function err(message, status, origin, detail) {
 // données : on relaie l'upstream tel quel. Gratuit + anonyme → accessible aux origines '*'.
 /* Kevin 2026-09-05 « Qwen l'IA gratuite en principal… pareil dans mes autres projets » :
    le routage IA commun du domaine (Qwen Workers AI d'abord, bascule par type de question). */
-import { routeText, detectDomain, routingStatus, DOMAIN_PREFERENCES, QWEN_MODELS } from '../_shared/ia-route.js';
+import { routeText, routeSmart, analyseQuestion, detectDomain, routingStatus, DOMAIN_PREFERENCES, QWEN_MODELS } from '../_shared/ia-route.js';
 
 export const KEYLESS = {
   // Météo (anticiper l'affluence casino — Convention SBM art.17.6).
@@ -350,28 +350,44 @@ async function handleAi(request, env, origin) {
   } catch (_) {
     return err('body JSON invalide', 400, origin);
   }
+  // POST /ai/analyse { text } — la CONCERTATION D'ANALYSE seule (Kevin 2026-09-06) : plusieurs
+  // voix gratuites classent la question (vote), pour qu'une app décide AVANT d'appeler un moteur.
+  if (new URL(request.url).pathname.replace(/\/+$/, '') === '/ai/analyse') {
+    const text = String((opts && (opts.text || (Array.isArray(opts.messages) && opts.messages.length && opts.messages[opts.messages.length - 1].content))) || '');
+    if (!text.trim()) return err('text requis', 400, origin);
+    const a = await analyseQuestion(env, text);
+    return json(Object.assign({ ok: true }, a), 200, origin);
+  }
   if (!opts || !Array.isArray(opts.messages) || !opts.messages.length) {
     return err('messages[] requis', 400, origin);
   }
   const tried = [];
   // 1) Routage commun du domaine (sauf provider forcé « à l'ancienne ») : Qwen Workers AI
   //    d'abord pour les questions courantes, bascule par TYPE de question sinon.
+  //    Kevin 2026-09-06 « concertation d'IA gratuites pour analyser les questions, va plus
+  //    loin » : le type est VOTÉ par plusieurs voix gratuites (analyse:'concert', défaut) et
+  //    une question difficile est répondue par un CONSEIL de voix + juge gratuit (council:'auto').
   const forced = opts.provider && opts.provider !== 'workers-ai' && opts.provider !== 'qwen-cf';
   if (!forced) {
-    const lastUser = [...opts.messages].reverse().find((m) => m && m.role === 'user');
-    const domain = (opts.domain && DOMAIN_PREFERENCES[opts.domain]) ? opts.domain : detectDomain(lastUser ? String(lastUser.content || '') : '');
-    const routed = await routeText(env, {
+    const domain = (opts.domain && DOMAIN_PREFERENCES[opts.domain]) ? opts.domain : undefined;
+    const routed = await routeSmart(env, {
       messages: opts.messages,
       domain,
+      analyse: opts.analyse === 'regex' ? 'regex' : 'concert',
+      council: opts.council === false ? false : (opts.council === true ? true : 'auto'),
       maxTokens: Math.min(4000, Math.max(50, parseInt(opts.max_tokens, 10) || 800)),
       temperature: typeof opts.temperature === 'number' ? opts.temperature : 0.7,
       premium: !!opts.premium,
       timeoutMs: 20000,
     });
     if (routed.ok) {
-      return json({ ok: true, provider: routed.provider, model: routed.model, domain: routed.domain, text: routed.text, tried: routed.tried }, 200, origin);
+      return json({
+        ok: true, provider: routed.provider, model: routed.model, domain: routed.domain, text: routed.text,
+        analyse: routed.analyse ? { by: routed.analyse.by, votes: routed.analyse.votes, complexity: routed.analyse.complexity, needs_tools: routed.analyse.needs_tools } : null,
+        voices: routed.voices || null, judge: routed.judge || null, tried: routed.tried,
+      }, 200, origin);
     }
-    tried.push(...routed.tried);
+    tried.push(...(routed.tried || []));
   }
   // 2) Secours historique : chaîne des paliers gratuits à clé (ceux que le routage commun
   //    ne connaît pas : cohere, together, nvidia…), sans re-tenter ce qui vient d'échouer.

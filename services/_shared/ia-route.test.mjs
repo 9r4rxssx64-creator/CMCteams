@@ -156,3 +156,108 @@ test('secrets : noms EXACTS de Kevin (PERPLEXITI, OPEN_AI)', () => {
   assert.equal(st.first_by_domain.code, 'anthropic');
   assert.equal(st.first_by_domain.vision, 'anthropic', 'sans Gemini, une image va à Anthropic, jamais à Qwen');
 });
+
+/* ---- CONCERTATION D'IA GRATUITES (Kevin 2026-09-06 « va plus loin ») ---- */
+import { analyseQuestion, councilText, routeSmart, freeVoices } from './ia-route.js';
+
+const voicesAI = (byModel, opts = {}) => ({
+  calls: [],
+  run(model, input) {
+    this.calls.push({ model, sys: input.messages[0].content.slice(0, 20) });
+    const isJudge = /JUGE/.test(input.messages[0].content);
+    if (isJudge) { if (opts.judgeDead) throw new Error('juge mort'); return { response: 'SYNTHÈSE : ' + input.messages[1].content.length }; }
+    const out = byModel[model];
+    if (out instanceof Error) throw out;
+    return { response: out === undefined ? 'réponse ' + model.split('/').pop() : out };
+  },
+});
+
+test('freeVoices : chaque modèle Qwen est une voix, les gratuits à clé s\'ajoutent, 3 max par défaut', () => {
+  assert.equal(freeVoices({ AI: {} }).length, 3);
+  assert.equal(freeVoices({ AI: {}, GROQ_API_KEY: 'g' }, 5).map((v) => v.provider).filter((p) => p === 'groq').length, 1);
+  assert.deepEqual(freeVoices({}), []);
+});
+
+test('analyseQuestion : vote majoritaire de 3 voix gratuites → concert ; JSON illisible ignoré', async () => {
+  const AI = voicesAI({
+    [QWEN_MODELS[0]]: '{"domain":"translation","needs_tools":false,"needs_vision":false,"complexity":1,"lang":"fr"}',
+    [QWEN_MODELS[1]]: '```json\n{"domain":"translation","needs_tools":false,"complexity":2,"lang":"fr"}\n```',
+    [QWEN_MODELS[2]]: 'je ne sais pas',
+  });
+  const a = await analyseQuestion({ AI }, 'peux-tu me dire ce texte en espagnol ?');
+  assert.equal(a.by, 'concert');
+  assert.equal(a.domain, 'translation', 'la regex aurait dit general : le concert va plus loin');
+  assert.deepEqual(a.votes, { translation: 2 });
+  assert.equal(a.voices.filter((v) => v.error).length, 1);
+  assert.equal(AI.calls.length, 3, '3 voix appelées en parallèle');
+});
+
+test('analyseQuestion : les voix disent « action » → admin (sécurité), désaccord → repli regex, < 2 voix → regex', async () => {
+  const act = voicesAI({
+    [QWEN_MODELS[0]]: '{"domain":"general","needs_tools":true,"complexity":2}',
+    [QWEN_MODELS[1]]: '{"domain":"code","needs_tools":true,"complexity":2}',
+    [QWEN_MODELS[2]]: '{"domain":"general","needs_tools":false,"complexity":2}',
+  });
+  const a = await analyseQuestion({ AI: act }, 'peux-tu mettre DUPONT en repos le 12 ?');
+  assert.equal(a.domain, 'admin'); assert.equal(a.needs_tools, true);
+
+  const split = voicesAI({
+    [QWEN_MODELS[0]]: '{"domain":"code","needs_tools":false,"complexity":2}',
+    [QWEN_MODELS[1]]: '{"domain":"summary","needs_tools":false,"complexity":2}',
+    [QWEN_MODELS[2]]: '{"domain":"creative","needs_tools":false,"complexity":2}',
+  });
+  const b = await analyseQuestion({ AI: split }, 'résume-moi ce texte');
+  assert.equal(b.by, 'regex'); assert.equal(b.domain, 'summary');
+
+  const c = await analyseQuestion({}, 'bonjour');
+  assert.equal(c.by, 'regex'); assert.deepEqual(c.voices, []);
+});
+
+test('councilText : 3 voix répondent, le juge Qwen fusionne ; juge mort → 1re voix ; 1 voix → telle quelle', async () => {
+  const AI = voicesAI({});
+  const c = await councilText({ AI }, { prompt: 'explique la relativité simplement' });
+  assert.equal(c.ok, true); assert.equal(c.provider, 'council'); assert.equal(c.judge, 'qwen');
+  assert.match(c.text, /^SYNTHÈSE/);
+  assert.equal(c.voices.filter((v) => v.ok).length, 3);
+  assert.equal(AI.calls.filter((x) => /JUGE/.test(x.sys)).length, 1, 'un seul appel juge');
+
+  const dead = voicesAI({ [QWEN_MODELS[1]]: new Error('capacity'), [QWEN_MODELS[2]]: new Error('capacity') }, { judgeDead: true });
+  const d = await councilText({ AI: dead }, { prompt: 'x' });
+  assert.equal(d.ok, true); assert.equal(d.judge, 'none', 'une seule voix → sa réponse, sans juge');
+  assert.equal(d.voices.filter((v) => !v.ok).length, 2);
+
+  const e = await councilText({}, { prompt: 'x' });
+  assert.equal(e.ok, false);
+});
+
+test('routeSmart : question difficile → conseil gratuit (Anthropic pas appelé) ; action → Anthropic ; simple → Qwen seul', async () => {
+  const AI = voicesAI({
+    [QWEN_MODELS[0]]: '{"domain":"reasoning","needs_tools":false,"complexity":4}',
+    [QWEN_MODELS[1]]: '{"domain":"reasoning","needs_tools":false,"complexity":5}',
+    [QWEN_MODELS[2]]: '{"domain":"reasoning","needs_tools":false,"complexity":4}',
+  });
+  const f = mockFetch((url) => (/anthropic/.test(url) ? okJson({ content: [{ type: 'text', text: 'Anthropic' }] }) : okJson({})));
+  try {
+    const r = await routeSmart({ AI, ANTHROPIC_API_KEY: 'a' }, { prompt: 'pourquoi le ciel est-il bleu, explique la physique derrière ?' });
+    assert.equal(r.analyse.by, 'concert'); assert.equal(r.domain, 'reasoning');
+    assert.equal(r.provider, 'council', 'question difficile → conseil de voix gratuites');
+    assert.equal(f.calls.length, 0, 'Anthropic pas appelé');
+
+    const act = voicesAI({
+      [QWEN_MODELS[0]]: '{"domain":"admin","needs_tools":true,"complexity":2}',
+      [QWEN_MODELS[1]]: '{"domain":"admin","needs_tools":true,"complexity":2}',
+      [QWEN_MODELS[2]]: '{"domain":"admin","needs_tools":true,"complexity":2}',
+    });
+    const a = await routeSmart({ AI: act, ANTHROPIC_API_KEY: 'a' }, { prompt: 'envoie le rapport à Laurence' });
+    assert.equal(a.provider, 'anthropic'); assert.equal(a.domain, 'admin');
+
+    const simple = voicesAI({
+      [QWEN_MODELS[0]]: '{"domain":"general","needs_tools":false,"complexity":1}',
+      [QWEN_MODELS[1]]: '{"domain":"general","needs_tools":false,"complexity":1}',
+      [QWEN_MODELS[2]]: '{"domain":"general","needs_tools":false,"complexity":1}',
+    });
+    const s = await routeSmart({ AI: simple, ANTHROPIC_API_KEY: 'a' }, { prompt: 'quelle heure est-il à Tokyo ?' });
+    assert.equal(s.provider, 'qwen', 'question simple → une seule voix gratuite, pas de conseil');
+    assert.equal(s.analyse.complexity, 1);
+  } finally { f.restore(); }
+});

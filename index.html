@@ -5821,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.892";
+var APP_VER="v9.893";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -47420,7 +47420,11 @@ function cmcIaFreeAsk(q,domain,onFail){
     if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
     var txt=String(d.text||"");
     var html=esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
-    var badge="<span style='font-size:11px;color:#7edc90' title='Réponse par "+esc(String(d.provider||"")+" "+String(d.model||""))+"'>"+esc(d.provider==="qwen"?CMC_IA_FREE_LABEL:String(d.provider||"IA"))+"</span><br>";
+    /* v9.893 — concertation (Kevin 2026-09-06) : le relais peut répondre par un CONSEIL de voix gratuites + juge ; on le dit. */
+    var nVoix=(d.voices&&d.voices.length)?d.voices.filter(function(v){return v&&v.ok;}).length:0;
+    var lbl=d.provider==="council"?("Concertation gratuite · "+nVoix+" avis"):(d.provider==="qwen"?CMC_IA_FREE_LABEL:String(d.provider||"IA"));
+    var ana=(d.analyse&&d.analyse.by==="concert")?" · type voté par "+Object.keys(d.analyse.votes||{}).length+" voix":"";
+    var badge="<span style='font-size:11px;color:#7edc90' title='Réponse par "+esc(String(d.provider||"")+" "+String(d.model||"")+ana)+"'>"+esc(lbl)+"</span><br>";
     iaHistory.push({role:"bot",html:badge+html});
     logIAInteraction(q,html,"free_"+String(d.provider||"?"));ttsSpeak(txt);
     dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
