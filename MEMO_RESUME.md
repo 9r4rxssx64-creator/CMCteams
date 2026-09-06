@@ -24,6 +24,9 @@
   par accident (pas de réseau). Test rendu honnête : clé embarquée neutralisée pour ce cas + page hors
   ligne. **Leçon transversale** : un test qui passe ici parce que le réseau est coupé n'est pas un test
   qui passe — le runner GitLab (réseau ouvert) le révèle, GitHub ne lançait plus ces tests.
+  6ᵉ : `test:garro-cp` 5/3 (MIRANDA 0 cellule) — même classe (1,8 s fixes + réseau) ; corrigé pareil,
+  et `test:code-legends` (2,2 s fixes) par précaution. Chaîne locale (après v788) : 0 échec réel, seuls
+  `pdfjs-dist`/`axe-core` manquent ici (pas de `npm install` dans le sandbox) — le runner les a.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
