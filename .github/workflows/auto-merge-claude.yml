@@ -340,7 +340,7 @@ jobs:
           git remote set-branches origin '*' || true
           git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet || true
           TOTAL=$(git branch -r 2>/dev/null | grep -c 'origin/claude/' || echo 0)
-          DEL=0; GARDE=0
+          DEL=0; GARDE=0; ECH=0
           echo "## Branches" >> "$REP"
           echo "" >> "$REP"
           if [ "$TOTAL" = "0" ]; then
@@ -355,16 +355,30 @@ jobs:
               git merge-base --is-ancestor "$b" origin/main 2>/dev/null || { GARDE=$((GARDE+1)); continue; }
               TS=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
               [ "$TS" -ge "$CUT" ] && { GARDE=$((GARDE+1)); continue; }
-              if git push origin --delete "$NAME" >/dev/null 2>&1; then
+              ERR=$(git push origin --delete "$NAME" 2>&1)
+              if [ $? -eq 0 ]; then
                 DEL=$((DEL+1)); echo "- supprimee \`$NAME\` (\`$(git rev-parse --short "$b")\`)" >> "$REP"
               else
-                echo "- ECHEC suppression \`$NAME\` — jeton sans droit de supprimer une reference ?" >> "$REP"
+                ECH=$((ECH+1))
+                # Le message EXACT, une seule fois : c'est lui qui nomme le
+                # verrou. L'avaler (>/dev/null 2>&1) etait mon erreur — on
+                # cherche ensuite la cause pendant une heure. Lecon #214.
+                if [ "$ECH" = "1" ]; then
+                  echo "" >> "$REP"
+                  echo "**Cause exacte du refus de suppression** (premiere occurrence, \`$NAME\`) :" >> "$REP"
+                  echo '```' >> "$REP"
+                  echo "$ERR" | head -12 >> "$REP"
+                  echo '```' >> "$REP"
+                  echo "" >> "$REP"
+                fi
               fi
             done
             echo "" >> "$REP"
             echo "| vues | supprimees | gardees |" >> "$REP"
             echo "|---:|---:|---:|" >> "$REP"
             echo "| $TOTAL | $DEL | $GARDE |" >> "$REP"
+            echo "" >> "$REP"
+            echo "Echecs de suppression : **$ECH**" >> "$REP"
           fi
 
           # ---------- 2) Annulations automatiques dormantes ----------
