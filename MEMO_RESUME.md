@@ -19,7 +19,7 @@ jours). Puis comparé cellule par cellule aux deux surfaces.
 | **NICASTRO M** | 9 à 18 cellules RH/R… alors qu'il **n'apparaît dans AUCUN** des PDF (juillet, août, septembre) | les passes de « réparation » complétaient les trous de n'importe quel employé du registre depuis la majorité de son équipe **par défaut** → planning **inventé** |
 | **BLANCHY F**, **DEGIOVANNI R** | planning juste dans CMCteams mais **absents de la page Départs** | arrivés le 16 (15 jours de CP avant) → seulement 4 jours de repos → le motif de repos ne les départage pas (4 équipes à égalité) → aucune équipe → hors Départs |
 
-**Les 3 correctifs (v9.892)** :
+**Les 3 correctifs (v9.894)** :
 1. **Lignes par proximité, plus par arrondi** — un item rejoint la ligne existante la plus proche à
    moins de **1,8 pt**. Seuil choisi sur MESURE des 3 vrais PDF : le tremblement à l'intérieur d'une
    ligne ne dépasse jamais 1,7 pt, deux lignes voisines sont toujours à ≥3,7 pt → ça ne peut que
@@ -51,9 +51,258 @@ discriminant par sabotage** (une cellule modifiée → écart nommé ; une perso
 MANQUANT »). Trouvé au passage : `compare-app-vs-light-teams` avait sa liste de mois **figée sur
 juillet/août** → septembre n'était jamais comparé ; elle est maintenant **déduite des boards**.
 
-**Leçon** : #217 dans `LESSONS.md`.
+**Leçon** : #220 dans `LESSONS.md`.
 
 
+## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
+
+- `main` fusionné dans la branche (4 conflits de journaux résolus en gardant les deux côtés ; les deux
+  leçons « 216 » de main deviennent 216/217, les miennes 218 (GitLab) et 219 (Vercel)).
+- Le job `tests` GitLab (seul endroit où `npm run test:ci` tourne à chaque push) a rougi sur
+  `test:ci-no-stampede` : `audit-live.yml`, arrivé de main, avait un groupe de concurrence fixe
+  **avec** annulation → un push d'une branche effaçait le balayage d'une autre. Corrigé :
+  `cancel-in-progress: false` (file d'attente sur la cible partagée, le motif que la garde autorise).
+  Gate 5/5 en local. Cette garde ne tourne pas sur GitHub à chaque push : sans le miroir GitLab, ce
+  rouge serait resté invisible.
+- Job `tests` GitLab, 2ᵉ rouge : `test:all` lance Chromium et l'image `node:20` n'en a pas
+  (« Executable doesn't exist … headless_shell »). Job passé sur `mcr.microsoft.com/playwright:v1.56.0-noble`
+  (même version que `devDependencies`), sans téléchargement à chaque run. 3ᵉ rouge : sur cette image
+  `npm install` plante (`edgesOut`, même bug que sur GitHub) → `--legacy-peer-deps`.
+- Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
+  profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
+  il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
+  `tools/smoke/audit-live.mjs` : `/__arbre/status` sert les fiches (119, D1) + un hash bidon est refusé
+  (`code_invalide`) + opt-in `ARBRE_CODE_SHA256` (empreinte, secret CI, jamais le code) pour entrer et
+  compter les cartes ; absent → dit que les cartes ne sont pas comptées (prouvé hors ligne par
+  `verify-domaine`). Harnais local 6 scénarios discriminant. Lingua ❌ dans le même run : session Lingua.
+- Vercel : la correction de domaine-audit (`tools/agent/vercel.json`, plus aucune prévisualisation
+  hors `main`) est maintenant dans ma branche → le contrôle rouge qui bloquait la PR #3674 n'a plus
+  de raison de revenir.
+
+---
+
+## 6 septembre 2026 (matin, session arbre) — Arbre v3.18 « Munegu » : le thème monégasque accentué, dans l'app et sur le poster
+
+**Demande Kevin** : *« Accentue le thème spécialité monégasque, Monaco. Va plus loin. »* puis *« Continu »*.
+
+**Fait** (`arbre/index.html` v3.18 + `sw.js`, branche `claude/sarzance-family-tree-3jxi7i`) :
+- **Vocabulaire vérifié avant de l'écrire** (pages du Comité National des Traditions Monégasques et chroniques
+  « A lenga munegasca » via recherche web ; les sites eux-mêmes sont bloqués depuis l'agent) : *Munegu* = Monaco,
+  *àrburu* = arbre, *famiya* = famille. Devise : *Deo Juvante*. Règnes des Princes (Honoré V 1819 → Albert II 2005-…)
+  aux dates officielles.
+- **App** : ruban **fuselé de gueules et d'argent** (les losanges de Monaco) sous l'en-tête ; badge **◆** sur chaque
+  personne née en Principauté (liste + tri « ◆ Monaco (N) » dans Personnes) ; dans la fiche, lignes **🇲🇨 Munegu**
+  (né/décédé en Principauté) et **👑 Règne** (« né sous Albert Ier (1889-1922) ») ; dans la vue Arbre, chaque
+  « Gén. N » porte le règne du Prince (année médiane des naissances de la rangée) ; dans Réglages, section
+  **🇲🇨 Munegu** (nés / % / décédés à Monaco, naissances par règne, lieux, 3 liens : registres de la Mairie ≥ 1900,
+  Journal de Monaco, Traditions monégasques). Lieux reconnus : Monaco, Monte-Carlo, La Condamine, Fontvieille,
+  Monaco-Ville, Moneghetti, Larvotto, Munegu, Principauté.
+- **Poster** : **cadre fuselé rouge/blanc** sur tout le pourtour + filet doré ; sous-titre *« Àrburu de famiya ·
+  Principauté de Monaco »* (seulement si quelqu'un est né à Monaco) ; losange ◆ sur les cartes ET les médaillons des
+  nés en Principauté, entrée de légende « né(e) en Principauté de Monaco (N) » ; sous chaque « Gén. N » : « sous
+  Rainier III (1949-2005) » ; pied : *Munegu · Deo Juvante*.
+- **Vérifié en VRAI navigateur** (famille synthétique, 2 racines nées « Monaco » / « Monte-Carlo ») :
+  `verify-poster.mjs` **154/154** (16 combos × cadre + devise, N badges = N nés à Monaco, sous-titre présent
+  seulement si N>0, 1 à 5 règnes par poster ; PDF A1 + mosaïques), `verify-domaine.mjs` tout vert, captures iPhone
+  (arbre, liste, fiche, Réglages, poster A1) relues à l'œil ; gates `arbre-poster` (+8 contrôles Munegu),
+  `arbre-prive`, `no-pin-leak`, `no-conflicts`, `pipeline-sessions` verts.
+- **Bug attrapé par la capture** : `irow` est locale à la fiche → passée en paramètre (`mcFicheRows(p,irow)`), sinon
+  la fiche plantait (« irow is not defined ») — visible seulement en ouvrant une fiche en vrai.
+
+**Trouvé en chemin — pourquoi la PR #3674 ne fusionnait plus** : le robot répond « merge auto refusé (protection) »
+depuis que le contrôle **Vercel** est ROUGE sur chaque commit (« Resource is limited — more than 100 deployments
+per day »). Toutes les sessions poussent, chaque push déclenche un déploiement Vercel inutile (Vercel ne sert
+rien de ce dépôt en production, prod = GitHub Pages / Cloudflare), le quota gratuit saute, et le contrôle rouge
+bloque **toutes** les PR. Correctif : `vercel.json` → `ignoreCommand` ignore aussi `arbre/**`, `tools/arbre/**`,
+`services/**`, `tests/**`, `pipeline/**`, `audit/**`, `.gitlab-ci.yml`, `tools/gitlab/**`, `tools/pipeline/**`,
+et `vercel.json` lui-même (un push qui ne touche que ça = Vercel « skipped » = neutre). Leçon #219.
+
+---
+
+## 6 septembre 2026 — « Concertation d'IA gratuites pour analyser les questions, va plus loin »
+
+**Demande Kevin** : *« Fais une concertation d'IA gratuites pour analyser les questions par
+exemple, va plus loin. »*
+
+**Ce qui change** (même module partagé, donc partout d'un coup) :
+- **Le type de chaque question est VOTÉ** par 3 IA gratuites en parallèle (chaque modèle Qwen
+  = une voix, plus Groq/Gemini si clé) au lieu d'être deviné par des mots-clés. Pas de
+  majorité ou trop lent → les mots-clés tranchent : jamais bloqué. Une demande d'action garde
+  toujours Anthropic et ses outils, quel que soit le vote.
+- **Les questions difficiles reçoivent un CONSEIL** : plusieurs voix gratuites répondent, un
+  juge gratuit garde ce qui fait consensus et écarte ce qu'une seule voix affirme (moins
+  d'inventions). Anthropic n'est plus appelé pour ça, seulement pour agir et en secours.
+- Où : relais apis.kd-mc.com (`/ai` + `/ai/analyse`), **Apex Chat v1.1.285**, **CMCteams
+  v9.893** (badge « Concertation gratuite · N avis »), World Monitor (la synthèse actu est
+  un conseil de 3 voix + juge), **Apex v13.4.367** (l'équipe d'experts = gratuites d'abord,
+  Anthropic chef d'orchestre).
+
+**Preuves** : module 14/14 · relais 31/31 · CMCteams 27/27 · Apex Chat 9/9 + 100/100 ·
+Apex orchestre + garde verts · tsc propre. Leçon **#219**.
+
+---
+
+## 5 septembre 2026 (nuit) — « Pareil dans mes autres projets » : IA gratuite en principal partout
+
+**Demande Kevin** : *« Pareil dans mes autres projets. »* (après Qwen dans Apex, ci-dessous)
+
+**Ce qui change pour Kevin** (un seul module partagé `services/_shared/ia-route.js`, même
+bascule qu'Apex : questions courantes → Qwen gratuit ; code / raisonnement / action → Anthropic ;
+image → Gemini ; recherche → Perplexity ; l'ancien ordre de chaque projet reste en secours) :
+- **CMCteams v9.892** : les questions courantes partent au relais du domaine (0 clé). Planning,
+  équipes, congés, convention, actions, photos → Anthropic et ses outils, comme avant. Si le
+  gratuit tombe → Anthropic quand il y a une clé, sinon le mode local. **Un employé sans clé a
+  maintenant une IA.**
+- **Apex Chat v1.1.284** : Qwen d'abord pour le chat, les résumés, les traductions, la
+  reformulation ; Anthropic pour agir et pour la recherche précise. Au passage, trois numéros de
+  version différents (badge 279, cache 279, source 283) sont réalignés.
+- **Lingua** (coach) : Qwen multilingue d'abord, puis Gemini/Groq/Mistral.
+- **World Monitor** (synthèse actu) : Qwen d'abord, Anthropic en secours (clé plus obligatoire).
+- **Créa AI** (paroles, compositions) : Qwen Workers AI en tête, 18 moteurs à clé en secours.
+- **Finances v0.15.0** : Qwen en tête du « gratuit d'abord » (texte seul, les documents vont
+  toujours aux moteurs qui lisent PDF/photos).
+- **Relais du domaine apis.kd-mc.com** : devient le hub commun, avec Anthropic en secours
+  pertinent. **Bug trouvé** : le vrai hôte GitHub Pages (`9r4rxssx64-creator.github.io`) n'était
+  pas dans ses origines de confiance → corrigé + test.
+- Rien à changer pour La Détente (images), RAG (embeddings), Balances (soldes) : aucun modèle texte.
+
+**Preuves** : module 9/9 · relais 29/29 + paliers 63/63 · CMCteams 26/26 (fonction extraite et
+exécutée) · Apex Chat 100/100 + 8/8 · Lingua 2/2 + coach 15/15 · Créa 71/71 · 6 workers
+`node --check` · gates dépôt public / destinations / pipefail / XSS / taille OK. Leçon **#218**.
+
+**Honnête** : `router-secours` échoue 6× sur `main` avant mes changements (copie de secours qui
+oublie cuisine/worldmonitor/osint/ia/outils/shops) — pas causé ici, à traiter à part. Les gardes
+Playwright (finances, ia-proxy-routing, lingua…) ne tournent pas dans ce bac à sable (pas de
+navigateur installable) : c'est la CI qui les joue. Les déploiements des 6 workers partent au
+merge dans `main` ; leurs étapes de vérification réelle prouvent qui répond (provider/model).
+
+---
+
+## 5 septembre 2026 (nuit) — Qwen gratuit devient l'IA principale d'Apex, bascule auto par question (v13.4.366)
+
+**Demande Kevin** : *« Fait tourner Apex sur Qwen l'IA gratuite, privilégie les IA gratuites en tâche
+principale pour l'instant, et suivant les questions elle bascule automatiquement sur la plus
+polyvalente, la plus pertinente pour la tâche demandée. »*
+
+**Ce qui change pour Kevin** (badge **v13.4.366**) :
+- **Qwen répond par défaut** aux questions du quotidien (général, résumé, traduction) — **0 clé**,
+  **0 €** : il tourne sur Workers AI, dans le compte Cloudflare, via le relais Apex existant.
+- **Bascule automatique** selon la question : code / raisonnement / créatif → **Anthropic** ;
+  **toute action** (« lance », « déploie », « corrige », « envoie »…) → **Anthropic** (seul à avoir
+  les outils) ; photo / image → **Gemini** ; recherche → **Perplexity** ; réponse ultra-rapide →
+  **Groq**. Anthropic reste le filet derrière tout le monde.
+- Le mode ⚡ par défaut « Gratuit malin » l'explique en clair dans le chat.
+
+**Comment c'est fait** (tout dans un commit, docs comprises) :
+- Relais `apex-secrets-proxy` (source dans le workflow `sync-apex-secrets-to-cf-worker.yml`) :
+  binding `[ai]`, route `/qwen/v1/chat/completions` (PIN obligatoire), 4 modèles Qwen essayés dans
+  l'ordre (3.8-27b en tête), sortie au format OpenAI (stream + non-stream), raisonnement `<think>`
+  filtré, `/health` annonce `qwen`. L'étape « Verify deploy » fait un **vrai appel Qwen** et
+  imprime `qwen HTTP <code>` dans le journal CI = la preuve live.
+- Client Apex : `qwen` ajouté aux 5 endroits (PROVIDERS, chaîne, `supported`, PROXY_PROVIDERS,
+  crew) + `FREE_PROVIDERS` en tête ; préférences par domaine réécrites ; les verbes d'action
+  envoient vers `admin` (Anthropic) ; coût `qwen_cf` = 0 dans le tableau des jetons.
+- **Preuves** : `tests/verify-apex-proxy-qwen.mjs` (worker extrait + Workers AI simulé, 17
+  contrôles), `tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` (13 tests, 3 sabotages
+  prouvés discriminants), 304/304 non-régression, tsc propre sur les fichiers touchés.
+  Leçon **#217**.
+
+**Limite honnête** : depuis l'agent je ne peux atteindre ni workers.dev ni l'API GitHub. Le
+déploiement du relais part **au merge dans main** (le workflow a changé) ; c'est son journal
+« Verify deploy » qui prouve Qwen en vrai. `/health` garde un cache de 5 min côté client avant
+d'afficher `qwen`.
+## 5 septembre 2026 — Lingua : « j'ai pourtant un compte » réparé pour de vrai
+
+**Kevin, capture à l'appui** : prénom + code sur `kdmc-site.pages.dev` → « Aucune
+sauvegarde pour ce prénom + code 🤔 ». Sa phrase : *« j'ai pourtant un compte »*.
+Il avait raison : le compte existait, l'application mentait.
+
+### Cause mesurée (lue dans le code, pas supposée)
+`enterWithCredentials` (`lingua/app.js`) renvoyait **le même résultat** dans deux
+situations opposées : (a) le serveur a répondu « rien trouvé », (b) le serveur
+**n'a pas répondu du tout**. La progression en ligne passe par `/__lingua/load`
+(worker **kdmc-router**), joignable **uniquement** via `lingua.kd-mc.com` — domaine
+indisponible. Donc `fetch` échouait, le `.catch` retombait dans le cas « rien
+trouvé », et l'écran annonçait une perte de compte là où il n'y avait qu'un
+serveur injoignable. **Mensonge d'interface** — exactement ce qu'interdit la règle
+« toujours détailler les erreurs, cause exacte ».
+
+### Le test existait depuis le 3.09 — le correctif, non
+`tests/verify-lingua-connexion-honnete.mjs` documentait déjà le diagnostic, mais
+`app.js` n'avait **jamais** été corrigé : ni `injoignable:true`, ni `localNames`.
+Le test n'avait donc jamais pu passer. Écrire le test ne répare rien.
+
+### Corrigé
+Trois cas désormais **distincts** : serveur injoignable → *« ne répond pas — ta
+progression n'est pas perdue »* · serveur OK mais vide → *« aucune sauvegarde »*
++ les prénoms réellement présents sur l'appareil (cas « je me suis trompé de
+prénom ») · sauvegarde trouvée → on entre.
+
+### Preuve
+Vrai navigateur, serveur simulé : **8 OK / 0 FAIL**. **Discriminant prouvé** :
+correctif retiré → **3 FAIL**, et le test reproduit mot pour mot le message que
+Kevin a vu. Restauré → 8/8.
+
+### Deuxième mensonge du même type, trouvé et corrigé (même jour)
+Le routeur renvoie `{ok:false, reason:'kv_absent'}` **en 200** quand son stockage
+est indisponible (repli volontaire). Le client repliait ça sur « aucune
+sauvegarde » : le serveur ne peut pas lire, et on annonce à l'utilisateur qu'il
+n'a pas de compte. Corrigé, et le cas est désormais couvert par le test.
+**10 OK / 0 FAIL.**
+
+### ⚠️ Correction d'une supposition (mesurée, pas devinée)
+Le commentaire du test — et ma première version de ce mémo — affirmaient que
+`lingua.kd-mc.com` était « indisponible ». **Jamais vérifié.** Mesuré le 5.09 :
+- le DNS **résout** (`lingua.kd-mc.com` → même IP que `kd-mc.com`) ;
+- la route `custom_domain` est bien déclarée dans `services/kdmc-router/wrangler.toml` ;
+- le CORS de `/__lingua/*` est ouvert à **toutes** les origines (donc venir de
+  `pages.dev` n'est pas le problème).
+
+Je ne peux pas atteindre le domaine depuis cette session (politique réseau), mais
+c'est **ma** limite — pas une panne prouvée. Le commentaire du test a été corrigé.
+
+### Piste du compte de Kevin → confirmée, et c'est devenu le correctif suivant
+La clé du compte en ligne était `sha256(norm(saisie) + ":" + code)` (`cloudKeyFor`) :
+la casse et les accents étaient normalisés, **mais pas les mots**. `kevin` et
+`kevin desarzens` produisaient donc **deux clés différentes** — sa sauvegarde
+pouvait exister sous un autre libellé. Traité ci-dessous.
+
+---
+
+## 5 septembre 2026 (suite) — Lingua : la connexion demande PRÉNOM + NOM
+
+**Kevin** : *« Ajoute nom et prénom pour la connexion, si 2 personnes ont le même
+prénom ça va poser problème. »* Il a raison, et c'est déjà une **règle absolue du
+dépôt** (« LOGIN TOUJOURS PRÉNOM + NOM ») que Lingua était seule à ne pas suivre :
+deux « Kevin » avec le même code tombaient sur **le même compte**.
+
+### Ce qui change
+- L'écran de connexion et celui de création ont **deux champs** (prénom, nom).
+  Un seul mot est refusé, avec un message clair : *« Entre ton prénom ET ton nom »*.
+- La clé du compte en ligne devient `sha256(prénom+nom triés : code)`. Les mots
+  sont **triés** → « Kevin Desarzens » et « Desarzens Kevin » ouvrent le **même**
+  compte : on n'impose pas l'ordre à l'utilisateur.
+
+### Jamais régresser : les anciens comptes restent retrouvables
+Tous les comptes créés **avant** cette règle sont enregistrés sous l'ancienne clé
+(souvent le prénom seul). Ils seraient devenus introuvables du jour au lendemain.
+La connexion interroge donc les clés **dans l'ordre** — nouvelle, puis anciennes —
+et s'arrête à la première sauvegarde trouvée. Une fois retrouvée, elle est
+**réécrite sous la clé prénom + nom** : la connexion suivante tombe directement
+dessus. « Serveur injoignable » n'est retenu que si **aucune** clé n'a pu être lue.
+
+### Un bug trouvé par le test lui-même
+Le nom contenu dans la sauvegarde restaurée (souvent un prénom seul, d'avant la
+règle) **écrasait** le nom complet qu'on venait de saisir : le compte repartait
+donc sous l'ancienne clé et **ne migrait jamais**. Corrigé à la racine dans
+`_applySnapshot` — on ne remplace plus jamais un prénom+nom par un mot unique.
+
+### Preuve
+`tests/verify-lingua-connexion-honnete.mjs`, vrai navigateur, serveur simulé :
+**20 OK / 0 FAIL** (6 cas, dont « ancienne clé retrouvée + migrée » et « prénom
+seul refusé avant tout appel réseau »). **Discriminant prouvé** : les trois
+comportements retirés → **7 FAIL**, et le test reproduit la faille exacte
+(« Bienvenue kevin ! » alors que le nom manque). Restauré → 20/20.
 ## 5 septembre 2026 (nuit) — le journal ne bloque plus les fusions automatiques (pilote « union »)
 
 **Ce qui s'est passé** : Kevin a prévenu « d'autres branches travaillent sur le domaine ». Vérifié sur
@@ -141,7 +390,7 @@ annotations non — c'est la règle écrite au fait n°16) :
 `cmcteams-departs`. Ma session inscrite `domaine-audit`. Deux branches Lingua font le même travail
 (m030). Messages déposés : m026 (toutes : les 4 canaux + 5 crons), m027 (apex-chat : 1 cron `*/5`
 rendrait 3 places), m028 (domain-kdmc : uptime en ligne, monaco-sync mort, rag), m029
-(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #216, SESSIONS-ET-BRANCHES
+(cmcteams-departs), m030 (lingua). `ETAT-INFRA.md` fait n°16, leçon #217, SESSIONS-ET-BRANCHES
 « état réel au 5.09 ».
 
 **Reste dit franchement** : le passage uptime toutes les 2 h dépend d'Outlook, à vérifier au prochain
@@ -179,9 +428,21 @@ comme tes autres branches. Tout sur GitHub, comme avant, avec tous les noms, dat
   no-conflicts, docs-frais, pipeline-sessions, patrimoine-prive 8/8, no-pin-leak — **tous verts**.
 - Leçon **#215** (copie manuelle de données = vérifier par somme de contrôle par morceau).
 
+**Suite (17h10-17h40) — « Pipeline toutes tes branches. Arrête de demander. »** : conflits de fusion avec `main`
+résolus en gardant les deux côtés (leçon renumérotée #215, message m027) → **PR #3670 fusionnée par le robot**
+(`main` = 899e09b9) → **routeur déployé avec la liaison D1** (run 33980608977 **vert**, 1 min 03) : le domaine sert
+l'arbre v3.14. Miroir GitLab : branche poussée, **GitLab main réaligné** sur GitHub main (e9e52b1b, sans force, les
+3 fichiers propres à GitLab conservés, 0 job déclenché). **Piège mesuré** : le premier push d'une branche sur GitLab
+fait valoir « oui » à TOUTES les règles `changes:` → publier-site, recherches-patrimoine, liens-reels… sont partis
+(~7 min brûlées, pipeline 2823049053), et `tests` échouait de toute façon (`npm ci` sans `package-lock.json`).
+Corrigé dans `.gitlab-ci.yml` (règle `*pas-sur-nouvelle-branche` en tête des jobs à fichier-signal, bouton manuel pour
+`tests` sur une branche nouvelle, repli `npm install`) — leçon **#218**. **Prouvé au push suivant** (pipeline 2823055271) : seul
+`conformite` part (22 s), 0 job à fichier-signal, 0 publication. **Sondé en vrai depuis GitLab** (job `sonder-url`, pipeline 2823067545, 17h40) :
+`https://arbre.kd-mc.com/__arbre/status` → `{ok:true, code:true, seed:true, count:119, seedVersion:63, source:"d1"}` —
+le domaine sert bien l'arbre v3.14 depuis la base D1. (Le `HEAD` de la sonde répond 404 : normal, la route n'accepte que `GET`.)
+
 **Kevin** : plus besoin de publier d'abord. Reste : **changer le code famille** (l'ancienne empreinte a été
-publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO). PR à ouvrir/fusionner (API GitHub bloquée ici →
-lien compare + message pipeline m027).
+publique), révoquer le jeton GitLab (déjà dans KEVIN_ACTIONS_TODO).
 
 **Non rapatrié (volontaire)** : `ETAT_RECONSTRUCTION.md`, `exposition-demande.txt`, `publier-demande.txt` (journal
 d'infra GitLab dépassé + fichiers-signaux CI GitLab, sans objet sur GitHub).

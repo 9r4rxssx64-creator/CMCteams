@@ -80,10 +80,11 @@ connaître (les tests envoient l'empreinte, jamais le code).*
 
 ---
 
-## ✅ FAIT (5.09.2026, 14h) — GitLab est aligné, le jeton a servi une fois
+## ✅ FAIT (5.09.2026, 14h — et refait à 17h20) — GitLab est aligné, le jeton a servi
 
-Tu m'as donné un jeton GitLab : il a servi **une seule fois** (un push, puis lecture du
-pipeline), il n'est écrit **nulle part** (vérifié : 0 trace dans `.git/config`, 0 fichier).
+Tu m'as donné un jeton GitLab : il a servi en session seulement (pousser, lire le pipeline,
+et à 17h20 réaligner GitLab `main` sur GitHub après la fusion de l'arbre v3.17), il n'est écrit
+**nulle part** (vérifié : 0 trace dans `.git/config`, 0 fichier).
 **GitLab → Préférences → Jetons d'accès → `glpat-wD6Q…` → Révoquer** — un clic, quand tu veux.
 
 Ce que ça a permis : le dépôt GitLab est maintenant **au même niveau que GitHub** (mêmes

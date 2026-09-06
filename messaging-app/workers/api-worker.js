@@ -40,6 +40,9 @@ const ADMIN_KEVIN_ALIASES = [
 
 import { corsHeaders, makeJson } from './lib/cors.js';
 import { giphySearchUrl, giphyTrendingUrl, mapGiphyResults } from '../lib/gif.js';
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+   routage IA commun du domaine (Qwen Workers AI 0 clé d'abord, bascule par type de demande). */
+import { routeText, routeSmart, detectDomain, planChain, availableProviders } from '../../services/_shared/ia-route.js';
 
 const CORS_HEADERS = {
   ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
@@ -4348,6 +4351,25 @@ export async function _callGeminiIA(messages, systemPrompt, env, signal) {
   return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal… pareil dans mes autres projets » :
+   QWEN sur Workers AI (binding AI, 0 clé, 0 €) devient un fournisseur à part entière, et
+   l'ORDRE des fournisseurs est décidé par le routage commun du domaine selon le TYPE de
+   demande (services/_shared/ia-route.js) : questions courantes → Qwen d'abord ;
+   code / raisonnement / actions → Anthropic ; le reste en secours, rien n'est perdu. */
+export async function _callQwenIA(messages, systemPrompt, env, signal, maxTokens) {
+  if (!env.AI) throw new Error('Workers AI missing');
+  const full = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
+  const r = await routeText(env, { messages: full, chain: ['qwen'], maxTokens: maxTokens || 1024 });
+  if (!r.ok) throw new Error('Qwen ' + ((r.tried[0] && r.tried[0].error) || 'indisponible'));
+  return r.text;
+}
+
+/* Fournisseurs disponibles, dans l'ordre décidé par le type de demande (domaine). */
+export function _iaOrdered(env, domain, fns) {
+  const available = availableProviders(env).filter((p) => fns[p]);
+  return planChain(domain, available).filter((p) => fns[p]).map((name) => ({ name, fn: fns[name] }));
+}
+
 export async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
   if (!env.DEEPSEEK_API_KEY) throw new Error('DeepSeek missing');
   const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
@@ -4373,29 +4395,46 @@ async function handleIAChat(request, env) {
 ${context?.is_admin ? 'Tu parles a Kevin admin.' : 'Tu parles a ' + (context?.user_pseudo || 'un user')}.
 Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIA, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
-    { name: 'deepseek', fn: _callDeepSeekIA, key: !!env.DEEPSEEK_API_KEY }
-  ];
-  const available = providers.filter(p => p.key);
-  if (available.length === 0) return err('Aucun provider IA configure', 503);
+  /* Le TYPE de la question décide de l'ordre : courante → Qwen (gratuit) ; code / raisonnement /
+     action → Anthropic ; puis les autres en secours. Essais en séquence (8 s chacun), cause
+     exacte conservée par fournisseur (règle « détailler les erreurs »). */
+  const lastUser = [...messages].reverse().find((m) => m && m.role === 'user');
+  /* Kevin 2026-09-06 « concertation d'IA gratuites pour analyser les questions, va plus loin » :
+     quand Workers AI est là, plusieurs voix gratuites VOTENT le type de la question, et une
+     question difficile est répondue par un CONSEIL de voix + juge gratuit. Sinon (pas de binding),
+     l'heuristique locale décide et les fournisseurs à clé répondent dans l'ordre du domaine. */
+  if (env.AI) {
+    const r = await routeSmart(env, { messages: [{ role: 'system', content: sysPrompt }, ...messages], maxTokens: 1024, timeoutMs: 8000 });
+    if (r.ok) {
+      return json({
+        ok: true, content: r.text, provider: r.provider, model: r.model, domain: r.domain,
+        analyse: r.analyse ? { by: r.analyse.by, votes: r.analyse.votes, complexity: r.analyse.complexity } : null,
+        voices: r.voices || null, judge: r.judge || null,
+      });
+    }
+    return json({ error: 'Tous providers IA indisponibles. Reessaie dans 1 min.', domain: r.domain, tried: r.tried }, 503);
+  }
+  const domain = detectDomain(lastUser ? String(lastUser.content || '') : '');
+  const ordered = _iaOrdered(env, domain, {
+    qwen: _callQwenIA, anthropic: _callAnthropicIA, groq: _callGroqIA, gemini: _callGeminiIA, deepseek: _callDeepSeekIA,
+  });
+  if (ordered.length === 0) return err('Aucun provider IA configure', 503);
 
-  const promises = available.map(({ name, fn }) => {
+  const tried = [];
+  for (const { name, fn } of ordered) {
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 8000);
-    return fn(messages, sysPrompt, env, ctrl.signal)
-      .then(r => { clearTimeout(to); if (!r) throw new Error('Empty'); return { provider: name, content: r }; })
-      .catch(e => { clearTimeout(to); throw e; });
-  });
-
-  try {
-    const winner = await Promise.any(promises);
-    return json({ ok: true, content: winner.content, provider: winner.provider });
-  } catch (e) {
-    return err('Tous providers IA indisponibles. Reessaie dans 1 min.', 503);
+    try {
+      const r = await fn(messages, sysPrompt, env, ctrl.signal);
+      clearTimeout(to);
+      if (r) return json({ ok: true, content: r, provider: name, domain });
+      tried.push({ provider: name, error: 'réponse vide' });
+    } catch (e) {
+      clearTimeout(to);
+      tried.push({ provider: name, error: String((e && e.message) || e).slice(0, 120) });
+    }
   }
+  return json({ error: 'Tous providers IA indisponibles. Reessaie dans 1 min.', domain, tried }, 503);
 }
 
 // ============================================================================
@@ -4441,13 +4480,10 @@ export async function handleAiSummarize(request, env) {
   const sysPrompt = "Tu es Apex, un IA résumeur expert. Style: bref, structuré, ton chaleureux. Réponds en français.";
   const messages = [{ role: 'user', content: prompt }];
 
-  // Failover providers
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
-  ];
-  const available = providers.filter(p => p.key);
+  // Failover providers — un RÉSUMÉ = question courante → Qwen (gratuit) d'abord (Kevin 2026-09-05)
+  const available = _iaOrdered(env, 'summary', {
+    qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA, gemini: _callGeminiIA,
+  });
   if (available.length === 0) return err('Aucun provider IA configuré', 503);
 
   for (const p of available) {
@@ -4692,11 +4728,9 @@ export async function handleAiSmartReply(request, env) {
   const userPrompt = `Message reçu: "${lastMessage}"${context ? `\nContexte: ${context}` : ''}`;
   const messages = [{ role: 'user', content: userPrompt }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Réponses rapides = « speed » → Groq puis Qwen (gratuits), Anthropic en secours */
+  const providers = _iaOrdered(env, 'speed', { qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 6000);
@@ -4750,12 +4784,11 @@ export async function handleAiTranslate(request, env) {
   const sysPrompt = `Tu es un traducteur expert. Traduis le texte fourni en ${targetLang}. Retourne UNIQUEMENT la traduction, sans préambule ni explication. Préserve le ton, les emojis, la ponctuation.`;
   const messages = [{ role: 'user', content: text }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Traduction = question courante → Qwen (multilingue, gratuit) d'abord (Kevin 2026-09-05) */
+  const providers = _iaOrdered(env, 'translation', {
+    qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA, gemini: _callGeminiIA,
+  });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 8000);
@@ -4985,11 +5018,9 @@ export async function handleAiRewrite(request, env) {
   const sysPrompt = `Tu es un assistant de rédaction. ${stylePrompt} Retourne UNIQUEMENT le texte reformulé, sans préambule, sans guillemets, sans explication.`;
   const messages = [{ role: 'user', content: text }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Reformulation = question courante → Qwen (gratuit) d'abord, Anthropic en secours */
+  const providers = _iaOrdered(env, 'general', { qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 10_000);
@@ -5051,11 +5082,9 @@ export async function handleAiSemanticSearch(request, env) {
   const userPrompt = `Messages à analyser (chacun avec son index entre []):\n\n${numbered}`;
   const msgsForAI = [{ role: 'user', content: userPrompt }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Recherche sémantique = RAISONNEMENT précis (JSON d'index) → Anthropic d'abord, Qwen en secours gratuit */
+  const providers = _iaOrdered(env, 'reasoning', { qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 12_000);

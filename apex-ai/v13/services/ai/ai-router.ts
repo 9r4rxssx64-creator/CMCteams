@@ -55,7 +55,7 @@ import {
 } from './reasoning-mode.js';
 
 
-export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras' | 'openclaw';
+export type Provider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras' | 'qwen' | 'openclaw';
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -465,6 +465,33 @@ const PROVIDERS: Record<Provider, ProviderConfig> = {
       'content-type': 'application/json',
     }),
   },
+  /* v13.4.366 (Kevin 2026-09-05 « Fait tourner Apex sur Qwen l'IA gratuite, privilégie les
+   * IA gratuites en tâche principale ») : Qwen servi par Cloudflare Workers AI DANS le worker
+   * apex-secrets-proxy (binding AI) — 0 clé, 0 compte tiers. L'endpoint EST l'URL du proxy :
+   * tryProxyRoute le reconnaît (même origine) et ne le ré-écrit pas. Sans proxy → aucune clé
+   * locale possible → la chaîne saute simplement qwen (fail-open, jamais bloqué).
+   * Format OpenAI (le worker traduit le flux Workers AI) → même parseSSE que groq. */
+  qwen: {
+    endpoint: 'https://apex-secrets-proxy.9r4rxssx64.workers.dev/qwen/v1/chat/completions',
+    keyName: 'ax_qwen_key',
+    model: '@cf/qwen/qwen3.8-27b',
+    buildBody: (messages, system) => ({
+      model: '@cf/qwen/qwen3.8-27b',
+      stream: true,
+      max_tokens: 2048,
+      messages: [{ role: 'system', content: system }, ...messages],
+    }),
+    parseSSE: (data) => {
+      try {
+        const j = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+        const text = j.choices?.[0]?.delta?.content;
+        return typeof text === 'string' && text.length > 0 ? { kind: 'text', text } : null;
+      } catch {
+        return null;
+      }
+    },
+    headers: () => ({ 'content-type': 'application/json' }),
+  },
   openclaw: {
     endpoint: 'https://api.openclaw.io/v1/chat/completions' /* placeholder, à confirmer quand Kevin fournit clé */,
     keyName: 'ax_openclaw_key',
@@ -630,16 +657,20 @@ async function tryProxyRoute(
     return null;
   }
   /* Transform URL : api.anthropic.com/v1/messages → worker/anthropic/v1/messages */
+  const workerBase = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
   let proxyPath: string;
+  let nativeToWorker = false;
   try {
     const u = new URL(directUrl);
+    /* v13.4.366 : provider NATIF au worker (qwen = Workers AI) — l'endpoint est déjà
+     * l'URL du proxy, on ne préfixe pas une 2e fois (/qwen/qwen/…). */
+    nativeToWorker = u.origin === workerBase;
     /* Extract path après .com → ex /v1/messages */
     proxyPath = u.pathname + u.search;
   } catch {
     return null;
   }
-  const workerBase = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
-  const proxyUrl = `${workerBase}/${provider}${proxyPath}`;
+  const proxyUrl = nativeToWorker ? directUrl : `${workerBase}/${provider}${proxyPath}`;
   return {
     url: proxyUrl,
     headers: {
@@ -758,7 +789,8 @@ const PROVIDERS_WITH_TOOLS: ReadonlySet<Provider> = new Set<Provider>(['anthropi
  *
  * Total effectif : 6 endpoints distincts → si 2 KO, reste 4 actifs minimum.
  */
-const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'mistral', 'cerebras', 'openclaw'];
+/* v13.4.366 : qwen (gratuit, Workers AI) juste après anthropic — avant tout provider payant. */
+const DEFAULT_CHAIN: readonly Provider[] = ['anthropic', 'qwen', 'openai', 'openrouter', 'groq', 'gemini', 'mistral', 'cerebras', 'openclaw'];
 
 /**
  * v13.3.74 H2 — Liste extensive des providers logiques supportés (incluant proxiés).
@@ -771,6 +803,7 @@ export const ALL_PROVIDERS_LOGICAL: readonly string[] = [
   'groq',
   'gemini',
   'cerebras',
+  'qwen',
   'mistral',
   'cohere',
   'deepseek',
@@ -1622,6 +1655,8 @@ class AIRouter {
         return 'groq_llama';
       case 'gemini':
         return 'gemini_pro';
+      case 'qwen':
+        return 'qwen_cf'; /* v13.4.366 : gratuit (Workers AI) */
       case 'openrouter':
       case 'openclaw':
       default:
@@ -1707,7 +1742,9 @@ class AIRouter {
         },
       });
       /* Map policy ProviderId → router Provider (filtre supportés) */
-      const supported: readonly Provider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'openclaw'];
+      /* v13.4.366 : qwen (Workers AI via proxy) supporté nativement — sans lui ici, la décision
+       * policy « qwen en principal » serait silencieusement ignorée (déclaré ≠ déployé, #28). */
+      const supported: readonly Provider[] = ['anthropic', 'qwen', 'openai', 'openrouter', 'groq', 'gemini', 'openclaw'];
       const mapToRouter = (p: string): Provider | null => {
         if ((supported as readonly string[]).includes(p)) return p as Provider;
         /* Providers policy non implémentés ai-router : openai, deepseek, cohere, mistral, perplexity
