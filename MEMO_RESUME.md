@@ -1,5 +1,26 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (15h30, session Apex Chat) — PR #3671 débloquée : c'était un conflit, pas une revue
+
+- **Correction d'une affirmation fausse que j'ai faite deux fois** : la PR #3671 n'attendait **aucune
+  revue de Kevin**. Le robot d'auto-merge a fini par écrire sa cause exacte (leçon #214) :
+  `{"mergeable": false, "mergeable_state": "dirty"}`, `reviews: []` → **conflit avec `main`** sur
+  `LESSONS.md`. Zéro clic Kevin. C'était mon travail depuis le début (leçon #223).
+- `main` fusionné dans `claude/apex-chat-mfa-faceid` : 81 fichiers, un seul conflit (`LESSONS.md`,
+  résolu en gardant les deux côtés ; mes leçons renumérotées **#221/#222** après la #220 de main).
+  `messaging-app/index.html` a fusionné sans conflit et le correctif P1 est intact (0 occurrence des
+  motifs interdits).
+- Re-prouvé après fusion : **1098/1098** tests vitest (56 fichiers) et **5/5** en vrai Chromium
+  (`test:runtime-admin` : onglet Admin masqué au boot, masqué pour « Kevin DESARZENS » sans
+  `is_admin` serveur, affiché seulement quand le serveur l'accorde, 0 exception JS).
+- `.github/AUTOMERGE-DIAGNOSTIC.md` retiré : artefact transitoire du robot, sa cause est réglée et
+  consignée dans LESSONS.md.
+- Reste de l'audit Apex Chat : **P2a** (jeton de session dans l'URL WebSocket → ticket à usage unique,
+  `workers/api-worker.js:148`) et **P2b** (CORS `*` → liste d'origines ; les 4 workers calculent CORS
+  **une fois au chargement du module**, donc refonte des 4 pipelines de réponse — non livré tant que
+  ce n'est pas câblé de bout en bout, erreur #28).
+
+
 ## 6 septembre 2026 (16h50, session arbre) — main rattrapé, et une garde rouge sur main trouvée par GitLab
 
 - `main` fusionné dans la branche (4 conflits de journaux résolus en gardant les deux côtés ; les deux
@@ -5070,3 +5091,56 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
 - Restent isolés (0 invention) : Myriam (acte 1935 verrouillé), Claude DE SARZENS, Jean-Marius
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
+
+## 2026-09-05 — Apex Chat : fermeture porte admin P0 (v1.1.284)
+- **Faille P0** : bypass « numéro Kevin + 000000 » → JWT admin sans preuve.
+- **v1.1.282** numéro retiré de la page publique (déployé) · **v1.1.283** garde serveur `ADMIN_BYPASS_REQUIRE_MFA` (OFF) · **v1.1.284 garde ACTIVÉE ("true")** après vérif D1 (`kdmc_kevin-desarzens` is_admin=1, source kdmc-sso).
+- **Porte admin principale** = SSO Face ID `kd-mc.com` via `/api/auth/sso-from-kdmc` (indépendant du drapeau). **Repli anti-lock-out** = `X-Apex-Admin-Token` (jamais dans la page).
+- **Rollback** = `messaging-app/workers/wrangler.toml` → `ADMIN_BYPASS_REQUIRE_MFA="false"` + redéploiement (SSO inchangé dans les deux états).
+- **Annulé** : piste « clé admin par app » (empreinte D1) = per-app secret, contraire aux règles (le code admin ne se vérifie jamais côté client).
+- **Coordination domaine** : scan des branches `claude/*` actives → aucune ne modifie la logique admin/SSO (family-tree touche le router mais côté arbre uniquement). Apex Chat admin dépend maintenant de la santé du SSO → ne pas casser `/__sso/whoami` ni la garde `ADMIN_UIDS && verified`.
+
+## 2026-09-05 — Apex Chat : correctif P1/P0 admin client-side (v1.1.285)
+
+Suite directe : fermeture du dernier vecteur admin **côté page**. La porte serveur
+était fermée (v1.1.284, `ADMIN_BYPASS_REQUIRE_MFA="true"`) mais `index.html` fabriquait
+une session admin locale en tapant « Kevin Desarzens » — y compris **quand le serveur
+refusait** (jeton `'local-admin-'`, is_admin:true), ce qui annulait la fermeture.
+
+**Corrigé (v1.1.285, index.html + sw.js)** : l'admin vient UNIQUEMENT de `user.is_admin`
+renvoyé par le Worker (+ JWT gate côté serveur). Supprimés : repli hors-ligne admin,
+`K.user.is_admin=true` par le nom (login + restauration), et la fabrication de jeton
+`'local-admin-'` sur refus serveur (→ session simple utilisateur, pas de lock-out).
+Anti-lock-out reste serveur (`X-Apex-Admin-Token`). Admin de Kevin = SSO Face ID
+(`/api/auth/sso-from-kdmc`, D1 kdmc_kevin-desarzens is_admin=1) — inchangé.
+
+Garde câblée : `tests/unit/no-client-side-admin-by-name.test.js` (discriminante, 4 motifs).
+Validé : 1086/1086 tests verts, JS syntax OK. Leçon #216. Findings P1 → ✅ CORRIGÉ.
+
+Reste audit Apex Chat : P2a (jeton WS dans l'URL, api-worker.js:148), P2b (CORS `*`
+workers/lib/cors.js), mensonges doc (README post-quantum, package.json version).
+
+## 2026-09-06 — Apex Chat : vérité doc (P2) + état des P2 restants
+
+**Corrigé (zéro risque, viole une règle ABSOLUE « vérité, rien de faux »)** :
+`messaging-app/README.md` annonçait « chiffrement militaire post-quantum (PQXDH) »
+et « serveur aveugle » — **les deux FAUX**, mesuré : le chiffrement réel est
+ECDH P-256 + HKDF-SHA256 + AES-GCM-256 + PBKDF2 100k, **zéro Kyber / zéro ML-KEM**
+(`PQXDH` n'est qu'un texte de remplissage `'PENDING_PQXDH'` en base) ; et le
+serveur n'est pas « aveugle » en mode A (kdmc_admin membre invisible).
+`package.json` : 1.1.262 → **1.1.285** (23 versions de retard).
+Garde câblée : `tests/unit/no-false-security-claims.test.js` (README + primitives
+réelles + parité version package.json ⇄ index.html).
+
+**P2 restants — décision motivée, PAS livrés dans cette PR** :
+- **P2b CORS `*`** : les 4 workers calculent le CORS **au chargement du module**
+  (constantes), pas par requête → une liste blanche d'origines exige de refactorer
+  le pipeline de réponse des 4 workers. Valeur réelle FAIBLE (l'auth est en
+  `Authorization: Bearer`, pas en cookie → pas de CSRF ; l'audit le dit lui-même),
+  risque de casser le chat MOYEN. Interdit d'ajouter un helper non câblé
+  (erreur #28). → à faire comme changement dédié, après le merge de P1.
+- **P2a jeton dans l'URL du WebSocket** : correctif = ticket court à usage unique
+  (nouvel endpoint + client + worker). Touche le cœur du chat → à faire seul,
+  avec e2e, jamais empilé sur une PR bloquée.
+
+**Bloquant** : PR #3671 attend l'approbation propriétaire de Kevin (CODEOWNERS `*`).
