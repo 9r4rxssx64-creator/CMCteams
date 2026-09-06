@@ -495,9 +495,12 @@ audit live de l'arbre refait sans code). Le job `tests` GitLab tourne désormais
 1.56.0, `npm install --legacy-peer-deps`) : il a révélé que `test:ci` rougissait sans que personne le voie —
 `cmc-runtime-audit.yml` (GitHub) échouait en 17 s depuis longtemps (`cache: npm` sans lockfile, réparé). Rendus
 déterministes : `everyone-has-planning`, `v788`, `garro-cp`, `code-legends` (attente stable + hors ligne).
-**Reste rouge, signalé aux sessions propriétaires** : `test:departs-sync` (page Départs ≠ parser, juillet-août →
-cmcteams-departs), `test:router-secours` (kdmc-home/*, shops absents de la copie de secours → domain-kdmc),
-`test:improvements-guard` (une règle ajoutée sans garde, 19 → 20). Leçon #220.
+`test:improvements-guard` **réglé** (la règle « Qwen gratuit » avait ses 5 gardes mais pas son entrée au registre).
+`test:departs-sync` : **pas un écart de données** — le contrôle croisé passe (couverture 273/291, horaires
+identiques) ; la page ne se régénère jamais à l'identique parce que l'identifiant des employés créés à l'import
+vient de l'horloge (64 tableaux « différents », 0 horaire) → générateur rendu hors ligne + échec explicite,
+`boards-gen.js` laissé intact, identifiant à dériver du nom (session Départs). **Reste rouge** :
+`test:router-secours` (kdmc-home/*, shops absents de la copie de secours → domain-kdmc). Leçons #220 et #221.
 
 ---
 
