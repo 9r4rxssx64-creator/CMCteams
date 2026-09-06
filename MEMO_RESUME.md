@@ -118,6 +118,45 @@ de Kevin) ; les workers sont sondés **depuis le runner GitHub**, qui a un vrai 
 `test:uptime-couverture` **6 OK / 0 FAIL** (26 adresses ⇄ routeur, 5 workers ⇄ dépôt) ·
 la liste `WORKERS` est bien relue par l'étape CI (`apex-secrets-proxy kdmc-ais kdmc-live kdmc-rag
 apex-auth-worker`). Doublon de leçon #216 corrigé (l'une passe en #217).
+## 6 septembre 2026 (20h30) — le VRAI « resté en rade » : 46 pull requests ouvertes
+
+- Avec le connecteur GitHub (que j'ignorais avoir, leçon #229) : **46 PR ouvertes**, la plus
+  ancienne du **21 avril**. C'est le bon angle — une branche qui traîne ne veut souvent rien
+  dire, **une PR ouverte est une session qui a fini et demandé l'intégration**.
+- **🔴 Le point grave : 18 PR d'AUTO-ANNULATION dorment dans le dépôt.** Ouvertes automatiquement
+  pour retirer une livraison jugée fautive sur le moment, jamais fermées. **Fusionnée aujourd'hui,
+  l'une d'elles retirerait du code livré depuis** (Face ID, activation IA, commandes cliquables,
+  corrections P0 de sécurité). Recommandation : les **fermer** (réversible), pas les fusionner.
+- **🟠 20 PR de sessions Claude** jamais intégrées (avril → septembre). Les 4 dernières
+  (5-6 sept.) sont des sessions probablement encore vivantes, donc normales.
+- **🟡 5 Dependabot** (8 juin) · **⚪ 3 builds auto obsolètes**.
+- Registre : **`PULL_REQUESTS_OUVERTES.md`**, tout est listé avec numéro, date, branche, sujet.
+- **Je n'ai rien fermé ni fusionné** : fusionner du code de plusieurs mois sur le `main` actuel =
+  régression assurée ; fermer 18 PR touche visiblement au dépôt. Décisions de Kevin, préparées.
+- Ma PR **#3710** est `mergeable_state: clean` — elle passe par le pipeline normal (je ne la
+  fusionne pas à la main, sinon mon étape de compactage ne tournerait pas).
+
+
+## 6 septembre 2026 (20h10) — Kevin avait raison : le connecteur GitHub marche
+
+- **Erreur corrigée (leçon #229)** : j'ai répété toute la session que « l'API GitHub est fermée »,
+  en citant un vrai 403. La mesure était juste, **la conclusion fausse** : le 403 ne vaut que pour
+  l'**API REST brute via le proxy**. Le **connecteur GitHub (MCP) fonctionne** — `get_me` renvoie
+  le compte `9r4rxssx64-creator`. C'est Kevin qui a dû me le dire.
+- **Ce que ça a coûté** : ce matin, `pull_request_read` m'aurait donné `mergeable_state: "dirty"`
+  en une seconde, au lieu de quoi j'ai supposé une revue de propriétaire et réclamé un clic
+  inexistant (leçon #223). La cause de #223 était donc **en amont** : je n'avais pas inventorié
+  mes propres outils.
+- **Inventaire réel du connecteur** (mesuré) : ✅ lire branches/commits/fichiers/PR/issues ·
+  ✅ écrire fichiers, créer branches, créer/mettre à jour/**fusionner** des PR · ❌ **aucune
+  suppression de branche** · ❌ **aucun outil Actions** (ni déclenchement, ni lecture de journal).
+- Donc la conclusion pratique (« il reste 1 clic pour le nettoyage ») **tient toujours**, mais je
+  l'avais atteinte **par une prémisse fausse** — c'est une faute même quand le résultat est juste.
+- **Amélioration livrée** : l'étape de compactage greffée dans l'auto-merge **écrit désormais son
+  compte-rendu dans le dépôt** (`.github/CLEANUP-REPORT.md`) — vues / supprimées / gardées. Même
+  motif que le diagnostic d'auto-merge, qui a permis ce matin de trouver une vraie cause en
+  30 secondes au lieu de la deviner. Ça distinguera enfin « tout est déjà propre » de « le jeton
+  n'a pas le droit de supprimer une référence ».
 
 
 ## 6 septembre 2026 (17h55) — nettoyage des branches : j'arrête de tâtonner, il reste 1 clic
