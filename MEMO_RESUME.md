@@ -78,6 +78,14 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   session**. Note déplacée dans `tools/agent/README.md`, `vercel.json` remis aux 6 clés légales.
   Message **m040** à `studio-crea` (leur terrain). Règle : `vercel.json` n'accepte ni commentaire ni
   clé inconnue.
+  **Et il y avait un DEUXIÈME motif de refus, puis un TROISIÈME fichier** : une fois `_note` retirée,
+  Vercel a dit la suite — *« `ignoreCommand` should NOT be longer than 256 characters »* (elle en
+  faisait 406). Et le `vercel.json` **de la racine** en a une de **647 caractères** : lui aussi était
+  refusé en entier depuis toujours, donc **aucune** de ses exclusions ne s'appliquait. Corrigés :
+  `tools/agent` en 158 caractères, la racine appelle `tools/vercel/ignore-racine.sh` (34 caractères,
+  la liste d'exclusions y est lisible, comportement identique). **Garde
+  `npm run test:vercel-conforme`** (dans `test:ci`) : aucune clé hors schéma, `ignoreCommand` ≤ 256,
+  sur TOUS les `vercel.json` du dépôt — prouvé discriminant par sabotage.
 - **`ETAT-INFRA.md` fait n°16 complété** : il annonce « API GitHub = 403 depuis une session » ;
   **depuis celle-ci elle RÉPOND** (`get_me` OK, PR et fusion par l'API possibles). C'est une
   propriété de la session, pas du dépôt — donc PR créée et fusionnée sans clic Kevin.

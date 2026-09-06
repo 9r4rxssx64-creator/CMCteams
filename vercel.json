@@ -1,6 +1,10 @@
 {
-  "git": { "deploymentEnabled": { "kv-backups": false } },
-  "ignoreCommand": "bash -c 'git diff HEAD^ HEAD --quiet -- . \":(exclude)*.md\" \":(exclude).github/**\" \":(exclude)CHANGELOG*\" \":(exclude)NOTES_USER*\" \":(exclude)MEMO_RESUME*\" \":(exclude)GUIDE_IPHONE*\" \":(exclude)MCP_INSTALL*\" \":(exclude)INTEGRATION_STANDARD*\" \":(exclude)TODO_REMINDERS*\" \":(exclude)CLAUDE*.md\" \":(exclude)README.md\" \":(exclude)_PROJECTS_KDMC/**\" \":(exclude)SETUP_FOR_LATER/**\" \":(exclude)tools/agent/**\" \":(exclude)arbre/**\" \":(exclude)tools/arbre/**\" \":(exclude)services/**\" \":(exclude)tests/**\" \":(exclude)pipeline/**\" \":(exclude)audit/**\" \":(exclude).gitlab-ci.yml\" \":(exclude)tools/gitlab/**\" \":(exclude)tools/pipeline/**\" \":(exclude)vercel.json\"'",
+  "git": {
+    "deploymentEnabled": {
+      "kv-backups": false
+    }
+  },
+  "ignoreCommand": "bash tools/vercel/ignore-racine.sh",
   "installCommand": "echo 'skip npm install — site statique, pas de build (prod = GitHub Pages)'",
   "buildCommand": "echo 'skip build — index.html servi tel quel'",
   "outputDirectory": "."

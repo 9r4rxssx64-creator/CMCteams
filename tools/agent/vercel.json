@@ -6,7 +6,7 @@
       "kv-backups": false
     }
   },
-  "ignoreCommand": "bash -c '[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] || { echo \"branche $VERCEL_GIT_COMMIT_REF : pas de previsualisation (agent = cron de production seulement)\"; exit 0; }; if git rev-parse -q --verify HEAD^ >/dev/null 2>&1; then git diff --quiet HEAD^ HEAD -- . && { echo \"tools/agent inchange : rien a deployer\"; exit 0; }; fi; echo \"main + tools/agent modifie (ou historique indisponible) : deployer\"; exit 1'",
+  "ignoreCommand": "bash -c '[ \"$VERCEL_GIT_COMMIT_REF\" = main ] || exit 0; git rev-parse -q --verify HEAD^ >/dev/null 2>&1 && git diff --quiet HEAD^ HEAD -- . && exit 0; exit 1'",
   "crons": [
     {
       "path": "/api/cron?trigger=cron:0 3 * * *",
