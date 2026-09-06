@@ -117,5 +117,5 @@ node tests/a11y-audit.js <generated_preview.html>
 
 - Frontend Design Anthropic : https://github.com/anthropic/skills/frontend-design
 - Impeccable.style : design fluency for AI harnesses (23 commands)
-- Pattern Apex : `apex-ai/v13/services/skills/frontend-design.ts`
+- Pattern Apex : `apex-ai/v13/services/core-svc/frontend-design.ts`
 - Vue : `?view=design-system`

@@ -103,7 +103,7 @@
 
 🎉 **L'agent 24/7 tourne tout seul à partir de maintenant.**
 
-Les 5 crons sont automatiques (toutes les 15 min, toutes les heures, et 3 par jour).
+Les **3 crons de production** sont automatiques : sauvegarde 3 h, burn-out 8 h, rapport hebdo lundi 9 h (`tools/agent/vercel.json`, vérifié 6.09.2026). **Ni health-check 15 min ni alerte horaire sur Vercel** — cette boucle n'existe qu'en mode `node index.js loop` (Railway/Fly.io).
 
 ---
 
@@ -142,7 +142,7 @@ Les 5 crons sont automatiques (toutes les 15 min, toutes les heures, et 3 par jo
 **Tu reçois maintenant** :
 - 🔔 Alertes burn-out chaque jour à 8h
 - 🔔 Alertes conflits planning toutes les heures (si critiques)
-- 🔔 Health-check toutes les 15 min (silencieux sauf si problème)
+- 🔔 Health-check — **pas sur Vercel** (seulement en mode `loop` Railway/Fly.io)
 - 💾 Backup automatique chaque jour à 3h
 - 📊 Rapport hebdomadaire chaque lundi à 9h
 

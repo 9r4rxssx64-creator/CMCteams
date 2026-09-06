@@ -15,7 +15,7 @@
 ### Preuve (sortie réelle)
 
 ```
-POST /api/auth/verify-otp  { phone:"+33672280277", pseudo:"pirate", otp:"000000" }
+POST /api/auth/verify-otp  { phone:"‹tél. admin›", pseudo:"pirate", otp:"000000" }
 env : ALLOW_TEST_OTP='false'  (le backdoor universel est bien fermé)
 
 HTTP 200
@@ -42,8 +42,8 @@ Le secret qui garde cette porte est **un numéro de téléphone**, et ce numéro
 dans le fichier public servi à chaque visiteur** :
 
 ```
-messaging-app/index.html:7193   const isKevinByPhone = cleanPhone === '+33672280277';
-messaging-app/index.html:7430   ... || K.authData.phone === '+33672280277';
+messaging-app/index.html:7193   const isKevinByPhone = cleanPhone === '‹tél. admin›';
+messaging-app/index.html:7430   ... || K.authData.phone === '‹tél. admin›';
 ```
 
 Un secret publié dans le client n'est plus un secret. Aucune preuve de possession du numéro
@@ -105,7 +105,7 @@ prévoir le chemin de secours (Face ID déjà présent) **avant** de fermer la p
 Si le worker est injoignable, le client crée un compte local :
 
 ```js
-const isKevin = isKevinAdmin(K.authData.name) || K.authData.phone === '+33672280277';
+const isKevin = isKevinAdmin(K.authData.name) || K.authData.phone === '‹tél. admin›';
 const localUser = { id: isKevin ? 'kdmc_admin' : ('local_'+...), ... };
 ```
 

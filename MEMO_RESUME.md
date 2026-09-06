@@ -1,5 +1,123 @@
 # MEMO_RESUME — état de session
 
+> 📌 **Ce que Kevin doit faire est ailleurs** : la liste complète et priorisée vit dans
+> **`KEVIN_ACTIONS_TODO.md`** (refaite le 6.09.2026). En tête : 4 mots de passe à remplacer
+> (ils sont dans l'historique public du dépôt), puis 7 questions dont une simple réponse me
+> débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
+
+
+## 6 septembre 2026 — relecture de TOUS les `.md` : deux secrets trouvés en clair (à RÉGÉNÉRER)
+
+Kevin : *« Relis tous les .md »*, deux fois. J'ai relu les **1160** fichiers Markdown du dépôt,
+y compris ~40 que personne n'avait jamais ouverts (`docs/`, `design/`, `SETUP_FOR_LATER/`,
+`_PROJECTS_KDMC/`…). **87 fichiers corrigés** en 7 passes.
+
+### ⚠️ Le plus important : deux secrets étaient écrits en clair, dans un dépôt PUBLIC
+
+| Secret | Où | Ce qu'il ouvre |
+|---|---|---|
+| `AGENT_SECRET` | `_PROJECTS_KDMC/e-KDMC/NOTES_USER.md`, `TODO_KEVIN.md` | c'est **la seule** protection de `/api/cron` et `/api/sentry-test` de l'agent déployé (`tools/agent/api/cron.js:12`). Le lire = déclencher les cycles de l'agent, qui appellent l'API Anthropic → **dépense réelle sur ton compte** |
+| Code famille de l'arbre | `arbre/PASSATION-ARBRE.md` | `sha256("arbre::"+code)` **EST** le chemin Firebase (`arbre/index.html:302`), et l'app se connecte en anonyme → le connaître = **lire et écrire tout l'arbre**, donc les données de personnes vivantes |
+
+Je les ai remplacés par `‹secret …›`. **Ça ne suffit pas** : masquer **n'efface pas l'historique
+git**. Les deux sont à considérer comme **connus de tous**, donc :
+
+1. **`AGENT_SECRET` → à régénérer sur Vercel** (projet `kdmc-agent-monaco`).
+2. **Code famille → à changer dans l'app** (fonction `changeCode()` de l'arbre).
+
+Aucun garde ne les voyait : `no-admin-pin-leak` ne cherche que le code **admin**, et `gitleaks`
+ne connaît que des préfixes publiés (`sk-`, `ghp_`…) — ces deux-là sont des chaînes libres. J'ai
+donc écrit un garde qui cherche une **forme** et pas une valeur : « une étiquette de secret,
+suivie d'une valeur » → `npm run test:no-secret-in-docs` (**822 fichiers, 0 fuite**), câblé dans
+`test:ci`. Il attrapera aussi les futurs secrets qu'on ne connaît pas encore. Prouvé
+discriminant : il retrouve les deux fuites réinjectées, et reste muet sur l'arbre propre.
+
+### Trois « faux verts » démasqués (une vérification qui ne vérifiait rien)
+
+- **Le contrôle JS de `.claude/settings.json`** échouait *à chaque exécution* pour deux raisons :
+  un chemin en dur `/home/user/CMCteams` (majuscules — n'existe pas sur Linux) et un motif qui
+  attrapait le bloc `<script type="application/ld+json">` → `SyntaxError` systématique. Corrigé,
+  puis **prouvé par sabotage** : code propre → « JS OK — 4 blocs » ; code cassé → erreur.
+- **La « MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT » de CLAUDE.md** lançait `node --check` sur
+  `apex-ai/index.html`… qui fait **80 octets** (Apex v12 est archivé). Elle passait au vert sans
+  rien contrôler. Elle vise maintenant le vrai mono-fichier (`index.html`) + `tsc`/`vitest` pour Apex v13.
+- **8 skills** pointaient vers `apex-ai/v13/src/` — un dossier qui **n'existe pas**. 12 chemins
+  de services morts corrigés (chaque cible vérifiée présente, chaque source vérifiée absente).
+
+### Un cron GitHub interdit était copiable-collable dans un skill
+
+`.claude/skills/audit-parity-v12-v13.md` contenait un `schedule: cron` prêt à l'emploi — alors
+que c'est le **volume** de crons (~97/jour) qui a fait suspendre le compte le 15/08. Remplacé par
+`workflow_dispatch` + le rappel de l'incident. C'était le dernier `schedule:` de `.claude/`.
+
+### Ce que j'ai refusé de corriger, exprès
+
+- **Les noms de collègues et de proches dans le dépôt public** : les masquer dans 15 documents
+  serait du théâtre, puisqu'ils sont dans le **code livré** (29 mentions des Pit Boss et 261
+  entrées d'effectif dans `index.html`). C'est une décision à prendre, pas un caviardage —
+  3 options chiffrées dans `audit/03-FINDINGS.md` (F-P1).
+- **Le DPA Firebase** affirmait « données en Europe, pas de transfert hors UE » alors que
+  l'adresse réellement appelée par le code déployé est la forme **américaine**
+  (`…firebaseio.com`, et un relevé Lighthouse prouve qu'elle répond). Je n'ai pas d'accès à la
+  console Google : je n'affirme **ni** l'un **ni** l'autre — j'ai retiré la fausse certitude et
+  écrit la vérification en 1 clic. **Ce document ne doit servir d'argument RGPD devant personne
+  tant que Kevin n'a pas ouvert la console** (F-P2).
+- **Le renommage des secrets App Store** (le workflow lit `ASC_*`, les vrais secrets s'appellent
+  `APPSTORE_*`) : la correspondance est incertaine et un 3ᵉ secret manque — renommer à l'aveugle
+  serait pire que documenter. Documenté dans le skill.
+
+### Aussi corrigé (chiffres qui avaient dérivé)
+
+`CLAUDE.md` : v9.741 → **v9.891 / v13.4.355** · taille `index.html` 1,80 Mo → **3,20 Mo** ·
+121 → **145 workflows** · 258 → **261 entrées d'effectif** · « 7 docs racine » → **8** (les 8 sont
+maintenant nommés). Plus : les 5 documents `docs/external-agent/` marqués « JAMAIS IMPLÉMENTÉ »,
+les comptes de crons (5→3, ~5000→~65/mois), l'URL Vercel, `tests/README.md` (2 → **21 suites**),
+et la contradiction de stratégie de branches d'IA-KDMC (« comme CMCteams » était **faux** : 918
+branches `claude/*` ici).
+
+### Vérifié (sorties réelles)
+
+`test:no-secret-in-docs` **822 fichiers / 0 fuite** · `test:no-pin-leak` **957 fichiers / 0 fuite
+dans le code servi** · `test:vercel-config` **5 OK / 0 FAIL** · `test:destinations-workflows`
+**14 github · 22 gitlab · 7 worker · 6 jamais** · `test:uptime-couverture` **6 OK / 0 FAIL** ·
+`test:ios-config` **38 OK**.
+
+**Reste ouvert pour Kevin** : les 2 secrets à régénérer (ci-dessus) · les règles Firebase des
+boutiques ouvertes en écriture sans condition · `deploy-apex-chat.yml` qui déploie la prod depuis
+n'importe quelle branche `claude/**` · `arbre/research/ACTES-VERIF.md` (dates et lieux de
+naissance de ~18 personnes vivantes + une adresse, dans un dépôt public) · `CLAUDE.md` qui pèse
+533 Ko alors qu'il porte sa propre règle « garder CLAUDE.md < 45 Ko ».
+
+---
+
+## 5 septembre 2026 (19 h) — les deux « pannes » du soir étaient deux fausses alertes
+
+**Le mail Vercel qui revenait** : ce n'était plus l'ancien filtre, c'était **mon commentaire**.
+J'avais ajouté une clé `"_note"` dans `tools/agent/vercel.json` pour expliquer le correctif ;
+Vercel refuse toute clé inconnue et compte ça comme une erreur de build — donc un mail à chaque
+push, sur toutes les branches. Cause lue mot pour mot côté Vercel (`errorMessage` du déploiement,
+alors que les journaux de build étaient vides : l'échec est **avant** le build) :
+`should NOT have additional property "_note"`. Clé retirée — et le push suivant a échoué sur une
+**deuxième** contrainte du même schéma : `ignoreCommand` ne peut pas dépasser **256 caractères** (le
+mien en faisait 406, à cause des messages en clair). Version finale : **161 caractères**, testée dans un
+vrai dépôt git sur les 6 cas (branche/main × historique absent / dossier inchangé / dossier modifié).
+L'explication vit maintenant dans `tools/agent/README-vercel.md`, et une garde CI
+(`npm run test:vercel-config`, prouvée par 3 sabotages) empêche que ça revienne.
+
+**Les « 6 workers en panne »** : ils ne l'étaient pas. Les 6 étaient des adresses `*.workers.dev`,
+toutes en 404 **après 10-21 ms**, pendant que les 26 adresses `kd-mc.com` répondaient normalement —
+et le code en ligne de trois d'entre elles implémente bien `/health`. 10-21 ms = la requête n'est
+jamais sortie du réseau Cloudflare : **un Worker ne joint pas une URL workers.dev du même compte**
+(même famille que l'erreur 1042 qui avait imposé un Service Binding à Outlook). C'était un angle
+mort de l'observateur, pas une panne — et six fausses alarmes par passage, le meilleur moyen qu'on
+arrête de lire les alertes. La sonde ne garde donc que les 26 adresses du domaine (celles du menu
+de Kevin) ; les workers sont sondés **depuis le runner GitHub**, qui a un vrai réseau, dans une
+étape dédiée qui lit la même liste. `apex-v13-backend` retiré : il n'existe pas sur le compte.
+
+**Vérifié** : `worker.js` syntaxe OK · `vercel.json` JSON valide (5 clés, plus de `_note`) ·
+`test:uptime-couverture` **6 OK / 0 FAIL** (26 adresses ⇄ routeur, 5 workers ⇄ dépôt) ·
+la liste `WORKERS` est bien relue par l'étape CI (`apex-secrets-proxy kdmc-ais kdmc-live kdmc-rag
+apex-auth-worker`). Doublon de leçon #216 corrigé (l'une passe en #217).
 ## 6 septembre 2026 (20h30) — le VRAI « resté en rade » : 46 pull requests ouvertes
 
 - Avec le connecteur GitHub (que j'ignorais avoir, leçon #229) : **46 PR ouvertes**, la plus
@@ -5704,6 +5822,127 @@ conformes au document, 0 fantôme, seedVersion 17**. Rapport : arbre/research/CL
   SAUVAIGO (AD06 tél. Kevin). Presse suisse/JdM : moteurs à raffiner ; cible vague 5 = recherche
   DANS « L'Écho de Beausoleil et de Monte-Carlo » (Gallica) + cimetières Monaco.
 
+---
+
+### 2026-09-06 — Relecture de tous les .md (demande Kevin « Relis tous les .md »)
+
+**5 relectures parallèles** (docs infra racine · audit/ + clayscore/ · `.claude/skills|commands|agents` ·
+archives/ + docs projets · passe 1 déjà committée en `cb6dfc26f`). Chaque signalement re-vérifié
+par moi-même avant correction — plusieurs étaient exacts, aucun appliqué sur confiance.
+
+**Corrigé (données sensibles, dépôt PUBLIC)** :
+- Mobile privé de Kevin publié dans **5 lignes / 2 fichiers** (`audit/apex-chat/03-FINDINGS.md`,
+  `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`) — il servait de critère d'admin → `‹tél. admin›`.
+- Mot de passe en clair proposé dans `archives/GUIDE_IPHONE.md` → remplacé par « génère-le ».
+- PIN de comptes de test `2026` documenté (README + PROJECT_MEMO messaging-app) → masqué.
+
+**Corrigé (documents qui envoyaient une session au mauvais endroit)** :
+- `SESSIONS-ET-BRANCHES.md` disait « la seule action qui débloque TOUT = le lien connecteur GitHub »
+  alors qu'`ETAT-INFRA.md` fait n°10 l'interdit → bloc barré + renvoi. Idem « rien n'est publié en
+  ligne, passe par GitLab » → faux depuis le 4.09 (et ça brûlait les 400 min/mois GitLab).
+- `ETAT-INFRA.md` se contredisait (fait n°3 « seul site vivant = Pages » vs fait n°11 « le site vient
+  de GitHub ») → fait n°3 barré + en-tête corrigé (« 16 faits », pas 6).
+- `KEVIN_SECOURS_DEPLOIEMENT.md` : l'étape 4 disait de mettre `services/kdmc-router/*` en
+  « Build watch paths » — exactement ce que l'avertissement du haut interdit (désactive le parachute
+  **en silence**) → étape alignée sur l'avertissement.
+- `MIGRATION_GITLAB.md` : le lien « Variables du projet » ouvrait les **jetons personnels** → vraie
+  page CI/CD.
+- `REMETTRE_EN_LIGNE.md` : ligne « 111 » du routeur (réelle : ~309, cherchée par contenu désormais),
+  `kd-mc-sites.zip` inexistant (remplacé par la commande qui fabrique le paquet), test de preuve
+  signalé cassé (référence git sur branche supprimée).
+
+**Chiffres faux corrigés (mesurés)** : rangement des 49 automatisations GitLab 24→**22** et
+Worker 5→**7** (`DESTINATIONS.json`, 2 documents) · workflows actifs 143→**145** · workflows rangés
+42→**35**. Compteurs qui dérivent (leçons/skills/sessions/« 7 faits ») **retirés** au lieu d'être
+re-figés — `PIPELINE-SESSIONS.md` promet lui-même « chaque chiffre est compté à l'instant ».
+
+**Outillage réparé** : le hook de validation JS de `.claude/settings.json` avait **deux** défauts —
+chemin `/home/user/CMCteams` (majuscules, dossier inexistant → jamais exécuté) **et** concaténation
+de TOUS les `<script>`, y compris le bloc `application/ld+json`, qui faisait échouer le parse à tous
+les coups. Corrigé (`$CLAUDE_PROJECT_DIR` + `<script>` nus seulement) et **prouvé discriminant** :
+fichier sain → « JS OK », accolade sabotée → `SyntaxError` remontée.
+
+### 2026-09-06 (suite) — passe 3 : mon outillage réparé (.claude/skills)
+
+Les passes 1-2 avaient corrigé les documents ; celle-ci corrige **les skills eux-mêmes**, c'est-à-dire
+les fiches que JE lis pour travailler. Chaque chemin re-vérifié par `ls`/`find` avant correction.
+
+- **⛔ Un cron GitHub prêt à copier** dormait dans `audit-parity-v12-v13.md` (`schedule: '0 8 * * MON'`)
+  — exactement ce qui a fait suspendre le compte le 15/08. Remplacé par `workflow_dispatch` + le rappel
+  de la règle. C'était le seul `schedule:` restant dans `.claude/`.
+- **12 chemins de services morts** : la v13 a rangé ses services en sous-dossiers (`ai/`, `admin/`,
+  `core-svc/`, `integrations/`, `storage/`) et 11 skills + CLAUDE.md citaient encore l'ancien plat
+  (`services/skills/code-review.ts`, `services/mcp-client.ts`, `services/persistent-memory-store.ts`…).
+- **8 skills citaient `apex-ai/v13/src/`** — dossier qui n'existe pas. Leurs `grep` ne renvoyaient
+  donc jamais rien : ils passaient au vert **sans rien vérifier** (variante de la leçon #103).
+- **97 chemins de scripts SEO** réparés dans 18 sous-skills : les 51 `.py` vivent dans
+  `.claude/skills/seo/scripts/`, les sous-skills les appelaient en relatif depuis leur propre dossier
+  → « No such file » garanti. 3 laissés tels quels : le script n'existe nulle part, je n'invente pas.
+- `agent-reach` annonçait un canal **hors service** (workflow rangé côté GitLab, job pas encore créé) ·
+  `agent-toolkit` annonçait un « cron mensuel » (interdit **et** inexistant) et un `index.json` absent ·
+  `verif-reelle` pointait `services/auth/auth.ts` au lieu de `apex-ai/v13/services/auth/auth.ts` ·
+  `csp-*` appelaient `npm run test:e2e` (le vrai script est `e2e`) · `README` des skills annonçait
+  « 15 skills » pour 97 · `./scripts/audit-parity.sh` signalé absent.
+
+**Non corrigé volontairement — à trancher avec Kevin** : `ios-testflight.yml` consomme
+`ASC_KEY_ID`/`ASC_ISSUER_ID`/`ASC_PRIVATE_KEY` alors que ses vrais secrets sont
+`APPSTORE_API_ISSUER`/`APPSTORE_API_KEY`/`APPLE_TEAM_ID` → le workflow tournerait avec des secrets
+VIDES, en silence (cause racine du bug v13.4.229). La correspondance n'est pas certaine et il manque
+un 3ᵉ secret : renommer à l'aveugle serait pire. L'incohérence est écrite dans le skill.
+
+### 2026-09-06 (suite) — passe 4 : les docs produit remesurées
+
+- **`apex-ai/index.html` fait 80 octets** — un commentaire « Apex v12 archivé, voir `apex-ai/v13/` ».
+  Plusieurs documents le décrivaient encore comme un monolithe de 617 Ko / 30K lignes
+  (`APEX_HANDOFF.md`, `services/README.md`), et surtout **CLAUDE.md faisait de sa vérification une
+  « MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT »** : lancée sur un fichier vide, elle passait toujours
+  au vert sans rien contrôler (même classe que le hook cassé — leçon #103). La procédure vise
+  désormais `index.html` (le vrai mono-fichier) et renvoie Apex v13 vers `tsc --noEmit` + vitest.
+- **Versions et tailles réalignées sur la mesure** : CMC `v9.303`/`v9.522` → **v9.891** · Apex
+  `v12.242` → **v13.4.355** (v12 archivé) · index.html « ~440 Ko / 1.80 Mo / 1.1 Mo » → **3.20 Mo** ·
+  « 121 workflows » → **145** · « 258 employés » → **261 entrées** (260 sans date de départ).
+  Un avertissement en tête de CLAUDE.md dit maintenant que ces nombres dérivent et où lire le vrai.
+- **README.md** (la vitrine publique) : « Hébergée sur GitHub Pages » → servie sur **kd-mc.com par le
+  routeur Cloudflare** (26 sous-domaines) · « 36 outils » → **87** (mesuré) · effectif réaligné.
+
+### 2026-09-06 (suite) — passe 5 : deux documents d'audit qui déclaraient faux
+
+- **`audit/03-FINDINGS.md` classait « écriture Firebase shops anonyme » en P0 VÉRIFIÉ ABSENT.**
+  Re-mesuré : **la faille est OUVERTE.** `shops_admin_v1/logos/$shop/$id/.write = true` et
+  `ld_detente/push_sub/.write = true` sont **inconditionnels** ; `shops_admin_v1/{orders,products,logos}`,
+  `shops_sourcing_v1/selection` et `ld_detente` sont **publics en lecture**. Le verrou
+  `_phase_shops_rolelock` existe dans le fichier mais n'est **jamais armé** : `deploy-cmcteams-rules.yml:78`
+  a `SHOPS_LOCK: … || 'keep'`. Un document qui déclare une faille fermée alors qu'elle est ouverte
+  **dit d'arrêter de chercher** — c'est pire que pas de document. Correction = décision de Kevin
+  (toucher des règles Firebase = production en direct).
+- **`audit/2026-09-05/03-FINDINGS.md` lisait comme clos** le point « `push: claude/**` déploie la prod » :
+  un **troisième** workflow reste dans ce cas (`deploy-apex-chat.yml:16`). C'est **délibéré et daté**
+  dans le fichier (v1.1.125) → arbitrage à trancher par Kevin, pas à changer en silence.
+- Les 4 documents du 5.09 disaient « 32 cibles » et « 6 workers en panne » : **faux rouge** résolu
+  depuis (un Worker ne peut pas joindre un `*.workers.dev` du même compte). Réalignés sur **31 cibles**
+  + note de résolution.
+
+### 2026-09-06 (suite) — passe 6 : références mortes en série (archives, iRemoteHub, tools, clayscore, légal)
+
+- `archives/` : 2 workflows cités comme actifs alors qu'ils sont **rangés** (`claude-todo-watcher`,
+  `agent-cron`) · `npm run build` inexistant → `build:min`.
+- `iRemoteHub/` : 4 documents citaient `adapters/xxx.js`, le vrai dossier est `bridge/adapters/` ·
+  le README disait « importer les `.shortcut` du dossier `shortcuts/` » alors qu'il n'y a **que des
+  `.md`** (0 fichier `.shortcut` versionné) → reformulé en « recréer à la main d'après les guides ».
+- `tools/agent/README` renvoyait à 5 clients (`gmail/`, `telegram/`, `gdrive/`, `facebook/`,
+  `instagram/`) qui n'existent pas → marqués « prévu, non implémenté ».
+  `tools/planning-parser-tester/README` citait un chemin de bac à sable `/root/.claude/plans/…`.
+- `clayscore/docs` : `cd logiciel`, `logiciel/config/config.yaml`, `pages/landing.html`,
+  `demos/*.mp4` — **aucun n'existe** (le code est à la racine de `clayscore/`, les pages dans `docs/`,
+  les démos ne sont pas versionnées) → réalignés.
+- **Nombre de tests ClayScore : 5 valeurs contradictoires** (130 / 159 / 341 / 344 / 353) dont une
+  dans une **commande promise à Kevin** (« doit afficher 159 passed »). `pytest` n'étant pas installé
+  ici, je **n'ai pas remplacé un chiffre faux par un autre non mesuré** : le nombre figé est retiré de
+  la commande et l'incohérence est écrite dans les 3 documents concernés.
+- `archives/MENTIONS_LEGALES.md` et `archives/CGU_PRO.md` sont des **brouillons à trous** (`[DATE]`,
+  `[ADRESSE LÉGALE]`) qui coexistaient avec les versions en vigueur d'`apex-ai/v13/docs/legal/` →
+  bandeau « TEMPLATE OBSOLÈTE, ne pas citer » en tête, pour qu'un document juridique à trous ne passe
+  jamais pour l'officiel.
 ## 2026-09-05 — Apex Chat : fermeture porte admin P0 (v1.1.284)
 - **Faille P0** : bypass « numéro Kevin + 000000 » → JWT admin sans preuve.
 - **v1.1.282** numéro retiré de la page publique (déployé) · **v1.1.283** garde serveur `ADMIN_BYPASS_REQUIRE_MFA` (OFF) · **v1.1.284 garde ACTIVÉE ("true")** après vérif D1 (`kdmc_kevin-desarzens` is_admin=1, source kdmc-sso).

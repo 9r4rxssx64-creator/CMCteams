@@ -19,7 +19,7 @@ commandes natives. L'agent appelle directement les outils sous-jacents.
 | Environnement | r.jina.ai / yt-dlp / s.jina.ai | Quoi utiliser |
 |---|---|---|
 | **Sandbox Claude Code web** (CCR) | ❌ bloqués (« Host not in allowlist », seuls les registres npm/pypi + raw.githubusercontent passent) | `WebFetch`/`WebSearch` intégrés, OU le **workflow CI** ci-dessous |
-| **Runner GitHub Actions** | ✅ réseau ouvert | commandes directes via `.github/workflows/agent-reach.yml` |
+| ~~**Runner GitHub Actions**~~ | ⛔ **HORS SERVICE** | `agent-reach.yml` a été rangé dans `.github/workflows-desactives/` (son travail est d'appeler des sites tiers → destination `gitlab`), et **le job GitLab de remplacement n'existe pas encore** (`job_gitlab: null` dans `DESTINATIONS.json`). En attendant : `WebSearch` / `WebFetch`, ou un autre workflow CI. |
 | **Machine locale / env réseau ouvert** | ✅ | commandes directes (§ Commandes) |
 
 ## 🚀 Depuis le sandbox : déclencher le workflow CI

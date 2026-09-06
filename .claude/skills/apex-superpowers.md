@@ -45,4 +45,4 @@ Appliquer une méthodologie de développement structurée et répétable pour le
 ## Références
 
 - obra/superpowers : https://github.com/obra/superpowers
-- Pattern Apex : `apex-ai/v13/services/skills/superpowers.ts`
+- Pattern Apex : `apex-ai/v13/services/ai/superpowers-methodology.ts`

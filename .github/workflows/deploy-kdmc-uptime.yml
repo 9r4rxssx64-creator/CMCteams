@@ -183,6 +183,43 @@ jobs:
           grep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }
           echo "✅ kdmc-uptime déployé et opérationnel — passage toutes les 2 h déclenché par le cron de kdmc-outlook (plan gratuit : 5 crons, tous pris)"
 
+      - name: Santé des workers (depuis le runner — un Worker ne peut pas les joindre)
+        # POURQUOI ICI ET PAS DANS LA SONDE : au passage n°11 (05/09) les 6 adresses
+        # *.workers.dev répondaient 404 en 10-21 ms pendant que les 26 adresses du domaine
+        # répondaient normalement. 10-21 ms = la requête n'est jamais sortie du réseau
+        # Cloudflare : depuis un Worker, une URL workers.dev du MÊME compte n'est pas
+        # joignable (même famille que l'erreur 1042 qui a imposé un Service Binding à
+        # Outlook). Six fausses pannes à chaque passage = des alertes qu'on cesse de lire.
+        # Le runner GitHub a un vrai réseau : c'est LUI qui sonde, et la sortie ci-dessous
+        # dit lequel des deux avait raison. Observation seulement : jamais bloquant.
+        shell: bash {0}
+        run: |
+          LISTE=$(node -e "
+            const s=require('fs').readFileSync('services/kdmc-uptime/worker.js','utf8');
+            const m=s.match(/const WORKERS = \[([\s\S]*?)\]/);
+            if(!m){ console.error('liste WORKERS introuvable dans worker.js'); process.exit(1); }
+            console.log([...m[1].matchAll(/'([a-z0-9-]+)'/g)].map(x=>x[1]).join(' '));
+          ") || { echo "::error::Impossible de lire la liste des workers dans services/kdmc-uptime/worker.js"; exit 0; }
+          echo "Workers à sonder : $LISTE"
+          VIVANTS=0; MORTS=""
+          for W in $LISTE; do
+            U="https://$W.9r4rxssx64.workers.dev/health"
+            CODE=$(curl -s -o /tmp/w.txt -w '%{http_code}' --max-time 15 "$U" || echo 000)
+            MS=$(curl -s -o /dev/null -w '%{time_total}' --max-time 15 "$U" || echo '?')
+            if [ "$CODE" -ge 200 ] 2>/dev/null && [ "$CODE" -lt 400 ] 2>/dev/null; then
+              VIVANTS=$((VIVANTS+1))
+              echo "::notice::worker ▸ $W → HTTP $CODE en ${MS}s · $(head -c 120 /tmp/w.txt)"
+            else
+              MORTS="$MORTS $W"
+              echo "::warning::worker ▸ $W → HTTP $CODE (${MS}s) · $(head -c 160 /tmp/w.txt)"
+            fi
+          done
+          if [ -z "$MORTS" ]; then
+            echo "::notice::✅ $VIVANTS worker(s) répondent depuis le runner — les 404 vus par la sonde étaient bien un angle mort du Worker, pas une panne"
+          else
+            echo "::warning::worker(s) qui ne répondent pas depuis le runner :$MORTS — là c'est une vraie panne, pas un angle mort"
+          fi
+
       - name: Redéployer kdmc-outlook (son cron est l'horloge de la sonde)
         # Mesuré 05/09 : après la fusion #3665, kdmc-uptime a été redéployé mais PAS kdmc-outlook
         # (modified_on inchangé) → le réveil toutes les 2 h n'était pas en ligne. Le dispatch

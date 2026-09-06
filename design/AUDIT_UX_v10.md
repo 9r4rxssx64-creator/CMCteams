@@ -139,7 +139,7 @@ Actions accessibles à plusieurs endroits → confusion, charge cognitive, code 
 | Touch-target minimum                    | parfois <44px| 44px partout|
 | Lignes CSS embedded                     | ~3200        | ~2500       |
 | Composants HTML inline créés ad-hoc     | ~12          | 0 (lib)     |
-| File size index.html                    | 2.91 MB      | < 2.5 MB    |
+| File size index.html                    | 3.20 Mo (6.09.2026) | < 2.5 Mo |
 
 ---
 

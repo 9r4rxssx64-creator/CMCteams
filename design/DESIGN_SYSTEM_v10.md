@@ -177,7 +177,8 @@ Exemple Moodboard A — Linear/Vercel :
 ```
 
 **Touch-target** : la taille `md` (36px) est utilisée desktop ; mobile utilise `lg` (44px)
-par défaut via media query — respecte la règle frontend.md du CLAUDE.md.
+par défaut via media query — respecte la règle « Touch targets minimum 44px » de
+`.claude/rules/frontend.md` (fichier séparé, PAS une section de CLAUDE.md).
 
 ### 2.2 Card
 

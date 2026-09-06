@@ -69,7 +69,7 @@
 
 ## Approche d'ajout
 
-Un nouvel adapter = 1 fichier `bridge/adapters/<name>.js` implémentant `{ actions: {...} }`. Pattern identique : import lib optionnelle → fonctions → export. L'adapter est auto-chargé par `adapters/index.js` via détection dans `REGISTRY`.
+Un nouvel adapter = 1 fichier `bridge/adapters/<name>.js` implémentant `{ actions: {...} }`. Pattern identique : import lib optionnelle → fonctions → export. L'adapter est auto-chargé par `bridge/adapters/index.js` via détection dans `REGISTRY`.
 
 Pour les adapters cloud-only (Samsung SmartThings, LG ThinQ, Tesla), un module `bridge/cloud/` distinct avec OAuth2 stockée dans `config.json`.
 

@@ -16,7 +16,7 @@ Kevin a filmé un tableau « **Une Notion = Un Projet** » listant 6 dépôts Gi
 
 Le contenu **texte** de ces 6 dépôts est vendorisé dans **`vendor/agent-toolkit/<id>/`**, avec
 `vendor/agent-toolkit/MANIFEST.json` qui donne pour chacun l'URL, le **SHA du commit** récupéré,
-la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** (bouton + cron mensuel).
+la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** — **bouton uniquement** (`workflow_dispatch`). Aucun cron : règle absolue du dépôt, c'est le volume d'exécutions programmées qui a fait suspendre le compte le 15/08.
 
 ## Les 6, et quand je m'en sers
 
@@ -24,7 +24,7 @@ la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** (bou
 |---|---|---|
 | 🛠 Ingénieur | [anthropics/skills](https://github.com/anthropics/skills) | j'écris ou je corrige un `SKILL.md` — c'est la référence officielle du format et des bons découpages (docx/pdf/pptx/xlsx, mcp-builder, artifacts). |
 | 🧠 Mémoire | [garrytan/gbrain](https://github.com/garrytan/gbrain) | je touche à la mémoire d'agent. À **comparer** à notre `tools/memory` maison (compact-memory) avant d'inventer autre chose. |
-| 🎨 Design | [bergside/awesome-design-skills](https://github.com/bergside/awesome-design-skills) | Kevin demande une direction visuelle. 67 systèmes prêts (`SKILL.md` pour moi + `DESIGN.md` pour l'humain) + `index.json`. **Anti-« design d'IA générique »** : je pioche une direction précise au lieu du crème/serif/terracotta par défaut. |
+| 🎨 Design | [bergside/awesome-design-skills](https://github.com/bergside/awesome-design-skills) | Kevin demande une direction visuelle. 67 systèmes prêts (`SKILL.md` pour moi + `DESIGN.md` pour l'humain), à parcourir dans `skills/` — **il n'y a pas d'`index.json`** dans ce qui a été vendorisé. **Anti-« design d'IA générique »** : je pioche une direction précise au lieu du crème/serif/terracotta par défaut. |
 | 💰 Économie de jetons | [rtk-ai/rtk](https://github.com/rtk-ai/rtk) | une commande crache 500 lignes inutiles dans mon contexte. `rtk <cmd>` compresse la sortie. Voir « honnêteté » plus bas. |
 | 🏢 Entreprise | [codejunkie99/meridian-company-os](https://github.com/codejunkie99/meridian-company-os) | on parle de piloter **humains + agents** dans une même console (cockpit, kanban, objectifs, gouvernance, audit). Inspiration directe pour l'admin de kd-mc.com. |
 | 🆓 LLM gratuit | [free-llm-api-resources](https://github.com/jeis4wpi/free-llm-api-resources) | un forfait IA est épuisé, ou je cherche un repli gratuit. Liste tenue à jour : modèles, quotas, limites. |
@@ -35,7 +35,7 @@ la licence et la date. Mise à jour : workflow **`agent-toolkit-sync.yml`** (bou
 ## Réflexes concrets
 
 - **Avant d'écrire un `SKILL.md`** → lire 2 exemples dans `vendor/agent-toolkit/skills/`.
-- **Avant de proposer une maquette / un thème** → `vendor/agent-toolkit/awesome-design-skills/index.json`,
+- **Avant de proposer une maquette / un thème** → `vendor/agent-toolkit/awesome-design-skills/skills/` (parcourir les fiches),
   choisir une direction nommée, et le **dire** à Kevin (« j'ai pris tel système »).
 - **Avant d'ajouter un provider IA** → vérifier `free-llm-api-resources` : y a-t-il un gratuit qui
   fait l'affaire ? ⚠️ Ne JAMAIS changer l'IA principale : Anthropic reste par défaut (leçon #124/#129),

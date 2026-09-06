@@ -6,7 +6,7 @@
 
 | # | Problème | Fichier | Fix |
 |---|----------|---------|-----|
-| 1 | XML injection SOAP Sonos | `adapters/sonos.js` | `escapeXml()` sur tous args |
+| 1 | XML injection SOAP Sonos | `bridge/adapters/sonos.js` | `escapeXml()` sur tous args |
 | 2 | Devices Map unbounded | `server.js` | TTL 7 jours + GC toutes les 6h |
 | 3 | Broadcast race condition | `server.js` | Promise.allSettled + snapshot |
 

@@ -1,5 +1,13 @@
 # APEX CONTINUATOR — Configuration & Memory
 
+> ⚠️ **JAMAIS IMPLÉMENTÉ — vérifié le 6.09.2026.** Tout ce dossier décrit un « agent externe »
+> (`ax_external_agent_enabled`, file Firebase `/apex/external_agent_queue/`, commande `/agent`,
+> kill-switch) annoncé « sera codé en v13.4.6 ». Apex est aujourd'hui en **v13.4.355** et
+> `grep -rl external_agent` sur le code source ne renvoie **rien**. Ne pas suivre ces pages
+> comme un mode d'emploi : elles décrivent du vide.
+
+
+
 ## 2e copier-coller : Memory MCP / Notes persistantes
 
 Copie ce bloc dans le **Memory MCP** de l'agent (ou en notes initiales si pas de Memory MCP).
@@ -31,7 +39,7 @@ Ce sont les infos critiques que l'agent doit avoir mémorisées de façon perman
 - URL : `https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app`
 - REST endpoint : `<URL>/<path>.json`
 - Region : europe-west1
-- Auth : public read pour la plupart, write avec `auth=<KEVIN_FIREBASE_TOKEN>`
+- Auth : **`auth != null` EXIGÉ partout** (auth anonyme acceptée) — la racine est `.read:false`. « Lecture publique » était faux (vérifié 6.09.2026)., write avec `auth=<KEVIN_FIREBASE_TOKEN>`
 - Token Kevin : à fournir séparément (env `KEVIN_FIREBASE_TOKEN`)
 
 ### PATHS FIREBASE CRITIQUES

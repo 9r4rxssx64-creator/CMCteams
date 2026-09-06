@@ -103,3 +103,12 @@ demande des **devis réels** aux fournisseurs listés dans BUDGET_BOM.
 > Ce qu'il fera **sur ton stand, sous la pluie, avec un plateau noir à
 > contre-jour** — personne ne le sait encore, moi le premier.
 > La prochaine étape qui apporte de la vérité, c'est **tes vraies vidéos**.
+
+
+> ⚠️ **NOMBRE DE TESTS — INCOHÉRENCE NON RÉSOLUE (constat du 6.09.2026).** Les documents ClayScore
+> annoncent **cinq valeurs différentes** : 130, 159, 341, 344 et 353 tests (et deux couvertures :
+> 91 % et 93 %). Comptage brut du dépôt : **328 `def test_`** dans `clayscore/tests/` — mais ce
+> n'est pas le total collecté par pytest (les tests paramétrés en produisent plusieurs chacun).
+> **Je n'ai pas pu trancher** : `pytest` n'est pas installé dans l'environnement de la session.
+> → La seule source valable est **la sortie de `pytest` datée**, à recopier une fois, au même
+> endroit, et à citer partout ailleurs. Ne pas re-figer un nombre non mesuré.

@@ -153,4 +153,4 @@ localStorage persistant).
 
 ## 📋 Plan complet de référence
 
-Voir `/root/.claude/plans/comment-ferais-tu-pour-cuddly-acorn.md` — détaille les 13 phases du pipeline + scorecard 100% chaque axe + plan T1/T2.
+Voir `‹plan de session, non versionné›` — détaille les 13 phases du pipeline + scorecard 100% chaque axe + plan T1/T2.

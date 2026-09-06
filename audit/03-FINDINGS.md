@@ -9,7 +9,19 @@
 
 - **Clé API en dur** → `grep sk-ant-api[0-9]` hors tests = **0**. ✅ VÉRIFIÉ. (Le brief le posait comme « P0 absolu à corriger » — ici il n'existe pas : clé fournie par l'admin, stockée device-local, ou proxy serveur.)
 - **Build cassé** → `test:check-syntax` exit **0**. ✅ VÉRIFIÉ.
-- **Écriture Firebase shops anonyme** (hole fermé la session précédente, verrou `_phase_shops_rolelock` = ON, self-test vert). ✅ VÉRIFIÉ.
+- **Écriture Firebase shops anonyme** — ❌ **CE POINT ÉTAIT FAUX, RE-MESURÉ LE 6.09.2026 : LA FAILLE EST OUVERTE.**
+  Il était classé « P0 vérifié comme ABSENT (verrou `_phase_shops_rolelock` = ON) ». Mesure réelle sur
+  `firebase-rules-apex.json` : `shops_admin_v1/logos/$shop/$id/.write = true` et
+  `ld_detente/push_sub/.write = true` sont **inconditionnels** (n'importe qui écrit), et
+  `shops_admin_v1/{orders,products,logos}/.read = true` + `shops_sourcing_v1/selection/.read` +
+  `ld_detente/.read` sont **publics en lecture**. Le bloc `_phase_shops_rolelock` existe bien dans le
+  fichier mais c'est un **payload optionnel non appliqué** : `deploy-cmcteams-rules.yml:78` a
+  `SHOPS_LOCK: ${{ github.event.inputs.shops_lock || 'keep' }}` — **`keep` par défaut**, donc le verrou
+  n'est jamais armé tout seul. Un document qui déclare une faille fermée alors qu'elle est ouverte est
+  pire que pas de document : il dit d'arrêter de chercher.
+  **Correctif = une décision de Kevin** (changer des règles Firebase touche la production en direct) :
+  relancer `deploy-cmcteams-rules.yml` avec `shops_lock=on`, après avoir vérifié que les boutiques
+  écrivent bien via un compte authentifié — sinon le verrou casse les commandes clients.
 
 ---
 
@@ -109,3 +121,53 @@ Aucune découpe sûre possible en une passe (globals partagés ; **0 doublon de 
 Gate `test:ci` **VERT end-to-end** (EXIT 0). Tous les findings P0/P1/P2 sont soit résolus, soit mitigés par un garde CI permanent. Restent 3 P3 de dette (mono-fichier, `loading=lazy`, console.log) — cosmétiques, non bloquants.
 
 Le levier le plus utile n'est pas un correctif de code mais un **garde CI** (F-C2) : convertir la vérification XSS manuelle en filet permanent. C'est la logique Phase 8 « cause racine, pas pansement ».
+
+---
+
+## Passe 7 (2026-09-06) — relecture des `.md` : ce que je n'ai PAS corrigé, et pourquoi
+
+Deux constats qui demandent une **décision de Kevin**, pas un correctif de ma part. Je les écris
+ici plutôt que de « nettoyer » les documents, parce que dans les deux cas nettoyer le document
+**ne changerait rien au problème réel** — ça donnerait seulement l'impression que c'est réglé
+(exactement le « faux vert » de la leçon #103).
+
+### F-P1 [P2] — Des noms de tiers sont dans le dépôt PUBLIC, mais c'est le CODE qui les porte, pas les docs
+
+**Ce que j'ai mesuré le 6.09.2026** (dépôt `9r4rxssx64-creator/CMCteams`, **public**) :
+
+| Donnée | Dans les `.md` | Dans le **code servi** |
+|---|---|---|
+| Nom complet de la compagne de Kevin | 15 fichiers | **25 fichiers** (`.html`/`.js`/`.ts`) |
+| Noms des 6 Pit Boss (collègues) | quelques docs | **29 occurrences dans `index.html`** |
+| Effectif nominatif | — | **261 entrées `DEF_EMP` dans `index.html`** |
+
+**Pourquoi je n'ai rien caviardé** : ces noms ne sont pas des notes de travail, ce sont les
+**données de fonctionnement de l'application** (la liste du personnel, les cadres). Les masquer
+dans 15 documents pendant qu'ils restent dans le fichier livré au navigateur ne protège
+personne — et deux rappels valent pour tout le reste de ce document :
+
+1. **Masquer n'efface pas l'historique git.** Ce qui a été publié une fois est à considérer
+   comme connu, définitivement.
+2. Ce sont des **données de tiers** (collègues, proches) qui n'ont rien demandé — donc c'est un
+   sujet RGPD réel, pas une coquetterie.
+
+**Ce que ça demande comme décision (Kevin, pas moi)** — 3 options, de la moins à la plus lourde :
+- **(a) Assumer** : le dépôt reste public avec l'effectif nominatif dedans. C'est un choix
+  possible, mais il doit être **explicite et daté**, pas subi par défaut.
+- **(b) Dépersonnaliser l'app** : les noms deviennent des identifiants (`U11804`…) et la
+  correspondance nom↔identifiant vit dans Firebase (déjà authentifié), plus dans le dépôt.
+  C'est le vrai correctif ; c'est un chantier, pas une passe de relecture.
+- **(c) Rendre le dépôt privé.** Le plus rapide, mais ça casse GitHub Pages tel qu'il est servi
+  aujourd'hui — donc à ne pas faire sans mesurer d'abord ce qui tombe.
+
+### F-P2 [P1] — Le DPA Firebase affirmait une chose que son propre contenu contredit
+
+`docs/DPA-Firebase.md` affirmait « région `europe-west1` ✅ EU » et en tirait « pas de transfert
+hors EU », **alors que l'adresse citée dans le document même** — et surtout celle réellement
+appelée par le code déployé (`index.html:6545`) — est `kdmc-clients-default-rtdb.firebaseio.com`,
+la forme **us-central1**. Un relevé Lighthouse réel prouve que cette adresse **répond**.
+
+Je n'ai pas d'accès réseau à la console Google : je **ne peux pas** trancher, donc je n'affirme
+ni l'un ni l'autre. J'ai retiré la certitude fausse et écrit la vérification en 1 clic dans le
+document. **Tant que Kevin n'a pas ouvert la console, ce DPA ne doit servir d'argument RGPD
+devant personne.** Détail complet : encadré du §3 de `docs/DPA-Firebase.md`.

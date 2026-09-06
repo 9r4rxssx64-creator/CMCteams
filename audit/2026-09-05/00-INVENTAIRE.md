@@ -31,6 +31,6 @@
 | `npm run audit:stability` | ✅ 17h10 | 0 FAIL 0 WARN (accueil/admin/monplanning, CMCteams) |
 | `npm run audit:clicks`, `test:a11y` | ✅ 17h30 (playwright + axe-core installés dans un dossier isolé, `npm i` à la racine plante : « edgesOut ») | clics : 79 vues / 1109 boutons / 0 erreur JS · a11y : 0 violation |
 | `audit-live.yml` (vrai navigateur sur kd-mc.com) | ✅ déclenché par le push 4c4a469 (rendu push-déclenchable ce jour) | lecture des annotations à la fin du run — `05-JOURNAL.md` |
-| `kdmc-uptime` premier relevé réel | ✅ run 33979141313 | 32 cibles, **6 « en panne » = les 6 workers** (cause à lire au prochain smoke, annotations par cible ajoutées) |
+| `kdmc-uptime` premier relevé réel | ✅ run 33979141313 | 32 cibles annoncées (**31** depuis le retrait d'`apex-v13-backend`), **6 « en panne » = les 6 workers** (cause à lire au prochain smoke, annotations par cible ajoutées) |
 | 3 relecteurs indépendants (sécurité, SRE, complétude) | ✅ | 2 P0, 4 P1, 6 P2, 5 P3 → tous les sûrs appliqués (`03-FINDINGS.md`) |
 | Second avis non-Claude | 🟡 | SonarCloud : Quality Gate C sur PR #3652 = 2 findings (wrangler non épinglé, `--ignore-scripts`) → **corrigés** ; Qodo/CodeRabbit : aucun commentaire sur la PR ; Semgrep « patterns » : non lisible depuis la session |

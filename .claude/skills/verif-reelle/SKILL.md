@@ -34,7 +34,7 @@ On repose la marque de session que **l'app elle-même écrit** quand Kevin se co
 | Surface | Marque | Source |
 |---|---|---|
 | CMCteams | `cmc_uid=U11804` + `cmc_lastact` | `index.html` (sans `lastact`, la session est jugée expirée) |
-| Apex v13 | `apex_v13_user` + `apex_v13_last_known_uid` | `services/auth/auth.ts` |
+| Apex v13 | `apex_v13_user` + `apex_v13_last_known_uid` | `apex-ai/v13/services/auth/auth.ts` |
 | admin.kd-mc.com | `kdmc_access_pinhash` | `services/kdmc-access/page.js` (`KEY`) |
 | Arbre | `arbre_trust=1` | règle « reconnu auto après 1re connexion » |
 | Portail | vrai pass via `POST /__sso/issue` → `#kdmc_sso=` | API publique du routeur |

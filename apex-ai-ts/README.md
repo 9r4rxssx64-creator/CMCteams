@@ -35,7 +35,7 @@ apex-ai-ts/
 │           └── github.ts       # readFile/writeFile/listFiles typés
 └── tests/
     ├── compliance.test.ts  # 7 tests
-    └── ai-safety.test.ts   # 9 tests
+    └── ai-safety.test.ts   # 10 tests
 ```
 
 ---
@@ -56,7 +56,7 @@ le **build CI échoue rouge** sur GitHub avant que ça arrive en production.
 cd apex-ai-ts
 npm install
 npm run type-check    # Vérifie les types sans build
-npm run test          # Lance Vitest (16 tests)
+npm run test          # Lance Vitest (17 tests : 7 compliance + 10 ai-safety)
 npm run build         # Build prod
 ```
 
@@ -69,7 +69,7 @@ npm run build         # Build prod
 | Module | Statut | Tests |
 |--------|--------|-------|
 | compliance/age | ✅ typé | 7 |
-| ai-safety/jailbreak | ✅ typé | 9 |
+| ai-safety/jailbreak | ✅ typé | 10 |
 | code/github | ✅ typé | 0 (TODO v12.556) |
 | compliance/apdp | ⏳ TODO | — |
 | ai-safety/hallucination | ⏳ TODO | — |

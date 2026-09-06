@@ -64,13 +64,13 @@ Tool calls dans le MEME message (parallel execution Claude Code) :
 Task({
   subagent_type: 'Explore',
   description: 'Performance audit',
-  prompt: 'Audite performance de apex-ai/v13/src/. Mesure bundle gzip, lazy chunks, memory leaks. Score /10 + top 3 P0/P1.'
+  prompt: 'Audite performance de apex-ai/v13/. Mesure bundle gzip, lazy chunks, memory leaks. Score /10 + top 3 P0/P1.'
 });
 
 Task({
   subagent_type: 'Explore',
   description: 'Security audit OWASP',
-  prompt: 'Audite securite ASVS L2 de apex-ai/v13/src/auth/. Score /10 + top 3 findings + CVSS.'
+  prompt: 'Audite securite ASVS L2 de apex-ai/v13/services/auth/. Score /10 + top 3 findings + CVSS.'
 });
 
 Task({

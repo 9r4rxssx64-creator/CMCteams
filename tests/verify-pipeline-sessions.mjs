@@ -44,10 +44,16 @@ const sessions = reg.sessions || {};
 chk(Object.keys(sessions).length > 0, `${Object.keys(sessions).length} sessions inscrites`);
 
 /* --- 2/3/4. le registre et la carte disent-ils la MÊME chose ? -------------- */
-/* La carte liste les branches dans un tableau markdown : `| Session | `branche` | … ` */
+/* La carte liste les branches dans un tableau markdown : `| Session | `branche` | … `
+ * On ne lit QUE les lignes de tableau. Avant le 6.09.2026 la recherche portait sur tout
+ * le fichier : citer une branche entre accents graves dans une simple PHRASE la faisait
+ * passer pour une session déclarée, et le garde échouait sur de la prose. */
 const carte = readFileSync(CARTE, 'utf8');
 const branchesCarte = new Set(
-  [...carte.matchAll(/`(claude\/[A-Za-z0-9._/-]+|publie-septembre)`/g)].map((m) => m[1])
+  carte.split('\n')
+    .filter((l) => l.trimStart().startsWith('|'))
+    .flatMap((l) => [...l.matchAll(/`(claude\/[A-Za-z0-9._/-]+|publie-septembre)`/g)])
+    .map((m) => m[1])
 );
 const branchesReg = new Map(Object.entries(sessions).map(([id, s]) => [s.branche, id]));
 
@@ -72,7 +78,66 @@ chk(incompletes.length === 0,
     ? 'chaque session a un titre, une branche et un sujet'
     : `incomplètes : ${incompletes.join(', ')}`);
 
-/* --- 6. ce que le pipeline doit rendre visible ------------------------------ */
+/* --- 6. les VRAIES branches git : aucune branche active ne doit être orpheline ---
+ *
+ * TROU TROUVÉ LE 6.09.2026. Les contrôles 1→5 ne comparent que deux DOCUMENTS entre
+ * eux (registre ⇄ carte). Ils sont donc verts même si dix sessions travaillent sur des
+ * branches que personne n'a inscrites — c'est-à-dire le risque exact décrit en tête de
+ * ce fichier. Mesuré ce jour-là : 370 branches `claude/*` sur origin, 22 inscrites,
+ * et **7 branches actives** (commit dans les 7 jours) inconnues du registre — dont
+ * celle qui réparait le rouge bloquant les fusions de tout le monde.
+ *
+ * Même classe d'erreur que la leçon #103 : une vérification qui passe parce qu'elle ne
+ * vérifie rien de réel.
+ *
+ * CLIQUET : les orphelines connues sont figées dans une base de référence. On échoue
+ * seulement si une NOUVELLE apparaît → on bloque le nouveau sans allumer un rouge
+ * permanent sur l'existant. Repli ouvert : sans git ni refs distantes (clone superficiel
+ * de CI), on saute — jamais de faux rouge.
+ */
+const BASELINE = 'pipeline/branches-orphelines-baseline.json';
+const JOURS = 7;
+
+let refs = '';
+try {
+  refs = execFileSync('git', [
+    'for-each-ref', '--format=%(refname:short)|%(committerdate:short)',
+    'refs/remotes/origin/claude/',
+  ], { stdio: ['ignore', 'pipe', 'ignore'] }).toString();
+} catch (_) { refs = ''; }
+
+if (!refs.trim()) {
+  console.log('  ·    (pas de branches distantes visibles — contrôle des orphelines sauté)');
+} else {
+  const seuil = new Date(Date.now() - JOURS * 86400000).toISOString().slice(0, 10);
+  const actives = refs.trim().split('\n').map((l) => {
+    const [r, d] = l.split('|');
+    return { branche: r.replace(/^origin\//, ''), date: d };
+  }).filter((b) => b.date >= seuil);
+
+  const inscrites = new Set(Object.values(sessions).map((s) => s.branche));
+  const orphelines = actives.filter((b) => !inscrites.has(b.branche)).map((b) => b.branche).sort();
+
+  let connues = [];
+  if (existsSync(BASELINE)) {
+    try { connues = JSON.parse(readFileSync(BASELINE, 'utf8')).orphelines || []; } catch (_) {}
+  }
+  const nouvelles = orphelines.filter((b) => !connues.includes(b));
+  const parties = connues.filter((b) => !orphelines.includes(b));
+
+  chk(nouvelles.length === 0, nouvelles.length === 0
+    ? `${actives.length} branche(s) active(s) · aucune NOUVELLE orpheline (${orphelines.length} connue(s), cliquet)`
+    : `branche(s) ACTIVE(S) que personne ne suit : ${nouvelles.join(', ')} — inscris-la : ` +
+      `node ${OUTIL} enregistrer --id <slug> --titre "…" --branche "<elle>" --sujet "…"`);
+
+  if (parties.length) {
+    console.log(`  ·    ${parties.length} orpheline(s) de la base ne sont plus actives : ${parties.join(', ')}`);
+    console.log(`  ·    (elles peuvent sortir de ${BASELINE})`);
+  }
+  orphelines.forEach((b) => console.log(`  ·    orpheline connue : ${b}`));
+}
+
+/* --- 7. ce que le pipeline doit rendre visible ------------------------------ */
 const attendKevin = Object.entries(sessions).filter(([, s]) => s.attend_kevin);
 const attendSession = Object.entries(sessions).filter(([, s]) => s.attend_session);
 console.log(`  · ${Object.keys(sessions).length} sessions · ${(reg.messages || []).length} message(s)`);

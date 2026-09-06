@@ -67,7 +67,7 @@
 
 ### 👑 Admin Kevin
 
-- ✅ Reconnu par téléphone E.164 (+33672280277) + aliases ("kevin", "KD", "kdmc")
+- ✅ Reconnu par téléphone E.164 (‹tél. admin›) + aliases ("kevin", "KD", "kdmc")
 - ✅ Bypass network client-side (login admin = 0 appel réseau)
 - ✅ Vue Live Users (géoloc + devices + actions)
 - ✅ Toggles 22 features (global + per-user)

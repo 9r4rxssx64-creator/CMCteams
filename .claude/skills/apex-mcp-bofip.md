@@ -73,5 +73,5 @@ Apex IA appelle `mcp_bofip_search` AUTOMATIQUEMENT si user mentionne :
 
 - BOFiP : Bulletin Officiel des Finances Publiques (impots.gouv.fr/bofip)
 - MCP server : OpenLegi (https://mcp.openlegi.fr)
-- Pattern Apex : `apex-ai/v13/services/mcp-client.ts` + `mcp-registry.ts`
+- Pattern Apex : `apex-ai/v13/services/ai/mcp-client.ts` + `mcp-registry.ts`
 - Vue admin : `?view=mcp-servers`

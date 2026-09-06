@@ -42,8 +42,8 @@ Fetch and parse any product page for on-page SEO quality.
 ### Workflow
 
 ```
-1. python scripts/fetch_page.py <url>         → raw HTML
-2. python scripts/parse_html.py --url <url>   → SEO elements
+1. python .claude/skills/seo/scripts/fetch_page.py <url>         → raw HTML
+2. python .claude/skills/seo/scripts/parse_html.py --url <url>   → SEO elements
 3. Analyze product-specific signals (below)
 ```
 
@@ -107,7 +107,7 @@ Live competitive analysis from Google Shopping results.
 
 Before EVERY Merchant API call:
 ```bash
-python scripts/dataforseo_costs.py check merchant_google_products_search
+python .claude/skills/seo/scripts/dataforseo_costs.py check merchant_google_products_search
 ```
 
 - `"status": "approved"` -- proceed
@@ -116,20 +116,20 @@ python scripts/dataforseo_costs.py check merchant_google_products_search
 
 After each call:
 ```bash
-python scripts/dataforseo_costs.py log merchant_google_products_search <cost>
+python .claude/skills/seo/scripts/dataforseo_costs.py log merchant_google_products_search <cost>
 ```
 
 ### Workflow
 
 ```bash
 # Product search: who sells what at what price
-python scripts/dataforseo_merchant.py search "<keyword>" --marketplace google
+python .claude/skills/seo/scripts/dataforseo_merchant.py search "<keyword>" --marketplace google
 
 # Seller analysis: merchant ratings and dominance
-python scripts/dataforseo_merchant.py sellers "<keyword>"
+python .claude/skills/seo/scripts/dataforseo_merchant.py sellers "<keyword>"
 
 # Normalize results for analysis
-python scripts/dataforseo_normalize.py results.json --module merchant
+python .claude/skills/seo/scripts/dataforseo_normalize.py results.json --module merchant
 ```
 
 ### Analysis Outputs
@@ -163,7 +163,7 @@ Cross-marketplace intelligence comparing Google Shopping and Amazon.
 ### Cost Guardrail (MANDATORY)
 
 ```bash
-python scripts/dataforseo_costs.py check merchant_amazon_products_search
+python .claude/skills/seo/scripts/dataforseo_costs.py check merchant_amazon_products_search
 ```
 
 Amazon endpoints are in the `warn_endpoints` set -- always requires user approval.
@@ -172,10 +172,10 @@ Amazon endpoints are in the `warn_endpoints` set -- always requires user approva
 
 ```bash
 # Amazon product search
-python scripts/dataforseo_merchant.py search "<keyword>" --marketplace amazon
+python .claude/skills/seo/scripts/dataforseo_merchant.py search "<keyword>" --marketplace amazon
 
 # Cross-marketplace comparison
-python scripts/dataforseo_merchant.py compare "<keyword>"
+python .claude/skills/seo/scripts/dataforseo_merchant.py compare "<keyword>"
 ```
 
 ### Cross-Marketplace Report
@@ -313,10 +313,10 @@ capability examples, and the relationship to AP2 (Agent Payments Protocol).
 
 ```bash
 # Discover and validate the UCP profile
-python scripts/ucp_check.py https://store.example.com --json
+python .claude/skills/seo/scripts/ucp_check.py https://store.example.com --json
 
 # With endpoint reachability probes (HEAD each declared capability)
-python scripts/ucp_check.py https://store.example.com --probe-endpoints --json
+python .claude/skills/seo/scripts/ucp_check.py https://store.example.com --probe-endpoints --json
 ```
 
 The script returns: profile presence, version, declared capabilities,

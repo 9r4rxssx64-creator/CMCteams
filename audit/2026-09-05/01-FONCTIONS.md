@@ -31,7 +31,7 @@
 | F25 | kdmc-ais (worker) | AIS navires | ✅ | — | 🔴 (« en panne ») |
 | F26 | kdmc-live (worker) | données live | ✅ | — | 🔴 (« en panne ») |
 | F27 | kdmc-rag (worker) | mémoire Apex | ✅ | — | 🔴 en ligne = code du 08/07, /health 404, déploiement bloqué (Vectorize, action Kevin) |
-| F28 | apex-v13-backend (worker) | backend Apex | ✅ | — | 🔴 **n'existe pas** sur le compte |
+| F28 | ~~apex-v13-backend (worker)~~ | backend Apex | ⛔ | — | 🔴 **n'existe pas** sur le compte → **retiré de la sonde le 6.09.2026** |
 | F29 | apex-auth-worker (worker) | auth Apex | ✅ | — | 🔴 (« en panne ») |
 | F30 | kdmc-router (worker) | le routeur | — (c'est lui qui sert F01-F23) | — | ✅ `arbre.test` 34/34 + `admin.test` 41/41 avant déploiement |
 | F31 | kdmc-outlook (worker) | factures Outlook + **réveil de la sonde** | — | — | ✅ `worker.test.mjs` 6/6 |

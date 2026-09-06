@@ -1,0 +1,14 @@
+{
+  "_pourquoi": "Cliquet du contrôle 6 de tests/verify-pipeline-sessions.mjs. Ces branches étaient ACTIVES (commit dans les 7 jours) et absentes du registre au moment où le contrôle a été écrit, le 6.09.2026 — on les fige pour bloquer les NOUVELLES sans allumer un rouge permanent sur l'existant. Une branche qui sort de cette liste et s'inscrit au registre ne doit PAS y revenir : retirez-la.",
+  "_mesure": "370 branches claude/* sur origin, 22 inscrites au registre, 15 actives sur 7 jours, 7 orphelines.",
+  "_date": "2026-09-06",
+  "orphelines": [
+    "claude/apex-chat-mfa-faceid",
+    "claude/apex-chat-secu-numero-public",
+    "claude/cuisine-6-recettes",
+    "claude/fix-messages-photo",
+    "claude/fix-mois-ouverture",
+    "claude/journal-fusion-union",
+    "claude/verify-cmcteams-light-data-rzlvau"
+  ]
+}

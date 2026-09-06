@@ -47,7 +47,7 @@ grep -oE '"ax_[a-z_]+"' apex-ai/index.html | sort -u > /tmp/v12-keys.txt
 ### Phase 1 - Inventaire v13 (10 min)
 
 ```bash
-cd apex-ai/v13/src
+cd apex-ai/v13
 
 # 1. Functions / classes / hooks exportes
 grep -rhE 'export (function|class|const)' . | grep -oE '(function|class|const)\s+[a-zA-Z_]+' | sort -u > /tmp/v13-exports.txt
@@ -200,14 +200,20 @@ Reordonner la liste par priorite + effort estime.
 - Si v12 evolue pendant le port → re-audit
 ```
 
-### Phase 6 - Audit recurrent (cron weekly)
+### Phase 6 - Audit recurrent (bouton, JAMAIS de cron)
+
+> ⛔ **INTERDIT ABSOLU : pas de `schedule:` sur GitHub Actions.** C'est le VOLUME d'exécutions
+> programmées (~97/jour) qui a fait **suspendre le compte le 15/08/2026**. Règle « CHAQUE
+> AUTOMATISATION A UNE DESTINATION ÉCRITE » : ce qui produit/teste CE dépôt va sur GitHub
+> **à la main uniquement** (`workflow_dispatch`), et c'est MOI qui appuie le bouton via l'API
+> (`actions_run_trigger`) — zéro clic Kevin. *(Ce bloc proposait un cron hebdomadaire à copier ;
+> corrigé le 6.09.2026.)*
 
 ```yaml
 # .github/workflows/parity-audit.yml
 name: Parity Audit v12/v13
 on:
-  schedule:
-    - cron: '0 8 * * MON'  # Chaque lundi 8h
+  workflow_dispatch:        # bouton seulement — je le déclenche moi-même
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -215,6 +221,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           # Run skill parity audit
+          # ⚠️ `./scripts/audit-parity.sh` n'existe PAS (vérifié 6.09.2026 : `scripts/` ne
+          # contient que `deploy-check.sh`). À écrire avant d'activer ce workflow.
           ./scripts/audit-parity.sh > parity-report.md
           # Si gaps P0 detectes → ouvrir issue auto
           if grep -q "P0 Critical" parity-report.md; then
