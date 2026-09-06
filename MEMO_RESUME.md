@@ -130,6 +130,11 @@
 **877 s**, toute la classe « le test dépend de l'état du réseau » étant traitée. Le rouge restant est
 `test:lingua-voix`, et **il échoue aussi ici** (même ligne 92, même `TimeoutError` : le bouton 🔊 n'apparaît
 pas dans les 15 s) — donc ce n'est pas du non-déterminisme, c'est un vrai écart, **session Lingua**.
+
+**Preuve que le déterminisme est atteint** : la chaîne complète relancée ici s'arrête **au même test que
+le runner GitLab**, `test:lingua-voix` — **92 étapes passées sur 93**, même ligne, même erreur des deux
+côtés. Avant aujourd'hui, les deux environnements donnaient des verdicts différents ; maintenant ils
+disent la même chose. C'est ça, un test qui sert à quelque chose.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
