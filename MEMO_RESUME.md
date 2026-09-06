@@ -19,6 +19,11 @@
   Rendu déterministe (attente stable des cellules, réseau coupé), 280/0 en local. Au passage :
   `cmc-runtime-audit.yml` (GitHub) échouait en 17 s depuis un moment (`cache: npm` sans lockfile) →
   ces tests ne tournaient **nulle part** ; réparé (plus de cache, `--legacy-peer-deps`).
+  5ᵉ : `test:v788` 6/2 sur le runner (8/0 ici) — le cas « sans clé » partait vraiment vers
+  identitytoolkit avec la clé Web embarquée (réseau ouvert) et obtenait un token ; le sandbox passait
+  par accident (pas de réseau). Test rendu honnête : clé embarquée neutralisée pour ce cas + page hors
+  ligne. **Leçon transversale** : un test qui passe ici parce que le réseau est coupé n'est pas un test
+  qui passe — le runner GitLab (réseau ouvert) le révèle, GitHub ne lançait plus ces tests.
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
