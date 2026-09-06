@@ -24,7 +24,7 @@ describe('v13.4.362 — free-smart routing (IA gratuites selon la question)', ()
 
   it('question SIMPLE (traduction) → IA GRATUITE (Gemini/Groq/OpenRouter)', () => {
     const d = aiRoutingPolicy.decide('translation');
-    expect(['gemini', 'groq', 'openrouter']).toContain(d.primary);
+    expect(['qwen', 'gemini', 'groq', 'openrouter']).toContain(d.primary); /* v13.4.366 : qwen = gratuit en tête */
     expect(d.is_free_tier).toBe(true);
     /* Anthropic reste joignable en secours */
     expect([d.primary, ...d.fallback_chain]).toContain('anthropic');
@@ -33,7 +33,7 @@ describe('v13.4.362 — free-smart routing (IA gratuites selon la question)', ()
   it('résumé / speed / general / vision = simples → gratuit', () => {
     for (const dom of ['summary', 'speed', 'general', 'vision'] as const) {
       const d = aiRoutingPolicy.decide(dom);
-      expect(['gemini', 'groq', 'openrouter']).toContain(d.primary);
+      expect(['qwen', 'gemini', 'groq', 'openrouter']).toContain(d.primary); /* v13.4.366 : qwen = gratuit en tête */
     }
   });
 
@@ -41,7 +41,7 @@ describe('v13.4.362 — free-smart routing (IA gratuites selon la question)', ()
     const d = aiRoutingPolicy.decide('code');
     expect(d.primary).toBe('anthropic');
     /* mais le gratuit reste en fallback → 0 blocage */
-    expect(d.fallback_chain.some((p) => ['gemini', 'groq', 'openrouter'].includes(p))).toBe(true);
+    expect(d.fallback_chain.some((p) => ['qwen', 'gemini', 'groq', 'openrouter'].includes(p))).toBe(true);
   });
 
   it('reasoning / admin / creative = complexes → Anthropic', () => {
@@ -60,7 +60,7 @@ describe('v13.4.362 — free-smart routing (IA gratuites selon la question)', ()
   it('hasKey proxy-aware : Gemini/Groq dispo via proxy même sans clé locale', () => {
     /* Aucune clé locale ax_*_key posée, mais proxy ON par défaut → gratuit routable. */
     const d = aiRoutingPolicy.decide('general');
-    expect(['gemini', 'groq', 'openrouter']).toContain(d.primary);
+    expect(['qwen', 'gemini', 'groq', 'openrouter']).toContain(d.primary); /* v13.4.366 : qwen = gratuit en tête */
   });
 
   it('proxy OFF + aucune clé locale gratuite → retombe sur Anthropic (pas de crash)', () => {

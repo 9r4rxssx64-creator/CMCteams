@@ -1,7 +1,49 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-05 nuit** (IA gratuite en principal dans TOUS les projets · Qwen gratuit en IA principale d'Apex v13.4.366 · fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🗳️ Concertation d'IA gratuites — vote sur le type de question + conseil avec juge (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | `analyseQuestion` (3 voix gratuites votent le type), `councilText` (voix + juge gratuit), `routeSmart` (les deux puis le routage) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | 14 tests dont 5 sur la concertation (vote, désaccord → repli, action → Anthropic, conseil, juge mort) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais vote puis conseille par défaut ; `POST /ai/analyse` = le vote seul | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.285) | Chat admin : vote + conseil quand Workers AI est là | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse actu = conseil de 3 voix + juge (moins d'inventions) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) |
+| `index.html` (CMCteams v9.893) | Badge « Concertation gratuite · N avis » quand un conseil a répondu | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `apex-ai/v13/services/ai/crew-experts.ts` (Apex v13.4.367) | Les voix de l'équipe d'experts = gratuites d'abord, Anthropic membre + chef d'orchestre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+
+## 🆓 « Pareil dans mes autres projets » — IA gratuite en principal partout (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | **NOUVEAU — LE routage IA commun** : qui répond en premier selon la question (Qwen gratuit, Anthropic, Gemini, Perplexity…), secours en chaîne, réponse qui nomme toujours le moteur. Importé par chaque worker | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | **NOUVEAU** — la garde du module (9 tests, hors ligne). `npm run test:ia-route` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais **apis.kd-mc.com/ai** devient le hub commun (Qwen d'abord, bascule par question, ancienne chaîne en secours). Bug corrigé : le vrai hôte GitHub Pages passe enfin | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `index.html` (CMCteams v9.892) | Le chat IA envoie les questions courantes au relais gratuit ; planning/outils/actions restent à Anthropic ; **marche sans clé pour les employés** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `tests/verify-cmc-ia-gratuite.mjs` | **NOUVEAU** — la garde CMCteams (26 contrôles : la fonction de décision est extraite du vrai fichier et exécutée). `npm run test:cmc-ia-gratuite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cmc-ia-gratuite.mjs) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.284) | Qwen pour le chat, résumés, traductions, reformulations ; Anthropic pour agir et chercher | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) |
+| `messaging-app/tests/unit/api-worker-ia-qwen.test.js` | **NOUVEAU** — 8 tests Apex Chat (Qwen répond, action → Anthropic, secours, cause exacte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-ia-qwen.test.js) |
+| `services/kdmc-router/worker.js` + `wrangler.toml` | Coach Lingua sur Qwen (multilingue) d'abord ; binding Workers AI ajouté au routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/lingua-ia.test.mjs` | **NOUVEAU** — la garde du coach (Qwen nommé, secours, fail-open). `npm run test:lingua-ia` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/lingua-ia.test.mjs) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse World Monitor par Qwen, Anthropic en secours (clé devenue optionnelle) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-wm-brief.yml) |
+| `services/kdmc-crea-ai/worker.js` | Paroles / compositions : Qwen Workers AI en tête (Qwen3 récents), les 18 moteurs à clé en secours, toutes les causes de bascule visibles | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tools/finances/index.html` (v0.15.0) | Qwen en tête du « gratuit d'abord » | [ouvrir](https://finances.kd-mc.com) · [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/finances/index.html) |
+
+## 🆓 Qwen gratuit en IA principale + bascule auto par question — Apex v13.4.366 (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | **Le relais Apex** (sa source est dans ce fichier) : sert maintenant **Qwen sans clé** via Workers AI, route `/qwen/…`, PIN obligatoire, 4 modèles essayés dans l'ordre, réponse au format OpenAI, raisonnement `<think>` filtré. L'étape « Verify deploy » fait un **vrai appel Qwen** et écrit `qwen HTTP <code>` dans le journal | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/sync-apex-secrets-to-cf-worker.yml) · [Runs (la preuve live)](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `apex-ai/v13/services/ai/ai-routing-policy.ts` | **Qui répond à quoi** : Qwen en tête pour général/résumé/traduction, Anthropic pour code/raisonnement/créatif et **toute action**, Gemini pour les images, Perplexity pour la recherche, Groq pour la vitesse. Les gratuits passent devant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-routing-policy.ts) |
+| `apex-ai/v13/services/ai/ai-router.ts` | Qwen déclaré comme fournisseur (adresse = le relais lui-même, 0 clé) et inséré dans la chaîne de secours juste après Anthropic | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-router.ts) |
+| `apex-ai/v13/services/ai/crew-experts.ts` | Qwen dans l'équipe d'experts (spécialité multilingue) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+| `apex-ai/v13/features/chat/chat-misc-wiring.ts` | Le libellé du mode ⚡ « Gratuit malin » explique la bascule en clair | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/features/chat/chat-misc-wiring.ts) |
+| `tests/verify-apex-proxy-qwen.mjs` | **NOUVEAU** — la preuve sans réseau : extrait le relais du workflow, le fait tourner avec un Workers AI simulé, 17 contrôles (PIN, formats, filtre `<think>`, modèle mort → suivant, cause exacte). `npm run test:apex-proxy-qwen` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-apex-proxy-qwen.mjs) |
+| `apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` | **NOUVEAU** — la garde : Qwen reste principal, la bascule par question tient, et un fournisseur ne peut plus être oublié dans une liste (13 tests, 3 sabotages prouvés) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts) |
+| `LESSONS.md` · `CLAUDE.md` | Leçon **#217** + règle « Qwen gratuit en IA principale + bascule auto » | [LESSONS](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/LESSONS.md) · [CLAUDE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE.md) |
 
 ## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
 

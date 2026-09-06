@@ -1,5 +1,97 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 — « Concertation d'IA gratuites pour analyser les questions, va plus loin »
+
+**Demande Kevin** : *« Fais une concertation d'IA gratuites pour analyser les questions par
+exemple, va plus loin. »*
+
+**Ce qui change** (même module partagé, donc partout d'un coup) :
+- **Le type de chaque question est VOTÉ** par 3 IA gratuites en parallèle (chaque modèle Qwen
+  = une voix, plus Groq/Gemini si clé) au lieu d'être deviné par des mots-clés. Pas de
+  majorité ou trop lent → les mots-clés tranchent : jamais bloqué. Une demande d'action garde
+  toujours Anthropic et ses outils, quel que soit le vote.
+- **Les questions difficiles reçoivent un CONSEIL** : plusieurs voix gratuites répondent, un
+  juge gratuit garde ce qui fait consensus et écarte ce qu'une seule voix affirme (moins
+  d'inventions). Anthropic n'est plus appelé pour ça, seulement pour agir et en secours.
+- Où : relais apis.kd-mc.com (`/ai` + `/ai/analyse`), **Apex Chat v1.1.285**, **CMCteams
+  v9.893** (badge « Concertation gratuite · N avis »), World Monitor (la synthèse actu est
+  un conseil de 3 voix + juge), **Apex v13.4.367** (l'équipe d'experts = gratuites d'abord,
+  Anthropic chef d'orchestre).
+
+**Preuves** : module 14/14 · relais 31/31 · CMCteams 27/27 · Apex Chat 9/9 + 100/100 ·
+Apex orchestre + garde verts · tsc propre. Leçon **#219**.
+
+---
+
+## 5 septembre 2026 (nuit) — « Pareil dans mes autres projets » : IA gratuite en principal partout
+
+**Demande Kevin** : *« Pareil dans mes autres projets. »* (après Qwen dans Apex, ci-dessous)
+
+**Ce qui change pour Kevin** (un seul module partagé `services/_shared/ia-route.js`, même
+bascule qu'Apex : questions courantes → Qwen gratuit ; code / raisonnement / action → Anthropic ;
+image → Gemini ; recherche → Perplexity ; l'ancien ordre de chaque projet reste en secours) :
+- **CMCteams v9.892** : les questions courantes partent au relais du domaine (0 clé). Planning,
+  équipes, congés, convention, actions, photos → Anthropic et ses outils, comme avant. Si le
+  gratuit tombe → Anthropic quand il y a une clé, sinon le mode local. **Un employé sans clé a
+  maintenant une IA.**
+- **Apex Chat v1.1.284** : Qwen d'abord pour le chat, les résumés, les traductions, la
+  reformulation ; Anthropic pour agir et pour la recherche précise. Au passage, trois numéros de
+  version différents (badge 279, cache 279, source 283) sont réalignés.
+- **Lingua** (coach) : Qwen multilingue d'abord, puis Gemini/Groq/Mistral.
+- **World Monitor** (synthèse actu) : Qwen d'abord, Anthropic en secours (clé plus obligatoire).
+- **Créa AI** (paroles, compositions) : Qwen Workers AI en tête, 18 moteurs à clé en secours.
+- **Finances v0.15.0** : Qwen en tête du « gratuit d'abord » (texte seul, les documents vont
+  toujours aux moteurs qui lisent PDF/photos).
+- **Relais du domaine apis.kd-mc.com** : devient le hub commun, avec Anthropic en secours
+  pertinent. **Bug trouvé** : le vrai hôte GitHub Pages (`9r4rxssx64-creator.github.io`) n'était
+  pas dans ses origines de confiance → corrigé + test.
+- Rien à changer pour La Détente (images), RAG (embeddings), Balances (soldes) : aucun modèle texte.
+
+**Preuves** : module 9/9 · relais 29/29 + paliers 63/63 · CMCteams 26/26 (fonction extraite et
+exécutée) · Apex Chat 100/100 + 8/8 · Lingua 2/2 + coach 15/15 · Créa 71/71 · 6 workers
+`node --check` · gates dépôt public / destinations / pipefail / XSS / taille OK. Leçon **#218**.
+
+**Honnête** : `router-secours` échoue 6× sur `main` avant mes changements (copie de secours qui
+oublie cuisine/worldmonitor/osint/ia/outils/shops) — pas causé ici, à traiter à part. Les gardes
+Playwright (finances, ia-proxy-routing, lingua…) ne tournent pas dans ce bac à sable (pas de
+navigateur installable) : c'est la CI qui les joue. Les déploiements des 6 workers partent au
+merge dans `main` ; leurs étapes de vérification réelle prouvent qui répond (provider/model).
+
+---
+
+## 5 septembre 2026 (nuit) — Qwen gratuit devient l'IA principale d'Apex, bascule auto par question (v13.4.366)
+
+**Demande Kevin** : *« Fait tourner Apex sur Qwen l'IA gratuite, privilégie les IA gratuites en tâche
+principale pour l'instant, et suivant les questions elle bascule automatiquement sur la plus
+polyvalente, la plus pertinente pour la tâche demandée. »*
+
+**Ce qui change pour Kevin** (badge **v13.4.366**) :
+- **Qwen répond par défaut** aux questions du quotidien (général, résumé, traduction) — **0 clé**,
+  **0 €** : il tourne sur Workers AI, dans le compte Cloudflare, via le relais Apex existant.
+- **Bascule automatique** selon la question : code / raisonnement / créatif → **Anthropic** ;
+  **toute action** (« lance », « déploie », « corrige », « envoie »…) → **Anthropic** (seul à avoir
+  les outils) ; photo / image → **Gemini** ; recherche → **Perplexity** ; réponse ultra-rapide →
+  **Groq**. Anthropic reste le filet derrière tout le monde.
+- Le mode ⚡ par défaut « Gratuit malin » l'explique en clair dans le chat.
+
+**Comment c'est fait** (tout dans un commit, docs comprises) :
+- Relais `apex-secrets-proxy` (source dans le workflow `sync-apex-secrets-to-cf-worker.yml`) :
+  binding `[ai]`, route `/qwen/v1/chat/completions` (PIN obligatoire), 4 modèles Qwen essayés dans
+  l'ordre (3.8-27b en tête), sortie au format OpenAI (stream + non-stream), raisonnement `<think>`
+  filtré, `/health` annonce `qwen`. L'étape « Verify deploy » fait un **vrai appel Qwen** et
+  imprime `qwen HTTP <code>` dans le journal CI = la preuve live.
+- Client Apex : `qwen` ajouté aux 5 endroits (PROVIDERS, chaîne, `supported`, PROXY_PROVIDERS,
+  crew) + `FREE_PROVIDERS` en tête ; préférences par domaine réécrites ; les verbes d'action
+  envoient vers `admin` (Anthropic) ; coût `qwen_cf` = 0 dans le tableau des jetons.
+- **Preuves** : `tests/verify-apex-proxy-qwen.mjs` (worker extrait + Workers AI simulé, 17
+  contrôles), `tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` (13 tests, 3 sabotages
+  prouvés discriminants), 304/304 non-régression, tsc propre sur les fichiers touchés.
+  Leçon **#217**.
+
+**Limite honnête** : depuis l'agent je ne peux atteindre ni workers.dev ni l'API GitHub. Le
+déploiement du relais part **au merge dans main** (le workflow a changé) ; c'est son journal
+« Verify deploy » qui prouve Qwen en vrai. `/health` garde un cache de 5 min côté client avant
+d'afficher `qwen`.
 ## 5 septembre 2026 — Lingua : « j'ai pourtant un compte » réparé pour de vrai
 
 **Kevin, capture à l'appui** : prénom + code sur `kdmc-site.pages.dev` → « Aucune

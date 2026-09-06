@@ -26,7 +26,7 @@ import { aiRouter } from './ai-router.js';
 export type CrewMode = 'consensus' | 'debate' | 'specialized';
 /* v13.4.364 (Kevin « Utilise toutes les IA dispo ») : élargi à TOUS les providers
  * réellement appelables par le router (openclaw exclu = placeholder sans clé). */
-export type CrewProvider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras';
+export type CrewProvider = 'anthropic' | 'openai' | 'openrouter' | 'groq' | 'gemini' | 'mistral' | 'cerebras' | 'qwen';
 
 export interface CrewMember {
   provider: CrewProvider;
@@ -74,6 +74,7 @@ const EXPERTISE_MAP: Record<CrewProvider, string> = {
   gemini: 'vision',
   groq: 'speed',
   openrouter: 'general',
+  qwen: 'multilingual', /* v13.4.366 : Qwen 3 gratuit (Workers AI) — général/multilingue */
   mistral: 'multilingual',
   cerebras: 'speed-alt',
 };
@@ -81,7 +82,7 @@ const EXPERTISE_MAP: Record<CrewProvider, string> = {
 /* v13.4.364 — Providers servis par le proxy Cloudflare (clé côté serveur, flag
  * apex_v13_use_secrets_proxy défaut ON) parmi ceux que le router sait appeler.
  * openrouter n'est PAS proxié → dispo seulement avec clé locale. */
-const PROXIED_CREW: readonly CrewProvider[] = ['anthropic', 'openai', 'groq', 'gemini', 'mistral', 'cerebras'];
+const PROXIED_CREW: readonly CrewProvider[] = ['anthropic', 'openai', 'groq', 'gemini', 'mistral', 'cerebras', 'qwen'];
 
 class CrewExpertsService {
   /**
@@ -318,6 +319,7 @@ class CrewExpertsService {
       openrouter: 'OpenRouter',
       mistral: 'Mistral',
       cerebras: 'Cerebras',
+      qwen: 'Qwen',
     };
     return names[provider];
   }
@@ -335,7 +337,7 @@ class CrewExpertsService {
       proxyOn = f !== 'false' && f !== '0';
     } catch { /* défaut ON */ }
     if (proxyOn) for (const p of PROXIED_CREW) out.add(p);
-    const all: CrewProvider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'mistral', 'cerebras'];
+    const all: CrewProvider[] = ['anthropic', 'openai', 'openrouter', 'groq', 'gemini', 'mistral', 'cerebras', 'qwen'];
     for (const p of all) {
       try {
         const raw = localStorage.getItem(`ax_${p}_key`);
@@ -343,8 +345,10 @@ class CrewExpertsService {
       } catch { /* ignore */ }
     }
     out.add('anthropic'); /* toujours joignable (proxy) — jamais un crew vide */
-    /* Anthropic d'abord, puis gratuits (groq/gemini/cerebras/openrouter), puis payants */
-    const order: CrewProvider[] = ['anthropic', 'groq', 'gemini', 'cerebras', 'openrouter', 'openai', 'mistral'];
+    /* v13.4.367 (Kevin 2026-09-06 « Fais une concertation d'IA gratuites ») : les VOIX du
+     * crew sont les gratuites d'abord (qwen/groq/gemini/cerebras/openrouter) ; Anthropic reste
+     * membre ET chef d'orchestre de la synthèse (conductorSynthesis), les payants en dernier. */
+    const order: CrewProvider[] = ['qwen', 'groq', 'gemini', 'cerebras', 'openrouter', 'anthropic', 'openai', 'mistral'];
     return order.filter((p) => out.has(p));
   }
 
