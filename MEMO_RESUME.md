@@ -1,5 +1,25 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h30) — vérification LIVE : le worker de production a bien été redéployé
+
+- Mesuré via le connecteur Cloudflare (pas déduit) : worker **`apex-chat-api`**,
+  `modified_on = 2026-09-06T16:26:22Z`. Mon dernier push est de **16:12:24Z**, la fusion dans
+  `main` a suivi → **le déploiement a tourné 14 min après le push et a réussi**. Les correctifs
+  P2a/P2b/P2c sont donc en production, pas seulement dans le dépôt.
+- **Faux signal écarté** : la table `ws_tickets` n'existe pas encore en D1
+  (`SELECT name FROM sqlite_master … = 0 ligne`). Ce **n'est pas** un échec de déploiement : elle
+  est créée **paresseusement**, au premier `?ticket=` réellement consommé. Tant qu'aucun téléphone
+  n'a rouvert l'app avec la v1.1.288, elle n'a aucune raison d'exister. À vérifier de nouveau après
+  la première connexion réelle de Kevin — **si elle apparaît, le chemin ticket est prouvé bout en
+  bout en production**.
+- **Ce que je n'ai PAS pu vérifier d'ici** (à dire, pas à masquer) : que le code déployé est
+  bien *mon* code (le bundle fait ~250 Ko, le charger noierait le contexte) et que l'API GitHub
+  reste fermée à cette session (403), donc je ne peux pas lire le résultat des workflows.
+  Le juge de paix reste `apex-chat-e2e.yml`, qui tourne à chaque push sur `main` et charge la
+  **vraie page** (`9r4rxssx64-creator.github.io`) contre le **vrai worker** : c'est lui qui
+  attraperait une origine CORS oubliée. Il ouvre une issue `e2e-fails` en cas d'échec.
+
+
 ## 6 septembre 2026 (16h10, session Apex Chat) — P2c corrigé : plus de jeton dans l'URL des photos (v1.1.288)
 
 - Dernier point de l'audit Apex Chat. `K._mediaSrc` collait `?token=<jeton de session>` sur chaque
