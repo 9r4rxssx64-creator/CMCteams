@@ -2,6 +2,7 @@
  * Tests workers/sms-worker.js — Vonage SMS proxy (invite + OTP)
  * Target : 100% coverage v8 via mock fetch global.
  */
+import { withOrigin } from './api-worker-helpers.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import worker from '../../workers/sms-worker.js';
 
@@ -25,9 +26,14 @@ beforeEach(() => {
 
 describe('sms-worker — routing & CORS', () => {
   it('OPTIONS retourne CORS headers', async () => {
-    const r = await worker.fetch(makeRequest({ method: 'OPTIONS' }), ENV);
-    expect(r.status).toBe(200);
-    expect(r.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    // v1.1.287 (audit P2b) : plus de `*`. L'origine autorisée est renvoyée
+    // telle quelle ; une origine inconnue n'obtient AUCUN en-tête CORS.
+    const ok = await worker.fetch(withOrigin(makeRequest({ method: 'OPTIONS' }), 'https://apex-chat.kd-mc.com'), ENV);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('Access-Control-Allow-Origin')).toBe('https://apex-chat.kd-mc.com');
+    expect(ok.headers.get('Vary')).toContain('Origin');
+    const ko = await worker.fetch(withOrigin(makeRequest({ method: 'OPTIONS' }), 'https://evil.example'), ENV);
+    expect(ko.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 
   it('GET /health → ok+version+provider', async () => {

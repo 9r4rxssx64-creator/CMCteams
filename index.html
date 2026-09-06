@@ -5821,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.891";
+var APP_VER="v9.895";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14074,7 +14074,7 @@ function _agentRegressionWatch(){
 /* v9.530 — Helper log securite cmc — synced FB_FIX cmc_security_log */
 function cmcSecurityLog(action,detail,uid){try{var log=lg("cmc_security_log",[]);log.push({ts:Date.now(),action:String(action||"").slice(0,60),uid:String(uid||(A.user&&A.user.id)||"anon").slice(0,30),detail:String(detail||"").slice(0,200)});if(log.length>100)log=log.slice(-100);ls("cmc_security_log",log);}catch(_){}}
 function _agentParserQuality(){try{var y=A.year,m=A.month;var active=A.employees.filter(function(e){return isEmpActive(e,y,m);});var pl=gpl(y,m)||{};var days=getDays(y,m);var tot=active.length*days,filled=0,unk=0;active.forEach(function(e){var row=pl[e.id]||{};for(var d=1;d<=days;d++){var c=row[d];if(c){filled++;if(!CODES[c])unk++;}}});var cov=tot?Math.round(filled/tot*100):0;if(cov<50){agentAppendReport("parser-quality","warn","Couverture "+cov+"% — import incomplet ?");_cmcEscalate({cov:cov,filled:filled,tot:tot,unk:unk,month:MFR[m]+" "+y},"Parser qualite basse");}else if(unk>5){agentAppendReport("parser-quality","warn",unk+" codes inconnus");}else{agentAppendReport("parser-quality","ok","Couverture "+cov+"% · "+unk+" codes inconnus");}}catch(e){agentAppendReport("parser-quality","err",(e.message||"").slice(0,100));}}
-function _agentErrorPattern(){try{var errs=lg("cmc_err_log",[])||[];var recent=errs.filter(function(e){return Date.now()-(e.ts||0)<3600000;});if(recent.length<=5){agentAppendReport("error-pattern","ok",recent.length+" erreurs dans 1h");return;}var pat={};recent.forEach(function(e){var k=(e.msg||"").slice(0,30);pat[k]=(pat[k]||0)+1;});var top=Object.keys(pat).sort(function(a,b){return pat[b]-pat[a];})[0];agentAppendReport("error-pattern","err",recent.length+" erreurs/h — top: '"+top+"' ×"+pat[top]);_cmcEscalate({patterns:pat,recent:recent.slice(0,10)},"Pattern erreur recurrent: "+top);}catch(e){agentAppendReport("error-pattern","err",(e.message||"").slice(0,100));}}
+function _agentErrorPattern(){try{var errs=lg("cmc_err_log",[])||[];var recent=errs.filter(function(e){return Date.now()-(e.ts||0)<3600000;});if(recent.length<=5){agentAppendReport("error-pattern","ok",recent.length+" erreurs dans 1h");return;}var pat={};recent.forEach(function(e){var k=(_cmcErrType(e)+" "+_cmcErrMsg(e)).trim().slice(0,40)||"(sans message)";pat[k]=(pat[k]||0)+1;});var top=Object.keys(pat).sort(function(a,b){return pat[b]-pat[a];})[0];agentAppendReport("error-pattern","err",recent.length+" erreurs/h — top: '"+top+"' ×"+pat[top]);_cmcEscalate({patterns:pat,recent:recent.slice(0,10)},"Pattern erreur recurrent: "+top);}catch(e){agentAppendReport("error-pattern","err",(e.message||"").slice(0,100));}}
 function _agentPlanningIntegrity(){try{var y=A.year,m=A.month;var pl=gpl(y,m)||{};var days=getDays(y,m);var bad=0,badCodes=[];Object.keys(pl).forEach(function(uid){var row=pl[uid]||{};for(var d=1;d<=days;d++){var c=row[d];if(c&&!CODES[c]){bad++;if(badCodes.indexOf(c)<0&&badCodes.length<5)badCodes.push(c);}}});if(bad){agentAppendReport("planning-integrity","warn",bad+" codes invalides: "+badCodes.join(", "));}else{agentAppendReport("planning-integrity","ok","Planning coherent "+MFR[m]+" "+y);}}catch(e){agentAppendReport("planning-integrity","err",(e.message||"").slice(0,100));}}
 function _agentSessionWatch(){try{if(!A.user)return;var last=+localStorage.getItem("cmc_lastact")||0;if(!last)return;var rem=SESSION_TTL-(Date.now()-last);if(rem<5*60*1000&&rem>0)agentAppendReport("session-watch","warn","Session expire "+Math.round(rem/60000)+"min");else agentAppendReport("session-watch","ok",Math.round(rem/60000)+"min restantes");}catch(e){agentAppendReport("session-watch","err",(e.message||"").slice(0,100));}}
 function _agentSwSync(){try{if(!("serviceWorker" in navigator))return;navigator.serviceWorker.getRegistration().then(function(reg){if(!reg)return;if(reg.waiting){agentAppendReport("sw-sync","warn","MAJ SW en attente");_cmcEscalate({appVer:APP_VER},"SW waiting - user reload requis");}else{agentAppendReport("sw-sync","ok","SW a jour");}}).catch(function(){});}catch(e){agentAppendReport("sw-sync","err",(e.message||"").slice(0,100));}}
@@ -23441,6 +23441,17 @@ if(typeof _origDc==="function"){
 }
 // API publique pour consulter
 function getErrorLog(){return _errLog.slice();}
+/* v9.895 — Le journal `cmc_err_log` est rempli par TROIS écrivains, avec TROIS formes :
+ *   _logError()      -> {ts, type, msg, stack, view, …}
+ *   _cmcUserError()  -> {ts, type, technical, userMsg, view}
+ *   _cmcSafeCatch()  -> {ts, ctx, err}
+ * Les lecteurs (page Debug admin, outil IA get_error_log, sentinelle error-pattern)
+ * ne lisaient QUE `.type`/`.msg` → deux tiers du journal s'affichaient « [undefined]
+ * undefined » et la sentinelle groupait sur la chaîne VIDE (« top: '' ×N ») : elle
+ * était donc aveugle aux erreurs qu'elle est censée détecter. Ces deux lectures
+ * uniformisent les trois formes — règle « toujours détailler les erreurs, cause exacte ». */
+function _cmcErrType(e){return String((e&&(e.type||e.ctx))||"erreur");}
+function _cmcErrMsg(e){if(!e)return"";return String(e.msg||e.err||e.technical||e.userMsg||"")||"";}
 function getPerfMetrics(){return Object.assign({},_perfMetrics);}
 function clearErrorLog(){if(!A.user||A.user.id!==AID)return;_errLog=[];try{localStorage.removeItem("cmc_err_log");}catch(e){}toast("Journal erreurs effac\u00e9");}
 
@@ -23496,8 +23507,8 @@ function vDebug(){
   else h+='<div style="max-height:300px;overflow-y:auto;font-family:monospace;font-size:11px;line-height:1.5">'
     +errs.map(function(e){var t=new Date(e.ts);return '<div style="padding:5px 8px;border-bottom:1px solid rgba(224,96,96,.1);word-break:break-word">'
       +'<span style="color:#8aaac0">'+t.toLocaleString("fr-FR")+'</span> '
-      +'<span style="color:#d4b840">['+esc(e.type)+']</span> '
-      +'<span style="color:#e0a0a0">'+esc(e.msg)+'</span>'
+      +'<span style="color:#d4b840">['+esc(_cmcErrType(e))+']</span> '
+      +'<span style="color:#e0a0a0">'+esc(_cmcErrMsg(e))+'</span>'
       +(e.view?' <span style="color:#6a8aa8">@'+esc(e.view)+'</span>':'')
       +'</div>';}).join("")
     +'</div>';
@@ -39898,13 +39909,35 @@ function _doExtractPdfLines(file,onDone,onErr){
               }
             }
             var TOL=3,rowMap={};
+            // v9.892 (Kevin 2026-09-06 « vérifie en réel, tout à l'identique ») —
+            // LIGNES PAR PROXIMITÉ, PAS PAR ARRONDI. Deux items d'une MÊME ligne peuvent
+            // tomber de part et d'autre d'une frontière d'arrondi : dans SEPTEMBRE 2026 V2,
+            // « .BRTP MATTERA M » est à y=631,4 (→630) et sa période « 1 30 » à y=631,6
+            // (→633) : 0,2 pt d'écart, deux lignes différentes. La ligne du nom perd son
+            // « 1 30 », le parser la rejette, et comme MATTERA M n'est pas au registre fixe
+            // AUCUN employé n'est créé → la personne disparaît du planning, des équipes et
+            // des départs (règle ABSOLUE « tout le monde a un planning si son nom est dans
+            // le PDF »). Correctif : un item rejoint la ligne EXISTANTE la plus proche si
+            // elle est à moins de _ROWTOL. Mesuré sur les 3 PDF réels : le tremblement
+            // À L'INTÉRIEUR d'une ligne ne dépasse jamais 1,7 pt, et deux lignes voisines
+            // sont toujours distantes d'au moins 3,7 pt → 1,8 pt ne peut JAMAIS fusionner
+            // deux vraies lignes, et ne peut que RÉUNIR ce que l'arrondi avait séparé.
+            var _ROWTOL=1.8;
+            function _cmcRowKey(yRaw){
+              var snapped=Math.round(yRaw/TOL)*TOL;
+              if(rowMap[snapped])return snapped;
+              var near=null,bd=1e9;
+              for(var k in rowMap){var d=Math.abs(Number(k)-yRaw);if(d<bd){bd=d;near=Number(k);}}
+              if(near!==null&&bd<=_ROWTOL)return near;
+              return snapped;
+            }
             var _ti=0;
             // v9.766 — Items GEOMETRIQUES bruts (x/y/str/w/h) pour parsers T1 valides.
             // Coordonnees PDF.js originales (pas arrondies par TOL).
             var _geoItems=[];
             tc.items.forEach(function(it){
               if(it.str===undefined){return;} // marked content
-              var y=Math.round(it.transform[5]/TOL)*TOL;
+              var y=_cmcRowKey(it.transform[5]);
               var x=it.transform[4];
               var t=(it.str||"").replace(/\s+/g," ").trim();
               var col=_colorMap[_ti]||null;
@@ -40701,6 +40734,76 @@ function _cmcFallbackUnassignedTeams(iy,im){
     });
     if(_rescued){console.info("[v9.823 rescue] "+_rescued+" emp(s) travaillant rattaché(s) à leur équipe (overlap repos)");try{ls("cmc_e",A.employees);}catch(_){}if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}}
   }catch(_rescErr){console.warn("[v9.823 rescue]",_rescErr&&_rescErr.message);}
+  // v9.892 (Kevin 2026-09-06 « bonne équipe … pour chaque ») — DERNIER FILET :
+  // rattachement par la ROTATION D'HORAIRES, pas par les jours de repos.
+  // Vécu septembre 2026 : BLANCHY F et DEGIOVANNI R arrivent le 16 (les 15 premiers
+  // jours en CP). Sur une demi-période ils n'ont que 4 jours de repos → le motif de
+  // repos les rend IMPOSSIBLES à départager (Jaccard 0,40 à 0,44 à égalité sur 4
+  // équipes) et ils restaient « sans équipe » : présents dans le planning CMCteams,
+  // ABSENTS de la page Départs. Leurs HORAIRES, eux, sont sans ambiguïté :
+  // BLANCHY = 12/12 codes de c7 (2e meilleure 33 %), DEGIOVANNI = 11/12 de c11
+  // (2e 33 %) — confirmé indépendamment par la colonne du récapitulatif du PDF
+  // (toute la colonne de BLANCHY est en c7, celle de DEGIOVANNI en c11).
+  // Exigences volontairement STRICTES pour ne jamais deviner : ≥8 jours comparables,
+  // ≥80 % de codes identiques, et au moins 2× la 2e meilleure équipe. VERZELLO O
+  // (que des RH/R, 4 équipes à 100 %) reste donc sans équipe — c'est correct.
+  // teamHistory = regroupement d'affichage, jamais une cellule du PDF → ne viole pas
+  // « reproduction à l'identique ».
+  try{
+    var _absH={formation:1,maladie:1,conges:1,deplacement:1,amenage:1};
+    var _hMembers={};
+    A.employees.forEach(function(_e){
+      if(!_e||!_e.teamHistory)return;var tid=_e.teamHistory[key];
+      if(!tid||_absH[tid])return;(_hMembers[tid]=_hMembers[tid]||[]).push(_e.id);
+    });
+    var _hNbDays=new Date(iy,im+1,0).getDate();
+    var _hMaj={};
+    Object.keys(_hMembers).forEach(function(tid){
+      var m={},mem=_hMembers[tid];
+      for(var d=1;d<=_hNbDays;d++){
+        var f={};mem.forEach(function(id){var c=(ov[id]||{})[d];if(c)f[c]=(f[c]||0)+1;});
+        var ks=Object.keys(f);if(!ks.length)continue;
+        ks.sort(function(a,b){return f[b]-f[a];});
+        if(f[ks[0]]*2>mem.length)m[d]=ks[0];
+      }
+      _hMaj[tid]=m;
+    });
+    var _hAbs={RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,CDH:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1,CLM:1,ABS:1,FL:1,HD:1,HC:1,MT:1,CEO:1,CSC:1,CSS:1};
+    var _hFixed=0;
+    A.employees.forEach(function(_e){
+      if(!_e||!isEmpActive(_e,iy,im))return;
+      // Les CADRES (Pit Boss / Superviseur / Inspecteur, id P#####, 2e PDF séparé) ne
+      // font PAS partie des équipes chefs/employés (Kevin 2026-07-09 « il ne peut plus y
+      // avoir de cadre présent dans les plannings ») — sans ce garde, CAMPI H et ENZA C
+      // se retrouvaient rattachés à une équipe de travail et apparaissaient dans les
+      // boards de la page Départs (garde npm run test:no-cadres).
+      if(/^P\d/.test(String(_e.id||"")))return;
+      if(String(_e.family||"").indexOf("cadre")>=0)return;
+      if(_e.role==="pit"||_e.role==="sup"||_e.role==="insp"||_e.role==="cadre")return;
+      if(_e.teamHistory&&_e.teamHistory[key])return;
+      if(_workedCount(_e.id)<5)return;
+      var mine=ov[_e.id]||{},wd=[];
+      Object.keys(mine).forEach(function(d){var c=String(mine[d]||"").toUpperCase();if(c&&!_hAbs[c])wd.push(d);});
+      if(wd.length<8)return;
+      var sc=[];
+      Object.keys(_hMaj).forEach(function(tid){
+        var okN=0,tot=0;
+        wd.forEach(function(d){var m=_hMaj[tid][d];if(m!==undefined){tot++;if(m===mine[d])okN++;}});
+        if(tot>=8)sc.push({tid:tid,r:okN/tot,ok:okN,tot:tot});
+      });
+      if(!sc.length)return;
+      sc.sort(function(a,b){return b.r-a.r;});
+      var second=sc.length>1?sc[1].r:0;
+      if(sc[0].r<0.8)return;
+      if(second>0&&sc[0].r<second*2)return;
+      if(!_e.teamHistory)_e.teamHistory={};_e.teamHistory[key]=sc[0].tid;
+      var _famT=null;A.employees.some(function(_o){if(_o&&_o.teamHistory&&_o.teamHistory[key]===sc[0].tid&&_o.id!==_e.id){_famT=(_o.familyHistory||{})[key]||_o.family||null;return true;}return false;});
+      if(!_e.familyHistory)_e.familyHistory={};if(!_e.familyHistory[key]&&_famT)_e.familyHistory[key]=_famT;
+      _hFixed++;
+      console.info("[v9.892 rotation] "+_e.name+" → "+sc[0].tid+" ("+sc[0].ok+"/"+sc[0].tot+" horaires identiques, 2e="+(second*100).toFixed(0)+"%)");
+    });
+    if(_hFixed){console.info("[v9.892 rotation] "+_hFixed+" emp(s) rattaché(s) par la rotation d'horaires");try{ls("cmc_e",A.employees);}catch(_){}if(typeof fbWrite==="function")try{fbWrite("cmc_e",A.employees);}catch(_){}}
+  }catch(_rotErr){console.warn("[v9.892 rotation]",_rotErr&&_rotErr.message);}
   return{ok:true,assigned:assigned+absenceAssigned,consolidated:reattributed};
 }
 // ═══════════════════════════════════════════════════════════════════════════
@@ -43143,6 +43246,35 @@ function doImport(){
       return maj;
     }
     // v8.57 : grouper TOUS les employés actifs (BJ + roulettes + CMC)
+    // v9.892 (Kevin 2026-09-06 « vérifie en réel, tout à l'identique ») — NE JAMAIS
+    // INVENTER UN PLANNING. Les passes de consensus/réparation ci-dessous complètent les
+    // personnes mal parsées à partir de la majorité de leur équipe. Elles complétaient
+    // AUSSI des personnes qui ne figurent PAS DU TOUT dans le PDF : NICASTRO M est absent
+    // des PDF de juillet, août ET septembre 2026 et recevait pourtant 9 à 18 cellules
+    // RH/R « majoritaires » — un planning inventé (règle « reproduction à l'identique :
+    // chaque cellule doit correspondre à un code observé dans le texte source »).
+    // Filtre : on ne complète que si le PATRONYME apparaît réellement dans le texte
+    // source. Volontairement généreux (patronyme seul) pour ne jamais priver de
+    // réparation quelqu'un dont l'initiale est écrite autrement dans le PDF.
+    // FAIL-OPEN : texte source vide (import JSON/CSV) → aucun filtrage, comportement
+    // d'avant inchange.
+    var _cmcSrcUp="";
+    try{ _cmcSrcUp=String(typeof txt==="string"?txt:"").toUpperCase(); }catch(_su){}
+    var _cmcInSrcCache={};
+    function _cmcNameInSource(emp){
+      if(!_cmcSrcUp)return true;
+      var n=String(emp&&emp.name||"").toUpperCase().replace(/\s+/g," ").trim();
+      if(!n)return false;
+      if(_cmcInSrcCache[n]!==undefined)return _cmcInSrcCache[n];
+      var ok=_cmcSrcUp.indexOf(n)>=0;
+      if(!ok){
+        var sp=n.lastIndexOf(" ");
+        var fam=(sp>0&&n.length-sp<=4)?n.slice(0,sp):n;
+        ok=fam.length>=3&&_cmcSrcUp.indexOf(fam)>=0;
+      }
+      _cmcInSrcCache[n]=ok;
+      return ok;
+    }
     var teamGroups={};
     A.employees.forEach(function(emp){
       if(!isEmpActive(emp,iy,im)) return;
@@ -43185,6 +43317,7 @@ function doImport(){
       if(cleanSources.length===0) return;
       // Membres à remplir : < 5 codes OU outlier
       var toFill=members.filter(function(emp){
+        if(!_cmcNameInSource(emp))return false; // v9.892 — absent du PDF = pas de planning inventé
         var d=A.overrides[key][emp.id]||{};
         return Object.keys(d).length<5||outlierIds.indexOf(emp.id)>=0;
       });
@@ -43255,6 +43388,7 @@ function doImport(){
     }
     A.employees.forEach(function(emp){
       if(!isEmpActive(emp,iy,im)) return;
+      if(!_cmcNameInSource(emp)) return; // v9.892 — absent du PDF = pas de planning inventé
       var dayMap=A.overrides[key][emp.id]||{};
       if(Object.keys(dayMap).length>=days) return; // planning complet → ok
       // Chercher des sources dans l'équipe courante (peut maintenant inclure des membres remplis)
@@ -44714,7 +44848,7 @@ function addEmp(){
 var iaHistory=[];
 // v9.452 — Auto-resolution cle API (Kevin : "pas de config manuelle")
 // Chaine fallback : cmc_ia_key → ax_shared_api_key (Apex sync) → ax_api_key
-function _resolveIaKey(){var k=localStorage.getItem("cmc_ia_key")||"";if(!k){k=localStorage.getItem("ax_shared_api_key")||"";try{var p=JSON.parse(k);if(typeof p==="string")k=p;}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_resolve-ia-key",_e);}catch(__){}}k=String(k||"").replace(/^"|"$/g,"");}if(!k){k=localStorage.getItem("ax_api_key")||"";k=String(k||"").replace(/^"|"$/g,"");}if(k&&k.length>10&&!localStorage.getItem("cmc_ia_key")){try{localStorage.setItem("cmc_ia_key",k);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_resolve-ia-key",_e);}catch(__){}}}return k;}
+function _resolveIaKey(){var k=localStorage.getItem("cmc_ia_key")||"";if(!k){k=localStorage.getItem("ax_shared_api_key")||"";if(k&&k.charAt(0)==='"')try{var p=JSON.parse(k);if(typeof p==="string")k=p;}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_resolve-ia-key",_e);}catch(__){}}k=String(k||"").replace(/^"|"$/g,"");}if(!k){k=localStorage.getItem("ax_api_key")||"";k=String(k||"").replace(/^"|"$/g,"");}if(k&&k.length>10&&!localStorage.getItem("cmc_ia_key")){try{localStorage.setItem("cmc_ia_key",k);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("_resolve-ia-key",_e);}catch(__){}}}return k;}
 var iaApiKey=_resolveIaKey();
 setInterval(function(){var k=_resolveIaKey();if(k&&k!==iaApiKey)iaApiKey=k;},60000);
 var iaEnabled=localStorage.getItem("cmc_ia_enabled")!=="0";
@@ -44949,7 +45083,7 @@ function t(key){return (I18N[_lang]||I18N.fr)[key]||(I18N.fr[key])||key;}
 // v9.536 — cmcT helper (utilise I18N_CRITICAL deja defini ligne 4557, voir i18n.md)
 function cmcT(key){try{var lang=(typeof _lang!=="undefined"&&_lang)||"fr";var d=(typeof I18N_CRITICAL!=="undefined"&&I18N_CRITICAL[lang])||(typeof I18N_CRITICAL!=="undefined"&&I18N_CRITICAL.fr)||{};return d[key]||(typeof I18N_CRITICAL!=="undefined"&&I18N_CRITICAL.fr&&I18N_CRITICAL.fr[key])||key;}catch(e){return key;}}
 // v9.542 — _cmcSafeCatch : helper pour remplacer catch(_){} silencieux par log auditable (admin only)
-function _cmcSafeCatch(ctx,e){try{var msg=String(e&&e.message||e||"unknown").slice(0,200);if(typeof console!=="undefined"&&console.warn)console.warn("[cmc-safe-catch]",ctx,msg);try{var log=lg("cmc_err_log",[]);log.push({ts:Date.now(),ctx:String(ctx||"").slice(0,40),err:msg});if(log.length>200)log=log.slice(-200);ls("cmc_err_log",log);}catch(__){}}catch(___){}}
+function _cmcSafeCatch(ctx,e){try{var msg=String(e&&e.message||e||"unknown").slice(0,200);if(typeof console!=="undefined"&&console.warn)console.warn("[cmc-safe-catch]",ctx,msg);try{var log=lg("cmc_err_log",[]);log.push({ts:Date.now(),ctx:String(ctx||"").slice(0,40),err:msg});if(log.length>200)log=log.slice(-200);ls("cmc_err_log",log);if(typeof _errLog!=="undefined")_errLog=log;}catch(__){}}catch(___){}}
 function setLang(lang){
   _lang=lang;localStorage.setItem("cmc_lang",lang);
   _ttsLang=lang==="it"?"it-IT":lang==="en"?"en-US":lang==="mn"?"fr-FR":"fr-FR";
@@ -47223,7 +47357,7 @@ function _iaExecuteTool(toolName,input){
         var count=Math.min(50,Math.max(1,parseInt(input.count,10)||20));
         var logs=(typeof getErrorLog==="function")?getErrorLog().slice(-count).reverse():[];
         if(!logs.length)return"\u2705 Aucune erreur enregistr\u00e9e r\u00e9cemment";
-        return"\ud83d\udc1b "+logs.length+" erreur(s) r\u00e9centes :\n\n"+logs.map(function(l){var t=new Date(l.ts);return t.toLocaleTimeString("fr-FR")+" ["+l.type+"] "+l.msg+(l.view?" (vue: "+l.view+")":"");}).join("\n");
+        return"\ud83d\udc1b "+logs.length+" erreur(s) r\u00e9centes :\n\n"+logs.map(function(l){var t=new Date(l.ts);return t.toLocaleTimeString("fr-FR")+" ["+_cmcErrType(l)+"] "+_cmcErrMsg(l)+(l.view?" (vue: "+l.view+")":"");}).join("\n");
       }
       case"get_performance_metrics":{
         var m=(typeof getPerfMetrics==="function")?getPerfMetrics():{};
@@ -47378,6 +47512,59 @@ function _iaExecuteTool(toolName,input){
   }catch(e){return"Erreur outil "+toolName+" : "+e.message;}
 }
 
+/* v9.892 — Kevin 2026-09-05 « Fait tourner Apex sur Qwen l'IA gratuite… pareil dans mes autres
+   projets » : les questions COURANTES (culture générale, résumé, traduction, réponse rapide) partent
+   au relais IA du domaine (apis.kd-mc.com/ai → Qwen sur Workers AI, 0 clé, 0 €). Tout ce qui touche
+   au PLANNING, aux employés, à la convention ou à une ACTION garde Anthropic + ses outils (seul à
+   pouvoir lire les données). Marche AUSSI sans clé Anthropic sur l'appareil (employés). */
+var CMC_IA_FREE_URL="https://apis.kd-mc.com/ai";
+var CMC_IA_FREE_LABEL="Qwen · gratuit";
+function cmcIaFreeDomain(q){
+  var lc=String(q||"").toLowerCase();
+  /* ce qui a besoin des OUTILS ou des données CMC → jamais le relais gratuit */
+  if(/\b(planning|plannings|horaire|horaires|équipe|equipe|équipes|equipes|repos|congé|conge|congés|conges|cp\b|rh\b|shift|départ|depart|départs|departs|table|tables|salle|salon|convention|article|employ|collègue|collegue|pit|inspecteur|superviseur|chef|miroir|aujourd|demain|hier|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|semaine|mois|janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre|qui travaille|qui est|conflit|échange|echange|absence|malade|import|upload|stat)/.test(lc))return null;
+  if(/\b(lance|exécute|execute|déploie|deploie|corrige|répare|repare|modifie|configure|installe|active|désactive|desactive|supprime|envoie|sauvegarde|synchronise|publie|merge|pousse|audit|teste|vérifie|verifie)\b/.test(lc)&&!/\b(comment|pourquoi|est-ce que|c'est quoi|explique)\b/.test(lc))return null;
+  if(/\bcode|programme|fonction|debug|bug|javascript|python|sql\b/.test(lc))return null;
+  if(/\bimage|photo|vision|scanne?r?\b/.test(lc))return null;
+  if(/\btraduit?|translate|en (anglais|italien|allemand|espagnol)\b/.test(lc))return "translation";
+  if(/\brésume|résum[eé]|tldr|résumé\b/.test(lc))return "summary";
+  if(/\b(rapide|vite|urgent|asap)\b/.test(lc))return "speed";
+  if(/\b(analyse|réfléchis|raisonne)\b/.test(lc)&&lc.length>200)return null;
+  if(/\bcherche|recherche|trouve|google\b/.test(lc))return null;
+  return "general";
+}
+/* Appel au relais gratuit. onFail(raison) → l'appelant décide (Anthropic si clé, sinon mode local). */
+function cmcIaFreeAsk(q,domain,onFail){
+  var msgs=[];
+  iaHistory.filter(function(m){return m.role!=="loading";}).slice(-10).forEach(function(m){
+    if(m.role==="user")msgs.push({role:"user",content:m.text});
+    else if(m.role==="bot")msgs.push({role:"assistant",content:(m.html||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,400)});
+  });
+  if(!msgs.length||msgs[msgs.length-1].role!=="user")msgs.push({role:"user",content:q});
+  var who=(A.user&&A.user.name)?A.user.name:"un membre de l'équipe";
+  var sys="Tu es l'Assistant CMC (CMCteams, planning des jeux de table du Casino de Monaco). Tu parles à "+who+". Réponds en français, clairement, en 2 à 6 phrases, sans jargon technique. Tu n'as PAS accès au planning ni aux fiches employés dans ce mode : si la question en a besoin, dis-le en une phrase et invite à reformuler avec « planning » ou « équipe ».";
+  var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+  var done=false;
+  var to=setTimeout(function(){if(done)return;done=true;if(ctrl)try{ctrl.abort();}catch(_e){}onFail("délai dépassé (25 s)");},25000);
+  var opts={method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messages:[{role:"system",content:sys}].concat(msgs),domain:domain||"general",max_tokens:900,app:"cmcteams"})};
+  if(ctrl)opts.signal=ctrl.signal;
+  fetch(CMC_IA_FREE_URL,opts).then(function(r){return r.text().then(function(t){var d=null;try{d=JSON.parse(t);}catch(_e){}if(!r.ok||!d||!d.ok||!d.text)throw new Error("HTTP "+r.status+" : "+((d&&(d.error||d.detail))||t.slice(0,120)));return d;});})
+  .then(function(d){
+    if(done)return;done=true;clearTimeout(to);
+    if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
+    var txt=String(d.text||"");
+    var html=esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
+    /* v9.893 — concertation (Kevin 2026-09-06) : le relais peut répondre par un CONSEIL de voix gratuites + juge ; on le dit. */
+    var nVoix=(d.voices&&d.voices.length)?d.voices.filter(function(v){return v&&v.ok;}).length:0;
+    var lbl=d.provider==="council"?("Concertation gratuite · "+nVoix+" avis"):(d.provider==="qwen"?CMC_IA_FREE_LABEL:String(d.provider||"IA"));
+    var ana=(d.analyse&&d.analyse.by==="concert")?" · type voté par "+Object.keys(d.analyse.votes||{}).length+" voix":"";
+    var badge="<span style='font-size:11px;color:#7edc90' title='Réponse par "+esc(String(d.provider||"")+" "+String(d.model||"")+ana)+"'>"+esc(lbl)+"</span><br>";
+    iaHistory.push({role:"bot",html:badge+html});
+    logIAInteraction(q,html,"free_"+String(d.provider||"?"));ttsSpeak(txt);
+    dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  })
+  .catch(function(e){if(done)return;done=true;clearTimeout(to);onFail(String((e&&e.message)||e));});
+}
 function callClaudeIA(q){
   if(!iaApiKey||!iaEnabled)return;
   var msgs=[];
@@ -47795,10 +47982,24 @@ function iaSend(preset){
   /* v9.506 — Auto-extract Kevin rules */
   try{if(A.user&&A.user.id===AID&&typeof cmcExtractKevinRule==="function")cmcExtractKevinRule(text);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ia-send",_e);}catch(__){}}
   iaHistory.push({role:"user",text:text});
-  if(iaApiKey&&iaEnabled){
-    iaHistory.push({role:"loading",html:"<span style='color:#a0cca0;font-style:italic'>"+(iaWebSearch?"🔍 Recherche…":"⏳ Réponse en cours…")+"</span>"});
+  /* v9.892 — question courante → relais gratuit (Qwen) ; planning/outils/action → Anthropic ;
+     si le gratuit tombe → Anthropic quand il y a une clé, sinon le mode local (jamais bloqué). */
+  var _freeDom=(iaEnabled&&navigator.onLine)?cmcIaFreeDomain(text):null;
+  if(iaEnabled&&(iaApiKey||_freeDom)){
+    iaHistory.push({role:"loading",html:"<span style='color:#a0cca0;font-style:italic'>"+(iaWebSearch?"🔍 Recherche…":(_freeDom?"⏳ Réponse en cours (gratuit)…":"⏳ Réponse en cours…"))+"</span>"});
     dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
-    callClaudeIA(text);
+    if(_freeDom){
+      cmcIaFreeAsk(text,_freeDom,function(reason){
+        try{console.warn("[ia] relais gratuit KO → secours :",reason);}catch(_e){}
+        if(iaApiKey){callClaudeIA(text);return;}
+        if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
+        var lr=iaRespond(text);
+        iaHistory.push({role:"bot",html:(lr!==null?lr:"<span style='color:#e09848'>L'IA gratuite ne répond pas pour le moment ("+esc(String(reason).slice(0,80))+"). Réessaie dans une minute.</span>")});
+        dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+      });
+    } else {
+      callClaudeIA(text);
+    }
   } else {
     // Mode local — fonctionne toujours (avec ou sans clé, activé ou non)
     var reply=iaRespond(text);

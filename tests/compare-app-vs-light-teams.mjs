@@ -12,7 +12,21 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const MONTHS = [{ y: 2026, m: 6, pre: '2026-07-' }, { y: 2026, m: 7, pre: '2026-08-' }];
+// v9.892 (Kevin 2026-09-06 « vérifie en réel … pour chaque ») — la liste des mois était
+// FIGÉE sur juillet et août : septembre 2026 n'était donc JAMAIS comparé, alors que c'est
+// le mois le plus récent (même classe de trou que la leçon #140 : une table tronquée saute
+// en silence ce qu'elle ne couvre pas). On la DÉRIVE des boards réellement générés → tout
+// nouveau mois est couvert automatiquement, sans que personne ait à y penser.
+const MONTHS = (() => {
+  const src = fs.readFileSync(resolve(ROOT, 'tools/departs/boards-gen.js'), 'utf8');
+  const g = {}; new Function('window', src)(g);
+  const seen = new Map();
+  Object.values((g.DEPARTS_GEN || {}).boards || {}).forEach(b => {
+    const pre = b.year + '-' + String(b.monthIdx + 1).padStart(2, '0') + '-';
+    if (!seen.has(pre)) seen.set(pre, { y: b.year, m: b.monthIdx, pre });
+  });
+  return [...seen.values()].sort((a, b) => (b.y - a.y) || (b.m - a.m));
+})();
 const MIME = { '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent((req.url || '/').split('?')[0]);

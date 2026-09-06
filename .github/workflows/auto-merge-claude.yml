@@ -209,12 +209,60 @@ jobs:
           done
           # Merge via PR (admin override si dispo, sinon merge normal). Si la règle
           # exige une review → laisse la PR ouverte + warning pour merge manuel.
-          if gh pr merge "$PR" --merge --admin --delete-branch=false 2>/dev/null \
-             || gh pr merge "$PR" --merge --delete-branch=false 2>/dev/null; then
+          #
+          # v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux
+          # tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus
+          # était donc JETÉE. Résultat vécu : la PR #3671 restait ouverte pendant des
+          # heures sans que personne (ni Kevin ni moi) puisse savoir pourquoi.
+          # On CAPTURE désormais la cause exacte, et on l'écrit dans un fichier
+          # committé sur la branche claude/* — seul canal lisible depuis une session
+          # d'agent qui n'a PAS accès à l'API GitHub (403 « GitHub access is not
+          # enabled for this session »). Aucune protection n'est contournée.
+          MERGE_LOG=$(mktemp)
+          if gh pr merge "$PR" --merge --admin --delete-branch=false >"$MERGE_LOG" 2>&1 \
+             || gh pr merge "$PR" --merge --delete-branch=false >>"$MERGE_LOG" 2>&1; then
             echo "PR #$PR mergée → déclenchement du déploiement Pages"
             echo "merged=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::PR #$PR créée mais merge auto refusé (protection) — merger manuellement dans l'UI."
+            echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."
+            cat "$MERGE_LOG" || true
+            # État de fusion vu par GitHub + règles qui bloquent (lisible par GITHUB_TOKEN)
+            DIAG=".github/AUTOMERGE-DIAGNOSTIC.md"
+            mkdir -p .github
+            {
+              echo "# Diagnostic auto-merge — PR #$PR ($BRANCH)"
+              echo
+              echo "Généré le $(date -u '+%Y-%m-%d %H:%M UTC') par auto-merge-claude.yml."
+              echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."
+              echo
+              echo '## Cause exacte renvoyée par GitHub'
+              echo '```'
+              cat "$MERGE_LOG" 2>/dev/null || echo "(vide)"
+              echo '```'
+              echo
+              echo '## État de la PR vu par GitHub'
+              echo '```json'
+              gh api "repos/${{ github.repository }}/pulls/$PR" \
+                --jq '{mergeable, mergeable_state, draft, rebaseable}' 2>&1 || echo "(api indisponible)"
+              echo '```'
+              echo
+              echo '## Revues exigées / reçues'
+              echo '```json'
+              gh api "repos/${{ github.repository }}/pulls/$PR/reviews" \
+                --jq '[.[] | {user: .user.login, state}]' 2>&1 || echo "(api indisponible)"
+              echo '```'
+              echo
+              echo '## Protection de la branche main'
+              echo '```json'
+              gh api "repos/${{ github.repository }}/branches/main/protection" 2>&1 \
+                | head -c 3000 || echo "(api indisponible)"
+              echo '```'
+            } > "$DIAG"
+            git add "$DIAG"
+            git -c user.name="github-actions[bot]" \
+                -c user.email="github-actions[bot]@users.noreply.github.com" \
+                commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true
+            git push origin "HEAD:$BRANCH" || echo "::warning::push du diagnostic impossible"
             exit 1
           fi
 
@@ -256,6 +304,57 @@ jobs:
             fi
           done
           echo "done"
+
+      # ------------------------------------------------------------------
+      #  Compactage des branches — GREFFÉ ICI EXPRÈS (2026-09-06)
+      #
+      #  Il existe un workflow dédié (cleanup-stale-branches.yml). Il n'a
+      #  JAMAIS tourné tout seul, pour une raison de plateforme : son
+      #  déclencheur `workflow_run` ne part que si le workflow déclencheur a
+      #  tourné sur la branche PAR DÉFAUT — or l'auto-merge tourne sur
+      #  `claude/**`. Et son déclencheur `push` est mort lui aussi : un push
+      #  fait avec GITHUB_TOKEN ne déclenche aucun workflow.
+      #  Résultat mesuré : 370 branches accumulées, dont 240 déjà fusionnées.
+      #
+      #  On met donc le nettoyage DANS le seul workflow dont on a la preuve
+      #  qu'il tourne. Pas de cron (interdit : suspension du compte le 15/08).
+      #  Quelques secondes ajoutées à une exécution qui a déjà lieu.
+      # ------------------------------------------------------------------
+      - name: Compacter les branches claude/* deja fusionnees
+        if: always()
+        continue-on-error: true          # ne doit JAMAIS faire echouer un merge
+        run: |
+          set -u
+          # actions/checkout pose un refspec MONO-BRANCHE : sans ces 2 lignes
+          # on ne voit que main et on croit qu'il n'y a rien a nettoyer.
+          git remote set-branches origin '*'
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet
+          TOTAL=$(git branch -r | grep -c 'origin/claude/' || echo 0)
+          echo "Branches claude/* visibles : $TOTAL"
+          if [ "$TOTAL" = "0" ]; then
+            echo "::warning::0 branche visible — fetch incomplet, on ne conclut PAS « rien a faire »."
+            exit 0
+          fi
+          CUT=$(date -u -d '7 days ago' +%s)
+          COURANTE="${{ steps.src.outputs.branch }}"
+          DEL=0; GARDE=0
+          for b in $(git branch -r | sed 's|^ *||' | grep '^origin/claude/'); do
+            NAME="${b#origin/}"
+            case "$NAME" in
+              main|master|develop|production|claude/test-699LQ) GARDE=$((GARDE+1)); continue ;;
+            esac
+            [ "$NAME" = "$COURANTE" ] && { GARDE=$((GARDE+1)); continue; }
+            # 1) doit etre un ANCETRE de main : chacun de ses commits y est deja.
+            git merge-base --is-ancestor "$b" origin/main 2>/dev/null || { GARDE=$((GARDE+1)); continue; }
+            # 2) et sans activite depuis 7 jours, pour ne pas gener une session en cours.
+            TS=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
+            [ "$TS" -ge "$CUT" ] && { GARDE=$((GARDE+1)); continue; }
+            # Le SHA est journalise : la suppression reste restaurable
+            # (git branch <nom> <sha>), cf. PIPELINE_BRANCHES_SESSIONS.md.
+            echo "[SUPPR] $NAME $(git rev-parse --short "$b")"
+            git push origin --delete "$NAME" >/dev/null 2>&1 && DEL=$((DEL+1)) || echo "::warning::echec suppression $NAME"
+          done
+          echo "::notice::Compactage : $DEL branche(s) supprimee(s), $GARDE gardee(s) sur $TOTAL."
 
       - name: Notify on failure
         if: failure()

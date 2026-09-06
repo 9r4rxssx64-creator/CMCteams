@@ -487,6 +487,26 @@ caractères, 8/8 identiques au fichier source ; 6 morceaux corrigés avant assem
 42/42 (mock D1, précédence KV, D1 en panne), navigateur `verify-domaine.mjs` 23/23. Reste pour Kevin : **changer le
 code famille** (l'ancienne empreinte est dans l'historique public).
 
+**Déployé (5.09, 17h19)** : PR #3670 fusionnée par le robot (`main` 899e09b9) → `deploy-kdmc-router.yml` run
+33980608977 **vert** (1 min 03) : le routeur en production porte la liaison `ARBRE_DB`. Miroir GitLab : branche
+et `main` alignés (e9e52b1b, sans force). **Piège GitLab mesuré le même jour** : le premier push d'une branche fait
+valoir « oui » à toutes les règles `changes:` (publier-site, recherches-patrimoine, liens-reels sont partis pour un
+simple miroir, ~7 min) — corrigé dans `.gitlab-ci.yml` (`*pas-sur-nouvelle-branche`, `compare_to: main`, repli
+`npm install` car le dépôt n'a pas de `package-lock.json`). Leçon #218. **Vérifié en production** (17h40, sonde GitLab `sonder-url`) :
+`GET https://arbre.kd-mc.com/__arbre/status` → `count:119, seedVersion:63, source:"d1"`.
+
+**6.09 (après-midi)** : PR #3674 et #3681 fusionnées par le robot (arbre v3.18 « Munegu », Vercel qui ne bloque plus,
+audit live de l'arbre refait sans code). Le job `tests` GitLab tourne désormais **pour de vrai** (image Playwright
+1.56.0, `npm install --legacy-peer-deps`) : il a révélé que `test:ci` rougissait sans que personne le voie —
+`cmc-runtime-audit.yml` (GitHub) échouait en 17 s depuis longtemps (`cache: npm` sans lockfile, réparé). Rendus
+déterministes : `everyone-has-planning`, `v788`, `garro-cp`, `code-legends` (attente stable + hors ligne).
+`test:improvements-guard` **réglé** (la règle « Qwen gratuit » avait ses 5 gardes mais pas son entrée au registre).
+`test:departs-sync` : **pas un écart de données** — le contrôle croisé passe (couverture 273/291, horaires
+identiques) ; la page ne se régénère jamais à l'identique parce que l'identifiant des employés créés à l'import
+vient de l'horloge (64 tableaux « différents », 0 horaire) → générateur rendu hors ligne + échec explicite,
+`boards-gen.js` laissé intact, identifiant à dériver du nom (session Départs). **Reste rouge** :
+`test:router-secours` (kdmc-home/*, shops absents de la copie de secours → domain-kdmc). Leçons #220 et #221.
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
@@ -687,6 +707,18 @@ Qui tient les 5 : **apex-chat-api : 4** (`0 */1`, `*/5`, `0 9`, `0 3` — `messa
 - Il fusionne **dès que « Auto PR Review » (tsc + tests changés) est vert**. SonarQube « Quality Gate C » et Semgrep sont **consultatifs** : PR #3652 fusionnée avec eux rouges.
 - Une PR « BLOCKED » peut l'être **par `main`** : la fusion #3647 avait cassé `apex-plugins-catalog.ts` (7 × TS1117) et bloquait *toutes* les PR suivantes. Reproduire `npx tsc --noEmit` sur `main` en local avant d'accuser sa branche ; réparer main **dans la PR**.
 - Après fusion, le bot **dispatche lui-même** chaque `deploy-*.yml` dont un `services/<x>` a changé (vu : `Deploy KDMC Uptime #3` sur main) — la fusion par `GITHUB_TOKEN` ne déclenchant pas les `push`.
+
+### ⚠️ MESURE CONTRAIRE le 6.09 : l'API GitHub RÉPOND depuis certaines sessions — remesurez chez vous
+
+Le tableau ci-dessus dit « API GitHub : ❌ 403 » (mesuré le 5.09 depuis trois sessions). **Depuis la
+session « cmcteams-pdf » le 6.09, elle RÉPOND** : `get_me` renvoie le compte `9r4rxssx64-creator`,
+et les outils MCP GitHub (créer une PR, la fusionner, lire un run) sont disponibles. Ce n'est donc
+pas une propriété du dépôt ni du compte : **c'est une propriété de VOTRE session**.
+
+Conséquence pratique, et elle compte : quand l'API répond, **on ne laisse pas une PR ouverte en
+attendant le robot** (refusé par la protection de branche, m019 point 4) — on la crée et on la
+fusionne soi-même par l'API, zéro clic pour Kevin. Avant d'écrire « je ne peux pas ouvrir de PR »,
+faites l'appel : le fait n°16 dit lui-même « refais-les chez toi, ne généralise pas ».
 
 ### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
 

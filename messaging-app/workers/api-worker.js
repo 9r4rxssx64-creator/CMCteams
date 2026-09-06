@@ -38,8 +38,11 @@ const ADMIN_KEVIN_ALIASES = [
   'kevin.desarzens', 'kevind@monaco.mc', 'kdmc', 'k desarzens'
 ];
 
-import { corsHeaders, makeJson } from './lib/cors.js';
+import { corsHeaders, makeJson, applyCors } from './lib/cors.js';
 import { giphySearchUrl, giphyTrendingUrl, mapGiphyResults } from '../lib/gif.js';
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+   routage IA commun du domaine (Qwen Workers AI 0 clé d'abord, bascule par type de demande). */
+import { routeText, routeSmart, detectDomain, planChain, availableProviders } from '../../services/_shared/ia-route.js';
 
 const CORS_HEADERS = {
   ...corsHeaders('GET, POST, PATCH, DELETE, OPTIONS', 'Content-Type, Authorization, X-Apex-Token, x-file-name'),
@@ -138,18 +141,70 @@ export async function verifyJWT(token, secret) {
   } catch { return null; }
 }
 
-async function getAuthUser(request, env) {
+// Un ticket WS est à USAGE UNIQUE : son jti est consommé en base. La clé
+// primaire rend la consommation atomique — un rejeu insère 0 ligne et est
+// refusé, même si deux requêtes arrivent en même temps (audit P2a, v1.1.286).
+async function consumeWsTicket(env, payload) {
+  if (!payload || payload.typ !== 'wstkt' || !payload.jti) return false;
+  const DB = env.APEX_CHAT_DB;
+  try {
+    await DB.prepare(
+      'CREATE TABLE IF NOT EXISTS ws_tickets (jti TEXT PRIMARY KEY, expires_at INTEGER NOT NULL)'
+    ).run();
+    const r = await DB.prepare(
+      'INSERT OR IGNORE INTO ws_tickets (jti, expires_at) VALUES (?, ?)'
+    ).bind(payload.jti, (payload.exp || 0) * 1000).run();
+    // 0 ligne insérée = jti déjà présent = REJEU → refusé.
+    if (!r || !r.meta || r.meta.changes !== 1) return false;
+    // Ménage opportuniste (la table ne doit pas grossir indéfiniment).
+    try { await DB.prepare('DELETE FROM ws_tickets WHERE expires_at < ?').bind(Date.now() - 60000).run(); } catch (_) {}
+    return true;
+  } catch (_) {
+    // Base indisponible : on REFUSE (fail-closed) — un ticket non consommable
+    // ne doit jamais valoir session. Le client retombe sur ?token= (legacy).
+    return false;
+  }
+}
+
+// `opts.allowMediaTicket` : autorise en plus un TICKET MÉDIA (`?mt=`) — activé
+// UNIQUEMENT par la route qui sert les fichiers, pour qu'un ticket média ne
+// puisse rien faire d'autre que servir un média (audit P2c, v1.1.288).
+async function getAuthUser(request, env, opts) {
   const auth = request.headers.get('Authorization') || '';
   let token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
   // WebSocket : le navigateur ne peut PAS poser de header Authorization sur un
-  // upgrade WS → le token arrive en query param ?token=. Sans ce fallback,
-  // toute connexion WebSocket échoue en 401 ("WebSocket non connecté").
+  // upgrade WS → l'identité arrive dans l'URL. Depuis v1.1.286 c'est un TICKET
+  // à usage unique valable 60 s (?ticket=), plus le jeton de session lui-même :
+  // une URL fuite (journaux serveur, historique, Referer) — un ticket qui fuite
+  // est déjà mort. ?token= reste accepté UNE version pour ne pas couper les
+  // apps encore en cache (règle : jamais casser la connexion).
+  let mode = 'session';
   if (!token) {
-    try { token = new URL(request.url).searchParams.get('token'); } catch (_) {}
+    try {
+      const qs = new URL(request.url).searchParams;
+      const tkt = qs.get('ticket');
+      const mt = opts && opts.allowMediaTicket ? qs.get('mt') : null;
+      if (tkt) { token = tkt; mode = 'ws'; }
+      else if (mt) { token = mt; mode = 'media'; }
+      else token = qs.get('token');
+    } catch (_) {}
   }
   if (!token) return null;
   const payload = await verifyJWT(token, env.JWT_SIGN_KEY);
   if (!payload || !payload.sub) return null;
+  if (mode === 'ws') {
+    // Doit être un vrai ticket WebSocket, et non déjà utilisé.
+    if (!(await consumeWsTicket(env, payload))) return null;
+  } else if (mode === 'media') {
+    // Ticket média : réutilisable pendant sa courte durée de vie (une photo est
+    // relue à chaque affichage), mais valable NULLE PART ailleurs.
+    if (payload.typ !== 'mtkt') return null;
+  } else if (payload.typ) {
+    // Un jeton TYPÉ (ticket WS, ticket média, invitation magique…) ne vaut
+    // JAMAIS jeton de session : sinon il redeviendrait une clé d'API complète.
+    // Les jetons de session, eux, n'ont pas de champ `typ`.
+    return null;
+  }
   // Vérif SÛRE (colonnes toujours présentes) — JAMAIS contournée même si une
   // colonne récente manque (fenêtre de déploiement). Rejette banni/supprimé.
   const DB = env.APEX_CHAT_DB;
@@ -1610,7 +1665,9 @@ export async function handleMediaUpload(request, env) {
 }
 
 async function handleMediaGet(id, request, env) {
-  const auth = await getAuthUser(request, env);
+  // Seule route à accepter un ticket média (?mt=) : le jeton de session n'a
+  // plus à voyager dans l'attribut `src` de chaque image (audit P2c).
+  const auth = await getAuthUser(request, env, { allowMediaTicket: true });
   if (!auth) return err('Non authentifié', 401);
   if (!env.APEX_CHAT_MEDIA) return err('Stockage média indisponible', 503, 'no_r2');
   const row = await env.APEX_CHAT_DB.prepare('SELECT r2_key, mime, owner_id FROM media WHERE id=?').bind(id).first();
@@ -1629,7 +1686,7 @@ async function handleMediaGet(id, request, env) {
   const h = new Headers();
   h.set('Content-Type', row.mime || obj.httpMetadata?.contentType || 'application/octet-stream');
   h.set('Cache-Control', 'private, max-age=31536000');
-  h.set('Access-Control-Allow-Origin', '*');
+  // (l'en-tête CORS est posé par applyCors selon l'origine — audit P2b)
   return new Response(obj.body, { status: 200, headers: h });
 }
 
@@ -3747,6 +3804,33 @@ export async function handleAdminSetToggle(request, env) {
 //  WebSocket → ConversationDO
 // ============================================================================
 
+// POST /api/auth/ws-ticket — échange le jeton de session (header Bearer, qui
+// lui ne voyage JAMAIS dans une URL) contre un ticket à usage unique valable
+// 60 s, destiné à l'URL du WebSocket. Audit P2a (v1.1.286).
+async function handleWsTicket(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const now = Math.floor(Date.now() / 1000);
+  const jti = crypto.randomUUID();
+  const ticket = await signJWT(
+    { sub: auth.sub, typ: 'wstkt', jti, iat: now, exp: now + 60 },
+    env.JWT_SIGN_KEY
+  );
+  return json({ ok: true, ticket, exp: (now + 60) * 1000 });
+}
+
+// POST /api/auth/media-ticket — même principe que le ticket WebSocket, mais
+// RÉUTILISABLE pendant 5 min : une photo est relue à chaque affichage (aperçu,
+// plein écran, re-rendu), donc un ticket à usage unique la casserait. Il ne
+// vaut que sur la route des médias. Audit P2c (v1.1.288).
+async function handleMediaTicket(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401);
+  const now = Math.floor(Date.now() / 1000);
+  const ticket = await signJWT({ sub: auth.sub, typ: 'mtkt', iat: now, exp: now + 300 }, env.JWT_SIGN_KEY);
+  return json({ ok: true, ticket, exp: (now + 300) * 1000 });
+}
+
 async function handleWsConversation(convId, request, env) {
   const upgradeHeader = request.headers.get('Upgrade');
   if (upgradeHeader !== 'websocket') return err('Upgrade WebSocket requis', 426);
@@ -4348,6 +4432,25 @@ export async function _callGeminiIA(messages, systemPrompt, env, signal) {
   return d.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal… pareil dans mes autres projets » :
+   QWEN sur Workers AI (binding AI, 0 clé, 0 €) devient un fournisseur à part entière, et
+   l'ORDRE des fournisseurs est décidé par le routage commun du domaine selon le TYPE de
+   demande (services/_shared/ia-route.js) : questions courantes → Qwen d'abord ;
+   code / raisonnement / actions → Anthropic ; le reste en secours, rien n'est perdu. */
+export async function _callQwenIA(messages, systemPrompt, env, signal, maxTokens) {
+  if (!env.AI) throw new Error('Workers AI missing');
+  const full = systemPrompt ? [{ role: 'system', content: systemPrompt }, ...messages] : messages;
+  const r = await routeText(env, { messages: full, chain: ['qwen'], maxTokens: maxTokens || 1024 });
+  if (!r.ok) throw new Error('Qwen ' + ((r.tried[0] && r.tried[0].error) || 'indisponible'));
+  return r.text;
+}
+
+/* Fournisseurs disponibles, dans l'ordre décidé par le type de demande (domaine). */
+export function _iaOrdered(env, domain, fns) {
+  const available = availableProviders(env).filter((p) => fns[p]);
+  return planChain(domain, available).filter((p) => fns[p]).map((name) => ({ name, fn: fns[name] }));
+}
+
 export async function _callDeepSeekIA(messages, systemPrompt, env, signal) {
   if (!env.DEEPSEEK_API_KEY) throw new Error('DeepSeek missing');
   const full = systemPrompt ? [{role:'system',content:systemPrompt},...messages] : messages;
@@ -4373,29 +4476,46 @@ async function handleIAChat(request, env) {
 ${context?.is_admin ? 'Tu parles a Kevin admin.' : 'Tu parles a ' + (context?.user_pseudo || 'un user')}.
 Francais, tutoiement, concis (max 200 mots), pas d'erreur technique brute.`;
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIA, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
-    { name: 'deepseek', fn: _callDeepSeekIA, key: !!env.DEEPSEEK_API_KEY }
-  ];
-  const available = providers.filter(p => p.key);
-  if (available.length === 0) return err('Aucun provider IA configure', 503);
+  /* Le TYPE de la question décide de l'ordre : courante → Qwen (gratuit) ; code / raisonnement /
+     action → Anthropic ; puis les autres en secours. Essais en séquence (8 s chacun), cause
+     exacte conservée par fournisseur (règle « détailler les erreurs »). */
+  const lastUser = [...messages].reverse().find((m) => m && m.role === 'user');
+  /* Kevin 2026-09-06 « concertation d'IA gratuites pour analyser les questions, va plus loin » :
+     quand Workers AI est là, plusieurs voix gratuites VOTENT le type de la question, et une
+     question difficile est répondue par un CONSEIL de voix + juge gratuit. Sinon (pas de binding),
+     l'heuristique locale décide et les fournisseurs à clé répondent dans l'ordre du domaine. */
+  if (env.AI) {
+    const r = await routeSmart(env, { messages: [{ role: 'system', content: sysPrompt }, ...messages], maxTokens: 1024, timeoutMs: 8000 });
+    if (r.ok) {
+      return json({
+        ok: true, content: r.text, provider: r.provider, model: r.model, domain: r.domain,
+        analyse: r.analyse ? { by: r.analyse.by, votes: r.analyse.votes, complexity: r.analyse.complexity } : null,
+        voices: r.voices || null, judge: r.judge || null,
+      });
+    }
+    return json({ error: 'Tous providers IA indisponibles. Reessaie dans 1 min.', domain: r.domain, tried: r.tried }, 503);
+  }
+  const domain = detectDomain(lastUser ? String(lastUser.content || '') : '');
+  const ordered = _iaOrdered(env, domain, {
+    qwen: _callQwenIA, anthropic: _callAnthropicIA, groq: _callGroqIA, gemini: _callGeminiIA, deepseek: _callDeepSeekIA,
+  });
+  if (ordered.length === 0) return err('Aucun provider IA configure', 503);
 
-  const promises = available.map(({ name, fn }) => {
+  const tried = [];
+  for (const { name, fn } of ordered) {
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 8000);
-    return fn(messages, sysPrompt, env, ctrl.signal)
-      .then(r => { clearTimeout(to); if (!r) throw new Error('Empty'); return { provider: name, content: r }; })
-      .catch(e => { clearTimeout(to); throw e; });
-  });
-
-  try {
-    const winner = await Promise.any(promises);
-    return json({ ok: true, content: winner.content, provider: winner.provider });
-  } catch (e) {
-    return err('Tous providers IA indisponibles. Reessaie dans 1 min.', 503);
+    try {
+      const r = await fn(messages, sysPrompt, env, ctrl.signal);
+      clearTimeout(to);
+      if (r) return json({ ok: true, content: r, provider: name, domain });
+      tried.push({ provider: name, error: 'réponse vide' });
+    } catch (e) {
+      clearTimeout(to);
+      tried.push({ provider: name, error: String((e && e.message) || e).slice(0, 120) });
+    }
   }
+  return json({ error: 'Tous providers IA indisponibles. Reessaie dans 1 min.', domain, tried }, 503);
 }
 
 // ============================================================================
@@ -4441,13 +4561,10 @@ export async function handleAiSummarize(request, env) {
   const sysPrompt = "Tu es Apex, un IA résumeur expert. Style: bref, structuré, ton chaleureux. Réponds en français.";
   const messages = [{ role: 'user', content: prompt }];
 
-  // Failover providers
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
-  ];
-  const available = providers.filter(p => p.key);
+  // Failover providers — un RÉSUMÉ = question courante → Qwen (gratuit) d'abord (Kevin 2026-09-05)
+  const available = _iaOrdered(env, 'summary', {
+    qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA, gemini: _callGeminiIA,
+  });
   if (available.length === 0) return err('Aucun provider IA configuré', 503);
 
   for (const p of available) {
@@ -4692,11 +4809,9 @@ export async function handleAiSmartReply(request, env) {
   const userPrompt = `Message reçu: "${lastMessage}"${context ? `\nContexte: ${context}` : ''}`;
   const messages = [{ role: 'user', content: userPrompt }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Réponses rapides = « speed » → Groq puis Qwen (gratuits), Anthropic en secours */
+  const providers = _iaOrdered(env, 'speed', { qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 6000);
@@ -4750,12 +4865,11 @@ export async function handleAiTranslate(request, env) {
   const sysPrompt = `Tu es un traducteur expert. Traduis le texte fourni en ${targetLang}. Retourne UNIQUEMENT la traduction, sans préambule ni explication. Préserve le ton, les emojis, la ponctuation.`;
   const messages = [{ role: 'user', content: text }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-    { name: 'gemini', fn: _callGeminiIA, key: !!env.GEMINI_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Traduction = question courante → Qwen (multilingue, gratuit) d'abord (Kevin 2026-09-05) */
+  const providers = _iaOrdered(env, 'translation', {
+    qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA, gemini: _callGeminiIA,
+  });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 8000);
@@ -4985,11 +5099,9 @@ export async function handleAiRewrite(request, env) {
   const sysPrompt = `Tu es un assistant de rédaction. ${stylePrompt} Retourne UNIQUEMENT le texte reformulé, sans préambule, sans guillemets, sans explication.`;
   const messages = [{ role: 'user', content: text }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Reformulation = question courante → Qwen (gratuit) d'abord, Anthropic en secours */
+  const providers = _iaOrdered(env, 'general', { qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 10_000);
@@ -5051,11 +5163,9 @@ export async function handleAiSemanticSearch(request, env) {
   const userPrompt = `Messages à analyser (chacun avec son index entre []):\n\n${numbered}`;
   const msgsForAI = [{ role: 'user', content: userPrompt }];
 
-  const providers = [
-    { name: 'anthropic', fn: _callAnthropicIASummarize, key: !!env.ANTHROPIC_API_KEY },
-    { name: 'groq', fn: _callGroqIA, key: !!env.GROQ_API_KEY },
-  ];
-  for (const p of providers.filter(x => x.key)) {
+  /* Recherche sémantique = RAISONNEMENT précis (JSON d'index) → Anthropic d'abord, Qwen en secours gratuit */
+  const providers = _iaOrdered(env, 'reasoning', { qwen: _callQwenIA, anthropic: _callAnthropicIASummarize, groq: _callGroqIA });
+  for (const p of providers) {
     try {
       const ctrl = new AbortController();
       const to = setTimeout(() => ctrl.abort(), 12_000);
@@ -5446,7 +5556,7 @@ async function handleGifSearch(request, env) {
 //  Main fetch handler
 // ============================================================================
 
-export default {
+const _workerHandler = {
   async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
 
@@ -5508,6 +5618,10 @@ export default {
       if (path === '/api/admin/trusted-circle' && method === 'GET') return await handleTrustedCircle(request, env, 'GET');
       if (path === '/api/admin/trusted-circle' && method === 'POST') return await handleTrustedCircle(request, env, 'POST');
       if (path === '/api/admin/diag' && method === 'GET') return await handleAdminDiag(request, env);
+      // Ticket WS à usage unique (audit P2a) — le jeton de session reste dans
+      // le header, seul le ticket éphémère part dans l'URL du WebSocket.
+      if (path === '/api/auth/ws-ticket' && method === 'POST') return await handleWsTicket(request, env);
+      if (path === '/api/auth/media-ticket' && method === 'POST') return await handleMediaTicket(request, env);
       const wsMatch = path.match(/^\/api\/conversations\/([^\/]+)\/ws$/);
       if (wsMatch) return await handleWsConversation(wsMatch[1], request, env);
       // Diagnostic WS : teste les MÊMES checks que le WS et renvoie la cause exacte
@@ -5911,6 +6025,20 @@ export async function performDailyBackup(env) {
 // ============================================================================
 //  Durable Objects (re-exporté depuis ./durable-objects/)
 // ============================================================================
+
+
+// ============================================================================
+//  CORS par ORIGINE (audit P2b, v1.1.287)
+//  Le worker répondait `Access-Control-Allow-Origin: *` à tout le monde. On
+//  applique la liste d'origines réelles en UN SEUL point — le `fetch` de tête —
+//  au lieu de toucher chaque site d'appel : zéro risque de rater une réponse.
+// ============================================================================
+export default {
+  ..._workerHandler,
+  async fetch(request, env, ctx) {
+    return applyCors(request, await _workerHandler.fetch(request, env, ctx));
+  },
+};
 
 export { ConversationDO } from './durable-objects/ConversationDO.js';
 export { BroadcastDO } from './durable-objects/BroadcastDO.js';

@@ -64,8 +64,9 @@ export function wireLogoAndModeToggle(rootEl: HTMLElement): void {
     economy: 'Économie (gratuit d\'abord — haiku, max_tokens /2)',
     premium: 'Premium (Anthropic Opus toujours)',
     forced: 'Forced (provider admin override)',
-    /* v13.4.362 (Kevin « privilégie les IA gratuites suivant les questions ») */
-    'free-smart': 'Gratuit malin (IA gratuite pour les questions simples, Anthropic pour les complexes)',
+    /* v13.4.362 (Kevin « privilégie les IA gratuites suivant les questions »)
+     * v13.4.366 (Kevin « Fait tourner Apex sur Qwen ») : Qwen gratuit en principal. */
+    'free-smart': 'Gratuit malin (Qwen gratuit en principal, bascule auto vers l\'IA la plus pertinente : Anthropic pour code/raisonnement/admin, Gemini vision, Perplexity recherche)',
   };
   /* Set icon initial selon mode persisté */
   void (async () => {

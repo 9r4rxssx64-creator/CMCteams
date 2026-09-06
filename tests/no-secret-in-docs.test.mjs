@@ -62,7 +62,12 @@ function ressembleAUnSecret(v) {
   // une valeur, pas un nom — c'est exactement la forme du code famille de l'arbre.
   if (/^[A-Z][A-Z0-9]*_[A-Z0-9_]*$/.test(v)) return false;
   if (/^[a-z][a-z0-9_.]*$/.test(v)) return false;       // nom.en.minuscules / snake_case
-  if (/^[a-z0-9]+([-_.][a-z0-9]+)+$/i.test(v)) return false; // identifiant à séparateurs
+  /* Identifiant à séparateurs (`apex-auth-worker`, `cmc_admin_pin`, `kd-mc.com`) — mais
+     SEULEMENT s'il est court. Mesuré le 6.09.2026 sur les 824 .md : près d'une étiquette de
+     secret, AUCUN nom légitime ne dépasse 24 caractères. Au-delà, ce n'est plus un nom.
+     Sans ce plafond la garde ratait AGENT_SECRET, dont la vraie valeur est une longue chaîne
+     à tirets — elle passait pour un nom de service. */
+  if (v.length <= 24 && /^[a-z0-9]+([-_.][a-z0-9]+)+$/i.test(v)) return false;
   if (/^[.@#$][A-Za-z]/.test(v)) return false;          // .read, @scope…
   if (/[…]|\.\.\.$/.test(v)) return false;             // valeur DÉJÀ tronquée (`glpat-wD6Q…`)
   if (/^_?[a-z][A-Za-z0-9]*$/.test(v)) return false;    // identifiant camelCase (`vLoginStep1`)
@@ -74,8 +79,29 @@ function ressembleAUnSecret(v) {
   const mixte = v.length >= 10 && /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v);
   const dense = v.length >= 12 && /^[A-Za-z0-9]+$/.test(v) && /[0-9]/.test(v);
   const majAlnum = v.length >= 6 && /^[A-Z0-9]+$/.test(v) && /[0-9]/.test(v) && /[A-Z]/.test(v);
-  return mixte || dense || majAlnum;
+  /* Longue chaîne à séparateurs AVEC des chiffres : au-delà de 24 caractères, plus aucun
+     nom de service légitime dans ce dépôt — c'est la forme d'AGENT_SECRET. */
+  const longSep = v.length >= 25 && /^[a-z0-9]+([-_.][a-z0-9]+)+$/i.test(v) && /[0-9]/.test(v);
+  return mixte || dense || majAlnum || longSep;
 }
+
+
+/* MAJUSCULES PURES, SANS AUCUN CHIFFRE — la classe que la garde RATAIT.
+ *
+ * Trouvé le 6.09.2026, et c'est une correction d'une affirmation que j'avais faite à tort :
+ * j'avais annoncé la garde « prouvée sur les deux fuites », mais mon sabotage utilisait une
+ * valeur AVEC chiffres. La vraie valeur du code famille n'en a pas : aucune des trois règles
+ * ci-dessus ne la voyait, donc la garde serait passée au VERT sur la vraie fuite.
+ *
+ * Cette forme est trop banale pour être jugée seule (« OBLIGATOIRE », « ATTENTION » en gras
+ * déclenchaient 3 faux positifs, mesurés). On exige donc qu'elle SUIVE l'étiquette de près :
+ * « code famille : **XXXXXX** » compte, une phrase où le mot en gras est ailleurs ne compte
+ * pas. Contrainte structurelle plutôt qu'une liste de mots interdits qui grandirait sans fin.
+ */
+const MAJ_PURES = /^[A-Z]{6,}$/;
+/* Ce qui peut séparer l'étiquette de sa valeur : ponctuation de liaison, rien d'autre. */
+const LIEN = /^[\s:=,()\-–—]*(?:est|vaut)?[\s:=]*$/;
+const MAX_ECART = 25;
 
 function fichiersMd(dir, acc = []) {
   for (const e of readdirSync(dir)) {
@@ -101,9 +127,16 @@ for (const f of fichiers) {
     const l = lignes[i];
     const etq = ETIQUETTES.find((e) => e.re.test(l));
     if (!etq) continue;
+    const posEtq = l.match(etq.re);
+    const finEtq = posEtq ? posEtq.index + posEtq[0].length : 0;
     for (const m of l.matchAll(VALEUR)) {
       const v = m[1] ?? m[2];
-      if (!v || !ressembleAUnSecret(v)) continue;
+      if (!v) continue;
+      /* Majuscules pures sans chiffre : uniquement si la valeur SUIT l'étiquette de près. */
+      const entre = m.index >= finEtq ? l.slice(finEtq, m.index) : null;
+      const majPures =
+        MAJ_PURES.test(v) && entre !== null && entre.length <= MAX_ECART && LIEN.test(entre);
+      if (!ressembleAUnSecret(v) && !majPures) continue;
       /* On rapporte l'EMPLACEMENT et la LONGUEUR, jamais la valeur. */
       fuites.push(`${relative(ROOT, f)}:${i + 1} — étiquette « ${etq.nom} » suivie d'une valeur de ${v.length} caractères`);
     }

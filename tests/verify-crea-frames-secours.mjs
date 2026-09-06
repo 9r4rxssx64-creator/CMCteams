@@ -22,8 +22,10 @@ const chk = (c, m) => (c ? R.ok : R.ko).push(m);
 const PIX = 'data:image/jpeg;base64,' + Buffer.from('FAKE-PHOTO-KEVIN').toString('base64');
 let vus = [];
 
-function mock({ geminiOk = false, editeur = false } = {}) {
+let creations = 0;
+function mock({ geminiOk = false, editeur = false, creationsKo = [] } = {}) {
   vus = [];
+  creations = 0;
   global.fetch = async (u) => {
     const url = String(u);
     vus.push(url);
@@ -39,6 +41,12 @@ function mock({ geminiOk = false, editeur = false } = {}) {
       return new Response(JSON.stringify({ latest_version: { id: 'v1' } }), { status: 200 });
     }
     if (/api\.replicate\.com\/v1\/predictions/.test(url)) {
+      creations++;
+      /* creationsKo simule une pose qui casse (délai dépassé, modèle occupé…)
+         pendant que l'autre réussit — exactement le cas du 2026-09-06. */
+      if (creationsKo.includes(creations)) {
+        return new Response(JSON.stringify({ error: 'timeout' }), { status: 200 });
+      }
       return new Response(JSON.stringify({ status: 'succeeded', output: 'https://out/pose.png',
         urls: { get: 'https://api.replicate.com/v1/predictions/x' } }), { status: 200 });
     }
@@ -94,6 +102,30 @@ r = await call('/pose', { GEMINI_API_KEY: 'k', REPLICATE_API_TOKEN: 't' },
 j = await r.json().catch(() => ({}));
 chk(r.status === 502, 'D. copie de pose impossible → refus (502), reçu ' + r.status);
 chk(/indisponible/.test(j.message || ''), 'D. on explique pourquoi au lieu de rendre autre chose');
+
+/* E) LE BUG DU 2026-09-06 — une pose casse, l'autre réussit.
+      Avant : `Promise.all` rejetait au premier échec et jetait AUSSI la pose
+      réussie → 0 pose → 502 « je n'ai pas pu fabriquer les poses », alors que
+      /magic (même moteur, même run) rendait une image sans problème.
+      Maintenant : allSettled garde la bonne + rattrape la manquante seule.
+      DISCRIMINANT : ce test échoue si on revient à `Promise.all`. */
+mock({ editeur: true, creationsKo: [2] });
+r = await call('/frames', { GEMINI_API_KEY: 'k', REPLICATE_API_TOKEN: 't' }, { image: PIX, mode: 'dance', n: 2 });
+j = await r.json().catch(() => ({}));
+chk(r.status === 200, 'E. 1 pose qui casse ne jette PLUS la pose réussie (' + r.status + ', avant : 502)');
+chk((j.frames || []).length >= 2, 'E. les 2 poses sont là après rattrapage : ' + (j.frames || []).length);
+chk(creations === 3, 'E. la manquante est refaite SEULE (3 lancements : 2 + 1 rattrapage), vu ' + creations);
+chk(/replicate-edit/.test(j.provider || ''), 'E. et c\'est bien le moteur d\'édition qui a servi');
+
+/* F) les DEUX poses cassent → refus honnête, mais la cause EXACTE de CHACUNE
+      est dite (règle « toujours détailler les erreurs, cause exacte »). */
+mock({ editeur: true, creationsKo: [1, 2] });
+r = await call('/frames', { GEMINI_API_KEY: 'k', REPLICATE_API_TOKEN: 't' }, { image: PIX, mode: 'dance', n: 2 });
+j = await r.json().catch(() => ({}));
+chk(r.status === 502, 'F. les 2 poses cassées → refus (502), reçu ' + r.status);
+chk(/edit#1/.test(j.detail || '') && /edit#2/.test(j.detail || ''),
+  'F. la cause de CHAQUE pose est nommée : ' + String(j.detail || '').slice(0, 90));
+chk(!(j.frames || []).length, 'F. aucune image inventée');
 
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));

@@ -87,10 +87,20 @@ prévoir le chemin de secours (Face ID déjà présent) **avant** de fermer la p
 
 ---
 
-## [P1] Session admin locale obtenue en tapant le nom
+## [P1] Session admin locale obtenue en tapant le nom — ✅ CORRIGÉ v1.1.285 (05/09)
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/index.html:7430`
-- **Statut** : 🟡 DÉDUIT (lecture du code, non rejoué)
+- **Statut** : ✅ VÉRIFIÉ — corrigé v1.1.285, garde de non-régression câblée (`tests/unit/no-client-side-admin-by-name.test.js`), 1086/1086 tests verts.
+
+> **Correctif appliqué (v1.1.285)** : l'admin est décidé UNIQUEMENT côté serveur
+> (`user.is_admin` renvoyé par le Worker + JWT). Les 3 vecteurs client par le nom
+> sont supprimés : (1) repli hors-ligne = simple utilisateur (`is_admin:false`,
+> plus de `kdmc_admin`) ; (2) plus de `K.user.is_admin=true` dérivé du nom dans
+> `K.login`/restauration → on lit `user.is_admin` du serveur ; (3) **le pire** :
+> le bypass en ligne fabriquait un jeton `'local-admin-'` avec `is_admin:true`
+> MÊME sur refus serveur (401 `admin_mfa_required`) → désormais session simple
+> utilisateur sur refus (pas de lock-out ; l'admin re-vient via le SSO Face ID).
+> Anti-lock-out préservé côté serveur (`X-Apex-Admin-Token`). Cf. leçon #216.
 
 Si le worker est injoignable, le client crée un compte local :
 
@@ -107,10 +117,10 @@ mais le panneau admin et les données déjà en cache s'ouvrent.
 
 ---
 
-## [P2] Le jeton de session circule dans l'URL du WebSocket
+## [P2] Le jeton de session circule dans l'URL du WebSocket — ✅ CORRIGÉ v1.1.286
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/api-worker.js:148`
-- **Statut** : ✅ VÉRIFIÉ (lecture confirmée)
+- **Statut** : ✅ VÉRIFIÉ (lecture confirmée) → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.286)
 
 ```js
 token = new URL(request.url).searchParams.get('token');
@@ -121,17 +131,131 @@ jeton en query string se retrouve dans les journaux serveur, les proxys et les r
 
 **Correctif** : jeton d'usage unique et court, échangé contre la session à l'ouverture du socket.
 
+### ✅ Correctif appliqué — v1.1.286 (2026-09-06)
+
+**Serveur** (`workers/api-worker.js`)
+- Nouvelle route `POST /api/auth/ws-ticket` : échange le jeton de session (en-tête `Authorization`,
+  qui ne voyage jamais dans une URL) contre un **ticket** signé `{typ:'wstkt', jti, exp: +60 s}`.
+- `getAuthUser` accepte `?ticket=` et **consomme le `jti`** dans `ws_tickets` (`INSERT OR IGNORE`
+  sur une clé primaire → la consommation est **atomique**, un rejeu insère 0 ligne et est refusé).
+- Un ticket **ne vaut jamais session** : rejeté en `Authorization: Bearer` comme en `?token=`.
+- Base indisponible → **fail-closed** (un ticket non consommable ne peut pas valoir session).
+
+**Client** (`index.html`)
+- `K._wsTicket()` demande un ticket, `_openWs` connecte en `?ticket=`.
+- `?token=` conservé **une version** en repli explicite (une app encore en cache doit continuer à
+  se connecter — règle « jamais casser la connexion »). À retirer en v1.1.287.
+
+**Preuve** — `tests/unit/ws-ticket-usage-unique.test.js`, 6 tests sur le vrai worker :
+ticket refusé sans session · ticket valide ouvre le chemin WS · **le même ticket une 2ᵉ fois est
+refusé** · un ticket ne vaut pas session (Bearer et `?token=`) · repli `?token=` intact ·
+le client demande bien un ticket.
+**Discriminant prouvé par sabotage** : usage unique retiré → 1 échec ; garde « ticket ≠ session »
+retirée → 1 échec ; restauré → 6/6. Suite complète **1104/1104**, navigateur réel **5/5**, 0 exception JS.
+
+**Reste** (même classe, traité séparément) : les URL de médias (`K._mediaSrc`) portent encore
+`?token=` — voir le finding P2c ci-dessous.
+
 ---
 
-## [P2] CORS ouvert à tous sur toute l'API
+## [P2c] Le jeton de session circule aussi dans les URL de médias — ✅ CORRIGÉ v1.1.288
+
+- **Axe** : Sécurité · **Fichier** : `messaging-app/index.html` (`K._mediaSrc`)
+- **Statut** : ✅ VÉRIFIÉ (lecture confirmée) → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.288)
+
+```js
+return full + (full.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(K.token || '');
+```
+
+Même défaut que le P2a, sur un autre chemin : le jeton de session part dans l'attribut `src` de
+chaque image/vidéo. Il entre donc dans le DOM, l'historique du navigateur et les journaux du
+serveur de médias.
+
+**Pourquoi ce n'est pas livré dans le même lot** : un média est lu **plusieurs fois** (aperçu,
+plein écran, re-rendu), donc un ticket à usage unique ne convient pas tel quel — il faut un
+ticket court **réutilisable** dans sa fenêtre, plus un rafraîchissement côté client. Ça touche
+tout le rendu des médias : le livrer à l'aveugle dans le même commit que le WebSocket risquait de
+casser l'affichage des photos. À traiter comme une étape vérifiée à part.
+
+### ✅ Correctif appliqué — v1.1.288 (2026-09-06)
+
+La protection d'un ticket média n'est pas l'usage unique (impossible ici) mais sa **portée** :
+
+**Serveur** (`workers/api-worker.js`)
+- `POST /api/auth/media-ticket` → ticket `{typ:'mtkt', exp: +5 min}`, **réutilisable**.
+- `getAuthUser(request, env, { allowMediaTicket: true })` : le paramètre n'est passé que par
+  `handleMediaGet`. Un ticket média posé sur **n'importe quelle autre route** n'est même pas lu →
+  il ne sert **qu'**à afficher un fichier.
+- Durcissement généralisé au passage : **tout jeton portant un `typ`** (ticket WS, ticket média,
+  invitation magique) est refusé comme jeton de session. Les jetons de session, eux, n'ont pas de
+  `typ` — la règle est donc structurelle, pas une liste à tenir à jour.
+- L'autorisation de fond est inchangée : propriétaire, ou membre d'une conversation partagée.
+
+**Client** (`index.html`)
+- `K._ensureMediaTicket()` : un seul ticket en cache, demandé **dès la connexion** et renouvelé
+  30 s avant expiration ; les appels concurrents partagent la même requête.
+- `K._mediaSrc` reste **synchrone** : ticket valide → `?mt=` ; sinon repli `?token=` **et**
+  demande d'un ticket en arrière-plan → **jamais d'image cassée**.
+- Garder le même ticket 5 min garde les URL **stables**, donc le cache du navigateur efficace.
+
+**Preuve** — `tests/unit/media-ticket-portee-limitee.test.js`, 6 tests sur le vrai worker :
+ticket refusé sans session · sert un média **trois fois de suite** (réutilisable) · refusé en
+Bearer · refusé en `?token=` · **ignoré sur une autre route** · un ticket WebSocket n'est pas un
+ticket média · le client demande bien un ticket.
+**Discriminant prouvé par sabotage** : restriction de route retirée → 1 échec ; garde « jeton typé
+≠ session » retirée → 2 échecs (média **et** WebSocket) ; restauré → 12/12.
+Suite complète **1115/1115**, gate de couverture vert, navigateur réel **5/5**, 0 exception JS.
+
+---
+
+## [P2] CORS ouvert à tous sur toute l'API — ✅ CORRIGÉ v1.1.287
 
 - **Axe** : Sécurité · **Fichier** : `messaging-app/workers/lib/cors.js:13`
-- **Statut** : ✅ VÉRIFIÉ
+- **Statut** : ✅ VÉRIFIÉ → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.287)
 
 `Access-Control-Allow-Origin: '*'` sur les 4 workers, y compris les routes admin. Le commentaire
 du fichier annonce déjà le durcissement par liste blanche — il n'a pas été fait.
 Atténuation réelle : l'authentification passe par `Authorization`, pas par cookie, donc pas de CSRF
 classique. Reste que n'importe quelle page peut appeler l'API avec un jeton volé.
+
+### ✅ Correctif appliqué — v1.1.287 (2026-09-06)
+
+**Ce que `*` permettait vraiment** (à dire honnêtement) : l'authentification étant portée par un
+en-tête `Bearer` et non par un cookie, un site tiers ne pouvait **pas lire** les données d'un
+utilisateur connecté. Ce qu'il pouvait faire : déclencher les routes **non authentifiées** depuis
+les navigateurs de ses visiteurs — `send-otp` (**coût SMS réel**) et `check-phone` (**énumération
+de numéros**). C'est ça qui est fermé.
+
+**Comment** — `workers/lib/cors.js`
+- `ALLOWED_ORIGINS` : les origines **mesurées**, pas devinées — `apex-chat.kd-mc.com` (domaine
+  canonique, `services/kdmc-router/worker.js:34`), `9r4rxssx64-creator.github.io` (hôte GitHub
+  Pages réel, celui que charge `apex-chat-e2e.yml`), `kd-mc.com` / `www.kd-mc.com` (le portail),
+  plus `localhost`/`127.0.0.1` pour le développement.
+- `applyCors(request, response)` renvoie l'origine demandeuse **si elle est autorisée**, et
+  **retire** l'en-tête sinon. Sans en-tête `Origin` (curl, Service Binding), rien n'est envoyé —
+  il n'y a pas de contrôle CORS à faire.
+- `Vary: Origin` **ajouté** (pas écrasé), sinon un cache pourrait servir à un site la réponse
+  autorisée d'un autre — et écraser un `Vary: Accept-Encoding` casserait la compression.
+- **Un upgrade WebSocket (101) est renvoyé tel quel** : sa réponse transporte un objet `webSocket`
+  non reconstructible, le recopier couperait le temps réel.
+
+**Où** : en **UN seul point par worker** — le `fetch` de tête des 4 workers est enveloppé
+(`const _workerHandler = {...}` puis `export default { ..._workerHandler, fetch: applyCors(...) }`).
+Aucun site d'appel n'est touché, donc aucune réponse ne peut échapper au filtre. C'est ce qui rend
+le correctif sûr : mon estimation initiale (« refondre 4 pipelines de réponse ») était fausse.
+
+**Preuve** — `tests/unit/cors-origines-autorisees.test.js` (5 tests) + les 4 tests de routing des
+workers mis à jour : origine autorisée renvoyée telle quelle · origine inconnue → aucun en-tête ·
+sans `Origin` → aucun en-tête · `Vary` cumulé · 101 renvoyé **à l'identique**. La liste est
+**dérivée des fichiers du dépôt** (canonical de `index.html` + `APEX_CHAT_URL` du workflow e2e),
+donc oublier le vrai hôte GitHub Pages fait échouer le test (leçon #218).
+**Discriminant prouvé par sabotage** : `applyCors` remis en passe-plat → 3 échecs ; hôte GitHub
+Pages retiré de la liste → 2 échecs ; restauré → 47/47.
+Suite complète **1109/1109**, couverture `cors.js` **100 %**, navigateur réel **5/5**.
+
+**Limite honnête** : le CORS est un contrôle **du navigateur**. Il n'empêche pas un appel direct
+(curl, script serveur) — ça, ce sont l'authentification et les limites de débit qui le tiennent.
+Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 
 ---
 
