@@ -39,6 +39,10 @@
   laissé **intact**. Corrigé côté générateur seulement : réseau coupé (Firebase remplaçait
   `A.overrides` en pleine mesure sur un runner) + échec explicite si l'import ne se stabilise pas.
   Leçon #221. À la session Départs : rendre l'identifiant temporaire **dérivé du nom**, pas du temps.
+  **Puis `test:vplan`** (« Ma section » vide côté runner) : même cause. Plutôt que de courir après un
+  rouge à la fois — chaque aller-retour coûte 4 min de runner — j'ai fait l'inventaire : **13 tests de
+  `test:ci`** important un planning avec le réseau **ouvert**. Réseau coupé dans les 13 (aucun n'a besoin
+  du CDN, aucun n'avait de route), attente stable pour `repro-vplan`. **14 tests relancés ici : 14 verts.**
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
