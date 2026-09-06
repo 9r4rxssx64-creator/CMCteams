@@ -10,6 +10,9 @@
 
 import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc, b64uDec } from './webauthn.js';
 import { mintShopsAdminIdToken } from './fb-token.js';
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+   UN routage IA commun au domaine (Qwen Workers AI d'abord, bascule par type de question). */
+import { routeText } from '../_shared/ia-route.js';
 
 /* D'où viennent les pages. Historiquement GitHub Pages — mais le compte GitHub
    a été suspendu le 15/08/2026 et le support a refusé de lever la restriction,
@@ -637,35 +640,12 @@ async function handleLingua(request, url, env) {
         + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
       if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
-      if (env.GROQ_API_KEY) {
-        try {
-          const rr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST', headers: { 'authorization': 'Bearer ' + env.GROQ_API_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 300, temperature: 0.75 }),
-          });
-          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'groq' }); }
-        } catch (_) { /* repli */ }
-      }
-      if (env.MISTRAL_API_KEY) {
-        try {
-          const rr = await fetch('https://api.mistral.ai/v1/chat/completions', {
-            method: 'POST', headers: { 'authorization': 'Bearer ' + env.MISTRAL_API_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 300, temperature: 0.75 }),
-          });
-          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'mistral' }); }
-        } catch (_) { /* repli */ }
-      }
-      if (env.GEMINI_API_KEY) {
-        try {
-          const contents = chat.filter((m) => m.role !== 'system').map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
-          const rr = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + env.GEMINI_API_KEY, {
-            method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: contents, generationConfig: { maxOutputTokens: 300, temperature: 0.75 } }),
-          });
-          if (rr.ok) { const j = await rr.json(); const reply = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'gemini' }); }
-        } catch (_) { /* repli */ }
-      }
-      return JL({ ok: false, reason: 'ai_absent' }); // aucune clé/erreur → message hors-ligne côté client (fail-open)
+      /* Kevin 2026-09-05 : le coach = TRADUCTION/conversation multilingue → routage commun,
+         QWEN (Workers AI, 0 clé, multilingue) en premier, puis Gemini / Groq / Mistral gratuits,
+         Anthropic en secours s'il existe. On sait toujours qui a répondu (`by`). */
+      const ai = await routeText(env, { messages: chat, domain: 'translation', maxTokens: 300, temperature: 0.75, timeoutMs: 15000 });
+      if (ai.ok) return JL({ ok: true, reply: ai.text, by: ai.provider, model: ai.model });
+      return JL({ ok: false, reason: 'ai_absent', tried: ai.tried }); // aucune IA/erreur → message hors-ligne côté client (fail-open)
     }
     return JL({ ok: false, reason: 'bad_route' }, 404);
   } catch (e) {

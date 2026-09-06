@@ -5821,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.891";
+var APP_VER="v9.893";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -47378,6 +47378,59 @@ function _iaExecuteTool(toolName,input){
   }catch(e){return"Erreur outil "+toolName+" : "+e.message;}
 }
 
+/* v9.892 — Kevin 2026-09-05 « Fait tourner Apex sur Qwen l'IA gratuite… pareil dans mes autres
+   projets » : les questions COURANTES (culture générale, résumé, traduction, réponse rapide) partent
+   au relais IA du domaine (apis.kd-mc.com/ai → Qwen sur Workers AI, 0 clé, 0 €). Tout ce qui touche
+   au PLANNING, aux employés, à la convention ou à une ACTION garde Anthropic + ses outils (seul à
+   pouvoir lire les données). Marche AUSSI sans clé Anthropic sur l'appareil (employés). */
+var CMC_IA_FREE_URL="https://apis.kd-mc.com/ai";
+var CMC_IA_FREE_LABEL="Qwen · gratuit";
+function cmcIaFreeDomain(q){
+  var lc=String(q||"").toLowerCase();
+  /* ce qui a besoin des OUTILS ou des données CMC → jamais le relais gratuit */
+  if(/\b(planning|plannings|horaire|horaires|équipe|equipe|équipes|equipes|repos|congé|conge|congés|conges|cp\b|rh\b|shift|départ|depart|départs|departs|table|tables|salle|salon|convention|article|employ|collègue|collegue|pit|inspecteur|superviseur|chef|miroir|aujourd|demain|hier|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|semaine|mois|janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|novembre|décembre|decembre|qui travaille|qui est|conflit|échange|echange|absence|malade|import|upload|stat)/.test(lc))return null;
+  if(/\b(lance|exécute|execute|déploie|deploie|corrige|répare|repare|modifie|configure|installe|active|désactive|desactive|supprime|envoie|sauvegarde|synchronise|publie|merge|pousse|audit|teste|vérifie|verifie)\b/.test(lc)&&!/\b(comment|pourquoi|est-ce que|c'est quoi|explique)\b/.test(lc))return null;
+  if(/\bcode|programme|fonction|debug|bug|javascript|python|sql\b/.test(lc))return null;
+  if(/\bimage|photo|vision|scanne?r?\b/.test(lc))return null;
+  if(/\btraduit?|translate|en (anglais|italien|allemand|espagnol)\b/.test(lc))return "translation";
+  if(/\brésume|résum[eé]|tldr|résumé\b/.test(lc))return "summary";
+  if(/\b(rapide|vite|urgent|asap)\b/.test(lc))return "speed";
+  if(/\b(analyse|réfléchis|raisonne)\b/.test(lc)&&lc.length>200)return null;
+  if(/\bcherche|recherche|trouve|google\b/.test(lc))return null;
+  return "general";
+}
+/* Appel au relais gratuit. onFail(raison) → l'appelant décide (Anthropic si clé, sinon mode local). */
+function cmcIaFreeAsk(q,domain,onFail){
+  var msgs=[];
+  iaHistory.filter(function(m){return m.role!=="loading";}).slice(-10).forEach(function(m){
+    if(m.role==="user")msgs.push({role:"user",content:m.text});
+    else if(m.role==="bot")msgs.push({role:"assistant",content:(m.html||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim().slice(0,400)});
+  });
+  if(!msgs.length||msgs[msgs.length-1].role!=="user")msgs.push({role:"user",content:q});
+  var who=(A.user&&A.user.name)?A.user.name:"un membre de l'équipe";
+  var sys="Tu es l'Assistant CMC (CMCteams, planning des jeux de table du Casino de Monaco). Tu parles à "+who+". Réponds en français, clairement, en 2 à 6 phrases, sans jargon technique. Tu n'as PAS accès au planning ni aux fiches employés dans ce mode : si la question en a besoin, dis-le en une phrase et invite à reformuler avec « planning » ou « équipe ».";
+  var ctrl=(typeof AbortController!=="undefined")?new AbortController():null;
+  var done=false;
+  var to=setTimeout(function(){if(done)return;done=true;if(ctrl)try{ctrl.abort();}catch(_e){}onFail("délai dépassé (25 s)");},25000);
+  var opts={method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messages:[{role:"system",content:sys}].concat(msgs),domain:domain||"general",max_tokens:900,app:"cmcteams"})};
+  if(ctrl)opts.signal=ctrl.signal;
+  fetch(CMC_IA_FREE_URL,opts).then(function(r){return r.text().then(function(t){var d=null;try{d=JSON.parse(t);}catch(_e){}if(!r.ok||!d||!d.ok||!d.text)throw new Error("HTTP "+r.status+" : "+((d&&(d.error||d.detail))||t.slice(0,120)));return d;});})
+  .then(function(d){
+    if(done)return;done=true;clearTimeout(to);
+    if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
+    var txt=String(d.text||"");
+    var html=esc(txt).replace(/\n/g,"<br>").replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
+    /* v9.893 — concertation (Kevin 2026-09-06) : le relais peut répondre par un CONSEIL de voix gratuites + juge ; on le dit. */
+    var nVoix=(d.voices&&d.voices.length)?d.voices.filter(function(v){return v&&v.ok;}).length:0;
+    var lbl=d.provider==="council"?("Concertation gratuite · "+nVoix+" avis"):(d.provider==="qwen"?CMC_IA_FREE_LABEL:String(d.provider||"IA"));
+    var ana=(d.analyse&&d.analyse.by==="concert")?" · type voté par "+Object.keys(d.analyse.votes||{}).length+" voix":"";
+    var badge="<span style='font-size:11px;color:#7edc90' title='Réponse par "+esc(String(d.provider||"")+" "+String(d.model||"")+ana)+"'>"+esc(lbl)+"</span><br>";
+    iaHistory.push({role:"bot",html:badge+html});
+    logIAInteraction(q,html,"free_"+String(d.provider||"?"));ttsSpeak(txt);
+    dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+  })
+  .catch(function(e){if(done)return;done=true;clearTimeout(to);onFail(String((e&&e.message)||e));});
+}
 function callClaudeIA(q){
   if(!iaApiKey||!iaEnabled)return;
   var msgs=[];
@@ -47795,10 +47848,24 @@ function iaSend(preset){
   /* v9.506 — Auto-extract Kevin rules */
   try{if(A.user&&A.user.id===AID&&typeof cmcExtractKevinRule==="function")cmcExtractKevinRule(text);}catch(_e){try{(typeof _cmcSafeCatch==="function"?_cmcSafeCatch:function(c,err){console.warn("[ctx]",err&&err.message);})("ia-send",_e);}catch(__){}}
   iaHistory.push({role:"user",text:text});
-  if(iaApiKey&&iaEnabled){
-    iaHistory.push({role:"loading",html:"<span style='color:#a0cca0;font-style:italic'>"+(iaWebSearch?"🔍 Recherche…":"⏳ Réponse en cours…")+"</span>"});
+  /* v9.892 — question courante → relais gratuit (Qwen) ; planning/outils/action → Anthropic ;
+     si le gratuit tombe → Anthropic quand il y a une clé, sinon le mode local (jamais bloqué). */
+  var _freeDom=(iaEnabled&&navigator.onLine)?cmcIaFreeDomain(text):null;
+  if(iaEnabled&&(iaApiKey||_freeDom)){
+    iaHistory.push({role:"loading",html:"<span style='color:#a0cca0;font-style:italic'>"+(iaWebSearch?"🔍 Recherche…":(_freeDom?"⏳ Réponse en cours (gratuit)…":"⏳ Réponse en cours…"))+"</span>"});
     dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
-    callClaudeIA(text);
+    if(_freeDom){
+      cmcIaFreeAsk(text,_freeDom,function(reason){
+        try{console.warn("[ia] relais gratuit KO → secours :",reason);}catch(_e){}
+        if(iaApiKey){callClaudeIA(text);return;}
+        if(iaHistory.length&&iaHistory[iaHistory.length-1].role==="loading")iaHistory.pop();
+        var lr=iaRespond(text);
+        iaHistory.push({role:"bot",html:(lr!==null?lr:"<span style='color:#e09848'>L'IA gratuite ne répond pas pour le moment ("+esc(String(reason).slice(0,80))+"). Réessaie dans une minute.</span>")});
+        dc();setTimeout(function(){var m=document.getElementById("iaMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
+      });
+    } else {
+      callClaudeIA(text);
+    }
   } else {
     // Mode local — fonctionne toujours (avec ou sans clé, activé ou non)
     var reply=iaRespond(text);

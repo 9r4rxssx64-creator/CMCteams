@@ -152,7 +152,7 @@
 <script>
 (function(){
   'use strict';
-  var APP_VER = 'v0.14.0';
+  var APP_VER = 'v0.15.0';
   var PROXY = 'https://apex-secrets-proxy.9r4rxssx64.workers.dev';
 
   /* ============================ Utils ============================ */
@@ -416,6 +416,10 @@
      marqué vision:true ; les moteurs texte-seul sont SAUTÉS quand l'entrée contient un
      document (sinon ils échouent). Tout passe par le proxy (tes clés, serveur). */
   var AI_FREE_CHAIN=[
+    /* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » : Qwen tourne
+       sur Workers AI dans le relais Apex (0 clé, 0 €) et parle le format OpenAI → en TÊTE pour le texte.
+       Texte seul (pas d'image, pas de PDF) : les documents vont toujours à Pixtral/Gemini/Claude. */
+    { id:'qwen',     label:'Qwen (gratuit)', fmt:'openai', free:true, vision:false, pdf:false, path:'/qwen/v1/chat/completions', models:['@cf/qwen/qwen3.8-27b'] },
     /* GRATUITES d'abord (Groq/Cerebras/Mistral = vrai tier gratuit). vision = lit les IMAGES (photos/tickets) ;
        pdf = lit un PDF directement. Mistral/Pixtral lit les images mais PAS un PDF (il renvoie HTTP 422 sur un
        application/pdf) → pdf:false. Seuls Gemini et Claude lisent un PDF nativement. Gemini est la clé de Kevin
