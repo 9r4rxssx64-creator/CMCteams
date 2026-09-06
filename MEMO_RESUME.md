@@ -70,6 +70,17 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
 - **`SESSIONS-ET-BRANCHES.md` corrigé** : sa section « la seule action qui débloque TOUT » demandait
   encore à Kevin de retaper l'autorisation du connecteur GitHub — **périmé depuis le 2.09, inutile
   depuis le 4.09** (m005/m016). Réécrite pour que personne ne le ressorte.
+- **`e2e-tests` est ROUGE sur `main` depuis au moins le 5.09 — et personne ne pouvait voir pourquoi.**
+  Ma PR est sortie rouge ; vérifié que ce n'est pas ma branche (`tests.yml` identique sur `main`, et
+  **les 5 derniers runs sur `main` sont tous en échec**). L'étape « Install Puppeteer » sort en code 1
+  après 9 s, et **`--silent` masquait le message d'erreur de npm** : un job rouge sans une seule ligne
+  utile, hérité par CHAQUE PR (le piège du fait n°16 : « une PR bloquée peut l'être par `main` »).
+  Corrigé : `--silent` retiré (la raison remontera), `--legacy-peer-deps --no-audit --no-fund` ajoutés
+  — remède **mesuré et documenté par `domaine-audit` au message m033** pour le même symptôme sur
+  playwright, à la racine de ce dépôt. **Honnêteté : je n'ai pas pu reproduire l'échec dans mon
+  conteneur** (npm 10.9.7 vs 10.9.8 sur le runner) : je porte un correctif documenté par une autre
+  session, pas un que j'ai vu passer du rouge au vert. Message **m042**. Cause de fond à prendre :
+  il n'y a **pas de `package-lock.json`** dans ce dépôt.
 - **Vercel : le correctif du 5.09 était annulé par sa propre note.** Le bot Vercel a échoué sur ma
   PR avec la vraie raison : *« The vercel.json schema validation failed … should NOT have additional
   property `_note` »*. La clé `_note` ajoutée dans `tools/agent/vercel.json` pour EXPLIQUER le
