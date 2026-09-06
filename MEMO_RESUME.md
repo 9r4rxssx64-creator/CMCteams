@@ -1,5 +1,47 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h40) — registre de mes erreurs + brouillon de réclamation Anthropic
+
+- Kevin demande le relevé de **toutes mes erreurs** et un mail à Anthropic pour un recrédit de
+  forfait. Livré : **`ERREURS_CLAUDE_CODE.md`** (registre factuel) + **brouillon Gmail** vers
+  `support@anthropic.com` (non envoyé — Kevin relit et envoie).
+- Règle que je me suis fixée pour ce dossier : **uniquement ce qui est écrit et vérifiable dans le
+  dépôt**, avec la référence fichier:ligne. Rien de reconstitué de mémoire, rien d'exagéré — un
+  dossier qui gonfle se retourne contre celui qui l'envoie.
+- Chiffres retenus (tous déjà écrits avant aujourd'hui) : **225 leçons** dont **65 aveux
+  explicites** · **126 commits de correctif** en 3 mois · **18 versions en 6 h** (CLAUDE.md:4911) ·
+  **25 versions de « protections » qui bloquaient le login**, 97/100 annoncé contre **42/100 réel**
+  (CLAUDE.md:4284) · **12 correctifs sur 16 orphelins**, +5 au lieu de +40 (CLAUDE.md:3075) ·
+  **1 h perdue** sur un cache non incrémenté (CLAUDE.md:4990) · mesure fausse **85/102 → 41**
+  (CLAUDE.md:875) · les deux erreurs du jour (leçons #223 et #225).
+- **Limites déclarées dans le document ET dans le mail** (section 5) : je n'ai accès qu'à ce dépôt,
+  pas à l'historique complet des sessions (le chiffre réel est donc un **minimum**) ; je ne peux
+  pas chiffrer les jetons (mesure côté Anthropic) ; une grande partie du travail livré est correcte
+  et n'est pas dans ce registre ; les pertes non imputables à Claude (suspension GitHub d'août,
+  quotas tiers) sont **explicitement exclues**.
+- Aucun secret dans le mail (ni code admin, ni numéro de téléphone, ni jeton) — vérifié.
+
+
+## 6 septembre 2026 (16h30) — vérification LIVE : le worker de production a bien été redéployé
+
+- Mesuré via le connecteur Cloudflare (pas déduit) : worker **`apex-chat-api`**,
+  `modified_on = 2026-09-06T16:26:22Z`. Mon dernier push est de **16:12:24Z**, la fusion dans
+  `main` a suivi → **le déploiement a tourné 14 min après le push et a réussi**. Les correctifs
+  P2a/P2b/P2c sont donc en production, pas seulement dans le dépôt.
+- **Faux signal écarté** : la table `ws_tickets` n'existe pas encore en D1
+  (`SELECT name FROM sqlite_master … = 0 ligne`). Ce **n'est pas** un échec de déploiement : elle
+  est créée **paresseusement**, au premier `?ticket=` réellement consommé. Tant qu'aucun téléphone
+  n'a rouvert l'app avec la v1.1.288, elle n'a aucune raison d'exister. À vérifier de nouveau après
+  la première connexion réelle de Kevin — **si elle apparaît, le chemin ticket est prouvé bout en
+  bout en production**.
+- **Ce que je n'ai PAS pu vérifier d'ici** (à dire, pas à masquer) : que le code déployé est
+  bien *mon* code (le bundle fait ~250 Ko, le charger noierait le contexte) et que l'API GitHub
+  reste fermée à cette session (403), donc je ne peux pas lire le résultat des workflows.
+  Le juge de paix reste `apex-chat-e2e.yml`, qui tourne à chaque push sur `main` et charge la
+  **vraie page** (`9r4rxssx64-creator.github.io`) contre le **vrai worker** : c'est lui qui
+  attraperait une origine CORS oubliée. Il ouvre une issue `e2e-fails` en cas d'échec.
+
+
 ## 6 septembre 2026 (soir, suite) — la barrière est vraiment relancée : 2 rouges restants, aucun n'est le mien
 
 Le test e2e est **vert en CI réelle** : workflow « Tests E2E + Validation », run
