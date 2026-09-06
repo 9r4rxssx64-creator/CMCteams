@@ -168,7 +168,8 @@
     "test:cmc-ia-gratuite": "node tests/verify-cmc-ia-gratuite.mjs",
     "test:lingua-ia": "node --test services/kdmc-router/lingua-ia.test.mjs",
     "test:journal-erreurs": "node tests/journal-erreurs-lisible.test.mjs",
-    "test:deploiement-declenche": "node tests/verify-deploiement-declenche.mjs"
+    "test:deploiement-declenche": "node tests/verify-deploiement-declenche.mjs",
+    "retard-branches": "node tools/pipeline/retard-branches.mjs"
   },
   "repository": {
     "type": "git",
