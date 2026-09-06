@@ -25,7 +25,7 @@
 | Clé API Anthropic | ✅ Configurée | `ax_shared_api_key` Firebase shared |
 | Proxy Cloudflare | ✅ Optionnel | `ax_proxy_url` (si set, prioritaire) |
 | Firebase RTDB | ✅ Actif | `cmcteams-c16ab-default-rtdb.europe-west1` |
-| Firebase Rules | ✅ Publiées | `cmcteams` + `apex` read/write true |
+| Firebase Rules | ✅ Publiées **et DURCIES** | `cmcteams`, `apex`, `coffre_vault` = `auth != null` (plus `read/write: true` — durci le 12.06 puis le 04.07.2026, cf. `firebase-rules-apex.json`). ⚠️ Cette ligne annonçait encore « read/write true » : **c'était faux et dangereux à relire** (corrigé le 6.09). |
 | Telegram Bot | ✅ Configuré | `@Kdmc_kevind_2026_bot`, chatId dans `ax_telegram_chatid` |
 | EmailJS | ✅ Configuré | pour notifs |
 | Sentry DSN | ✅ Configuré | monitoring erreurs |

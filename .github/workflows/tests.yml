@@ -87,9 +87,18 @@ jobs:
           node-version: '22'
 
       - name: Install Puppeteer
+        # 06/09/2026 — ce job échouait sur main ET sur chaque PR depuis au moins le 5.09,
+        # et PERSONNE ne pouvait voir pourquoi : « --silent » masquait le message d'erreur
+        # de npm, le job sortait en code 1 après 9 s sans une ligne utile. Deux correctifs :
+        #   1) plus de --silent → la vraie raison apparaît dans les logs ET en annotation ;
+        #   2) --legacy-peer-deps : à la racine de ce dépôt (package.json volumineux, PAS de
+        #      package-lock), la résolution des dépendances par npm échoue — mesuré et
+        #      documenté par la session « domaine-audit » sur playwright (message m033),
+        #      même symptôme ici avec puppeteer. --no-audit --no-fund : rien à voir avec
+        #      l'installation, juste du bruit.
         run: |
           npm init -y > /dev/null 2>&1 || true
-          npm install puppeteer@latest --no-save --silent
+          npm install puppeteer@latest --no-save --no-audit --no-fund --legacy-peer-deps
 
       - name: Run E2E tests
         run: node tools/tests/e2e.test.js
