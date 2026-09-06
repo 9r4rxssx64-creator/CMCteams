@@ -136,7 +136,7 @@ Pour **CHEZ LOLO** spécifiquement :
 |---------|-----|--------|
 | Agent 24/7 | `kdmc-agent-monaco.vercel.app` | ✅ Actif |
 | Health check | `kdmc-agent-monaco.vercel.app/api/health` | ✅ |
-| Agent secret | `kdmc-monaco-casino-2026-secret-kevin-x7m9` | ✅ |
+| Agent secret | `‹secret agent — COMPROMIS, à régénérer sur Vercel›` | ✅ |
 | Shops (à déployer) | `kdmc-shops.vercel.app` | ⏳ Action 1 |
 
 ---
