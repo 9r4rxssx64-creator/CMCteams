@@ -11,6 +11,9 @@ const INDEX_PATH = resolve(__dirname, '../index.html');
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ viewport: { width: 375, height: 812 } });
+  // Hors ligne : la page en file:// ne parle à personne (sinon, sur un runner AVEC réseau,
+  // la synchro Firebase peut remplacer A.overrides en pleine mesure — leçon #220).
+  await ctx.route(/^https?:\/\//, (r) => r.abort());
   const page = await ctx.newPage();
   await page.goto('file://' + INDEX_PATH, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.A === 'object' && typeof window.APP_VER === 'string', { timeout: 20000 });
