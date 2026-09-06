@@ -1,5 +1,30 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (soir) — le test e2e rougissait « 5 erreurs runtime :  |  | » : quatre défauts empilés (v9.895)
+
+Le workflow `tests` sortait **49/54 PASS** avec, en guise d'explication, un message **vide**. Reproduit
+en vrai navigateur (4 appareils enchaînés) : **0 → 1 → 2 → 3 erreurs**, toujours la même —
+`{ctx:"_resolve-ia-key", err:"Unexpected end of JSON input"}`.
+
+| Défaut | Ce que ça donnait |
+|---|---|
+| `_resolveIaKey()` faisait `JSON.parse("")` quand il n'y a pas de clé partagée (le cas de tout le monde) | une **fausse erreur inscrite au journal à chaque démarrage**, qui noie les vraies |
+| Le journal `cmc_err_log` a **trois** écrivains et **trois** formes (`{type,msg}`, `{technical,userMsg}`, `{ctx,err}`), les **trois** lecteurs n'en lisaient qu'une | page Debug admin et outil IA `get_error_log` : **« [undefined] undefined »** sur deux tiers du journal ; et la sentinelle `error-pattern` (celle qui doit escalader une erreur qui se répète) groupait sur la **chaîne vide** → **aveugle** |
+| `_cmcSafeCatch` écrivait dans localStorage sans mettre à jour le journal en mémoire | l'erreur n'apparaissait qu'au chargement **suivant** → attribuée au **mauvais appareil** |
+| Le harnais e2e ne remettait pas le journal à zéro entre appareils, et affichait `e.msg` | cumul 1,2,3,4,5 + **message vide** |
+
+**Corrigé** : `JSON.parse` seulement si la valeur commence par `"` · deux lectures normalisées
+`_cmcErrType`/`_cmcErrMsg` câblées dans les trois lecteurs · `_cmcSafeCatch` synchronise le journal en
+mémoire · e2e repart propre par appareil et affiche `[type] texte @vue`.
+
+**Mesuré** : avant **0/1/2/3**, après **0/0/0/0**. Sabotage (retrait de la garde) → **1/2/3/4** revient.
+Les trois formes s'affichent enfin : `[js] Cannot read x of null` · `[warn] HTTP 500 backend` ·
+`[_resolve-ia-key] Unexpected end of JSON input`.
+
+**Garde** : `npm run test:journal-erreurs` (13 contrôles, dans `test:ci`), prouvée discriminante.
+Leçon **#225**.
+
+
 ## 6 septembre 2026 — SEPTEMBRE 2026 V2 vérifié EN RÉEL contre le PDF : 3 vrais défauts trouvés et corrigés
 
 **Kevin** : *« Vérifie en réel, toutes les infos. Que tout soit reproduit à l'identique dans CMCteams
