@@ -6,7 +6,7 @@
       "kv-backups": false
     }
   },
-  "ignoreCommand": "bash -c '[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] || { echo \"branche $VERCEL_GIT_COMMIT_REF : pas de previsualisation (agent = cron de production seulement)\"; exit 0; }; if git rev-parse -q --verify HEAD^ >/dev/null 2>&1; then git diff --quiet HEAD^ HEAD -- . && { echo \"tools/agent inchange : rien a deployer\"; exit 0; }; fi; echo \"main + tools/agent modifie (ou historique indisponible) : deployer\"; exit 1'",
+  "ignoreCommand": "bash -c '[ \"$VERCEL_GIT_COMMIT_REF\" = main ] || exit 0; git rev-parse -q --verify HEAD^ >/dev/null 2>&1 && git diff --quiet HEAD^ HEAD -- . && exit 0; exit 1'",
   "crons": [
     {
       "path": "/api/cron?trigger=cron:0 3 * * *",
@@ -25,6 +25,5 @@
     "api/cron.js": {
       "maxDuration": 60
     }
-  },
-  "_note": "05/09/2026 : 40 deploiements Vercel en une journee (un par push de chaque branche claude/*), tous CANCELED ou ERROR, production main annulee a chaque nouveau push, et un mail d'echec a Kevin a chaque fois. L'ancienne commande `git diff --quiet HEAD^ HEAD -- .` sortait en erreur (HEAD^ absent du clone Vercel) → Vercel le compte comme un build error. Regle : l'agent est un cron de PRODUCTION (crons ci-dessous ne tournent qu'en production sur le plan Hobby) → aucune previsualisation, jamais ; sur main, deploiement seulement si ce dossier a change."
+  }
 }
