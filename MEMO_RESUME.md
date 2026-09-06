@@ -1,5 +1,23 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (21h40) — compactage : j'arrête, état honnête + 1 clic
+
+- **Prouvé** : le nettoyeur **voit** enfin (371 branches, contre 0 avant), le mécanisme de
+  compte-rendu **fonctionne** (fichier écrit et poussé à 20 h 44), et **235 suppressions ont
+  échoué**. Trois identités ont refusé : relais git, connecteur (**lecture seule**, `403` en
+  écriture), jeton de CI.
+- **Pas su** : le **nom** du verrou. J'ai livré la capture d'erreur, mais aucun nouveau
+  compte-rendu depuis — et pour savoir pourquoi il faut le **journal d'exécution** :
+  `déclencher un workflow : 403` · `lire un journal : 403` · `outil Actions : aucun`.
+- **Décision : j'arrête la boucle.** Le compactage est de l'hygiène (374 branches encombrent,
+  elles ne perdent rien : ce sont des ancêtres de `main`, SHA notés). Chaque tentative sans
+  journal revient à deviner — c'est le travers que Kevin me reproche, je ne le prolonge pas.
+- **1 clic, et il est réel** : Actions → « Compact stale claude/* branches » → Run workflow.
+  Soit il supprime (fini, et ça repart seul), soit son journal **nomme le verrou** et je termine.
+  Déclencher un workflow et lire un journal sont les **deux seules** choses qu'aucun de mes trois
+  accès ne permet.
+
+
 ## 6 septembre 2026 (21h15) — compactage : j'arrête de contourner, je vais chercher le NOM du verrou
 
 - Compte-rendu du robot : **371 branches vues** (le correctif de cécité marche), **136 gardées**,
