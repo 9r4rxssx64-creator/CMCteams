@@ -38,7 +38,7 @@ const ADMIN_KEVIN_ALIASES = [
   'kevin.desarzens', 'kevind@monaco.mc', 'kdmc', 'k desarzens'
 ];
 
-import { corsHeaders, makeJson } from './lib/cors.js';
+import { corsHeaders, makeJson, applyCors } from './lib/cors.js';
 import { giphySearchUrl, giphyTrendingUrl, mapGiphyResults } from '../lib/gif.js';
 /* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
    routage IA commun du domaine (Qwen Workers AI 0 clé d'abord, bascule par type de demande). */
@@ -5532,7 +5532,7 @@ async function handleGifSearch(request, env) {
 //  Main fetch handler
 // ============================================================================
 
-export default {
+const _workerHandler = {
   async fetch(request, env, ctx) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
 
@@ -6000,6 +6000,20 @@ export async function performDailyBackup(env) {
 // ============================================================================
 //  Durable Objects (re-exporté depuis ./durable-objects/)
 // ============================================================================
+
+
+// ============================================================================
+//  CORS par ORIGINE (audit P2b, v1.1.287)
+//  Le worker répondait `Access-Control-Allow-Origin: *` à tout le monde. On
+//  applique la liste d'origines réelles en UN SEUL point — le `fetch` de tête —
+//  au lieu de toucher chaque site d'appel : zéro risque de rater une réponse.
+// ============================================================================
+export default {
+  ..._workerHandler,
+  async fetch(request, env, ctx) {
+    return applyCors(request, await _workerHandler.fetch(request, env, ctx));
+  },
+};
 
 export { ConversationDO } from './durable-objects/ConversationDO.js';
 export { BroadcastDO } from './durable-objects/BroadcastDO.js';

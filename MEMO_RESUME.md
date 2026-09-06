@@ -1,5 +1,32 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h00, session Apex Chat) — P2b corrigé : le CORS n'est plus ouvert à tous (v1.1.287)
+
+- **Ce que `*` permettait vraiment** : l'auth passe par un en-tête `Bearer` et non par un cookie,
+  donc un site tiers ne pouvait **pas lire** les données de Kevin. Ce qu'il pouvait faire :
+  déclencher `send-otp` (**coût SMS réel**) et `check-phone` (**énumération de numéros**) depuis
+  les navigateurs de ses visiteurs. C'est ça qui est fermé.
+- **Correctif** : `ALLOWED_ORIGINS` = les origines **mesurées** (`apex-chat.kd-mc.com` d'après le
+  routeur, `9r4rxssx64-creator.github.io` d'après le workflow e2e, `kd-mc.com`/`www`, plus
+  localhost). `applyCors` renvoie l'origine si elle est autorisée, **retire** l'en-tête sinon,
+  **ajoute** `Vary: Origin` sans écraser l'existant, et **laisse passer un 101 tel quel** (une
+  réponse d'upgrade WebSocket n'est pas reconstructible).
+- **J'avais écarté ce correctif à tort** : j'avais écrit qu'il fallait « refondre 4 pipelines de
+  réponse ». Faux — chaque worker a **un seul `fetch` de tête**, donc une enveloppe de 4 lignes par
+  worker suffit et **aucune réponse ne peut échapper au filtre**. Leçon #225.
+- Preuve : `tests/unit/cors-origines-autorisees.test.js` + les 4 tests de routing mis à jour.
+  La liste est **dérivée des fichiers du dépôt** (canonical + workflow e2e) → oublier le vrai hôte
+  GitHub Pages fait échouer le test (leçon #218). **Discriminant par sabotage** : passe-plat → 3
+  échecs ; hôte Pages retiré → 2 échecs ; restauré → 47/47.
+- **1109/1109** tests, couverture `cors.js` **100 %** (gate 100 % sur `lib/` tenu), `api-worker.js`
+  83,35 % (plancher 80), navigateur réel **5/5**, 0 exception JS.
+- Piège noté : `happy-dom` **retire l'en-tête `Origin`** d'une Request (comme un vrai navigateur) —
+  réinjecté par un proxy de test `withOrigin`. Sans ça on croit que le correctif ne marche pas.
+- **Reste sur Apex Chat** : **P2c** (les URL de médias portent encore `?token=` — même défaut, mais
+  un média est relu plusieurs fois donc le ticket à usage unique ne convient pas tel quel) et le
+  retrait du repli `?token=` sur le WebSocket, une fois les apps à jour.
+
+
 ## 6 septembre 2026 (15h45, session Apex Chat) — PR #3671 fusionnée + P2a corrigé (v1.1.286)
 
 - **PR #3671 est dans `main`** (7 min 30 après le push). Vérifié sur `main` : 0 occurrence de
