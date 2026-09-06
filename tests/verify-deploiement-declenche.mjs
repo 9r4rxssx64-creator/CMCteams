@@ -89,13 +89,17 @@ for (const { nom, wf } of IA) {
    attendre une fusion. Étendus à tous ceux qui ont un déclencheur `push` DÉJÀ
    filtré par `paths` (pas de volume ajouté : le compte a été suspendu pour ça).
 
-   Trois EXCLUSIONS volontaires, tranchées par Kevin — le cliquet ci-dessous
+   Quatre EXCLUSIONS volontaires, tranchées par Kevin — le cliquet ci-dessous
    empêche qu'on les ouvre par distraction :
-     • deploy-firebase-rules / deploy-cmcteams-rules → droits d'accès aux
-       DONNÉES : une branche inachevée ne doit jamais pouvoir les réécrire ;
+     • deploy-firebase-rules / deploy-cmcteams-rules / firebase-rules-auto-apply
+       → droits d'accès aux DONNÉES : une branche inachevée ne doit jamais
+       pouvoir les réécrire. (Le 3ᵉ écoutait `claude/**` avant la décision du
+       2026-09-06 ; retiré ce jour-là. Zéro clic perdu : le marker passe par
+       `main` via le bot d'auto-fusion, et le push sur `main` applique.)
      • deploy (GitHub Pages) → publie le VRAI site, et sans filtre `paths` :
        l'ouvrir publierait le site à chaque push de n'importe quelle branche. */
-const INTERDITS = ['deploy-firebase-rules', 'deploy-cmcteams-rules', 'deploy'];
+const INTERDITS = ['deploy-firebase-rules', 'deploy-cmcteams-rules',
+  'firebase-rules-auto-apply', 'deploy'];
 console.log('— 3 ter. Tous les déploiements : autonomes, sauf les 3 exclus volontairement —');
 for (const nom of INTERDITS) {
   const y = lire(`.github/workflows/${nom}.yml`);
@@ -111,11 +115,8 @@ for (const nom of INTERDITS) {
    COMPARE les branches à main ; il ne déploie rien. Un garde qui hurle sur du
    légitime finit par être ignoré (faux positif = aussi nuisible qu'un faux négatif).
 
-   ⚠️ CONNU, NON TRAITÉ ICI : `firebase-rules-auto-apply.yml` publie les règles RTDB
-   et écoute `claude/**` (il ne se déclenche que si on modifie volontairement le
-   marker rules-deploy-request.json). Ça date d'avant la décision de Kevin
-   « pas les règles depuis une branche » — signalé à Kevin, pas changé sans son
-   accord : c'est aujourd'hui le seul moyen d'appliquer les règles sans qu'il clique. */
+   (`firebase-rules-auto-apply.yml` est tenu par le cliquet ci-dessus : il publie
+   des règles, il ne part donc plus d'une branche.) */
 const PUBLIE = /wrangler\s+(deploy|pages\s+deploy|versions\s+upload)|wrangler-action|firebase\s+deploy|vercel\s+(deploy|--prod)|actions\/deploy-pages|netlify\s+deploy/i;
 {
   const tous = readdirSync('.github/workflows').filter((f) => f.endsWith('.yml'));
