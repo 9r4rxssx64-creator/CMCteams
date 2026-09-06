@@ -10,6 +10,13 @@
   `cancel-in-progress: false` (file d'attente sur la cible partagée, le motif que la garde autorise).
   Gate 5/5 en local. Cette garde ne tourne pas sur GitHub à chaque push : sans le miroir GitLab, ce
   rouge serait resté invisible.
+- Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
+  profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
+  il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
+  `tools/smoke/audit-live.mjs` : `/__arbre/status` sert les fiches (119, D1) + un hash bidon est refusé
+  (`code_invalide`) + opt-in `ARBRE_CODE_SHA256` (empreinte, secret CI, jamais le code) pour entrer et
+  compter les cartes ; absent → dit que les cartes ne sont pas comptées (prouvé hors ligne par
+  `verify-domaine`). Harnais local 6 scénarios discriminant. Lingua ❌ dans le même run : session Lingua.
 - Vercel : la correction de domaine-audit (`tools/agent/vercel.json`, plus aucune prévisualisation
   hors `main`) est maintenant dans ma branche → le contrôle rouge qui bloquait la PR #3674 n'a plus
   de raison de revenir.

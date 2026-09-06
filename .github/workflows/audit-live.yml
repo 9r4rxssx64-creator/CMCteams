@@ -48,6 +48,11 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Balayage LIVE de toutes les surfaces
         shell: bash -eo pipefail {0}
+        env:
+          # OPTIONNEL : empreinte SHA-256 du code famille de l'arbre (jamais le code). Absent →
+          # l'arbre est contrôlé sans entrer (domaine sert les fiches + mauvais code refusé) ;
+          # présent → le balayage entre et compte aussi les cartes. Masqué par GitHub.
+          ARBRE_CODE_SHA256: ${{ secrets.ARBRE_CODE_SHA256 }}
         run: |
           set +e
           node tools/smoke/audit-live.mjs "https://kd-mc.com" 2>&1 | tee /tmp/live.log
