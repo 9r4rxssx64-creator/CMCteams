@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "maj": "2026-09-05",
+  "maj": "2026-09-06",
   "note": "Registre COMMUN des sessions Claude Code de Kevin + boîte aux lettres entre elles. Écrit/lu via tools/pipeline/pipeline.mjs — ne pas éditer à la main. Vit sur GitLab main : c'est la seule surface que TOUTES les sessions voient.",
   "sessions": {
     "studio-crea": {
@@ -224,9 +224,10 @@
         ".github/workflows/deploy-kdmc-rag.yml"
       ],
       "etat": "actif",
-      "maj": "2026-09-05",
+      "maj": "2026-09-06",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Deux branches en cours : claude/surveillance-domaine-26-adresses (relecture de tous les .md, passe 7) et claude/vercel-config-main (correctif Vercel, inscrite sous « vercel-config »)."
     },
     "cmcteams-departs": {
       "titre": "CMCteams — Départs light (miroir pour chaque)",
@@ -263,6 +264,16 @@
       ],
       "etat": "actif",
       "maj": "2026-09-05",
+      "attend_kevin": null,
+      "attend_session": null
+    },
+    "vercel-config": {
+      "titre": "Correctif Vercel (branche annexe de domaine-audit)",
+      "branche": "claude/vercel-config-main",
+      "sujet": "Branche MINIMALE partie de main : les 2 vercel.json refusés par le schéma Vercel (clé _note + ignoreCommand > 256 car.) + la garde test:vercel-config, qui n'existait que sur une branche. Même session que domaine-audit — ce n'est pas une 22e session, c'est sa branche de correctif urgent.",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-06",
       "attend_kevin": null,
       "attend_session": null
     }
