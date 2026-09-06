@@ -1,5 +1,27 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (20h10) — Kevin avait raison : le connecteur GitHub marche
+
+- **Erreur corrigée (leçon #229)** : j'ai répété toute la session que « l'API GitHub est fermée »,
+  en citant un vrai 403. La mesure était juste, **la conclusion fausse** : le 403 ne vaut que pour
+  l'**API REST brute via le proxy**. Le **connecteur GitHub (MCP) fonctionne** — `get_me` renvoie
+  le compte `9r4rxssx64-creator`. C'est Kevin qui a dû me le dire.
+- **Ce que ça a coûté** : ce matin, `pull_request_read` m'aurait donné `mergeable_state: "dirty"`
+  en une seconde, au lieu de quoi j'ai supposé une revue de propriétaire et réclamé un clic
+  inexistant (leçon #223). La cause de #223 était donc **en amont** : je n'avais pas inventorié
+  mes propres outils.
+- **Inventaire réel du connecteur** (mesuré) : ✅ lire branches/commits/fichiers/PR/issues ·
+  ✅ écrire fichiers, créer branches, créer/mettre à jour/**fusionner** des PR · ❌ **aucune
+  suppression de branche** · ❌ **aucun outil Actions** (ni déclenchement, ni lecture de journal).
+- Donc la conclusion pratique (« il reste 1 clic pour le nettoyage ») **tient toujours**, mais je
+  l'avais atteinte **par une prémisse fausse** — c'est une faute même quand le résultat est juste.
+- **Amélioration livrée** : l'étape de compactage greffée dans l'auto-merge **écrit désormais son
+  compte-rendu dans le dépôt** (`.github/CLEANUP-REPORT.md`) — vues / supprimées / gardées. Même
+  motif que le diagnostic d'auto-merge, qui a permis ce matin de trouver une vraie cause en
+  30 secondes au lieu de la deviner. Ça distinguera enfin « tout est déjà propre » de « le jeton
+  n'a pas le droit de supprimer une référence ».
+
+
 ## 6 septembre 2026 (17h55) — nettoyage des branches : j'arrête de tâtonner, il reste 1 clic
 
 - Trois causes trouvées et corrigées (nettoyeur aveugle #227 · deux déclencheurs morts #228 ·

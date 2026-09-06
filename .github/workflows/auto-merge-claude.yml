@@ -356,6 +356,36 @@ jobs:
           done
           echo "::notice::Compactage : $DEL branche(s) supprimee(s), $GARDE gardee(s) sur $TOTAL."
 
+          # Le journal d'execution n'est PAS lisible depuis une session agent
+          # (le connecteur GitHub n'expose aucun outil Actions). On ecrit donc
+          # le compte-rendu DANS le depot — meme motif que le diagnostic
+          # d'auto-merge, qui a permis ce matin de trouver la vraie cause d'un
+          # refus en 30 secondes au lieu de la deviner.
+          REP=".github/CLEANUP-REPORT.md"
+          mkdir -p .github
+          {
+            echo "# Compte-rendu du compactage des branches"
+            echo
+            echo "Genere le $(date -u '+%Y-%m-%d %H:%M UTC') par auto-merge-claude.yml."
+            echo
+            echo "| Mesure | Valeur |"
+            echo "|---|---:|"
+            echo "| Branches \`claude/*\` vues apres fetch | $TOTAL |"
+            echo "| Supprimees | $DEL |"
+            echo "| Gardees (recentes, non-ancetres, ou protegees) | $GARDE |"
+            echo
+            echo "Si \`vues\` vaut 0 : le fetch n'a pas ramene les branches."
+            echo "Si \`vues\` est correct mais \`supprimees\` vaut 0 : soit tout est"
+            echo "deja propre, soit le jeton n'a pas le droit de supprimer une"
+            echo "reference — c'est CE cas qu'il faut distinguer, et que ce"
+            echo "fichier rend enfin visible."
+          } > "$REP"
+          git add "$REP" 2>/dev/null || true
+          if ! git diff --cached --quiet 2>/dev/null; then
+            git commit -m "compactage: compte-rendu $DEL supprimee(s) / $TOTAL vues [skip ci]" >/dev/null 2>&1 || true
+            git push origin "HEAD:${{ steps.src.outputs.branch }}" >/dev/null 2>&1 || echo "::warning::push du compte-rendu echoue"
+          fi
+
       - name: Notify on failure
         if: failure()
         run: |
