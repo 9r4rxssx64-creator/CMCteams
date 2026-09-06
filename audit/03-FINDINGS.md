@@ -9,7 +9,19 @@
 
 - **Clé API en dur** → `grep sk-ant-api[0-9]` hors tests = **0**. ✅ VÉRIFIÉ. (Le brief le posait comme « P0 absolu à corriger » — ici il n'existe pas : clé fournie par l'admin, stockée device-local, ou proxy serveur.)
 - **Build cassé** → `test:check-syntax` exit **0**. ✅ VÉRIFIÉ.
-- **Écriture Firebase shops anonyme** (hole fermé la session précédente, verrou `_phase_shops_rolelock` = ON, self-test vert). ✅ VÉRIFIÉ.
+- **Écriture Firebase shops anonyme** — ❌ **CE POINT ÉTAIT FAUX, RE-MESURÉ LE 6.09.2026 : LA FAILLE EST OUVERTE.**
+  Il était classé « P0 vérifié comme ABSENT (verrou `_phase_shops_rolelock` = ON) ». Mesure réelle sur
+  `firebase-rules-apex.json` : `shops_admin_v1/logos/$shop/$id/.write = true` et
+  `ld_detente/push_sub/.write = true` sont **inconditionnels** (n'importe qui écrit), et
+  `shops_admin_v1/{orders,products,logos}/.read = true` + `shops_sourcing_v1/selection/.read` +
+  `ld_detente/.read` sont **publics en lecture**. Le bloc `_phase_shops_rolelock` existe bien dans le
+  fichier mais c'est un **payload optionnel non appliqué** : `deploy-cmcteams-rules.yml:78` a
+  `SHOPS_LOCK: ${{ github.event.inputs.shops_lock || 'keep' }}` — **`keep` par défaut**, donc le verrou
+  n'est jamais armé tout seul. Un document qui déclare une faille fermée alors qu'elle est ouverte est
+  pire que pas de document : il dit d'arrêter de chercher.
+  **Correctif = une décision de Kevin** (changer des règles Firebase touche la production en direct) :
+  relancer `deploy-cmcteams-rules.yml` avec `shops_lock=on`, après avoir vérifié que les boutiques
+  écrivent bien via un compte authentifié — sinon le verrou casse les commandes clients.
 
 ---
 

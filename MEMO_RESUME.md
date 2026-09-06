@@ -4985,3 +4985,20 @@ un 3ᵉ secret : renommer à l'aveugle serait pire. L'incohérence est écrite d
   Un avertissement en tête de CLAUDE.md dit maintenant que ces nombres dérivent et où lire le vrai.
 - **README.md** (la vitrine publique) : « Hébergée sur GitHub Pages » → servie sur **kd-mc.com par le
   routeur Cloudflare** (26 sous-domaines) · « 36 outils » → **87** (mesuré) · effectif réaligné.
+
+### 2026-09-06 (suite) — passe 5 : deux documents d'audit qui déclaraient faux
+
+- **`audit/03-FINDINGS.md` classait « écriture Firebase shops anonyme » en P0 VÉRIFIÉ ABSENT.**
+  Re-mesuré : **la faille est OUVERTE.** `shops_admin_v1/logos/$shop/$id/.write = true` et
+  `ld_detente/push_sub/.write = true` sont **inconditionnels** ; `shops_admin_v1/{orders,products,logos}`,
+  `shops_sourcing_v1/selection` et `ld_detente` sont **publics en lecture**. Le verrou
+  `_phase_shops_rolelock` existe dans le fichier mais n'est **jamais armé** : `deploy-cmcteams-rules.yml:78`
+  a `SHOPS_LOCK: … || 'keep'`. Un document qui déclare une faille fermée alors qu'elle est ouverte
+  **dit d'arrêter de chercher** — c'est pire que pas de document. Correction = décision de Kevin
+  (toucher des règles Firebase = production en direct).
+- **`audit/2026-09-05/03-FINDINGS.md` lisait comme clos** le point « `push: claude/**` déploie la prod » :
+  un **troisième** workflow reste dans ce cas (`deploy-apex-chat.yml:16`). C'est **délibéré et daté**
+  dans le fichier (v1.1.125) → arbitrage à trancher par Kevin, pas à changer en silence.
+- Les 4 documents du 5.09 disaient « 32 cibles » et « 6 workers en panne » : **faux rouge** résolu
+  depuis (un Worker ne peut pas joindre un `*.workers.dev` du même compte). Réalignés sur **31 cibles**
+  + note de résolution.
