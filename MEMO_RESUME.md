@@ -1,5 +1,19 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (17h20) — le correctif du nettoyeur est sur `main`, mais le nettoyage n'a pas encore tourné
+
+- Mesuré : le correctif est bien dans `main` (2 occurrences de `remote set-branches`), et pourtant
+  **370 branches** 6 min après la fusion. Le nettoyage n'a pas eu lieu sur ce cycle.
+- **Explication la plus probable** (déduite, pas observée — l'API GitHub est fermée à cette
+  session, je ne peux pas lire les journaux d'exécution) : le déclencheur `push` du workflow est
+  **mort par construction** — le fichier le dit lui-même, le push de l'auto-merge utilise
+  `GITHUB_TOKEN` et un push fait avec ce jeton **ne déclenche aucun workflow**. Reste le
+  déclencheur `workflow_run`, qui part **après** l'auto-merge : au moment où il est parti, la
+  version du fichier utilisée était probablement encore **celle d'avant le correctif**.
+- **Test décisif** : le prochain auto-merge doit utiliser la version corrigée. Je pousse donc un
+  nouveau lot et je regarde si le compte de branches baisse. Si oui → prouvé. Si non → le seul
+  canal restant est le bouton « Run workflow » (je ne peux pas déclencher un workflow : API 403),
+  et je le dirai plutôt que de laisser croire que c'est réglé.
 ## 6 septembre 2026 (soir, clôture) — vérifié EN VRAI sur kd-mc.com, connecté comme Kevin
 
 Dernière étape : j'ai lancé **« Vérif RÉELLE (connecté en tant que Kevin) »** sur le vrai
