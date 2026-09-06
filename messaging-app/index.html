@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.287",
+  "softwareVersion": "v1.1.288",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.287';
+const __APEX_CHAT_VERSION__ = 'v1.1.288';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -643,7 +643,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.287</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.288</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -657,7 +657,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.287</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.288</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1144,6 +1144,9 @@ K.login = async function(user, token){
   }catch(_){}
   // Préchauffe les credentials TURN en arrière-plan → le 1er appel se connecte vite (v1.1.229)
   try{ if(K._ensureIceServers) K._ensureIceServers(); }catch(_){}
+  // v1.1.288 (audit P2c) : demande le ticket média DÈS la connexion, pour que
+  // les premières photos affichées portent déjà un ticket et non le jeton.
+  try{ if(K._ensureMediaTicket) K._ensureMediaTicket(); }catch(_){}
   // v1.1.285 SÉCU (audit P1) : l'admin vient UNIQUEMENT du serveur (is_admin
   // renvoyé par le worker après vérif SSO/JWT + is_admin en base), JAMAIS du nom
   // côté client. On affiche l'onglet Admin seulement si le serveur l'a accordé.
@@ -11543,10 +11546,49 @@ K._toggleVoiceRecord = async function(){
 // ============================================================================
 // v1.1.186 — Médias R2 : photos / vidéos / fichiers TOUS FORMATS, toutes tailles
 // (jusqu'à 100 Mo), avec aperçu visuel. URL authentifiée par ?token=.
+// v1.1.288 (audit P2c) — Même défaut que pour le WebSocket : le jeton de
+// SESSION partait dans l'attribut `src` de chaque photo/vidéo, donc dans le
+// DOM, l'historique du navigateur et les journaux du serveur. On utilise un
+// TICKET MÉDIA valable 5 min, valable NULLE PART ailleurs que sur cette route.
+// Réutilisable (contrairement au ticket WebSocket) : une photo est relue à
+// chaque affichage — et garder le même ticket 5 min garde les URL stables,
+// donc le cache du navigateur efficace.
+K._mediaTicket = null;      // { v: '<jwt>', exp: <ms> }
+K._mediaTicketInFlight = null;
+
+K._ensureMediaTicket = async function(){
+  const now = Date.now();
+  if(K._mediaTicket && K._mediaTicket.exp - 30000 > now) return K._mediaTicket.v;
+  if(K._mediaTicketInFlight) return K._mediaTicketInFlight;
+  K._mediaTicketInFlight = (async () => {
+    try{
+      if(!K.token) return null;
+      const r = await fetch(API_BASE + '/api/auth/media-ticket', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + K.token },
+        cache: 'no-store'
+      });
+      if(!r.ok) return null;
+      const d = await r.json().catch(() => null);
+      if(!d || !d.ok || !d.ticket) return null;
+      K._mediaTicket = { v: d.ticket, exp: d.exp || (Date.now() + 300000) };
+      return d.ticket;
+    }catch(_e){ return null; }
+    finally{ K._mediaTicketInFlight = null; }
+  })();
+  return K._mediaTicketInFlight;
+};
+
 K._mediaSrc = function(url){
   if(!url) return '';
   const full = String(url).startsWith('http') ? url : (API_BASE + url);
-  return full + (full.indexOf('?') >= 0 ? '&' : '?') + 'token=' + encodeURIComponent(K.token || '');
+  const sep = full.indexOf('?') >= 0 ? '&' : '?';
+  const t = K._mediaTicket;
+  if(t && t.exp - 30000 > Date.now()) return full + sep + 'mt=' + encodeURIComponent(t.v);
+  // Pas encore de ticket (ou serveur pas à jour) : on en demande un pour la
+  // suite et on retombe sur ?token= cette fois-ci — jamais d'image cassée.
+  try{ K._ensureMediaTicket(); }catch(_e){}
+  return full + sep + 'token=' + encodeURIComponent(K.token || '');
 };
 K._fmtSize = function(b){
   b = +b || 0;

@@ -1,5 +1,30 @@
 # MEMO_RESUME — état de session
 
+## 6 septembre 2026 (16h10, session Apex Chat) — P2c corrigé : plus de jeton dans l'URL des photos (v1.1.288)
+
+- Dernier point de l'audit Apex Chat. `K._mediaSrc` collait `?token=<jeton de session>` sur chaque
+  photo/vidéo → le jeton entrait dans le DOM, l'historique du navigateur et les journaux serveur.
+- **La recette du WebSocket ne s'appliquait pas** : une photo est **relue** à chaque affichage,
+  donc un ticket à usage unique casse la 2ᵉ vue. L'axe de protection change : au lieu de
+  « utilisable une fois », c'est **« utilisable nulle part ailleurs »** — ticket 5 min lu
+  **uniquement** par la route des médias (`allowMediaTicket`, passé par ce seul appelant).
+- **Durcissement structurel** : la garde `payload.typ === 'wstkt'` (liste de types interdits, qui
+  se périme) devient `payload.typ` → **tout jeton typé n'est pas une session**, puisque les jetons
+  de session n'ont pas de `typ`. Une propriété bat une liste à tenir à jour.
+- Client : `_mediaSrc` reste **synchrone** (appelée en plein rendu) → ticket en cache si valide,
+  sinon repli `?token=` **et** demande en arrière-plan : jamais d'image cassée. Ticket gardé 5 min
+  entier pour que les URL restent **stables** (sinon le cache du navigateur raterait à chaque
+  rendu : un correctif de sécurité aurait coûté des données à Kevin).
+- Preuve : `tests/unit/media-ticket-portee-limitee.test.js` (6 tests) — sert un média **3 fois**,
+  refusé en Bearer, refusé en `?token=`, **ignoré sur une autre route**, ticket WS ≠ ticket média.
+  **Discriminant par sabotage** : restriction de route retirée → 1 échec ; garde « jeton typé ≠
+  session » retirée → 2 échecs ; restauré → 12/12.
+- **1115/1115** tests, gate de couverture vert, navigateur réel **5/5**, 0 exception JS.
+- **Audit Apex Chat : tous les findings P0→P2 sont corrigés.** Restent deux nettoyages datés :
+  retirer le repli `?token=` (WebSocket **et** médias) une version après, quand les apps en cache
+  sont à jour.
+
+
 ## 6 septembre 2026 (16h00, session Apex Chat) — P2b corrigé : le CORS n'est plus ouvert à tous (v1.1.287)
 
 - **Ce que `*` permettait vraiment** : l'auth passe par un en-tête `Bearer` et non par un cookie,
