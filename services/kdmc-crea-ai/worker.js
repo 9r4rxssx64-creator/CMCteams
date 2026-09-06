@@ -270,6 +270,10 @@ async function cfImage(env, prompt) {
    RÉELLEMENT répondu (`cloudflare:@cf/qwen/…`). C'est la seule façon honnête
    de choisir sans pouvoir interroger le catalogue Cloudflare depuis ici. */
 const CF_QWEN_MODELS = [
+  /* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+     les Qwen3 récents en tête (mêmes identifiants que le relais Apex, services/_shared/ia-route.js). */
+  '@cf/qwen/qwen3.8-27b',
+  '@cf/qwen/qwen3-30b-a3b-fp8',
   '@cf/qwen/qwen2.5-coder-32b-instruct',
   '@cf/qwen/qwq-32b',
   '@cf/qwen/qwen1.5-14b-chat-awq',
@@ -455,14 +459,16 @@ function enginesAvailable(env) {
 }
 async function anyText(env, prompt, wantJson, prefer) {
   const errs = [];
-  /* Kevin peut demander explicitement un moteur gratuit sans clé (ex 'qwen') :
-     on l'essaie EN PREMIER, et s'il ne répond pas on retombe sur la chaîne
-     normale — demander Qwen ne doit jamais pouvoir casser une génération. */
-  if (prefer && env.AI) {
+  /* Kevin 2026-09-05 « Fait tourner Apex sur Qwen l'IA gratuite… pareil dans mes autres
+     projets » : QWEN (Workers AI, 0 clé) est essayé EN PREMIER par défaut — plus seulement
+     quand le client le demande. S'il ne répond pas, la chaîne des IA gratuites à clé prend
+     le relais, puis les autres modèles Cloudflare : demander Qwen ne casse jamais rien. */
+  const first = env.AI ? String(prefer || 'qwen').toLowerCase() : null;
+  if (first) {
     try {
-      const c = await cfText(env, prompt, wantJson, String(prefer).toLowerCase());
+      const c = await cfText(env, prompt, wantJson, first);
       if (c && c.text) return { text: c.text, provider: 'cloudflare:' + c.model, tried: errs };
-    } catch (e) { errs.push(prefer + '_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
+    } catch (e) { errs.push(first + '_' + String((e && e.message) || e).replace(/^cf_/, '').slice(0, 100)); }
   }
   for (const p of TEXT_PROVIDERS) {
     const key = env[p.key] || (p.id === 'gemini' ? env.GOOGLE_API_KEY : null);
@@ -968,7 +974,7 @@ export default {
       try {
         const r = await anyText(env, ask, true, moteur);
         const score = parseScore(r.text);
-        if (score) return json({ score, style, provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
+        if (score) return json({ score, style, provider: r.provider, fallback: (r.tried || []).join(' | ') }, h);
         return json({ error: 'bad_score_' + r.provider + '_' + String(r.text).slice(0, 90) }, h, 502);
       } catch (e) { return json({ error: String((e && e.message) || e).slice(0, 400) }, h, 502); }
     }
@@ -994,7 +1000,7 @@ export default {
         const r = await anyText(env, ask, false, moteur);
         const t = /TITRE\s*:\s*(.+)/i.exec(r.text);
         return json({ title: (t ? t[1] : 'Ma chanson').trim().slice(0, 80), lyrics: r.text, style, mode,
-          provider: r.provider, fallback: (r.tried || [])[0] || '' }, h);
+          provider: r.provider, fallback: (r.tried || []).join(' | ') }, h);
       } catch (e) { return json({ error: String((e && e.message) || e).slice(0, 400) }, h, 502); }
     }
 

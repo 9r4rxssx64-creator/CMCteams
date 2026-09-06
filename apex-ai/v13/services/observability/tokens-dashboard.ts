@@ -44,6 +44,8 @@ const PRICING: Record<string, PricingTier> = {
   groq_llama: { input_per_1k: 0.00059, output_per_1k: 0.00079 },
   gemini_pro: { input_per_1k: 0.00125, output_per_1k: 0.01 },
   openrouter_default: { input_per_1k: 0.001, output_per_1k: 0.003 },
+  /* v13.4.366 : Qwen via Cloudflare Workers AI — palier gratuit (10k neurons/jour), 0 € pour Kevin. */
+  qwen_cf: { input_per_1k: 0, output_per_1k: 0 },
 };
 
 class TokensDashboard {

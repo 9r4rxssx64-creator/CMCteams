@@ -139,7 +139,7 @@ test('secretName : noms EXACTS (leçon secrets)', () => {
   assert.equal(secretName('inconnu'), '');
 });
 
-test('AI_CHAIN : gemini en tête, providers connus', () => {
+test('AI_CHAIN (secours historique, ordre inchangé) : gemini en tête, providers connus', () => {
   assert.equal(AI_CHAIN[0], 'gemini');
   assert.ok(AI_CHAIN.includes('openrouter'));
 });
@@ -212,6 +212,100 @@ test('/ai : fallback Workers AI SANS clé externe (env.AI mock) → 200', async 
   });
   assert.equal(r.status, 200);
   const b = await r.json();
-  assert.equal(b.provider, 'workers-ai');
+  /* Kevin 2026-09-05 : sans aucune clé, c'est QWEN (Workers AI) qui répond — et il est nommé. */
+  assert.equal(b.provider, 'qwen');
+  assert.equal(b.model, '@cf/qwen/qwen3.8-27b');
+  assert.equal(b.domain, 'general');
   assert.ok(b.text.includes('Workers AI'));
+});
+
+test('/ai : une ACTION va à Anthropic (outils) même avec Qwen disponible ; réponse vide Qwen → secours', async () => {
+  const calls = [];
+  /* les appels d'ANALYSE (classificateur) ne comptent pas : seuls les appels de RÉPONSE sont tracés */
+  const fakeAI = { run: async (model, input) => { const sys = String(input.messages[0].content); if (/classificateur/i.test(sys)) return { response: '?' }; calls.push(model); return { response: '<think>hmm</think>Qwen répond' }; } };
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('api.anthropic.com')) return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Anthropic agit' }] }), { status: 200 });
+    return new Response('{}', { status: 500 });
+  };
+  try {
+    const r = await call('/ai', {
+      method: 'POST',
+      headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'déploie le worker maintenant' }] }),
+      env: { AI: fakeAI, ANTHROPIC_API_KEY: 'k' },
+    });
+    const b = await r.json();
+    assert.equal(r.status, 200);
+    assert.equal(b.provider, 'anthropic');
+    assert.equal(b.domain, 'admin');
+    assert.equal(calls.length, 0, 'Qwen pas appelé pour une action');
+
+    const g = await call('/ai', {
+      method: 'POST',
+      headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'quelle heure ouvre le casino ?' }] }),
+      env: { AI: fakeAI, ANTHROPIC_API_KEY: 'k' },
+    });
+    const gb = await g.json();
+    assert.equal(gb.provider, 'qwen', 'question courante → Qwen gratuit même si Anthropic est là');
+    assert.equal(gb.text, 'Qwen répond', '<think> jamais montré');
+  } finally { globalThis.fetch = orig; }
+});
+
+test('isTrustedOrigin : le VRAI hôte GitHub Pages (9r4rxssx64-creator) passe', () => {
+  assert.equal(isTrustedOrigin('https://9r4rxssx64-creator.github.io'), true);
+});
+
+test('/ai/analyse : la CONCERTATION classe la question par vote de voix gratuites (Kevin 2026-09-06)', async () => {
+  const fakeAI = { run: async (model, input) => (/classificateur/i.test(String(input.messages[0].content))
+    ? { response: '{"domain":"translation","needs_tools":false,"needs_vision":false,"complexity":1,"lang":"fr"}' }
+    : { response: 'x' }) };
+  const r = await call('/ai/analyse', {
+    method: 'POST',
+    headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: 'peux-tu me dire ça en italien ?' }),
+    env: { AI: fakeAI },
+  });
+  const b = await r.json();
+  assert.equal(r.status, 200);
+  assert.equal(b.by, 'concert');
+  assert.equal(b.domain, 'translation', 'la regex aurait dit general : le vote va plus loin');
+  assert.deepEqual(b.votes, { translation: 3 });
+});
+
+test('/ai : question difficile → CONSEIL de voix gratuites + juge (provider council), Anthropic pas appelé', async () => {
+  const fakeAI = { run: async (model, input) => {
+    const sys = String(input.messages[0].content);
+    if (/classificateur/i.test(sys)) return { response: '{"domain":"reasoning","needs_tools":false,"complexity":5}' };
+    if (/JUGE/.test(sys)) return { response: 'Réponse fusionnée' };
+    return { response: 'avis de ' + model };
+  } };
+  const orig = globalThis.fetch; let anthropicCalled = false;
+  globalThis.fetch = async (u) => { if (/anthropic/.test(String(u))) anthropicCalled = true; return new Response('{}', { status: 500 }); };
+  try {
+    const r = await call('/ai', {
+      method: 'POST',
+      headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'explique en détail pourquoi la roulette européenne a un avantage maison plus faible' }] }),
+      env: { AI: fakeAI, ANTHROPIC_API_KEY: 'k' },
+    });
+    const b = await r.json();
+    assert.equal(r.status, 200);
+    assert.equal(b.provider, 'council');
+    assert.equal(b.judge, 'qwen');
+    assert.equal(b.text, 'Réponse fusionnée');
+    assert.equal(b.voices.length, 3);
+    assert.equal(anthropicCalled, false);
+    /* council:false → une seule voix (le routage classique), toujours gratuit */
+    const s = await call('/ai', {
+      method: 'POST',
+      headers: { Origin: 'https://cmcteams.kd-mc.com', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'explique en détail pourquoi la roulette européenne a un avantage maison plus faible' }], council: false }),
+      env: { AI: fakeAI, ANTHROPIC_API_KEY: 'k' },
+    });
+    const sb = await s.json();
+    assert.equal(sb.domain, 'reasoning');
+    assert.equal(anthropicCalled, true, 'raisonnement sans conseil → Anthropic (la plus pertinente), Qwen en secours');
+  } finally { globalThis.fetch = orig; }
 });

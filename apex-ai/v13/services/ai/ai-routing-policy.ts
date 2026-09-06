@@ -25,7 +25,8 @@ import { PROXY_PROVIDERS } from '../integrations/apex-secrets-proxy-client.js';
 import { consumptionMonitor } from '../observability/consumption-monitor.js';
 
 
-export type ProviderId = 'anthropic' | 'openai' | 'groq' | 'gemini' | 'openrouter' | 'deepseek' | 'cohere' | 'mistral' | 'perplexity';
+/* v13.4.366 : 'qwen' = Qwen GRATUIT servi par Cloudflare Workers AI via le proxy (0 clé). */
+export type ProviderId = 'anthropic' | 'openai' | 'groq' | 'gemini' | 'openrouter' | 'deepseek' | 'cohere' | 'mistral' | 'perplexity' | 'qwen';
 
 export type TaskDomain =
   | 'general' /* Chat normal */
@@ -44,7 +45,9 @@ export type TaskDomain =
  * 'free-smart' = par DÉFAUT pour l'admin. Questions SIMPLES (traduction, résumé,
  * rapidité, chat général, vision) → IA GRATUITE d'abord (Gemini/Groq/OpenRouter).
  * Questions COMPLEXES (code, raisonnement, admin, créatif, long contexte) → Anthropic.
- * Anthropic reste en fallback partout → une panne Anthropic ne bloque plus rien. */
+ * Anthropic reste en fallback partout → une panne Anthropic ne bloque plus rien.
+ * v13.4.366 (Kevin « Fait tourner Apex sur Qwen l'IA gratuite ») : le gratuit choisi en
+ * premier est désormais QWEN (Workers AI, 0 clé) ; la bascule par domaine est inchangée. */
 export type RoutingMode = 'auto' | 'economy' | 'premium' | 'forced' | 'free-smart';
 
 export interface RoutingDecision {
@@ -55,32 +58,43 @@ export interface RoutingDecision {
   estimated_cost_eur: number;
 }
 
+/* v13.4.366 (Kevin 2026-09-05 « Fait tourner Apex sur Qwen l'IA gratuite, privilégie les IA
+ * gratuites en tâche principale pour l'instant, et suivant les questions elle bascule
+ * automatiquement sur la plus polyvalente, la plus pertinente pour la tâche ») :
+ *   - QWEN (gratuit, Workers AI, 0 clé) = IA PRINCIPALE des questions courantes
+ *     (général, résumé, traduction) ;
+ *   - la question DÉCIDE de la bascule : code / raisonnement / admin / créatif → Anthropic
+ *     (la plus polyvalente), vision → Gemini, recherche → Perplexity, vitesse → Groq,
+ *     très long contexte → Gemini (1M) ;
+ *   - Qwen reste 2e partout où il est pertinent (secours gratuit), Anthropic reste en
+ *     secours partout → une panne ne bloque jamais. */
 const DOMAIN_PREFERENCES: Record<TaskDomain, readonly ProviderId[]> = {
-  /* Admin Kevin = TOUJOURS Anthropic d'abord */
-  admin: ['anthropic', 'openai', 'gemini'],
-  /* Raisonnement complexe = Anthropic > OpenAI > Gemini */
-  reasoning: ['anthropic', 'openai', 'gemini', 'groq'],
-  /* Code = DeepSeek très bon marché ou Claude */
-  code: ['anthropic', 'deepseek', 'openai', 'gemini'],
-  /* Vision = Gemini gratuit + Claude */
+  /* Admin Kevin (actions, outils, sécurité) = TOUJOURS Anthropic d'abord (seul provider à outils) */
+  admin: ['anthropic', 'openai', 'gemini', 'qwen'],
+  /* Raisonnement complexe = Anthropic > Qwen (qwen3 raisonne, gratuit) > OpenAI > Gemini */
+  reasoning: ['anthropic', 'qwen', 'openai', 'gemini', 'groq'],
+  /* Code = Anthropic > Qwen (qwen2.5-coder gratuit) > DeepSeek > OpenAI */
+  code: ['anthropic', 'qwen', 'deepseek', 'openai', 'gemini'],
+  /* Vision = Gemini gratuit + Claude (Qwen texte seul sur Workers AI → absent) */
   vision: ['gemini', 'anthropic', 'openai'],
-  /* Long context = Gemini 1M tokens gratuit */
-  long_context: ['gemini', 'anthropic', 'openai'],
-  /* Speed = Groq (500+ tok/sec) */
-  speed: ['groq', 'gemini', 'openrouter', 'anthropic'],
+  /* Long context = Gemini 1M tokens gratuit, puis Qwen 3.8 (262k) */
+  long_context: ['gemini', 'anthropic', 'qwen', 'openai'],
+  /* Speed = Groq (500+ tok/sec), puis Qwen gratuit */
+  speed: ['groq', 'qwen', 'gemini', 'openrouter', 'anthropic'],
   /* Search citations = Perplexity puis Anthropic */
-  search: ['perplexity', 'anthropic', 'gemini'],
-  /* Traduction simple = free first */
-  translation: ['gemini', 'groq', 'openrouter', 'anthropic'],
-  /* Résumé court = free first */
-  summary: ['groq', 'gemini', 'openrouter', 'anthropic'],
-  /* Créatif = Anthropic en premier */
-  creative: ['anthropic', 'openai', 'gemini'],
-  /* Général = priorité Anthropic + free fallback */
-  general: ['anthropic', 'gemini', 'groq', 'openrouter'],
+  search: ['perplexity', 'anthropic', 'gemini', 'qwen'],
+  /* Traduction simple = Qwen gratuit (multilingue) d'abord */
+  translation: ['qwen', 'gemini', 'groq', 'openrouter', 'anthropic'],
+  /* Résumé court = Qwen gratuit d'abord */
+  summary: ['qwen', 'groq', 'gemini', 'openrouter', 'anthropic'],
+  /* Créatif = Anthropic en premier (qualité), Qwen en secours gratuit */
+  creative: ['anthropic', 'qwen', 'openai', 'gemini'],
+  /* Général = QWEN GRATUIT EN PRINCIPAL (Kevin 2026-09-05), Anthropic en secours */
+  general: ['qwen', 'anthropic', 'gemini', 'groq', 'openrouter'],
 };
 
-const FREE_PROVIDERS: readonly ProviderId[] = ['groq', 'gemini', 'openrouter'];
+/* Qwen en tête : c'est lui que « gratuit d'abord » choisit quand plusieurs gratuits existent. */
+const FREE_PROVIDERS: readonly ProviderId[] = ['qwen', 'groq', 'gemini', 'openrouter'];
 
 /* v13.4.362 — Providers IA servis par le proxy Cloudflare (clé côté serveur).
  * Quand le proxy est actif (défaut), ces providers sont DISPONIBLES même sans
@@ -88,7 +102,7 @@ const FREE_PROVIDERS: readonly ProviderId[] = ['groq', 'gemini', 'openrouter'];
  * Gemini/Groq. Source unique = PROXY_PROVIDERS du client proxy. */
 const PROXIED_AI: ReadonlySet<ProviderId> = new Set(
   (PROXY_PROVIDERS as readonly string[]).filter(
-    (p): p is ProviderId => (['anthropic', 'openai', 'groq', 'gemini', 'deepseek', 'cohere', 'mistral', 'perplexity'] as string[]).includes(p),
+    (p): p is ProviderId => (['anthropic', 'openai', 'groq', 'gemini', 'deepseek', 'cohere', 'mistral', 'perplexity', 'qwen'] as string[]).includes(p),
   ),
 );
 
@@ -108,6 +122,7 @@ const COST_PER_M_TOKENS_EUR: Record<ProviderId, number> = {
   cohere: 1.5,       /* Command R+ */
   mistral: 4.0,      /* Large */
   perplexity: 5.0,   /* Sonar */
+  qwen: 0,           /* v13.4.366 : Workers AI, palier gratuit — 0 € */
 };
 
 class AIRoutingPolicy {
@@ -279,7 +294,7 @@ class AIRoutingPolicy {
     try {
       const o = localStorage.getItem('apex_v13_routing_forced_provider');
       if (!o) return null;
-      const valid: ProviderId[] = ['anthropic', 'openai', 'groq', 'gemini', 'openrouter', 'deepseek', 'cohere', 'mistral', 'perplexity'];
+      const valid: ProviderId[] = ['anthropic', 'openai', 'groq', 'gemini', 'openrouter', 'deepseek', 'cohere', 'mistral', 'perplexity', 'qwen'];
       return valid.includes(o as ProviderId) ? (o as ProviderId) : null;
     } catch {
       return null;
@@ -304,6 +319,12 @@ class AIRoutingPolicy {
    */
   detectDomain(text: string): TaskDomain {
     const lc = text.toLowerCase();
+    /* v13.4.366 : une DEMANDE D'ACTION (lancer, déployer, corriger, modifier, configurer,
+     * tester, auditer…) exige les OUTILS d'Apex — seul Anthropic les porte
+     * (PROVIDERS_WITH_TOOLS). Sans ce garde, « Qwen en principal » aurait répondu du texte
+     * à « lance l'audit » au lieu d'agir → domaine admin (Anthropic d'abord). */
+    if (/\b(lance|exécute|execute|déploie|deploie|corrige|répare|repare|modifie|configure|installe|active|désactive|desactive|supprime|envoie|sauvegarde|synchronise|publie|merge|pousse|audit(e|er)?|teste|vérifie|verifie|diagnosti(c|que))\b/.test(lc)
+      && !/\b(comment|pourquoi|est-ce que|c'est quoi|explique)\b/.test(lc)) return 'admin';
     if (/\bcode|programme|fonction|debug|bug|typescript|javascript|python|php|sql\b/.test(lc)) return 'code';
     if (/\bimage|photo|vision|scanner?|reconnaitre|détecter\b/.test(lc)) return 'vision';
     if (/\btraduit?|translate|en (anglais|italien|allemand|espagnol)\b/.test(lc)) return 'translation';

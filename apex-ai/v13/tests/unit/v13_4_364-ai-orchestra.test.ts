@@ -65,10 +65,10 @@ describe('v13.4.364 — Orchestre d\'IA', () => {
     store.set('user', { id: 'kdmc_admin', name: 'Kevin', tier: 'admin' });
   });
 
-  it('availableProviders : toutes les IA dispo via proxy (défaut ON), Anthropic en tête', async () => {
+  it('availableProviders : toutes les IA dispo via proxy (défaut ON), voix gratuites en tete (v13.4.367 concertation), Anthropic présent', async () => {
     const { crewExperts } = await import('../../services/ai/crew-experts.js');
     const provs = crewExperts.availableProviders();
-    expect(provs[0]).toBe('anthropic');
+    expect(provs[0]).toBe('qwen'); expect(provs).toContain('anthropic');
     expect(provs.length).toBeGreaterThanOrEqual(5);
     for (const p of ['groq', 'gemini', 'openai', 'mistral', 'cerebras']) {
       expect(provs).toContain(p);
