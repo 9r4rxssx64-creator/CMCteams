@@ -5,7 +5,7 @@
 
 ## 0. ÉTAT ACTUEL (vérifié, pas supposé)
 
-- **EN LIGNE : v3.13** → https://kdmc-site.pages.dev/arbre/ (code d'accès famille : **MAIFFRET**, majuscules).
+- **EN LIGNE : v3.13** → https://kdmc-site.pages.dev/arbre/ (code d'accès famille : ‹code famille — COMPROMIS, à changer via changeCode() dans l\'app›, majuscules).
 - `arbre/index.html` : `APP_VER="v3.13"` (~l.265) · `SEED_VERSION=62` (~l.1420) · **119 fiches seed, 0 lien cassé**.
 - `arbre/sw.js` : `CACHE = "arbre-v3.13"` (l.2). **Règle : le trio APP_VER + SEED_VERSION + CACHE se bumpe ENSEMBLE à chaque modif de fiche.**
 - Kevin = admin, sur iPhone, PAS codeur : parler simple, liens cliquables, 1 clic max.

@@ -10,12 +10,21 @@ concurrency:
   cancel-in-progress: false  # un deploiement ne doit jamais etre coupe en plein vol
 
 
+# Kevin 2026-09-06 « pourquoi tu es bloqué par GitHub ? trouve des solutions » :
+# l'API GitHub est fermée à cette session (app non connectée pour l'organisation) →
+# impossible de lancer un déploiement à la main depuis l'agent. La voie qui MARCHE est
+# le push sur claude/** (schéma déjà éprouvé par deploy-apex-chat.yml). Un push =
+# un déploiement, sans API, sans clic, sans attendre la fusion (leçon #213).
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'claude/**'
     paths:
       - 'tools/cloudflare/wm-brief/**'
+      - 'services/_shared/ia-route.js'          # le worker l'importe (routage IA commun)
+      - '.github/workflows/deploy-wm-brief.yml' # sinon modifier ce fichier ne redéploie rien
 
 permissions:
   contents: read

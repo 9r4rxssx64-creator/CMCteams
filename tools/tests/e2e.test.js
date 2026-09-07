@@ -92,6 +92,14 @@ async function runTestsForDevice(browser, device, runner) {
   console.log(`\n📱 ${device.name} (${device.w}×${device.h})`);
   const page = await setupPage(browser, device);
 
+  // Le journal d'erreurs vit dans localStorage, PARTAGÉ entre les pages du même
+  // navigateur : sans remise à zéro, l'erreur de l'appareil 1 était recomptée sur
+  // les 5 suivants (1, 2, 3, 4, 5 erreurs) et attribuée au mauvais appareil.
+  await page.evaluate(() => {
+    try { localStorage.removeItem('cmc_err_log'); } catch (e) {}
+    if (typeof _errLog !== 'undefined') _errLog.length = 0;
+  });
+
   // Login admin pour tous les tests
   await page.evaluate(() => {
     const admin = A.employees.find(e => e.id === 'U11804');
@@ -170,8 +178,20 @@ async function runTestsForDevice(browser, device, runner) {
   });
 
   await runner.test(`[${device.name}] Aucune erreur JS runtime`, async () => {
-    const errs = await page.evaluate(() => (getErrorLog && getErrorLog()) || []);
-    runner.assert(errs.length === 0, `${errs.length} erreurs runtime: ` + errs.map(e => e.msg).slice(0, 3).join(' | '));
+    // Le journal a trois formes d'entrée ({msg}, {technical,userMsg}, {ctx,err}) :
+    // n'en lire qu'une affichait un message VIDE — un rouge qui ne dit pas pourquoi.
+    const errs = await page.evaluate(() => {
+      const l = (typeof getErrorLog === 'function' ? getErrorLog() : []) || [];
+      const memoire = (typeof _errLog !== 'undefined') ? _errLog : [];
+      const brut = l.length ? l : memoire;
+      return brut.map(e => ({
+        quoi: String((e && (e.type || e.ctx)) || 'erreur'),
+        texte: String((e && (e.msg || e.err || e.technical || e.userMsg)) || '(sans message)'),
+        vue: (e && e.view) || ''
+      }));
+    });
+    runner.assert(errs.length === 0, `${errs.length} erreurs runtime: `
+      + errs.slice(0, 3).map(e => `[${e.quoi}] ${e.texte}${e.vue ? ' @' + e.vue : ''}`).join(' | '));
   });
 
   await page.close();

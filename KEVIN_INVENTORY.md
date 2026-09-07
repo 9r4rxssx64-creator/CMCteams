@@ -3,6 +3,15 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/pipeline/retard-branches.mjs` | Dit si une branche est dangereusement en retard sur un fichier **partagé** — et surtout si un **mois de planning entier** y a disparu sans faire le moindre bruit. `npm run retard-branches` (ou `--toutes`, `--tout`). Non bloquant. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pipeline/retard-branches.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pipeline/retard-branches.mjs) |
+| `tests/verify-pdf-vs-surfaces.mjs` | Relit les **vrais PDF** sans le parser de l'app et exige chaque personne / chaque cellule des deux côtés. `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-pdf-vs-surfaces.mjs) |
+| `tests/journal-erreurs-lisible.test.mjs` | Empêche le journal d'erreurs de redevenir illisible (3 formes, 3 lecteurs). `npm run test:journal-erreurs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/journal-erreurs-lisible.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/journal-erreurs-lisible.test.mjs) |
+
+
 ## 🇲🇨 L'arbre aux couleurs de Monaco — session 2026-09-06 matin (arbre v3.18 « Munegu », branche `claude/sarzance-family-tree-3jxi7i`)
 
 | Fichier | À quoi ça sert | Liens |
@@ -18,6 +27,15 @@
 | `tests/runtime-audit-everyone-has-planning.mjs` · `…-v788-fb-auth.mjs` · `…-garro-cp.mjs` · `…-code-legends.mjs` | Attendent la fin réelle de l'import et coupent le réseau : mêmes résultats sur ton iPhone, ici, et sur un runner lent. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/runtime-audit-everyone-has-planning.mjs) |
 | `vercel.json` | Vercel ne se déploie plus pour l'arbre, les workers, les tests, le pipeline ou la CI GitLab : c'est ce qui épuisait le quota gratuit (100/jour) et **bloquait toutes les fusions** (contrôle rouge sur chaque PR). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/vercel.json) |
 > Dernière mise à jour : **2026-09-05 nuit** (IA gratuite en principal dans TOUS les projets · Qwen gratuit en IA principale d'Apex v13.4.366 · fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🚀 Déblocage des déploiements + preuve live des IA (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verify-deploiement-declenche.mjs` | **NOUVEAU** — la garde : chaque atelier de déploiement part sur un push `claude/**`, surveille son propre fichier ET le routage IA commun. 28 contrôles. `npm run test:deploiement-declenche` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-deploiement-declenche.mjs) |
+| `.github/workflows/deploy-kdmc-apis.yml` | Déploie sur push `claude/**` + **pose 4 vraies questions aux IA** après chaque mise en ligne (qui répond, quel modèle, le vote) | [Runs — la preuve live](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | Le relais d'Apex se déploie enfin sans clic (push `claude/**`) et teste Qwen en vrai | [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `.github/workflows/deploy-wm-brief.yml` | World Monitor : déclencheur réparé (il ne surveillait même pas son propre fichier) | [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-wm-brief.yml) |
 
 ## 🗳️ Concertation d'IA gratuites — vote sur le type de question + conseil avec juge (2026-09-06)
 
@@ -60,6 +78,20 @@
 | `tests/verify-apex-proxy-qwen.mjs` | **NOUVEAU** — la preuve sans réseau : extrait le relais du workflow, le fait tourner avec un Workers AI simulé, 17 contrôles (PIN, formats, filtre `<think>`, modèle mort → suivant, cause exacte). `npm run test:apex-proxy-qwen` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-apex-proxy-qwen.mjs) |
 | `apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` | **NOUVEAU** — la garde : Qwen reste principal, la bascule par question tient, et un fournisseur ne peut plus être oublié dans une liste (13 tests, 3 sabotages prouvés) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts) |
 | `LESSONS.md` · `CLAUDE.md` | Leçon **#217** + règle « Qwen gratuit en IA principale + bascule auto » | [LESSONS](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/LESSONS.md) · [CLAUDE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE.md) |
+
+
+## 📄 Septembre 2026 vérifié EN RÉEL contre le PDF — session 2026-09-06 (branche `claude/verify-cmcteams-light-data-rzlvau`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verify-pdf-vs-surfaces.mjs` **(nouveau)** | **Le garde qui manquait.** Relit les VRAIS PDF avec pdfjs **sans passer par le parser de l'app**, reconstruit la grille par géométrie, et exige que CHAQUE personne et CHAQUE cellule se retrouvent à l'identique dans CMCteams **et** dans la page Départs. C'est ce qui a trouvé MATTERA M (disparu), NICASTRO M (planning inventé) et BLANCHY F / DEGIOVANNI R (sans équipe). `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) |
+| `tests/fixtures/pdf-fidelite-baseline.json` **(nouveau)** | Le **cliquet** : la liste des manques CONNUS d'août (MOREL F + 10 sans équipe). Le test échoue si un manque NOUVEAU apparaît — jamais de faux rouge sur l'existant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/pdf-fidelite-baseline.json) |
+| `index.html` (v9.894) | 3 correctifs : lignes du PDF regroupées par **proximité** (1,8 pt) et non par arrondi · les passes de réparation **n'inventent plus** de planning pour qui n'est pas dans le PDF · rattachement d'équipe par la **rotation d'horaires** quand les jours de repos ne suffisent pas (cadres exclus). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
+| `tests/compare-app-vs-light-teams.mjs` | Sa liste de mois était **figée sur juillet/août** → septembre n'était jamais comparé. Elle est désormais **déduite des boards générés** : tout nouveau mois est couvert automatiquement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/compare-app-vs-light-teams.mjs) |
+| `tools/shared/planning-seed.js` · `tools/departs/boards-gen.js` | Régénérés depuis les vrais PDF. Septembre : **248/248 personnes, 7 440/7 440 cellules identiques au PDF des deux côtés**. | [seed](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/shared/planning-seed.js) · [boards](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/departs/boards-gen.js) |
+| `tools/vercel/ignore-racine.sh` **(nouveau)** · `vercel.json` · `tools/agent/vercel.json` · `tests/vercel-conforme.test.mjs` **(nouveau)** | **Tu recevais un mail « Deployment failed » à chaque push de chaque session.** Les deux `vercel.json` étaient REFUSÉS par Vercel (une note interdite, et une commande de 406 et 647 caractères pour une limite de 256) : leurs protections ne s'appliquaient donc jamais. Corrigés, et un contrôle automatique empêche que ça revienne. | [racine](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/vercel.json) · [script](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/vercel/ignore-racine.sh) · [contrôle](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/vercel-conforme.test.mjs) |
+| `tests/journal-erreurs-lisible.test.mjs` **(nouveau)** · `index.html` · `tools/tests/e2e.test.js` | **Le journal d'erreurs de l'app était à moitié illisible.** Il est rempli par trois endroits différents, chacun à sa façon, et les pages qui l'affichent n'en comprenaient qu'une : la page Debug admin et l'IA montraient « [undefined] undefined », et l'agent censé repérer une erreur qui se répète ne voyait rien. En prime, l'app inscrivait une **fausse erreur à chaque démarrage**. Corrigé, avec un contrôle automatique. `npm run test:journal-erreurs` | [contrôle](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/journal-erreurs-lisible.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/journal-erreurs-lisible.test.mjs) |
+| `LESSONS.md` (leçon #221) | 0,2 pt d'écart dans un PDF = une personne qui disparaît ; et pourquoi un test « app == light » ne peut jamais le voir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/LESSONS.md) |
 
 ## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
 

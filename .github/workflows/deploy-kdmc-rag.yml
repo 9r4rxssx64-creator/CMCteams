@@ -19,6 +19,7 @@ on:
   push:
     branches:
       - main
+      - 'claude/**'
     paths:
       - 'services/kdmc-rag/**'
       - '.github/workflows/deploy-kdmc-rag.yml'

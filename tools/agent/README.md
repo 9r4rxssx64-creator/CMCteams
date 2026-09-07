@@ -120,3 +120,21 @@ L'agent peut appeler les modules `tools/integrations/*` :
 - Vercel Cron : 1 cron/jour en free tier, illimité en Pro
 - Anthropic API : usage = coût (Haiku ~$1/Mtoken in · $5/Mtoken out — très peu pour un rapport hebdo)
 - Firebase : gratuit pour petit trafic
+
+## ⚠️ Vercel — pourquoi `vercel.json` refuse les prévisualisations (05-06/09/2026)
+
+Le 5.09 : **40 déploiements Vercel en une journée** (un par push de chaque branche `claude/*`),
+tous `CANCELED` ou `ERROR`, la production `main` annulée à chaque nouveau push, et **un mail
+d'échec à Kevin à chaque fois**. L'ancienne commande `git diff --quiet HEAD^ HEAD -- .` sortait en
+erreur (`HEAD^` absent du clone Vercel) → Vercel le compte comme un *build error*.
+
+Règle : l'agent est un **cron de production** (sur le plan Hobby les `crons` ne tournent qu'en
+production) → **aucune prévisualisation, jamais** ; sur `main`, déploiement seulement si ce dossier
+a changé. C'est ce que fait l'`ignoreCommand` de `vercel.json`.
+
+**06/09 — piège suivant, corrigé** : cette explication vivait dans une clé `"_note"` **à l'intérieur
+de `vercel.json`**. Vercel valide le fichier contre un schéma strict et l'a **refusé** :
+`The vercel.json schema validation failed … should NOT have additional property '_note'`. Résultat :
+le déploiement échouait toujours et Kevin recevait toujours le mail — le correctif du 5.09 était
+annulé par sa propre note. **`vercel.json` n'accepte ni commentaire ni clé inconnue** : toute
+explication se met ici, jamais dans le fichier.

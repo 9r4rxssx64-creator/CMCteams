@@ -17,7 +17,7 @@ concurrency:
 on:
   workflow_dispatch: {}
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'services/kdmc-outlook/**'
       - '.github/workflows/deploy-kdmc-outlook.yml'
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 1 }
+        with: { fetch-depth: 1 }
 
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
