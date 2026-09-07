@@ -9,7 +9,7 @@ allowed_tools: [skill_factory_create, generate_design_system, read_repo_file, se
 # Boîte à outils agents (parité Claude Code)
 
 Contenu vendorisé dans **`vendor/agent-toolkit/<id>/`** du dépôt (texte seulement, épinglé au SHA,
-`MANIFEST.json` = URL + licence + version). Mise à jour auto : workflow `agent-toolkit-sync.yml`
+`MANIFEST.json` = URL + licence + version). Mise à jour à la demande (bouton `workflow_dispatch`, jamais de cron) : workflow `agent-toolkit-sync.yml`
 (bouton + 1er de chaque mois). Les 6 sont aussi dans le catalogue plugins (tag `agent-toolkit`).
 
 | Notion | Dépôt | Quand je m'en sers |

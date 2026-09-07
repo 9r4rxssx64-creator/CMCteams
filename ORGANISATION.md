@@ -74,7 +74,7 @@ Usage acceptable :
 
 ### Concrètement, aujourd'hui
 
-**Sur GitHub** (mesuré le 5.09 après rapatriement : **143 workflows actifs, 0 exécution
+**Sur GitHub** (mesuré le 5.09 après rapatriement : **145 workflows actifs, 0 exécution
 programmée, 0 crypto**, 35 rangés) :
 tests, lint, CodeQL, gitleaks, Lighthouse, déploiement des Workers du projet,
 publication GitHub Pages (`kd-mc.com`), fusion automatique des branches `claude/*`.
@@ -101,8 +101,8 @@ Chacune a désormais sa destination ÉCRITE dans
 | Destination | Combien | Pourquoi |
 |---|---|---|
 | **GitHub** (rapatriées) | **14** | elles testent, déploient ou publient CE dépôt — l'usage prévu. **À la main uniquement**, jamais de cron : le bouton, c'est moi qui l'appuie via l'API. |
-| **GitLab CI** | 24 | elles appellent des sites tiers (liens, sources, génération d'images, sauvegardes) |
-| **Cloudflare Worker** | 5 | elles doivent tourner en continu : ce sont des services, pas du CI |
+| **GitLab CI** | 22 | elles appellent des sites tiers (liens, sources, génération d'images, sauvegardes) |
+| **Cloudflare Worker** | 7 | elles doivent tourner en continu : ce sont des services, pas du CI |
 | **nulle part** | 6 | crypto — « Cryptomining » est nommé mot pour mot dans les conditions |
 
 Les 14 rapatriées : smoke test après déploiement, smoke cadastre, vérif live d'un

@@ -75,6 +75,6 @@ Apex priorise retention si overflow :
 
 - claude-mem (Anthropic ecosystem)
 - mempalace (alternative open-source)
-- Pattern Apex : `apex-ai/v13/services/persistent-memory-store.ts`
+- Pattern Apex : `apex-ai/v13/services/storage/persistent-memory-store.ts`
 - Vue admin : `?view=knowledge`
 - Sentinelle : `never-forget-watch` (1×/h)

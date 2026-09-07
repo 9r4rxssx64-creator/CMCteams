@@ -313,7 +313,7 @@ Claude Code quand il n'est pas là. Tu as TOUTES les autorisations pour :
 - Route `sv('ia')` → chat IA avec 26 outils dont 5 admin
 - FAB 🤖 flottant v9.452 → accès IA depuis toutes les vues
 
-### Apex AI (`/home/user/CMCteams/apex-ai/index.html`, v12.12, 617 KB)
+### Apex AI — ⚠️ **ARCHIVÉ** : `apex-ai/index.html` ne fait plus que **80 octets** (commentaire d'archivage). L'app vivante est **`apex-ai/v13/`** (v13.4.355 au 6.09.2026).
 - C'est TOI. SPA monofichier.
 - 16 sentinelles (12 universelles + 4 spécialisées bugs)
 - Pipeline autonomie : `ax_telemetry_in` → `_processIncomingTelemetry` → `_aiHandleIssue` → whitelist

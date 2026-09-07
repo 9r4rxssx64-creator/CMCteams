@@ -20,10 +20,12 @@ Site : `asccli.sh`.
 **`rorkai/app-store-connect-cli-skills`** (MIT, 963 ★) — les **skills d'agent** du CLI.
 C'est la source la plus utile : elle décrit les **enchaînements** (publier, gérer une
 bêta, préparer une fiche), pas seulement les commandes. Vendorisée dans
-`vendor/agent-toolkit/app-store-connect-cli-skills/` → **la lire AVANT d'inventer une
-séquence de commandes**.
+`vendor/agent-toolkit/app-store-connect-cli-skills/` — ⚠️ **déclarée dans
+`tools/agent-toolkit/sources.json` mais JAMAIS récupérée** : ce dossier n'existe pas et n'est pas
+dans `MANIFEST.json` (vérifié le 6.09.2026). Relancer `agent-toolkit-sync.yml` pour cet id avant
+de compter dessus.
 
-Doc du CLI : `vendor/agent-toolkit/app-store-connect-cli/`.
+Doc du CLI : `vendor/agent-toolkit/app-store-connect-cli/` — **absente elle aussi** (même cause, même correctif).
 
 ## Ce qu'il faut AVANT de promettre l'App Store (à dire à Kevin, honnêtement)
 
@@ -44,8 +46,17 @@ contenu propre). Un simple lanceur de liens serait refusé.
 ## Sécurité — non négociable
 
 - La clé `.p8` est un **secret** : elle va dans les **secrets GitHub**
-  (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY`), **jamais dans le dépôt**, jamais
+  **jamais dans le dépôt**, jamais
   journalisée, jamais affichée en clair (masquer comme `masque()` de `session-kevin.mjs`).
+  > ⚠️ **INCOHÉRENCE MESURÉE LE 6.09.2026 — à trancher AVANT de lancer le workflow.**
+  > `ios-testflight.yml` consomme `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_PRIVATE_KEY`, mais les
+  > secrets RÉELLEMENT présents chez Kevin (liste vue sur les vraies pages GitHub le 3.09) sont
+  > `APPSTORE_API_ISSUER`, `APPSTORE_API_KEY`, `APPLE_TEAM_ID`. **Les noms ne correspondent pas**
+  > → le workflow tournerait avec des secrets VIDES, en silence : c'est exactement la cause racine
+  > du bug v13.4.229 (règle « NOMS SECRETS GITHUB DOIVENT MATCHER EXACTEMENT »).
+  > **Je n'ai PAS renommé** — la correspondance n'est pas certaine (`APPSTORE_API_KEY` = identifiant
+  > de clé ou contenu `.p8` ?) et il manque un 3ᵉ secret côté Kevin. À confirmer avec lui, puis
+  > aligner skill ET workflow dans le MÊME commit.
 - Le binaire `asc` **n'est pas vendorisé** (règle : texte uniquement, jamais d'exécutable
   tiers dans le dépôt). Il s'installe sur la machine qui exécute — runner CI ou Mac de Kevin.
 - Toute commande qui **soumet** ou **publie** (`submit`, `release`) est une action
@@ -73,7 +84,7 @@ contenu propre). Un simple lanceur de liens serait refusé.
 | Source unique des apps | `mobile/apps.json` | 3 apps : CMCteams, Apex Chat, Lingua |
 | Préparation du contenu | `mobile/build-ios.mjs` | ✅ mesuré : 4,3 / 0,8 / 11,4 Mo |
 | Build + TestFlight | `.github/workflows/ios-testflight.yml` | bouton uniquement, `macos-latest` |
-| Garde-fou | `tests/mobile-ios-config.test.mjs` | 35 vérifications, dans `test:ci` |
+| Garde-fou | `tests/mobile-ios-config.test.mjs` | dans `test:ci` (le nombre de vérifications est donné par le test lui-même — 38 au 6.09.2026 — il n'est plus figé ici parce qu'il augmente à chaque ajout) |
 
 **Deux pièges déjà attrapés — ne pas les réintroduire :**
 

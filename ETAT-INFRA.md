@@ -1,10 +1,15 @@
 # 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 4.09.2026)
 
-> ✅ **LIS D'ABORD LE FAIT N°10 (tout en bas)** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
+> ✅ **LIS D'ABORD LE FAIT N°10** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
 > restriction**. Le compte n'est plus suspendu, les Actions tournent, la publication du
-> site est relancée. Les faits **1, 2 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
-> plus à Kevin que GitHub est fermé, et ne lui redemande plus d'envoyer la réponse au
-> support : c'est fait, et ça a marché.
+> site est relancée. Les faits **1, 2, 3 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
+> plus à Kevin que GitHub est fermé, ne redis plus que `kdmc-site.pages.dev` est le seul
+> site vivant (fait n°3 → voir fait n°11 : **le site vient de GitHub**, Pages n'est qu'un
+> filet), et ne lui redemande plus d'envoyer la réponse au support : c'est fait, et ça a marché.
+>
+> 📍 **Ce document compte 16 faits**, pas 6 : le titre « Les 6 faits » ci-dessous ne couvre que
+> les six premiers (état au 1.09). Les faits 7 à 16 suivent et sont plus récents — donc
+> prioritaires en cas de désaccord entre deux faits.
 >
 > ⚠️ **Mais la règle « zéro exécution programmée sur GitHub » reste ABSOLUE** — le compte
 > a rouvert dans l'état qui l'avait fait fermer (55 crons encore armés sur `main`),
@@ -23,7 +28,7 @@
    mergent des PR (ex : PR #3621 le 1.09) ; d'autres reçoivent 403 — souvent le **proxy du conteneur**
    (message « sessions are bound to their configured repositories »), pas GitHub. → Teste TON accès
    (`git ls-remote origin`) et ne généralise ni ton 403 ni ton succès.
-3. **Le seul site vivant = `kdmc-site.pages.dev`** (Cloudflare Pages). Il est alimenté par
+3. ~~**Le seul site vivant = `kdmc-site.pages.dev`**~~ **(PÉRIMÉ — voir fait n°11 : le site vivant vient de GitHub depuis le 4.09 ; Pages est le filet de secours.)** (Cloudflare Pages). Il est alimenté par
    **GitLab `kdmc-group/Kdmc-project`** (id 85753352, compte `desarzens.kevin`) : chaque commit sur
    `main` y publie tout le dépôt (job CI `publier-site`). Cette infra a été montée le **27/08 À LA
    DEMANDE DE KEVIN** (« Remet tout en ligne comme avant par GitLab ») pendant le blocage GitHub —
@@ -526,11 +531,11 @@ remettre.
 | Destination | Combien | Exemples |
 |---|---|---|
 | **GitHub** (rapatriées) | **14** | smoke post-déploiement, vérifs Lingua/Décès en direct, MAJ forcée d'Apex Chat, pentest Strix, audit SEO, déploiement Vercel |
-| **GitLab CI** | 24 | liens réels, sources des langues, génération d'images, sauvegardes KV |
-| **Cloudflare Worker** | 5 | alertes World Monitor, agent 24/7, sentinelles |
+| **GitLab CI** | 22 | liens réels, sources des langues, génération d'images, sauvegardes KV |
+| **Cloudflare Worker** | 7 | alertes World Monitor, agent 24/7, sentinelles |
 | **nulle part** | 6 | crypto (nommé mot pour mot dans les conditions GitHub) |
 
-`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+`.github/workflows` : **134 → 145**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
 
 **Le bouton, c'est moi qui l'appuie** : une automatisation rapatriée est manuelle, donc zéro
 volume automatique — et je la lance via l'API, Kevin ne clique rien.

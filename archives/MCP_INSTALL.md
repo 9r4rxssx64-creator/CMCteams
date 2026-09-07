@@ -224,7 +224,7 @@ Ton cron `*/15 * * * *` (toutes les 15 min) est **bloqué par Vercel Hobby** (li
 
 ### Solutions (dans l'ordre)
 
-1. **GitHub Actions** (gratuit, recommandé) — créer `.github/workflows/agent-cron.yml` avec `schedule: cron: '*/15 * * * *'` qui appelle l'endpoint `/api/cron` avec le secret.
+1. **GitHub Actions** (gratuit, recommandé) — créer `.github/workflows-desactives/agent-cron.yml (**rangé** — plus actif)` avec `schedule: cron: '*/15 * * * *'` qui appelle l'endpoint `/api/cron` avec le secret.
 2. **Railway / Fly.io** (~5 €/mois) — service continu avec `setInterval`, déjà prévu dans le code de l'agent.
 3. **Cloudflare Workers + Cron Triggers** (gratuit jusqu'à 100k invocations/jour) — MCP Cloudflare utile ici.
 4. **Vercel Pro** (20 €/mois) — overkill pour juste un cron.
