@@ -535,3 +535,47 @@ contourne pas**. Je ne le contourne donc pas.
 | Qu'est-ce qui change maintenant ? | la version **corrigée** (qui écrit la cause exacte) est sur cette branche ; la prochaine exécution du robot **écrira le message d'erreur du jeton de CI** dans `.github/CLEANUP-REPORT.md`, ou supprimera les 231 |
 
 Autrement dit : plus rien à deviner. La prochaine livraison répond d'elle-même.
+
+---
+
+## Réponse finale (7 septembre, 00 h 03) — ce n'était **pas** une histoire de droits
+
+Le robot a enfin écrit la cause exacte, et elle change tout le dossier :
+
+```
+remote: error: GH013: Repository rule violations found for refs/heads/claude/actions-done-doc
+remote: - Cannot delete this branch
+ ! [remote rejected]  (push declined due to repository rule violations)
+```
+
+**Ce n'est pas un jeton trop faible. C'est une règle du dépôt qui interdit de supprimer
+une branche** — une protection posée dans les réglages, au-dessus de tout le monde.
+
+### Ce que ça invalide dans ce que j'ai écrit hier
+
+| Ce que j'avais écrit | La vérité |
+|---|---|
+| « trois identités ont refusé, chacune pour sa raison » | **une seule raison, la même pour les trois** : la règle du dépôt |
+| « mon accès n'a pas le droit d'effacer une référence » (#235) | vrai en apparence, **faux en cause** : même un accès administrateur reçoit ce refus |
+| « il reste à savoir si le jeton de la CI y arrive » | il n'y arrive pas non plus, **et il n'y arrivera jamais** tant que la règle est là |
+
+Le `403` que j'avais mesuré à la main était la **même** règle, vue de l'extérieur.
+
+### Ce que ça veut dire concrètement
+
+- **Aucun automatisme ne peut supprimer ces 375 branches.** Ni moi, ni le connecteur, ni la CI.
+- La seule voie est de **modifier la règle** dans *Réglages → Rules → Rulesets* — un réglage de
+  **sécurité** du dépôt, donc une décision de Kevin, pas une action que je prends seul.
+- Le robot **arrête maintenant de s'acharner** : il sonde une fois par livraison, constate la
+  règle, l'écrit, et passe. Le jour où la règle change, **il repart tout seul**, par paquets de 60.
+
+### Ma recommandation : **laisser la règle en place**
+
+Les 375 branches ne coûtent rien : elles n'apparaissent pas dans l'application, ne ralentissent
+rien, ne peuvent pas être fusionnées par accident (contrairement aux 18 annulations, qui elles
+étaient un vrai danger — et qui sont fermées). Cette règle, en revanche, protège chaque branche
+d'une suppression accidentelle par un automatisme. **Le rangement ne vaut pas d'affaiblir ça.**
+
+Si Kevin veut quand même faire le ménage un jour, la marche est courte et il n'y a aucun risque :
+les 231 branches concernées sont **entièrement contenues dans `main`** — leur contenu est déjà
+livré, et chaque SHA est noté plus haut dans ce document.

@@ -1,5 +1,20 @@
 # MEMO_RESUME — état de session
 
+## 7 septembre 2026 (00h10) — la réponse : une RÈGLE du dépôt, pas un droit manquant
+
+- Le robot a enfin écrit la cause exacte : **`GH013 — Cannot delete this branch`**. Une **règle
+  du dépôt** interdit la suppression de branche. Elle s'applique à **tout le monde** : ma session,
+  le connecteur, le jeton de la CI, et même un administrateur.
+- **Donc tout mon raisonnement d'hier était bâti sur une prémisse fausse** : je cherchais « quel
+  accès a le droit » alors que la réponse est « **aucun** ». Leçon **#238**.
+- **Le robot arrête de s'acharner** : il sonde une fois par livraison, écrit le constat, et passe.
+  Si la règle change un jour, il repart seul par paquets de 60.
+- **Ma recommandation : laisser la règle.** 375 branches ne coûtent rien (invisibles dans l'app,
+  impossibles à fusionner par accident) ; la règle, elle, protège du vrai travail. Le rangement
+  ne vaut pas d'affaiblir une protection. Décision de Kevin, marche courte et sans risque s'il
+  veut quand même : les 231 branches sont entièrement contenues dans `main`.
+- **Acquis définitifs de la nuit** : 18 annulations fermées · verrou nommé · 0 donnée en danger.
+
 ## 7 septembre 2026 (00h05) — c'est MON correctif qui bloquait tout
 
 - Diagnostic final, mesuré : mon correctif d'hier soir (« capturer la cause du refus »)
