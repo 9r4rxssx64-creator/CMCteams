@@ -1,5 +1,20 @@
 # MEMO_RESUME — état de session
 
+## 7 septembre 2026 (00h05) — c'est MON correctif qui bloquait tout
+
+- Diagnostic final, mesuré : mon correctif d'hier soir (« capturer la cause du refus »)
+  **tuait l'étape dès la première branche refusée**. Les robots GitHub exécutent en mode
+  « arrêt à la première erreur », et la façon dont j'avais écrit la capture est justement
+  celle qui déclenche l'arrêt. L'ancienne version survivait par chance d'écriture.
+- **Conséquence** : le compte-rendu n'était pas seulement mal publié (ce que j'ai cru à
+  23 h 50, leçon #236) — il n'était **jamais atteint**. Leçon **#237**.
+- **Corrigé** : la capture est replacée dans une forme qui survit à l'échec, avec un plafond
+  de 60 suppressions par livraison (une boucle de 231 allers-retours réseau risquait le délai
+  maximum du job — et alors rien n'est publié non plus).
+- **Bilan honnête** : quatre fois en une journée, le même travers sous quatre formes —
+  « une commande échoue et son message n'atterrit nulle part » (#232, #235, #236, #237).
+  Ce n'est plus une leçon à écrire, c'est un réflexe de relecture à tenir.
+
 ## 6 septembre 2026 (23h50) — le compte-rendu du robot n'était jamais publié
 
 - La livraison a bien tourné (demande #3716 ouverte à 23 h 30, fusionnée à 23 h 36) et l'étape de

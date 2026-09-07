@@ -340,7 +340,7 @@ jobs:
           git remote set-branches origin '*' || true
           git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet || true
           TOTAL=$(git branch -r 2>/dev/null | grep -c 'origin/claude/' || echo 0)
-          DEL=0; GARDE=0; ECH=0
+          DEL=0; GARDE=0; ECH=0; RESTE_A_FAIRE=0
           echo "## Branches" >> "$REP"
           echo "" >> "$REP"
           if [ "$TOTAL" = "0" ]; then
@@ -355,8 +355,15 @@ jobs:
               git merge-base --is-ancestor "$b" origin/main 2>/dev/null || { GARDE=$((GARDE+1)); continue; }
               TS=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
               [ "$TS" -ge "$CUT" ] && { GARDE=$((GARDE+1)); continue; }
-              ERR=$(git push origin --delete "$NAME" 2>&1)
-              if [ $? -eq 0 ]; then
+              # Plafond par execution : une suppression est un aller-retour reseau.
+              # 231 d'un coup risquent le delai maximum du job (et alors RIEN
+              # n'est publie). On draine par paquets, a chaque livraison.
+              [ "$((DEL+ECH))" -ge 60 ] && { RESTE_A_FAIRE=$((RESTE_A_FAIRE+1)); continue; }
+              # `if ERR=$(...)` et NON `ERR=$(...)` seul : les runners tournent en
+              # `bash -e`, ou une AFFECTATION qui echoue TUE l'etape sur place —
+              # c'est ce qui a fait disparaitre le compte-rendu (lecon #237).
+              # Place en condition de `if`, l'echec est un resultat, pas une mort.
+              if ERR=$(git push origin --delete "$NAME" 2>&1); then
                 DEL=$((DEL+1)); echo "- supprimee \`$NAME\` (\`$(git rev-parse --short "$b")\`)" >> "$REP"
               else
                 ECH=$((ECH+1))
@@ -379,6 +386,8 @@ jobs:
             echo "| $TOTAL | $DEL | $GARDE |" >> "$REP"
             echo "" >> "$REP"
             echo "Echecs de suppression : **$ECH**" >> "$REP"
+            echo "" >> "$REP"
+            echo "Reportees au prochain passage (plafond de 60/execution) : **$RESTE_A_FAIRE**" >> "$REP"
           fi
 
           # ---------- 2) Annulations automatiques dormantes ----------
