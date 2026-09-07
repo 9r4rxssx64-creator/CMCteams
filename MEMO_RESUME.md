@@ -824,6 +824,13 @@ pas dans les 15 s) — donc ce n'est pas du non-déterminisme, c'est un vrai éc
 le runner GitLab**, `test:lingua-voix` — **92 étapes passées sur 93**, même ligne, même erreur des deux
 côtés. Avant aujourd'hui, les deux environnements donnaient des verdicts différents ; maintenant ils
 disent la même chose. C'est ça, un test qui sert à quelque chose.
+
+**Verdict du 7.09 au matin, sur le runner GitLab** : **95 étapes passées sur 96**, seul `test:lingua-voix`
+rouge (même ligne qu'en local). Le contrôle croisé Départs, qui rougissait hier, est **vert sur le runner** :
+« couverture 277 · horaires OK 277 » pour août, « 290 · 290 » pour juillet — avec la page régénérée par
+cmcteams-pdf (MATTERA M récupéré). Autrement dit : leurs corrections et les miennes tiennent ensemble.
+Le déblocage de la fusion (conflit `pipeline/sessions.json`, deux sessions avaient pris le numéro m039)
+a été fait à la main ; GitLab est réaligné (`ad1910e5`).
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
