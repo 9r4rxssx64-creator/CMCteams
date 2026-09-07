@@ -9,7 +9,7 @@ name: Deploy cmc-parser-proxy (Cloudflare Worker)
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'tools/planning-parser-tester/worker/**'
       - '.github/workflows/cmc-parser-proxy-deploy.yml'

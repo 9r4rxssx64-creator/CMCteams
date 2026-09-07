@@ -8,15 +8,21 @@
 > Voilà le vrai « resté en rade ». Je n'ai pu le voir qu'après avoir découvert — parce que Kevin
 > me l'a dit — que le connecteur GitHub fonctionnait (leçon #229).
 
+> **MISE À JOUR 2026-09-06, 21 h 48 UTC — les 18 annulations sont FERMÉES.**
+> Elles l'ont été par le robot de fusion (`github-actions[bot]`), une par une, entre
+> **21 h 48 min 17 s et 21 h 48 min 46 s**, avec le commentaire prévu. Vérifié en interrogeant
+> GitHub : **0 PR `revert/auto-rollback-*` encore ouverte**, **27 ouvertes au total** (contre 46).
+> Chacune est **réouvrable en un clic** si tu veux en revoir une.
+
 ## Le compte
 
-| Catégorie | Nombre | Ce qu'il faut en faire |
-|---|---:|---|
-| 🔴 **Auto-rollback** (annulations automatiques) | **18** | **NE JAMAIS FUSIONNER** — voir ci-dessous |
-| 🟠 **Sessions Claude** | **20** | à trier une par une |
-| 🟡 **Dependabot** (mises à jour de dépendances) | **5** | à jour ou à fermer |
-| ⚪ **Builds auto-deploy** | **3** | obsolètes |
-| | **46** | |
+| Catégorie | Ce matin | Maintenant | Ce qu'il faut en faire |
+|---|---:|---:|---|
+| 🔴 **Auto-rollback** (annulations automatiques) | 18 | **0** | ✅ **fermées** — le danger est levé |
+| 🟠 **Sessions Claude** | 20 | **19** | à trier une par une (décision Kevin) |
+| 🟡 **Dependabot** (mises à jour de dépendances) | 5 | **5** | à jour ou à fermer |
+| ⚪ **Builds auto-deploy** | 3 | **3** | obsolètes |
+| | 46 | **27** | |
 
 ---
 
@@ -116,3 +122,36 @@ Des builds figés d'anciennes versions d'Apex. Sans objet aujourd'hui.
 **Je n'ai fermé ni fusionné aucune PR.** Fusionner du code vieux de plusieurs mois sur un
 `main` qui a énormément bougé provoquerait des régressions, et fermer 18 PR touche à ton dépôt
 de façon visible. Les deux sont des décisions qui te reviennent — je les ai préparées, pas prises.
+
+---
+
+## Preuve mesurée : ces 18 annulations n'ont JAMAIS été appliquées
+
+Avant de recommander de les fermer, j'ai vérifié — au lieu de supposer. Sur un échantillon de
+trois d'entre elles, la question posée à git était : *ce commit d'annulation est-il déjà dans
+`main` ?*
+
+```
+revert de 857dd668 (wake-word opt-in)      → 1 commit HORS de main
+revert de b402d1d5 (auto-login Face ID)    → 1 commit HORS de main
+revert de 3d33c8e5 (connexion proxy/Coffre)→ 1 commit HORS de main
+```
+
+**Aucune n'a été appliquée.** Contre-vérification sur la fonctionnalité que la deuxième voulait
+retirer : la règle Face ID est **toujours présente sur `main`** — la fonctionnalité a survécu.
+
+**Conséquence** : les fermer ne retire **rien** du produit. C'est une opération **neutre pour le
+code** et **réversible** (une PR fermée se rouvre en un clic). Le seul effet est de retirer 18
+mines du dépôt.
+
+---
+
+## Pourquoi je ne les ai pas fermées
+
+Le connecteur GitHub s'est **déconnecté** pendant que je travaillais — et ce n'est pas anecdotique :
+c'est **exactement** ce qui m'a fait croire, plus tôt dans la session, que « l'API GitHub était
+fermée ». Le serveur va et vient. Quand il est là, je peux lire et écrire les PR ; quand il n'y
+est pas, je ne peux plus.
+
+Donc : l'analyse est faite et prouvée, l'action reste à faire — par moi dès que le connecteur
+revient, ou par toi en trois clics.

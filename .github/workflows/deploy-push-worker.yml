@@ -29,7 +29,7 @@ name: Deploy Apex Push Worker
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'tools/cloudflare/apex-push-worker.js'
       - '.github/workflows/deploy-push-worker.yml'

@@ -23,7 +23,7 @@ const PIX = 'data:image/jpeg;base64,' + Buffer.from('FAKE-PHOTO-KEVIN').toString
 let vus = [];
 
 let creations = 0;
-function mock({ geminiOk = false, editeur = false, creationsKo = [] } = {}) {
+function mock({ geminiOk = false, editeur = false, creationsKo = [], creation429 = false } = {}) {
   vus = [];
   creations = 0;
   global.fetch = async (u) => {
@@ -42,6 +42,15 @@ function mock({ geminiOk = false, editeur = false, creationsKo = [] } = {}) {
     }
     if (/api\.replicate\.com\/v1\/predictions/.test(url)) {
       creations++;
+      /* Le VRAI format d'erreur de Replicate (RFC 7807) : un 429 avec `detail`
+         qui dit pourquoi, et AUCUN champ `error`. C'est ce corps-là qui, le
+         2026-09-06, ressortait en « model_429 » nu dans le rapport. */
+      if (creation429) {
+        return new Response(JSON.stringify({
+          title: 'Too Many Requests', status: 429,
+          detail: 'You have reached the free tier spend limit. Add a payment method to continue.'
+        }), { status: 429 });
+      }
       /* creationsKo simule une pose qui casse (délai dépassé, modèle occupé…)
          pendant que l'autre réussit — exactement le cas du 2026-09-06. */
       if (creationsKo.includes(creations)) {
@@ -126,6 +135,19 @@ chk(r.status === 502, 'F. les 2 poses cassées → refus (502), reçu ' + r.stat
 chk(/edit#1/.test(j.detail || '') && /edit#2/.test(j.detail || ''),
   'F. la cause de CHAQUE pose est nommée : ' + String(j.detail || '').slice(0, 90));
 chk(!(j.frames || []).length, 'F. aucune image inventée');
+
+/* G) Replicate refuse avec un 429 « palier gratuit atteint » → le rapport doit
+      dire POURQUOI, pas seulement le numéro. Vécu le 2026-09-06 : le verdict
+      affichait `model_429` — impossible de savoir s'il fallait attendre ou
+      recharger. DISCRIMINANT : sans la lecture de `detail`, ce test échoue. */
+mock({ editeur: true, creation429: true });
+r = await call('/frames', { GEMINI_API_KEY: 'k', REPLICATE_API_TOKEN: 't' }, { image: PIX, mode: 'dance', n: 2 });
+j = await r.json().catch(() => ({}));
+chk(r.status === 502, 'G. moteur d\'édition à sec → refus honnête (502), reçu ' + r.status);
+chk(/429/.test(j.detail || ''), 'G. le code du refus est dit : ' + String(j.detail || '').slice(0, 60));
+chk(/free tier|spend limit/i.test(j.detail || ''),
+  'G. et sa RAISON exacte aussi (palier gratuit / plafond), pas juste « model_429 »');
+chk(!/model_429/.test(j.detail || ''), 'G. plus de code nu « model_429 » sans explication');
 
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));

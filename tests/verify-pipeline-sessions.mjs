@@ -98,6 +98,28 @@ chk(incompletes.length === 0,
 const BASELINE = 'pipeline/branches-orphelines-baseline.json';
 const JOURS = 7;
 
+/* Une branche fabriquée par un WORKFLOW n'a pas de session à inscrire : son nom porte
+   l'identifiant du run (`…-34079684358`), donc il est NEUF à chaque exécution — aucun
+   cliquet ne peut le rattraper, et le contrôle virerait au rouge permanent (faux rouge :
+   exactement ce que la leçon #103 interdit). Mesuré le 7.09.2026 sur les 377 `claude/*` :
+   71 branches ont cette forme, **toutes** écrites uniquement par un robot (kdmc-bot ou
+   github-actions[bot]), et **aucune** branche inscrite au registre ne l'a.
+   Les DEUX signaux sont exigés ensemble : un nom en `-<chiffres>` ne suffit pas — il faut
+   aussi que personne d'humain n'ait commité dessus. Une vraie session dont le nom finirait
+   par des chiffres reste donc contrôlée. */
+const NOM_DE_ROBOT = /-[0-9]{8,}$/;
+const ROBOTS = new Set(['kdmc-bot', 'github-actions[bot]', 'claude-bot']);
+
+function ecriteParUnRobotSeulement(branche) {
+  let auteurs;
+  try {
+    auteurs = execFileSync('git', ['log', '--format=%an', `origin/main..origin/${branche}`],
+      { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  } catch (_) { return false; }        /* pas lisible → on ne l'exclut pas */
+  if (!auteurs) return false;
+  return auteurs.split('\n').every((a) => ROBOTS.has(a.trim()));
+}
+
 let refs = '';
 try {
   refs = execFileSync('git', [
@@ -116,7 +138,14 @@ if (!refs.trim()) {
   }).filter((b) => b.date >= seuil);
 
   const inscrites = new Set(Object.values(sessions).map((s) => s.branche));
-  const orphelines = actives.filter((b) => !inscrites.has(b.branche)).map((b) => b.branche).sort();
+  const robots = actives.filter((b) => NOM_DE_ROBOT.test(b.branche)
+    && ecriteParUnRobotSeulement(b.branche)).map((b) => b.branche);
+  const aSuivre = actives.filter((b) => !robots.includes(b.branche));
+  const orphelines = aSuivre.filter((b) => !inscrites.has(b.branche)).map((b) => b.branche).sort();
+
+  if (robots.length) {
+    console.log(`  ·    ${robots.length} branche(s) fabriquée(s) par un workflow, sans session à inscrire`);
+  }
 
   let connues = [];
   if (existsSync(BASELINE)) {
@@ -126,7 +155,7 @@ if (!refs.trim()) {
   const parties = connues.filter((b) => !orphelines.includes(b));
 
   chk(nouvelles.length === 0, nouvelles.length === 0
-    ? `${actives.length} branche(s) active(s) · aucune NOUVELLE orpheline (${orphelines.length} connue(s), cliquet)`
+    ? `${aSuivre.length} branche(s) active(s) suivie(s) · aucune NOUVELLE orpheline (${orphelines.length} connue(s), cliquet)`
     : `branche(s) ACTIVE(S) que personne ne suit : ${nouvelles.join(', ')} — inscris-la : ` +
       `node ${OUTIL} enregistrer --id <slug> --titre "…" --branche "<elle>" --sujet "…"`);
 

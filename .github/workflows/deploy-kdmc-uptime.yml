@@ -29,6 +29,7 @@ on:
   push:
     branches:
       - main
+      - 'claude/**'
     paths:
       - 'services/kdmc-uptime/**'
       - 'tests/uptime-couverture.test.mjs'

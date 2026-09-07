@@ -8,7 +8,7 @@ concurrency:
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'services/apex-v13-backend/**'
   workflow_dispatch:

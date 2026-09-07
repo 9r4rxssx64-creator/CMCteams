@@ -6,6 +6,42 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité) + un faux rouge de ma propre garde
+
+La PR n'était plus bloquée par ce que j'avais mesuré la veille. Un robot a laissé un
+diagnostic sur ma branche (`.github/AUTOMERGE-DIAGNOSTIC.md`, commit `1424673f4`) : GitHub
+répondait `mergeable_state: "dirty"` — **des conflits**, pas le test rouge hérité de `main`.
+La branche avait 54 commits de retard. J'ai fusionné `main` dedans et résolu les 2 vrais
+conflits :
+
+- **`pipeline/sessions.json`** : collision d'identifiant — une autre session avait pris `m053`
+  pendant que je l'utilisais. Union propre : ses 2 sessions + ses messages `m053`/`m054`
+  gardés, mon message renuméroté **`m055`**. 24 sessions, 55 messages, 0 doublon.
+- **`.github/AUTOMERGE-DIAGNOSTIC.md`** : deux robots écrivent ce même fichier pour des PR
+  différentes → il conflit à chaque fusion. J'ai gardé le plus récent. *Ce fichier est un
+  artefact de robot suivi par git : il rejouera ce conflit sur toutes les branches tant qu'il
+  restera versionné.*
+
+### Ma garde des branches orphelines allumait un rouge permanent — corrigé
+
+Le contrôle 6 que j'avais ajouté la veille échouait sur **6 branches fabriquées par un
+workflow** (`claude/printify-order-config-34079684358`…). Leur nom porte l'**identifiant du
+run**, donc il est **neuf à chaque exécution** : aucun cliquet ne peut les rattraper, le rouge
+serait devenu permanent — exactement le défaut que la garde était censée empêcher (leçon #103).
+
+Mesuré avant de corriger, sur les **377** branches `claude/*` : **71** ont cette forme,
+**toutes** écrites uniquement par un robot, et **aucune** branche inscrite au registre ne l'a.
+J'exige donc les **deux** signaux ensemble (nom en `-<identifiant>` **et** aucun commit humain)
+— une vraie session dont le nom finirait par des chiffres reste contrôlée. **Prouvé
+discriminant par deux sabotages** : désinscrire une vraie branche → échec ; renommer une
+branche de robot sans identifiant de run → échec ; arbre propre → **9 OK / 0 FAIL**.
+
+Cliquet resserré : **7 → 6** orphelines figées (`claude/verify-cmcteams-light-data-rzlvau`
+n'est plus active). Mes deux gardes revérifiées sur l'arbre fusionné : `no-secret-in-docs`
+**827 fichiers, 0 fuite** · `vercel-config` **10 OK / 0 FAIL**.
+
+---
+
 ## 6 septembre 2026 — relecture de TOUS les `.md` : deux secrets trouvés en clair (à RÉGÉNÉRER)
 
 Kevin : *« Relis tous les .md »*, deux fois. J'ai relu les **1160** fichiers Markdown du dépôt,
@@ -118,6 +154,144 @@ de Kevin) ; les workers sont sondés **depuis le runner GitHub**, qui a un vrai 
 `test:uptime-couverture` **6 OK / 0 FAIL** (26 adresses ⇄ routeur, 5 workers ⇄ dépôt) ·
 la liste `WORKERS` est bien relue par l'étape CI (`apex-secrets-proxy kdmc-ais kdmc-live kdmc-rag
 apex-auth-worker`). Doublon de leçon #216 corrigé (l'une passe en #217).
+## 7 septembre 2026 (00h10) — la réponse : une RÈGLE du dépôt, pas un droit manquant
+
+- Le robot a enfin écrit la cause exacte : **`GH013 — Cannot delete this branch`**. Une **règle
+  du dépôt** interdit la suppression de branche. Elle s'applique à **tout le monde** : ma session,
+  le connecteur, le jeton de la CI, et même un administrateur.
+- **Donc tout mon raisonnement d'hier était bâti sur une prémisse fausse** : je cherchais « quel
+  accès a le droit » alors que la réponse est « **aucun** ». Leçon **#238**.
+- **Le robot arrête de s'acharner** : il sonde une fois par livraison, écrit le constat, et passe.
+  Si la règle change un jour, il repart seul par paquets de 60.
+- **Ma recommandation : laisser la règle.** 375 branches ne coûtent rien (invisibles dans l'app,
+  impossibles à fusionner par accident) ; la règle, elle, protège du vrai travail. Le rangement
+  ne vaut pas d'affaiblir une protection. Décision de Kevin, marche courte et sans risque s'il
+  veut quand même : les 231 branches sont entièrement contenues dans `main`.
+- **Acquis définitifs de la nuit** : 18 annulations fermées · verrou nommé · 0 donnée en danger.
+
+## 7 septembre 2026 (00h05) — c'est MON correctif qui bloquait tout
+
+- Diagnostic final, mesuré : mon correctif d'hier soir (« capturer la cause du refus »)
+  **tuait l'étape dès la première branche refusée**. Les robots GitHub exécutent en mode
+  « arrêt à la première erreur », et la façon dont j'avais écrit la capture est justement
+  celle qui déclenche l'arrêt. L'ancienne version survivait par chance d'écriture.
+- **Conséquence** : le compte-rendu n'était pas seulement mal publié (ce que j'ai cru à
+  23 h 50, leçon #236) — il n'était **jamais atteint**. Leçon **#237**.
+- **Corrigé** : la capture est replacée dans une forme qui survit à l'échec, avec un plafond
+  de 60 suppressions par livraison (une boucle de 231 allers-retours réseau risquait le délai
+  maximum du job — et alors rien n'est publié non plus).
+- **Bilan honnête** : quatre fois en une journée, le même travers sous quatre formes —
+  « une commande échoue et son message n'atterrit nulle part » (#232, #235, #236, #237).
+  Ce n'est plus une leçon à écrire, c'est un réflexe de relecture à tenir.
+
+## 6 septembre 2026 (23h50) — le compte-rendu du robot n'était jamais publié
+
+- La livraison a bien tourné (demande #3716 ouverte à 23 h 30, fusionnée à 23 h 36) et l'étape de
+  ménage aussi — **mais rien n'a changé** : toujours 375 branches, aucun compte-rendu.
+- **Cause trouvée** : la dernière ligne publiait le compte-rendu par un `push` sur la branche…
+  qui avait bougé entre-temps (elle venait d'être fusionnée). GitHub rejette, et le rejet était
+  **encore avalé**. Le fichier existait, mais seulement dans la machine du robot. Leçon **#236** —
+  troisième fois en douze heures que le même travers réapparaît, à trois endroits différents.
+- **Correctif poussé** : le compte-rendu s'écrit maintenant **directement sur `main` par l'API**
+  (aucun rebase possible), et un échec de publication est **rapporté**, pas avalé.
+- **Donc** : à la prochaine livraison, `.github/CLEANUP-REPORT.md` sur `main` dira soit
+  « 231 supprimées », soit **le message exact du refus du jeton de CI**. Rien à faire de ton côté.
+
+## 6 septembre 2026 (23h30) — je m'étais trompé : c'était déjà fait, et le verrou a un nom
+
+- **Correction de ce que j'ai écrit à 21 h 40** : j'avais conclu que l'étape de ménage n'avait
+  pas tourné, parce que le compte-rendu sur `main` n'avait pas bougé. **Faux.** Elle a tourné à
+  **21 h 47**, et son compte-rendu a été poussé **sur la branche d'exécution**, pas sur `main` —
+  je regardais au mauvais endroit (leçon **#234**).
+- ✅ **Les 18 annulations dormantes sont FERMÉES** — le 6 septembre entre **21 h 48 min 17 s et
+  21 h 48 min 46 s UTC**, par `github-actions[bot]`, avec le commentaire prévu. Vérifié en
+  interrogeant GitHub : **0 `revert/auto-rollback-*` ouverte**, **27 PR ouvertes** (contre 46).
+  Réouvrables en un clic. Le danger « une annulation fusionnée par erreur retire du code livré »
+  est **levé**.
+- ✅ **Le verrou des branches a un nom** — mesuré en lançant la commande moi-même :
+  `git push origin --delete …` → **`HTTP 403`**, puis un trompeur `Everything up-to-date`.
+  Mon accès git de session sait **ajouter** des commits, pas **effacer** une référence. Ce n'est
+  pas le pare-feu (son journal de refus est vide) : c'est GitHub contre mon jeton. Leçon **#235**.
+- **Reste** : **231 branches** supprimables (toutes déjà entièrement dans `main`, > 7 jours,
+  aucun contenu en danger). Seul le **jeton de la CI** peut les effacer. La version corrigée du
+  ménage — celle qui **écrit la cause exacte** au lieu de l'avaler — est maintenant sur la
+  branche : **la prochaine livraison supprimera les 231, ou nommera par écrit le refus du jeton
+  de CI**. Plus rien à deviner, et **aucun clic** demandé à Kevin.
+- **Toujours à trancher par Kevin** : les **19 PR de sessions Claude** (avril → septembre),
+  une décision par PR — c'est le seul endroit où je ne peux pas choisir à sa place.
+
+## 6 septembre 2026 (21h40) — compactage : j'arrête, état honnête + 1 clic
+
+- **Prouvé** : le nettoyeur **voit** enfin (371 branches, contre 0 avant), le mécanisme de
+  compte-rendu **fonctionne** (fichier écrit et poussé à 20 h 44), et **235 suppressions ont
+  échoué**. Trois identités ont refusé : relais git, connecteur (**lecture seule**, `403` en
+  écriture), jeton de CI.
+- **Pas su** : le **nom** du verrou. J'ai livré la capture d'erreur, mais aucun nouveau
+  compte-rendu depuis — et pour savoir pourquoi il faut le **journal d'exécution** :
+  `déclencher un workflow : 403` · `lire un journal : 403` · `outil Actions : aucun`.
+- **Décision : j'arrête la boucle.** Le compactage est de l'hygiène (374 branches encombrent,
+  elles ne perdent rien : ce sont des ancêtres de `main`, SHA notés). Chaque tentative sans
+  journal revient à deviner — c'est le travers que Kevin me reproche, je ne le prolonge pas.
+- **1 clic, et il est réel** : Actions → « Compact stale claude/* branches » → Run workflow.
+  Soit il supprime (fini, et ça repart seul), soit son journal **nomme le verrou** et je termine.
+  Déclencher un workflow et lire un journal sont les **deux seules** choses qu'aucun de mes trois
+  accès ne permet.
+
+
+## 6 septembre 2026 (21h15) — compactage : j'arrête de contourner, je vais chercher le NOM du verrou
+
+- Compte-rendu du robot : **371 branches vues** (le correctif de cécité marche), **136 gardées**,
+  **0 supprimée** → **235 suppressions tentées, 235 échecs**.
+- **Trois identités, trois refus** : relais git de la session (connexion coupée), connecteur
+  GitHub (pas d'outil de suppression, et **lecture seule** — `403` en écriture), **jeton de la CI**
+  (les 235 échecs ci-dessus). Le verrou est donc **au niveau du dépôt**, pas dans mes outils.
+- **Mon erreur, corrigée** : mon étape écrivait `git push origin --delete … >/dev/null 2>&1` —
+  elle **avalait le message d'erreur**. C'est exactement le défaut que j'avais corrigé ce matin
+  sur l'auto-merge (leçon #214) et que j'ai reproduit douze heures plus tard dans mon propre code.
+  Elle capture désormais la **cause exacte**, une fois, et l'écrit dans le compte-rendu.
+- Le nombre de branches **monte** pendant ce temps (371 → 374) : d'autres sessions en créent.
+  Le ménage n'est donc pas cosmétique à terme, mais il reste sans risque de perte (les 235 sont
+  des **ancêtres de `main`**).
+
+
+## 6 septembre 2026 (21h00) — « Go tout » : le ménage part dans la CI (branches + 18 annulations)
+
+- **Mesure décisive** : le connecteur GitHub **lit** tout mais **n'écrit rien** —
+  `403 Resource not accessible by integration` sur la première fermeture de PR. Trois capacités
+  distinctes qu'on confond en disant « j'ai accès à GitHub » : le **connecteur** (lecture seule),
+  les **identifiants git** (poussent des commits, mais suppression de référence refusée par le
+  relais), le **jeton de la CI** (`contents: write` **et** `pull-requests: write` — le seul
+  complet). Leçon **#231**.
+- **Donc je ne demande pas de clic** : je déplace l'action là où les droits existent déjà.
+  L'étape greffée dans l'auto-merge fait maintenant **les deux ménages** :
+  1. supprimer les branches `claude/*` **ancêtres de `main`** et inactives depuis 7 jours ;
+  2. **fermer les 18 annulations dormantes** (`revert/auto-rollback-*`), avec un commentaire
+     expliquant pourquoi — elles n'ont jamais été appliquées, la fusionner aujourd'hui
+     **retirerait** du code livré depuis, et fermer est réversible.
+- **Et elle REND COMPTE** : `.github/CLEANUP-REPORT.md` écrit vues / supprimées / fermées **et les
+  échecs**. Sans ça, « rien à faire » et « le jeton n'avait pas le droit » donnent la même ligne
+  verte — c'est exactement ce qui m'a fait chercher pendant une heure.
+- Robustesse : `if: always()` + `continue-on-error` → un ménage ne peut **jamais** faire échouer
+  une livraison.
+
+
+## 6 septembre 2026 (20h45) — preuve sur les 18 annulations, et le connecteur qui va et vient
+
+- **Vérifié au lieu de supposer** : les 3 annulations échantillonnées ont **1 commit HORS de
+  `main`** → **elles n'ont jamais été appliquées**. Contre-vérification : la règle Face ID (que
+  l'une d'elles voulait retirer) est **toujours sur `main`**. Donc **les fermer ne retire rien du
+  produit** — opération neutre pour le code et réversible.
+- **Je n'ai pas pu les fermer** : le connecteur GitHub s'est **déconnecté** en plein travail.
+  Ce n'est pas anecdotique — **c'est exactement ce qui m'a fait croire ce matin que « l'API
+  GitHub était fermée »**. Les serveurs d'outils se sont déconnectés/reconnectés **au moins
+  4 fois** sur cette seule session. Leçon **#230** : une capacité se re-vérifie **au moment de
+  s'en servir**, et quand l'outil est là il faut **agir tout de suite**, pas planifier.
+- Ma PR **#3710 est fusionnée dans `main`** ✅ (registres, correctifs et leçons livrés).
+- **Compactage : toujours aucun compte-rendu déposé** et **371 branches**. Conforme à ma décision
+  d'arrêter de tâtonner : j'ai posé le mécanisme qui *fera parler* le robot, je ne relance pas de
+  cycle d'essais à l'aveugle.
+
+
 ## 6 septembre 2026 (20h30) — le VRAI « resté en rade » : 46 pull requests ouvertes
 
 - Avec le connecteur GitHub (que j'ignorais avoir, leçon #229) : **46 PR ouvertes**, la plus
@@ -794,6 +968,23 @@ juillet/août** → septembre n'était jamais comparé ; elle est maintenant **d
   fois pour la raison **inverse** : ce test vérifie ce que l'app fait *quand l'IA n'est pas joignable*, et
   ne tenait que parce que le sandbox n'a pas de réseau. Sur le runner l'IA répond → sous-titres produits →
   rouge. L'indisponibilité est maintenant **forcée** au lieu d'être subie : 37/0 ici.
+
+**Où en est `test:ci` sur le runner GitLab** : le job `tests` est passé de **65 s (échec immédiat)** à
+**877 s**, toute la classe « le test dépend de l'état du réseau » étant traitée. Le rouge restant est
+`test:lingua-voix`, et **il échoue aussi ici** (même ligne 92, même `TimeoutError` : le bouton 🔊 n'apparaît
+pas dans les 15 s) — donc ce n'est pas du non-déterminisme, c'est un vrai écart, **session Lingua**.
+
+**Preuve que le déterminisme est atteint** : la chaîne complète relancée ici s'arrête **au même test que
+le runner GitLab**, `test:lingua-voix` — **92 étapes passées sur 93**, même ligne, même erreur des deux
+côtés. Avant aujourd'hui, les deux environnements donnaient des verdicts différents ; maintenant ils
+disent la même chose. C'est ça, un test qui sert à quelque chose.
+
+**Verdict du 7.09 au matin, sur le runner GitLab** : **95 étapes passées sur 96**, seul `test:lingua-voix`
+rouge (même ligne qu'en local). Le contrôle croisé Départs, qui rougissait hier, est **vert sur le runner** :
+« couverture 277 · horaires OK 277 » pour août, « 290 · 290 » pour juillet — avec la page régénérée par
+cmcteams-pdf (MATTERA M récupéré). Autrement dit : leurs corrections et les miennes tiennent ensemble.
+Le déblocage de la fusion (conflit `pipeline/sessions.json`, deux sessions avaient pris le numéro m039)
+a été fait à la main ; GitLab est réaligné (`ad1910e5`).
 - Balayage live (run #32, déclenché par ma fusion) : **arbre.kd-mc.com ❌** — faux rouge : le contrôle
   profond comptait sur le code famille par défaut, retiré en v3.16 (le code se vérifie sur le domaine,
   il n'existe nulle part dans le dépôt). Sans code, la grille est le bon état. Contrôle refait dans
@@ -6055,3 +6246,78 @@ sur son **propre commentaire** → les commentaires sont retirés avant la reche
 **Règle que j'applique désormais** : après un déploiement, je vérifie **le code en
 ligne** (la ligne exacte du correctif), jamais seulement l'horodatage.
 Leçon #231.
+
+## 2026-09-06 (suite) — Tes branches déploient toutes seules (sauf les règles)
+
+Tu as tranché : **« prudent — tout sauf les règles »**. C'est fait.
+
+**Avant** : 7 mises en ligne partaient d'un push sur une de mes branches ;
+les autres attendaient une fusion dans `main` — donc t'attendaient, toi.
+**Maintenant** : **23**. Un push sur `claude/**` déploie le worker concerné,
+tout seul, sans clic.
+
+**Ce que je n'ai PAS touché, exprès :**
+- `deploy-firebase-rules` et `deploy-cmcteams-rules` → **droits d'accès à tes
+  données**. Ta décision. Ils restent sur bouton manuel.
+- `deploy.yml` (le vrai site public) → il n'a **aucun filtre de fichiers** :
+  l'ouvrir publierait le site à chaque push de n'importe quelle branche.
+
+**Ce que j'ai retiré de ma propre liste après relecture** (ils ne mettent rien
+en ligne, ils n'auraient fait qu'ajouter du bruit) :
+- `smoke-test-deploy` : il dort 3 minutes puis compare la version *en ligne*
+  à celle de la branche → avertissements faux depuis une branche.
+- `auto-deploy-vercel` : il ne déploie pas (Vercel s'en charge tout seul), il
+  t'envoie un **Telegram** → ça t'aurait spammé.
+
+**Verrou** : `test:deploiement-declenche` (38 contrôles) encode ta décision.
+Si une session future rouvre les règles aux branches → **échec immédiat**.
+Prouvé par sabotage : ouvrir `deploy-firebase-rules` → 1 échec ;
+ré-épingler Créa AI sur `main` → 2 échecs ; remis en état → 38/0.
+
+**Un point pour toi (je n'ai rien changé sans ton accord)** :
+`firebase-rules-auto-apply.yml` publie les règles Firebase **et écoute déjà
+`claude/**`** — c'est antérieur à ta décision d'aujourd'hui. Il ne se déclenche
+que si je modifie volontairement un fichier-marqueur, et c'est aujourd'hui mon
+seul moyen d'appliquer des règles sans que tu cliques. Dis-moi : je le ferme
+comme les deux autres, ou je le laisse ?
+
+## 2026-09-06 (fin) — « Go tout auto » : j'ai tranché, et j'ai trouvé mieux
+
+### 1. Les règles Firebase ne partent plus d'une branche — sans te coûter un clic
+
+Tu m'as laissé décider. J'ai appliqué **ta** règle jusqu'au bout :
+`firebase-rules-auto-apply` (qui publie les droits d'accès à tes données)
+n'écoute **plus** mes branches. Il ne reste que `main`.
+
+**Et tu ne cliques toujours rien** : je modifie le fichier-marqueur sur ma
+branche → le bot d'auto-fusion l'amène dans `main` → le push sur `main`
+applique les règles. On passe juste par la case `main`, comme tu l'as voulu.
+
+Les **4 exclusions** sont maintenant verrouillées dans le test
+(`deploy-firebase-rules`, `deploy-cmcteams-rules`, `firebase-rules-auto-apply`,
+`deploy`). **39 contrôles, 0 échec.** Sabotage : rouvrir l'un des quatre → échec
+immédiat.
+
+### 2. Le rapport « IA gratuites » de 20h20 prouve que le correctif est en ligne
+
+Il affiche enfin la cause exacte, avec le rattrapage qui a tourné. **Mais** il
+disait `model_429` — un numéro, sans raison. Impossible de savoir s'il fallait
+**attendre** ou **recharger**.
+
+**Corrigé** : Replicate renvoie ses erreurs dans un format qui n'a pas de champ
+« error » — mon contrôle les laissait passer et la phrase explicative était
+jetée. Le rapport dira désormais :
+
+> `create_429: You have reached the free tier spend limit. Add a payment method to continue.`
+
+### 3. Ce que ça veut dire pour toi, concrètement
+
+**Les poses de danse ne sont PAS cassées côté code — les deux moteurs d'image
+sont à sec.** Gemini dit « crédits épuisés », Replicate dit « plafond du palier
+gratuit atteint ». C'est une question d'argent, pas de bug. Tant que l'un des
+deux n'est pas rechargé, cette fonction refusera honnêtement au lieu
+d'inventer une image.
+
+Tests : 39/0 (déploiements) · 27/0 (poses de danse, 2 nouveaux cas) ·
+secrets, actions, dépôt public, destinations, routage IA → tous verts.
+Leçons #232 et #233.

@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 1 }   # PAS de "ref: main" : un push sur claude/** doit deployer CETTE branche
+        with: { fetch-depth: 1 }   # on NE fige PAS la branche : un push sur claude/** deploie CETTE branche
 
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
