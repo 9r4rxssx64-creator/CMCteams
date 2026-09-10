@@ -1,6 +1,6 @@
 # Diagnostic auto-merge — PR #3754 (claude/capcut-mini-versions-66tfum)
 
-Généré le 2026-09-10 19:49 UTC par auto-merge-claude.yml.
+Généré le 2026-09-10 19:56 UTC par auto-merge-claude.yml.
 Ce fichier existe parce que le merge automatique a été REFUSÉ.
 
 ## Cause exacte renvoyée par GitHub
