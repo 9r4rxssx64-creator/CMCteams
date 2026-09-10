@@ -44,6 +44,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 ## 📋 Les branches, par session
 
 | Session | Branche | État au 2.09 |
+| Ménage — extension aux `auto-deploy/*` | `claude/menage-auto-deploy` | 🟢 452 branches de build supprimables (453/461 déjà dans main), garde de source 15/15 |
 |---|---|---|
 | Studio créa | `claude/capcut-mini-versions-66tfum` | ✅ **sur GitLab**, 18 commits |
 | CMCteams | `claude/cmcteams-clicking-issue-rmli6m` | ✅ **sur GitLab**, 15 commits |

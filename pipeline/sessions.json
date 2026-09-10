@@ -381,6 +381,16 @@
       "attend_kevin": null,
       "attend_session": null,
       "note": "Chantier menage termine. Bilan : ruleset corrige, 264 branches claude/* supprimees (389 -> 125), outil branches-superflues.mjs + gardes test:menage-branches (12/12) et test:pipeline-sessions (9/9), registre remis a plat, regle 'branche fusionnee = branche supprimee' ecrite dans PIPELINE-SESSIONS.md."
+    },
+    "menage-autodeploy": {
+      "titre": "Ménage — extension aux auto-deploy/*",
+      "branche": "claude/menage-auto-deploy",
+      "sujet": "461 branches de build jamais regardées par la boucle du ménage",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-10",
+      "attend_kevin": null,
+      "attend_session": null
     }
   },
   "messages": [
