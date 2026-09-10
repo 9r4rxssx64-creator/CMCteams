@@ -11,6 +11,37 @@
 | `index.html` (v9.898) | Modifié : remplacement automatique d'un mois importé par un parseur plus ancien que le seed vérifié + correction du nettoyage de boot qui effaçait les horaires des chefs (« 20/5c ») à chaque ouverture. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/index.html) |
 | `tools/shared/_gen-seed.mjs` + `planning-seed.js` | Modifié : le seed porte la version du parseur qui l'a produit (`parser`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/shared/_gen-seed.mjs) |
 | `LESSONS.md` #246-247 | Le P0 du nettoyage de boot et la règle « import périmé remplacé ». | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+> Dernière mise à jour : **2026-09-10 (soir)** (les configs des workflows arrivent enfin dans `main` — 73 branches robot n'allaient nulle part depuis juin)
+
+### 10 septembre 2026 (soir) — les configs écrites par les workflows arrivent dans `main`
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/actions/publier-config/action.yml` | **Nouveau.** Quand un workflow écrit une config (URL de worker, clé push, catalogue), cette action la fait **arriver dans `main`** : PR créée et fusionnée par le robot, redéploiement lancé, rien de créé si seul l'horodatage a changé. Avant, la config partait sur une branche que personne ne fusionnait jamais. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/actions/publier-config/action.yml) |
+| `tests/verify-branches-robot.mjs` | **Nouveau garde** (dans `test:ci`) : un workflow qui crée une branche robot doit dire ce qu'elle devient — publiée dans `main`, ou « de relecture ». Une branche qui ne va nulle part fait échouer le test. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-branches-robot.mjs) |
+| `.github/workflows/la-detente-printify-order-deploy.yml` | Modifié : la **clé des notifications push** (`push-config.json`) va enfin dans `main` — la boutique la demandait depuis juin sans jamais la recevoir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/la-detente-printify-order-deploy.yml) |
+| `.github/workflows/la-detente-worker-deploy.yml` · `…-printify-connect.yml` · `…-printify-catalog.yml` · `…-printify-blueprints.yml` | Modifiés : même mécanisme pour l'URL du worker Gemini, la config Printify et les deux catalogues. | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/.github/workflows) |
+| `.github/workflows/auto-merge-claude.yml` | Modifié : si le seul conflit est le rapport de ménage (régénéré des deux côtés), le robot garde la version de `main` au lieu d'abandonner la fusion. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) |
+| `LESSONS.md` | Leçon **#243** : un push signé par le jeton du robot ne réveille jamais un autre workflow — « auto-merge » écrit dans un journal n'a jamais rien fusionné. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
+> Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
+
+Les 6 fichiers que la méthode d'audit exige. À lire dans l'ordre : le **02** pour les chiffres,
+le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `audit/apex-chat/00-INVENTAIRE.md` | Ce qu'est vraiment l'app, mesuré : pile réelle (0 dépendance), 24 194 lignes, **64 routes** dont 20 d'admin, 27 tables, **0 secret** dans le dépôt | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/00-INVENTAIRE.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/00-INVENTAIRE.md) |
+| `audit/apex-chat/01-FONCTIONS.md` | **F01→F78** : tout ce que l'app sait faire, une ligne par fonction, avec son état de test. 2 seules sans test (écrans admin en lecture seule) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/01-FONCTIONS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/01-FONCTIONS.md) |
+| `audit/apex-chat/02-RESULTATS.md` | Les chiffres, avec la commande qui les a produits : **1115/1115 tests**, couverture **89,47 %**, **0 finding ouvert** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/02-RESULTATS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/02-RESULTATS.md) |
+| `audit/apex-chat/03-FINDINGS.md` | Les 5 problèmes trouvés le 5/09 — **tous corrigés et prouvés**. La porte admin (le plus grave) est fermée depuis le 6 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/03-FINDINGS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/03-FINDINGS.md) |
+| `audit/apex-chat/04-DESIGN.md` | Le design **mesuré** et pas apprécié : 20 jetons de couleur, encoche iPhone traitée, 67 libellés accessibles, et les 2 dettes chiffrées | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/04-DESIGN.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/04-DESIGN.md) |
+| `audit/apex-chat/05-JOURNAL.md` | **Ce que je n'ai PAS pu vérifier**, en 10 points, et pourquoi. Plus mon auto-critique | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/05-JOURNAL.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/05-JOURNAL.md) |
+> Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 
 ### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
 

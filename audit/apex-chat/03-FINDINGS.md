@@ -6,13 +6,18 @@
 
 ---
 
-## [P0] Un jeton admin de 30 jours s'obtient sans OTP, avec un numéro public
+## [P0] Un jeton admin de 30 jours s'obtient sans OTP, avec un numéro public — ✅ CORRIGÉ v1.1.283→v1.1.284
 
 - **Axe** : Sécurité
 - **Fichier** : `messaging-app/workers/api-worker.js:759-806` (bypass) · `messaging-app/index.html:7193` (fuite du numéro)
-- **Statut** : ✅ **VÉRIFIÉ** — reproduit en bac à sable, handler réel importé
+- **Statut** : ✅ VÉRIFIÉ (reproduit en bac à sable le 05/09) → ✅ **CORRIGÉ ET PROUVÉ** (v1.1.284, re-mesuré le 10/09)
 
-### Preuve (sortie réelle)
+> **⚠️ Ce finding décrivait l'état du 5 septembre. Il est fermé depuis le 6.**
+> Le correctif et sa preuve mesurée sont en bas de section (« ✅ Correctif appliqué »).
+> Ce qui suit est conservé **tel quel** comme trace de la faille d'origine — c'est ce
+> qui permet de vérifier que le correctif ferme bien *ce* trou-là, et pas un autre.
+
+### Preuve (sortie réelle, 2026-09-05, AVANT correctif)
 
 ```
 POST /api/auth/verify-otp  { phone:"‹tél. admin›", pseudo:"pirate", otp:"000000" }
@@ -84,6 +89,63 @@ Sabotage de contrôle : réactiver le bypass → le test doit échouer.
 
 **Effort** : S (quelques lignes) · **Régression possible** : Kevin doit pouvoir se reconnecter —
 prévoir le chemin de secours (Face ID déjà présent) **avant** de fermer la porte.
+
+### ✅ Correctif appliqué — v1.1.283 → v1.1.284 (2026-09-06)
+
+La faille tenait sur **deux jambes** : un secret qui n'en était pas un (un numéro publié dans la
+page), et une porte qui s'ouvrait sur la seule présentation de ce secret. Les deux sont coupées.
+
+**1. Le numéro n'est plus dans le fichier public** (`index.html`)
+Les deux occurrences (`isKevinByPhone`, `K.authData.phone === …`) sont supprimées avec le
+mécanisme d'admin-par-le-nom (finding P1 ci-dessous, v1.1.285). L'admin est décidé **côté
+serveur** uniquement (`user.is_admin` du Worker + JWT).
+
+**2. La porte exige une vraie preuve** (`workers/api-worker.js`, ~l. 805-830)
+
+```js
+if (kevinSecret && phoneNorm === kevinSecret) {
+// v1.1.283 — FERMETURE PORTE ADMIN (audit 05/09, faille P0).
+if (env.ADMIN_BYPASS_REQUIRE_MFA === 'true') {
+  const provided = (request.headers.get('X-Apex-Admin-Token') || '').trim();
+  const expected = (env.APEX_CHAT_ADMIN_TOKEN || '').trim();
+  if (!expected || provided !== expected) {
+    return err('Preuve admin requise (Face ID / clé admin)', 401, 'admin_mfa_required', …);
+  }
+}
+```
+
+Connaître le numéro ne suffit plus : il faut **un secret que le client ne porte pas**
+(`APEX_CHAT_ADMIN_TOKEN`, secret Cloudflare). Le chemin admin normal reste le **SSO central**
+(`/api/auth/sso-from-kdmc` → Face ID / passkey) ; `X-Apex-Admin-Token` n'est que l'anti-lock-out.
+La régression annoncée plus haut (« Kevin doit pouvoir se reconnecter ») est donc traitée : le
+drapeau n'a été activé qu'**après** que le chemin de secours existe.
+
+**Preuve — chaîne mesurée le 2026-09-10** (statut ✅ VÉRIFIÉ, commandes exécutées) :
+
+| Contrôle | Commande | Résultat |
+|---|---|---|
+| Le numéro a quitté la page publique | `grep -rn "‹tél. admin›" index.html` | **0 ligne** ✅ |
+| Il ne reste que dans les tests | `grep -rln … .` | **12 fichiers de test** (non servis) — plus aucun `.md` depuis le 10/09, voir P3 ✅ |
+| La garde est ACTIVE en config déployée | `grep … workers/wrangler.toml:140` | `ADMIN_BYPASS_REQUIRE_MFA = "true"` ✅ |
+| Le backdoor universel reste fermé | `workers/wrangler.toml:149` | `ALLOW_TEST_OTP = "false"` ✅ |
+| Les deux gardes passent | `npx vitest run …mfa… …phone…` | **6/6 verts** (1,01 s) ✅ |
+| Suite complète | `npx vitest run` | **1115/1115, 59 fichiers** (18,13 s) ✅ |
+
+**Discriminant prouvé par sabotage** (`tests/unit/admin-bypass-mfa.test.js`, en-tête du fichier) :
+retirer la garde `ADMIN_BYPASS_REQUIRE_MFA` du worker → **le 3ᵉ test échoue** (« l'inconnu
+redeviendrait admin »). Le test couvre les 3 comportements : drapeau OFF → accès comme avant
+(pas de lock-out à l'activation) · drapeau ON + jeton correct → accès accordé · drapeau ON +
+jeton absent/faux → **401 `admin_mfa_required`**. Second garde : `no-admin-phone-in-page.test.js`
+échoue si le numéro revient dans `index.html`.
+
+**🔴 Limite honnête — ce qui n'a PAS pu être vérifié** : je n'ai pas pu rejouer la requête
+contre le **Worker réellement déployé**. Le POST vers
+`apex-chat-api.9r4rxssx64.workers.dev/api/auth/verify-otp` est refusé par la politique de sortie
+réseau de cette session (`CONNECT tunnel failed, response 403` — refus d'egress, pas du service ;
+règle du proxy : on le signale, on ne le contourne pas). Tout ce qui précède prouve donc que
+**le code source et la configuration versionnée** ferment la porte, pas que le déploiement en
+production porte bien cette version. Ce dernier maillon se ferme par la CI, réseau ouvert :
+Actions → `apex-chat-e2e.yml`, qui rejoue le parcours contre le vrai worker.
 
 ---
 
@@ -259,12 +321,47 @@ Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 
 ---
 
+## [P3] Le numéro personnel de Kevin reste écrit dans 12 fichiers de test d'un dépôt **public**
+
+- **Axe** : Vie privée (plus sécurité)
+- **Fichiers** : `messaging-app/tests/unit/*.js` (11) + `tests/e2e/auth-flow.spec.js`
+- **Statut** : ✅ VÉRIFIÉ (`grep -rln`) · **partiellement traité** le 10/09
+
+**Ce que ce n'est PAS** : ce n'est plus une faille. Depuis v1.1.284, connaître ce numéro
+n'ouvre **aucune** porte — l'admin exige une preuve serveur (`X-Apex-Admin-Token` ou SSO
+Face ID). Le classer P0 serait crier au loup.
+
+**Ce que c'est** : une **donnée personnelle** publiée. Le dépôt `9r4rxssx64-creator/CMCteams`
+est public ; n'importe qui peut lire le numéro de portable de Kevin, et un moissonneur
+automatique le récupérera. Le risque est du démarchage et de l'hameçonnage par SMS, pas une
+intrusion dans l'app.
+
+**Traité le 10/09** : le numéro a été retiré de `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`
+(le seul document en prose qui le portait — la ligne décrivait en plus un comportement
+supprimé depuis, elle a été corrigée en même temps). ✅ Vérifié : **plus aucun `.md`** du
+dépôt ne contient le numéro.
+
+**Reste à faire — délibérément pas fait dans cette passe** : les 12 fichiers de test l'utilisent
+comme donnée de scénario (ils testent justement le chemin admin). Les modifier, c'est toucher
+**12 fichiers d'une suite verte à 1115/1115** pour un gain de confidentialité, pas de sécurité.
+Le faire à la fin d'une passe d'audit, sans nécessité, c'est prendre un risque de régression
+contre un bénéfice modeste — l'inverse de « jamais régresser ».
+
+**Correctif recommandé (étape séparée, à froid)** : extraire le numéro dans **une** constante
+de test partagée (`tests/unit/api-worker-helpers.js` porte déjà les fixtures communes), lue
+depuis `process.env.APEX_TEST_ADMIN_PHONE` avec un numéro fictif par défaut — même schéma que
+le code admin, qui ne s'écrit jamais et se lit dans l'environnement. Douze occurrences
+deviennent alors une, et la suite reste verte.
+**Effort** : S · **Régression possible** : faible mais réelle (12 fichiers, 1115 tests).
+
+---
+
 ## Ce qui est solide (vérifié, pas supposé)
 
 | Point | Preuve |
 |---|---|
-| Suite de tests | ✅ **1077 tests / 51 fichiers, tous verts** (`npx vitest run --coverage`, 18,3 s) |
-| Couverture | ✅ `lib/` **100 %** · workers/DO **100 %** · `api-worker.js` 82,61 % (plancher 80 % tenu) |
+| Suite de tests | ✅ **1115 tests / 59 fichiers, tous verts** (`npx vitest run`, 18,13 s — re-mesuré 10/09) |
+| Couverture | ✅ Global **89,47 %** lignes / 84,30 % branches / 94,96 % fonctions · `lib/` **100 %** · DO **100 %** · `ia`/`push`/`sms`-worker **100 %** · `api-worker.js` **83,42 %** (plancher 80 % tenu) |
 | Backdoor `000000` universel | ✅ **FERMÉ** — `ALLOW_TEST_OTP = "false"` (`wrangler.toml`) |
 | Secrets en dur | ✅ **Aucun** — scan `sk-ant-`/`AIza`/`ghp_`/`whsec_`/`sk_live_` : 0 résultat hors tests |
 | Vérification JWT | ✅ Correcte — HMAC systématique, l'en-tête `alg` n'est jamais lu (pas de confusion d'algorithme), expiration contrôlée |
@@ -280,9 +377,9 @@ Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 |---|---|---|
 | `messaging-app/README.md:4` | « Chiffrement militaire post-quantum (PQXDH) — Serveur aveugle » | `lib/crypto-core.js` : **ECDH P-256 + HKDF-SHA256 + AES-GCM-256 + PBKDF2 100k**. Solide, mais **rien de post-quantique** : zéro Kyber, zéro ML-KEM dans tout le dépôt. Seul `0001_init.sql:30` porte un commentaire « Kyber-768 » sur une colonne remplie de `'PENDING_PQXDH'` |
 | `messaging-app/README.md` | « Serveur aveugle » | Faux en mode A : `kdmc_admin` est membre invisible de chaque conversation |
-| `messaging-app/README.md` | « Phase 1 (Foundation) en cours », fichiers « à créer » | Tout existe : 16 098 lignes de front, 5 902 lignes de worker, 823 lignes de DO |
-| `MEMO_KEVIN_RESTE_A_FAIRE.md` | Daté v1.1.3, demande de fermer le backdoor `000000` | Fermé depuis v1.1.174. Le document a **278 versions de retard** |
-| `messaging-app/package.json:3` | `"version": "1.1.262"` | L'app tourne en `v1.1.281` |
+| `messaging-app/README.md` | « Phase 1 (Foundation) en cours », fichiers « à créer » | Tout existe : **16 293** lignes de front, **6 946** lignes de workers, **834** lignes de DO (mesuré 10/09) |
+| `MEMO_KEVIN_RESTE_A_FAIRE.md` | Daté v1.1.3, demande de fermer le backdoor `000000` | Fermé depuis v1.1.174. Le document a **285 versions de retard** — et il **contient encore le numéro admin en clair** (fichier de travail, non servi, mais à nettoyer) |
+| ~~`messaging-app/package.json:3`~~ | ~~`"version": "1.1.262"`~~ | ✅ **CORRIGÉ** : `package.json` = `1.1.288` = `index.html` (`__APEX_CHAT_VERSION__`, l. 461) |
 
 L'app livrée dit la vérité ; ce sont les documents internes qui sont périmés. C'est l'inverse
 du danger habituel, mais ça reste un risque : quelqu'un qui lit le README croit vendre du
@@ -325,3 +422,29 @@ avec un jeton admin volé. Le statut de membre invisible est certain ; savoir si
 déchiffrer demanderait de rejouer un échange de clés réel entre deux clients, ce que je n'ai pas
 fait. J'ai donc décrit ce qui est prouvé (identités, numéros, GPS, pouvoirs d'administration) et
 signalé le reste comme non tranché, plutôt que d'annoncer « il lit tous tes messages ».
+
+---
+
+## Addendum — 2026-09-10 (passe de re-mesure)
+
+Ce document avait **quatre jours de retard sur le code** : les 5 findings étaient corrigés, mais
+le P0 — le plus grave — était encore rédigé comme *ouvert*. Un livrable d'audit périmé est un
+livrable qui **ment**, dans le sens le plus dangereux (il fait croire à un trou qui n'existe
+plus, donc il fait perdre la confiance dans les quatre autres lignes qui, elles, sont justes).
+Corrigé ci-dessus, avec la chaîne de mesure et sa date.
+
+**Ce qui reste vrai de l'auto-critique du 05/09** : je n'ai toujours **pas touché le vrai site**.
+La question « `KEVIN_PHONE_E164` en production vaut-il le numéro publié ? » est en revanche
+devenue **sans objet** : le numéro n'est plus publié nulle part dans le fichier servi, donc il
+n'y a plus de secret client à faire correspondre. Le maillon manquant a changé de nature : ce
+n'est plus « la faille est-elle exploitable ? » mais « **la version déployée porte-t-elle bien
+le correctif ?** ». Cette question-là ne se tranche pas depuis cette session (egress 403) — elle
+se tranche en CI (`apex-chat-e2e.yml`).
+
+**Ce dont je ne suis toujours pas certain** : que le Worker en production tourne la v1.1.288.
+`workers_get_worker` (MCP Cloudflare) ne renvoie ici que `name`/`id`, sans `modified_on` — je ne
+peux donc pas dater le déploiement, et je ne l'affirme pas.
+
+Les livrables `00-INVENTAIRE.md`, `01-FONCTIONS.md`, `02-RESULTATS.md`, `04-DESIGN.md` et
+`05-JOURNAL.md`, absents jusqu'ici (le protocole d'audit en exige six, il n'y en avait qu'un),
+ont été écrits dans la même passe.

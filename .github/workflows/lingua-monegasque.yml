@@ -45,6 +45,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # branche-de-relecture : la moisson est déposée pour être RELUE avant de bâtir le cours,
+          # jamais fusionnée automatiquement (garde : tests/verify-branches-robot.mjs, leçon #243).
           BR="claude/monegasque-sources-${{ github.run_id }}"
           git checkout -b "$BR"
           git add audit/monegasque
