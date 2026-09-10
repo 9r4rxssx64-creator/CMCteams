@@ -63,6 +63,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Correctif Vercel (annexe de la précédente) | `claude/vercel-config-main` | ✅ **fusionnée** (0 commit hors de main, mesuré le 10.09) — l'alerte ci-dessous est conservée pour l'historique : — partie de `main` le 6.09, 4 fichiers. Répare les 2 `vercel.json` refusés par le schéma Vercel : tant qu'elle n'est pas dans `main`, **chaque push de chaque branche envoie un mail d'échec à Kevin**. Voir message m036. |
 | Garde anti-fuite de secrets (annexe) | `claude/secrets-guard-main` | ✅ **fusionnée** (0 commit hors de main, mesuré le 10.09) — l'alerte ci-dessous est conservée pour l'historique : — partie de `main` le 6.09. 4 secrets encore en clair sur `main` (dépôt PUBLIC) + la garde qui les attrape. Voir message m036. |
 | Lingua — connexion prénom + nom | `claude/lingua-connexion-honnete` | ✅ fusionnée (0 commit hors de main, mesuré le 10.09) |
+| Ménage des branches — pourquoi 0 supprimée sur 379 | `claude/menage-branches-cause-exacte` | 🟢 diagnostic mesuré le 10.09 : ruleset `16725169` en `~ALL` (bloque toute suppression) + historique de `main` reconstruit le 09.08 (314 branches sur 361 sans ancêtre commun). PR #3725 |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
 | CMCteams — fidélité au PDF (planning/équipes/départs) | `claude/verify-cmcteams-light-data-rzlvau` | 🟢 septembre 2026 : 248/248 personnes et 7 440/7 440 cellules identiques au PDF, des deux côtés (6.09) |
 
