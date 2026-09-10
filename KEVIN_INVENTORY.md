@@ -1,6 +1,21 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
+> Dernière mise à jour : **2026-09-10 (soir)** (les configs des workflows arrivent enfin dans `main` — 73 branches robot n'allaient nulle part depuis juin)
+
+### 10 septembre 2026 (soir) — les configs écrites par les workflows arrivent dans `main`
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/actions/publier-config/action.yml` | **Nouveau.** Quand un workflow écrit une config (URL de worker, clé push, catalogue), cette action la fait **arriver dans `main`** : PR créée et fusionnée par le robot, redéploiement lancé, rien de créé si seul l'horodatage a changé. Avant, la config partait sur une branche que personne ne fusionnait jamais. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/actions/publier-config/action.yml) |
+| `tests/verify-branches-robot.mjs` | **Nouveau garde** (dans `test:ci`) : un workflow qui crée une branche robot doit dire ce qu'elle devient — publiée dans `main`, ou « de relecture ». Une branche qui ne va nulle part fait échouer le test. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-branches-robot.mjs) |
+| `.github/workflows/la-detente-printify-order-deploy.yml` | Modifié : la **clé des notifications push** (`push-config.json`) va enfin dans `main` — la boutique la demandait depuis juin sans jamais la recevoir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/la-detente-printify-order-deploy.yml) |
+| `.github/workflows/la-detente-worker-deploy.yml` · `…-printify-connect.yml` · `…-printify-catalog.yml` · `…-printify-blueprints.yml` | Modifiés : même mécanisme pour l'URL du worker Gemini, la config Printify et les deux catalogues. | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/.github/workflows) |
+| `.github/workflows/auto-merge-claude.yml` | Modifié : si le seul conflit est le rapport de ménage (régénéré des deux côtés), le robot garde la version de `main` au lieu d'abandonner la fusion. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) |
+| `LESSONS.md` | Leçon **#243** : un push signé par le jeton du robot ne réveille jamais un autre workflow — « auto-merge » écrit dans un journal n'a jamais rien fusionné. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 > Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
 ## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)

@@ -53,6 +53,37 @@ minimum démarrer et produire sa sortie.
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 (soir) — 73 branches robot « silencieuses » : elles n'allaient nulle part, et la boutique attendait un fichier que main n'a jamais reçu
+
+### Ce qui a été trouvé (mesuré, pas supposé)
+
+- **131 branches `claude/*` non fusionnées sur 379.** Parmi elles, **73 branches robot** (`printify-order-config-<run>`, `worker-config-<run>`, `e2e-shot-<run>`…) créées par **10 workflows** qui écrivaient « Poussé (auto-merge) » dans leur journal.
+- **Pourquoi elles n'ont jamais été fusionnées** : un push signé par le jeton du robot ne déclenche **jamais** un autre workflow, et le message portait `[skip ci]`. La fusion automatique ne les a donc **jamais vues**. Ça dure depuis juin.
+- **Conséquence réelle** : la boutique La Détente demande `push-config.json` (clé pour les notifications push) — ce fichier a été écrit 18 fois sur 18 branches et **jamais** dans `main`. En production, il n'existe pas. `printify-catalog.json` : pareil.
+- **Bruit** : les branches `worker-config` ne changeaient QUE l'horodatage `updated_at` (URL identique) → une branche par déploiement pour rien.
+- **Le robot de ménage ne peut pas les supprimer** : elles ne sont pas dans `main`, et une règle du dépôt refuse les suppressions (mesuré par la session « ménage-branches » ce matin : 0 supprimée sur 379).
+
+### Ce qui a été fait
+
+| Quoi | Où |
+|---|---|
+| **Une action réutilisable** qui publie une config dans `main` : compare **hors horodatage** (rien si identique), refuse depuis une branche `claude/*`, crée la PR, la **fusionne** elle-même, relance `deploy.yml`, et **rougit avec la cause exacte** si la fusion est refusée | `.github/actions/publier-config/action.yml` |
+| **5 workflows** La Détente (worker Gemini, worker commande + clé push, connexion Printify, catalogue, blueprints) passent par cette action au lieu de pousser une branche orpheline | `.github/workflows/la-detente-*.yml` |
+| **5 workflows** dont la branche est faite pour être **lue** (images IA, captures E2E, moisson monégasque) portent le marqueur `# branche-de-relecture` : c'est écrit noir sur blanc qu'elle n'est pas censée fusionner | idem |
+| **Garde** `npm run test:branches-robot` (dans `test:ci`) : un workflow qui crée une branche `claude/*-<run_id>` doit soit publier via l'action, soit se déclarer « de relecture ». Tout le reste = échec | `tests/verify-branches-robot.mjs` |
+| **Étape « Rattraper main » du robot** : quand le seul conflit est le rapport de ménage `.github/CLEANUP-REPORT.md` (régénéré à chaque exécution des deux côtés), la version de `main` est gardée au lieu d'abandonner la fusion | `.github/workflows/auto-merge-claude.yml` |
+
+### Ce qui a été réveillé à la main (branches d'autres sessions, inactives)
+
+- `claude/miroir-pour-chaque` (PR #3669, endormie depuis le 5.09 parce que sa fusion avait échoué sur le journal AVANT le correctif « union ») : `main` fusionné dedans, commit de réveil sans `[skip ci]`.
+- `claude/apex-ultra-review-crew-MZ8nS` : ma poussée a été **refusée**, et c'est tant mieux — la session était **active le matin même** (35 PR). Elle a fini par entrer dans `main` toute seule. Règle appliquée : on ne touche jamais à une branche active.
+
+### Ce qui reste (pas à moi de décider)
+
+- Les **73 branches robot existantes** restent là : la règle du dépôt interdit leur suppression (sujet de la session « ménage-branches », pas de doublon de travail ici).
+- Les nouvelles exécutions des 5 workflows corrigés vont, elles, faire arriver `push-config.json` et `printify-catalog.json` dans `main` — la preuve viendra du **prochain déploiement**, pas d'ici.
+
+Leçon **#243** dans `LESSONS.md`.
 ## 10 septembre 2026 (soir) — Ménage des branches : l'outil, et la correction de ce que j'avais écrit le matin
 
 **Le matin**, j'avais écrit dans `ETAT-INFRA.md` qu'un « repli par comparaison d'arbres » suffirait

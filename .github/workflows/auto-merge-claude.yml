@@ -149,8 +149,24 @@ jobs:
               echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."
             fi
           else
-            echo "::warning::Conflit sur du CODE, pas seulement le journal : $(git diff --name-only --diff-filter=U | tr '\n' ' ')— à résoudre par la session ; la PR restera ouverte."
-            git merge --abort
+            # 2026-09-10 : le rapport du ménage (.github/CLEANUP-REPORT.md) est RÉGÉNÉRÉ à chaque
+            # exécution, sur la branche ET sur main → deux versions différentes du même fichier
+            # neuf = conflit « add/add » que le pilote « union » ne couvre pas (ce n'est pas un
+            # journal, c'est un instantané). Vécu : 35 PR sur claude/apex-ultra-review-crew-MZ8nS,
+            # fusionnées à la main par la session à chaque fois. Ici on garde la version de main
+            # (la plus récente) : elle sera de toute façon réécrite au prochain ménage.
+            U=$(git diff --name-only --diff-filter=U)
+            if [ "$U" = ".github/CLEANUP-REPORT.md" ]; then
+              git checkout --theirs .github/CLEANUP-REPORT.md
+              git add .github/CLEANUP-REPORT.md
+              git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit -q --no-edit
+              echo "OK: seul le rapport de ménage était en conflit → version de main gardée ($(git rev-parse --short HEAD))"
+              git push origin "HEAD:refs/heads/$BRANCH" \
+                || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."
+            else
+              echo "::warning::Conflit sur du CODE, pas seulement le journal : $(echo "$U" | tr '\n' ' ')— à résoudre par la session ; la PR restera ouverte."
+              git merge --abort
+            fi
           fi
 
       - name: Create & merge PR into main
