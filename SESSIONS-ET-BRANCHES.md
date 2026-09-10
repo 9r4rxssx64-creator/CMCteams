@@ -53,7 +53,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | La détente | `claude/priority-action-workflow-iKc0T` | 🟠 en attente d'une réponse de Kevin |
 | ClayScore | `claude/clayscore-development-df6rj1` | 🟢 travail prêt |
 | Apex ai | `claude/apex-ultra-review-crew-MZ8nS` | 🟢 travail prêt |
-| Apex chat | `claude/apex-chat-multi-messenger-dvpo2u` | 🟢 travail prêt |
+| Apex chat | `claude/apex-chat-mfa-faceid` | 🟢 travail prêt (branche réelle depuis le 10.09 — l'ancienne `apex-chat-multi-messenger-dvpo2u` restait inscrite à cause du faux succès de `enregistrer`, m056) |
 | Pool robot | `claude/pool-robot-app-mapping-kcmx03` | 🟢 travail prêt |
 | Jacob (finances) | `claude/finances-engins-tracking` | 🟢 travail prêt |
 | Crypto trading bot | `claude/crypto-trading-bot-irrfu6` | 🟢 travail prêt |
