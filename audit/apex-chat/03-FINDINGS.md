@@ -533,3 +533,90 @@ peux donc pas dater le déploiement, et je ne l'affirme pas.
 Les livrables `00-INVENTAIRE.md`, `01-FONCTIONS.md`, `02-RESULTATS.md`, `04-DESIGN.md` et
 `05-JOURNAL.md`, absents jusqu'ici (le protocole d'audit en exige six, il n'y en avait qu'un),
 ont été écrits dans la même passe.
+
+---
+
+## Addendum — 2026-09-10 (soir) — le scan sécu outillé a tourné : ce qu'il dit **vraiment** d'Apex Chat
+
+Le tableau « Ce que je n'ai PAS pu faire » plus haut est désormais faux sur sa troisième ligne :
+`security-suite.yml` (run `34519764156`) et `strix-scan.yml` (run `34520670517`) ont tourné, lancés
+par `node tools/ci/ci.mjs run`, et leur rapport a été lu par `node tools/ci/ci.mjs report`.
+
+**Chiffre brut, à ne pas prendre pour un verdict** : 2 211 signalements sur **tout** le dépôt
+(gitleaks 258, TruffleHog 52, OSV 17, Trivy 0, Semgrep 1 167, zizmor 717). La règle de l'audit
+impose de **vérifier chaque signalement avant d'agir** et d'écarter les faux positifs **avec
+preuve**. Voici le tri, limité au périmètre Apex Chat (`messaging-app/` + les 19 workflows qui
+le touchent), avec pour chaque classe : ce que dit l'outil, ce que j'ai vérifié, la conclusion.
+
+### [P3] Outils de test d'Apex Chat portant 7 vulnérabilités connues — ✅ CORRIGÉ le 10/09
+
+- **Axe** : sécurité (dépendances) · **Fichier** : `messaging-app/package.json`
+- **Preuve** (`npm audit`, exécuté ici) : **production : 0** vulnérabilité. Outils de test :
+  **7** (4 critiques, 1 haute, 2 moyennes) — toutes dans la chaîne `vitest 1.x` (`@vitest/ui`
+  : lecture de fichiers arbitraires quand son serveur écoute · `happy-dom 14` : évasion du bac
+  à sable → exécution de code depuis une balise `<script>` · `vite`/`esbuild` : traversée de
+  chemin, serveur de dev interrogeable).
+- **Impact réel** : aucun sur l'app déployée — ces paquets ne tournent qu'en CI et sur les
+  machines de test. Le risque est un test qui charge du HTML hostile.
+- **Cause racine** : versions figées depuis la création du projet (`^1.6.0`, `^14.12.0`), aucun
+  garde ne signale une dépendance de test vulnérable.
+- **Correctif** : `vitest 5`, `@vitest/ui 5`, `@vitest/coverage-v8 5`, `happy-dom 20` →
+  `npm audit` : **0** vulnérabilité, toutes catégories.
+- **Test qui prouve** : **1 117 / 1 117** tests unitaires verts après mise à jour. Un seul
+  fichier a dû être adapté (`tests/unit/visio-mesh.test.js`) : happy-dom 20 rend `navigator`
+  non assignable, le test redéfinit la propriété au lieu de l'écraser. Comportement testé
+  inchangé.
+- **Effort** : S · **Régression possible** : aucune sur l'app (paquets de test uniquement).
+
+### [P3] Deux workflows installaient `wrangler` sans version, avec le jeton Cloudflare en main — ✅ CORRIGÉ le 10/09
+
+- **Axe** : sécurité (chaîne d'approvisionnement) · **Fichiers** : `deploy-apex-chat.yml`
+  (`npm install -g wrangler`), `sync-secrets-to-cloudflare.yml` (`wrangler@latest`).
+- **Preuve** : zizmor « adhoc-packages » ; lecture des deux lignes.
+- **Impact** : « ce que npm publiera demain » s'exécute avec le jeton qui déploie l'API et pose
+  les secrets. Une majeure publiée avec un changement de comportement casse un déploiement ;
+  un paquet compromis fait pire.
+- **Correctif** : `wrangler@4` — c'est ce qui tourne déjà (dernier déploiement vert
+  `34520637740` a installé la dernière version, 4.x). Zéro changement de comportement aujourd'hui,
+  plus de saut de majeure silencieux demain.
+- **Test qui prouve** : YAML validé ; le prochain déploiement le prouvera en vrai.
+
+### [P3] Un job de déploiement sans `permissions:` déclarées — ✅ CORRIGÉ le 10/09
+
+- **Fichier** : `deploy-cloudflare-workers.yml` (services Apex, adjacent à Apex Chat — il est
+  apparu dans le périmètre parce qu'il déploie `chat-svc`).
+- **Preuve** : zizmor « excessive-permissions » ; le job ne fait que `wrangler` + `curl` vers
+  Cloudflare, jamais un `git push` ni un appel `gh`.
+- **Correctif** : `permissions: contents: read` sur le job. Les 18 autres workflows du
+  périmètre déclaraient déjà leurs permissions.
+
+### Écartés avec preuve (faux positifs)
+
+| Outil · règle | Ce qu'il signale | Ce que j'ai vérifié | Verdict |
+|---|---|---|---|
+| gitleaks × 8 | `messaging-app/workers/push-worker.js` | Lecture du fichier : **une clé VAPID publique** (envoyée à chaque navigateur, publique par conception) et les deux chaînes `-----BEGIN/END PRIVATE KEY-----` qui servent à **retirer l'en-tête** d'une variable d'environnement. Aucune valeur de clé dans le fichier | faux positif |
+| TruffleHog × 52 (dépôt entier) | « secrets » | **0 confirmé vivant** par l'outil lui-même (vérification auprès des fournisseurs) | rien à révoquer |
+| zizmor « template-injection » | 149 sur le dépôt | Passe `awk` sur les 19 workflows Apex Chat : **0** `${{ github.event.* }}` dans un `run:` | hors périmètre |
+| zizmor « artipacked » | 5 étapes `upload-artifact` du périmètre | Chemins : rapports Playwright, couverture, un fichier chiffré `/tmp/out/latest.sql.enc` — **jamais le dépôt** ni `.git/` | faux positif |
+| zizmor « unpinned-uses » | 33 `uses:` du périmètre | Tous des actions **officielles** (`actions/*`, `cloudflare/wrangler-action`) sur une **version publiée** (`@v4`, `@v6`…), conformes à la règle du dépôt public | recommandation P3 : épingler sur un SHA, pas une faille |
+| Semgrep « plaintext-http-link » × 2 | `tests/unit/media-gallery.test.js` | `http://b.io` = URL de **fixture** dans un test, jamais appelée | faux positif |
+| OSV × 17 (dépôt entier) | dépendances | `messaging-app` : production 0 (mesuré `npm audit`) ; les 7 de test corrigées ci-dessus. Les autres lignes sont dans d'autres lockfiles du dépôt | hors périmètre |
+
+### Ce que je n'ai **pas** pu trier — et l'outil construit pour le faire
+
+**9 des 11 signalements Semgrep de `messaging-app` restent anonymes.** Le rapport lisible depuis
+cette session ne portait que des comptes par règle et par dossier, pas les lignes. Rejouer
+Semgrep ici est impossible : ses règles se téléchargent depuis `semgrep.dev`, injoignable
+(mesuré : réponse 000). J'ai donc ajouté à `security-suite.yml` une entrée `detail_path` :
+pour les préfixes demandés, le check-run liste **chaque signalement** (outil · gravité ·
+fichier:ligne · règle), plafonné à 400 lignes, sans jamais imprimer la valeur d'un secret.
+Résultat de cette lecture : § 6.5 de `02-RESULTATS.md`.
+
+### Pentest IA (Strix) — exécuté, mais tué par le délai
+
+`strix-scan.yml` a été **arrêté par le délai de 26 minutes** (rc = 124) avant d'écrire son
+rapport. Son tableau de bord annonce **1 vulnérabilité MEDIUM** dont je ne connais **pas le
+contenu**. Coût mesuré de cette exécution : **13,77 $** (31,8 M jetons, modèle gpt-5.4, avec
+des erreurs de flux « Error streaming response » répétées). Je ne l'ai **pas relancé** : ça
+coûte de l'argent réel, et il faudrait d'abord allonger le délai et capturer le dossier de
+travail à l'arrêt. C'est une décision pour Kevin.

@@ -99,7 +99,8 @@ chemin légitime existe et a le réseau ouvert : Actions → `apex-chat-e2e.yml`
 | **LIVE Apex Chat** (`apex-chat-e2e.yml`) | ✅ **EXÉCUTÉE, puis VERTE** | 1ʳᵉ passe : **prod HTTP 200**, **18 OK / 2 KO** (le même test sur 2 navigateurs) → cause identifiée, test corrigé → **2ᵉ passe : 20/20 ✅** (run `34518010574`, l'issue d'échec #3742 s'est refermée automatiquement) |
 | **LIVE domaine** (`audit-live.yml`) | ✅ **EXÉCUTÉE** | Toutes les surfaces répondent **sauf `lingua.kd-mc.com`** (hors périmètre Apex Chat, signalé à part) |
 | **Second avis indépendant** (`ai-review-independent.yml`) | 🔴 **ÉTEINT — découverte majeure** | **0 succès sur 100 runs** (92 sautés, 6 échecs, 2 annulés). Cause + correctif : voir ci-dessous |
-| **Scan sécu outillé** (`security-suite.yml`, `strix-scan.yml`) | ⏳ lancés, en cours à la clôture de cette passe | à relire via `node tools/ci/ci.mjs runs security-suite.yml` |
+| **Scan sécu outillé** (`security-suite.yml`) | ✅ **EXÉCUTÉ, LU, TRIÉ** (run `34519764156`) | **2 211 signalements bruts** sur tout le dépôt, **0 secret confirmé vivant** (TruffleHog). Pour Apex Chat : voir § 6.5 — 0 vulnérabilité en production, 7 dans les outils de test **corrigées**, 3 durcissements de workflows **appliqués**, 9 signalements Semgrep encore à identifier (outil livré pour les lire) |
+| **Pentest IA** (`strix-scan.yml`) | ⏱ **EXÉCUTÉ mais TUÉ par le délai** (run `34520670517`, rc = 124 à 26 min) | Le tableau de bord annonce **1 vulnérabilité MEDIUM** dont le contenu n'a pas été écrit avant l'arrêt. Coût mesuré : **13,77 $** (31,8 M jetons). Pas relancé sans ton accord (ça coûte) |
 
 ### 6.1 Le seul échec e2e était un **test périmé**, pas une régression de l'app
 
@@ -165,12 +166,12 @@ l'auto-réparation des notifications sont donc **vérifiés sur Chromium/Android
 
 | Indicateur | Valeur mesurée |
 |---|---|
-| Tests | **1115 / 1115** verts, 59 fichiers |
+| Tests | **1117 / 1117** verts, 59 fichiers (après passage à vitest 5 / happy-dom 20) |
 | Couverture globale | **89,47 %** lignes · 84,30 % branches · 94,96 % fonctions |
 | Findings d'audit | **6** — les **5 de sécurité corrigés et prouvés** (0 ouvert) + **1 P3 vie privée** partiellement traité (numéro personnel dans 12 fichiers de test) |
 | Fonctions cartographiées | **78** (F01–F78) |
 | Fonctions sans aucun test | **2** (F18 sentinelles, F19 chronologie — vues admin en lecture seule) |
 | Routes API | **64** dont **20 d'administration** |
 | Secrets dans le dépôt | **0** |
-| Passes obligatoires | **exécutées le 10/09** — live Apex Chat ✅ **20/20 après correction** (prod HTTP 200) · live domaine ✅ (1 surface KO hors périmètre) · scan sécu lancé · **second avis : trouvé ÉTEINT (0 succès/100), réparé** |
+| Passes obligatoires | **exécutées le 10/09** — live Apex Chat ✅ **20/20 après correction** (prod HTTP 200) · live domaine ✅ (1 surface KO hors périmètre) · **scan sécu exécuté, lu et trié** (§ 6.5) · pentest IA tué par le délai (1 MEDIUM non lisible) · **second avis : trouvé ÉTEINT (0 succès/100), réparé** |
 | Tests navigateur réellement lancés en CI | **3 fichiers sur 22** — les 19 autres ne sont branchés nulle part (finding P2) |

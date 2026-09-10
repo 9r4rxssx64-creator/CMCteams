@@ -39,6 +39,31 @@
   `node tools/ci/ci.mjs report <run>` le lit. Relancés pour lire le vrai résultat.
 - **Autre chose vue au passage** (hors Apex Chat) : toutes tes pages du domaine répondent,
   **sauf `lingua.kd-mc.com`** qui est en panne. Je te le signale, je n'y ai pas touché.
+- **Les deux scans de sécurité ont fini, je les ai lus.** L'arsenal donne **2 211 signalements
+  bruts** sur tout le dépôt — un chiffre qui fait peur et qui ne veut rien dire tant qu'on n'a
+  pas vérifié chaque ligne. Pour Apex Chat, le tri (preuves dans `audit/apex-chat/03-FINDINGS.md`) :
+  **aucun secret vivant**, **aucune faille dans l'app déployée**. Ce qui était vrai et que j'ai
+  corrigé : **7 failles connues dans les outils de test** (mis à jour, 1117/1117 tests verts),
+  **2 installations de `wrangler` « dernière version, quelle qu'elle soit » avec ton jeton
+  Cloudflare en main** (version majeure épinglée), **1 job de déploiement sans permissions
+  déclarées** (limité à la lecture). Le reste, sur Apex Chat, est faux positif prouvé (clé
+  VAPID publique par conception, en-têtes PEM sans valeur, URL de fixture dans un test).
+- **9 signalements Semgrep restent à identifier** : le rapport ne donnait que des comptes, pas
+  les lignes, et Semgrep ne peut pas tourner d'ici. J'ai ajouté au scan une option qui liste
+  chaque signalement avec sa ligne, et je le relance sur Apex Chat.
+- **Le pentest IA (Strix) a été tué par son délai de 26 min** avant d'écrire son rapport ; il
+  annonce **1 vulnérabilité MEDIUM** que je ne peux pas lire. Cette exécution t'a coûté
+  **13,77 $**. Je ne la relance pas sans ton accord.
+- **L'automate de fusion a refusé ma branche deux fois ce soir** : à chaque fois, une autre
+  session avait ajouté un test à la même ligne de `package.json` que moi. Résolu à la main les
+  deux fois (les deux tests gardés). Le correctif CORS des iPhone est **toujours en attente sur
+  `main`** tant que cette fusion n'a pas abouti.
+- **Trouvé pourquoi ça bloquait, et corrigé** : ce n'était pas seulement le conflit. Le
+  **nettoyage automatique des branches** effaçait la mienne **dans la minute qui suivait chaque
+  push**, parce que son nom avait déjà eu des demandes fusionnées avant (5 fois). Il jugeait sur
+  le nom, pas sur le contenu. Corrigé : il ne supprime plus que ce qui est déjà entièrement dans
+  `main`, et un test rejoue le cas (`tests/verify-cleanup-nom-reutilise.mjs`). Ça touchait
+  aussi les autres sessions qui réutilisent un nom de branche.
 ## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
 
 - **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une

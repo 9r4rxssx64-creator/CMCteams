@@ -29,6 +29,10 @@ on:
         description: 'ID exécution (callback Apex, optionnel)'
         required: false
         default: ''
+      detail_path:
+        description: 'Préfixes (séparés par des virgules) pour lister les signalements UN PAR UN dans le check-run — ex. messaging-app,.github/workflows/apex-chat'
+        required: false
+        default: ''
   repository_dispatch:
     types: [security-suite]
   # ⛔ Exécutions programmées RETIRÉES le 15/08/2026.
@@ -158,6 +162,8 @@ jobs:
       #    journal d'un dépôt PUBLIC n'est pas l'endroit pour ça.
       - name: Triage des secrets (vivants ? faux positifs ? où ?)
         if: always()
+        env:
+          DETAIL_PATH: ${{ inputs.detail_path }}
         run: |
           # Écrit dans un fichier (repris par le check-run plus bas) PUIS dans le résumé.
           python3 - <<'PYEOF' | tee /tmp/sec/triage.txt
@@ -248,6 +254,50 @@ jobs:
           print("  par gravité : %s" % dict(sev_zz))
           print("  par règle :")
           for k, v in regles_zz.most_common(12): print("    - %s : %d" % (k, v))
+
+          # ── DÉTAIL PAR CHEMIN (à la demande) ─────────────────────────────────
+          #    Les comptes ci-dessus disent « 11 dans messaging-app » sans dire
+          #    LESQUELS : impossible de trier (vérifier chacun, écarter les faux
+          #    positifs avec preuve) sans la ligne exacte. Ajouté le 10/09 pendant
+          #    l'audit Apex Chat : `detail_path=messaging-app` liste chaque
+          #    signalement (règle · fichier:ligne · gravité), plafonné, sans jamais
+          #    imprimer la valeur d'un secret (gitleaks : règle + ligne seulement).
+          prefixes = [p.strip() for p in os.environ.get('DETAIL_PATH', '').split(',') if p.strip()]
+          if prefixes:
+              CAP = 400
+              def garde(p): return any(p.startswith(x) or p.startswith('./' + x) for x in prefixes)
+              print("")
+              print("=== DÉTAIL — signalements un par un pour : %s (plafond %d lignes) ===" % (', '.join(prefixes), CAP))
+              n = 0
+              for r in sg:
+                  p2 = r.get('path', '?')
+                  if not garde(p2): continue
+                  n += 1
+                  if n > CAP: break
+                  ex = r.get('extra') or {}
+                  print("  semgrep  %-8s %s:%s  %s" % (ex.get('severity', '?'), p2, (r.get('start') or {}).get('line', '?'), r.get('check_id', '?').split('.')[-1]))
+              for f in gl:
+                  ch = f.get('File', '?')
+                  if not garde(ch): continue
+                  n += 1
+                  if n > CAP: break
+                  print("  gitleaks %-8s %s:%s  %s" % ('secret?', ch, f.get('StartLine', '?'), f.get('RuleID', '?')))
+              for f in (zz or []):
+                  loc = ''
+                  try:
+                      locs = f.get('locations') or []
+                      sym = (locs[0].get('symbolic') or {}) if locs else {}
+                      loc = ((sym.get('key') or {}).get('Local') or {}).get('given_path') or sym.get('key', {}).get('Remote', {}).get('path') or ''
+                      if not loc:
+                          loc = str(sym.get('key', ''))[:80]
+                  except Exception:
+                      loc = ''
+                  if not garde(loc): continue
+                  n += 1
+                  if n > CAP: break
+                  sevz = f.get('determinations', {}).get('severity') if isinstance(f.get('determinations'), dict) else f.get('severity', '?')
+                  print("  zizmor   %-8s %s  %s" % (sevz, loc, f.get('ident') or f.get('rule') or '?'))
+              print("  → %d signalement(s) listé(s)" % min(n, CAP))
 
           print("")
           print("Aucune valeur de secret n'est imprimée ici — ce dépôt est public.")
