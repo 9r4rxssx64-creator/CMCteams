@@ -35787,7 +35787,9 @@ function createEmpFromImport(name,family){
   if(!A.user||A.user.id!==AID)return;
   var exists=A.employees.find(function(e){return e.name===name;});
   if(exists){toast("Cet employ\u00e9 existe d\u00e9j\u00e0 : "+name,"err");return;}
-  var tmpId="U_TMP_"+Date.now().toString(36).toUpperCase().slice(-6);
+  // v9.899 : dernier site tiré de l'HORLOGE (les imports utilisent _cmcTmpEmpId depuis v9.896,
+  // leçon #239) — même règle ici : identifiant dérivé du NOM, jamais de Date.now().
+  var tmpId=(typeof _cmcTmpEmpId==="function")?_cmcTmpEmpId(name,A.employees):("U_TMP_"+Date.now().toString(36).toUpperCase().slice(-6));
   var newEmp={id:tmpId,name:name,team:"1",post:"",chef:false,family:family||"bj",cdpShifts:[]};
   A.employees.push(newEmp);
   ls("cmc_e",A.employees);
