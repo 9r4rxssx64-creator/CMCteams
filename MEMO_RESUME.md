@@ -1,5 +1,35 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
+
+Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le
+signalement d'origine — le message **m051** du 6.09 : la « Vérif RÉELLE » sur le VRAI domaine
+avait **27 surfaces vertes et une seule rouge**, `lingua.kd-mc.com` :
+`deep: exception TimeoutError: page.fill: Timeout 30000ms exceeded`. La page ne se montait pas
+assez pour qu'on puisse seulement **remplir un champ**. Un élève tombait sur une page vide,
+sans message : la panne la plus pénible, celle qui ne fait aucun bruit.
+
+**C'était exactement le bug corrigé quelques heures plus tôt** (`u0-0` sur `undefined`, l'app
+rendait 2 boutons au lieu de 607). Preuve que c'est en ligne : le déploiement Pages a **réussi
+à 20 h 59 sur `d023a18ad`**, le commit de fusion du correctif.
+
+### État mesuré maintenant, sur le code de `main`
+Parcours complet dans un vrai navigateur : arrivée → **Nouveau compte** → prénom + nom + code →
+choix de la langue → **607 boutons**, bouton d'écoute présent, **0 erreur JavaScript**. Les 5
+cours (en/es/it/de/mc) s'ouvrent, y compris **sans progression enregistrée**.
+
+### Ce qui manquait, et qui est ajouté : une garde sur le PARCOURS
+Les tests existants partaient tous d'un compte **déjà fabriqué en mémoire**. Ils ne passaient
+donc jamais par l'écran d'arrivée, la création de compte ni le choix de la langue — **les trois
+étapes cassées en production**. D'où une panne visible par les utilisateurs pendant 4 jours
+avec des tests au vert.
+
+`npm run test:lingua-parcours` (**11 OK / 0 FAIL**, câblé dans `test:ci`) rejoue ce parcours.
+**Prouvé discriminant** : correctif retiré → **6 échecs**, dont l'erreur mot pour mot de la
+panne (`Cannot read properties of undefined (reading 'u0-0')`).
+
+---
+
 ## 10 septembre 2026 (nuit) — Lingua : 3 vrais bugs, dont un écran blanc total
 
 La session « arbre » signalait 5 échecs rouges dans `test:lingua-voix`, qui bloquaient
