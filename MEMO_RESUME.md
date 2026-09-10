@@ -35,6 +35,12 @@ et les autres aussi. Note le. »* C'est écrit, et surtout **rendu obligatoire p
   Les 2 vrais trous existaient depuis le 13.08 : **cuisine.kd-mc.com** et **shops.kd-mc.com** n'avaient
   aucune copie de secours — si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent.
   Mesuré après : **43/6 → 49 OK / 0 FAIL**, paquet 497 fichiers / 18,2 Mo (limite 20 000).
+- **Cause commune enfin corrigée** — trois fusions refusées aujourd'hui pour la même raison : deux
+  sessions tiraient le **même identifiant de message** (m039, m055, m064), parce que le numéro venait
+  d'un compteur calculé dans la copie de chaque branche. Ce n'était pas de la malchance, c'était garanti.
+  Pire : le cliquet de la garde gèle des identifiants — un identifiant réattribué **exemptait en silence**
+  un message d'une autre session. L'identifiant porte maintenant le nom de l'expéditeur (`m067-arbre`),
+  et le registre **refuse** deux messages sous le même identifiant. Leçon **#253**.
 
 ---
 
@@ -2024,8 +2030,10 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    urgent. Ensuite je relance `deploy-kdmc-rag`.
 3. 👤 **Révoquer le jeton GitLab `glpat-wD6Q…`** (utilisé une fois, jamais écrit) :
    [Jetons d'accès GitLab](https://gitlab.com/-/user_settings/personal_access_tokens).
-4. 👤 Dans les apps qui ont **leur propre** code (quand tu y passes) : CMCteams
-   `Réglages → Sécurité → Changer le PIN admin` ; Boutiques `Paramètres → Changer le PIN admin`.
+4. 👤 Dans les apps qui ont **leur propre** code (quand tu y passes) — chemins **vérifiés dans le
+   code le 10.09** (l'ancien « Réglages → Sécurité » n'existait pas) : CMCteams **Admin → 🔒 Sécurité
+   → 🔐 Modifier PIN admin** (`vAdminSecurity`, `savePinCode`) ; Boutiques **dashboard.kd-mc.com →
+   Paramètres → 🔑 Changer le PIN admin**. Rien à coder : les deux boutons existent.
 5. 🤖 **Page Départs : « admin » cosmétique côté données** — elle écrit dans Firebase avec un jeton
    anonyme (`auth != null`), alors que la grande app a `cmcFbRoleAuth` (jeton de rôle via
    `/login-cmc`). À aligner (message m021 envoyé à la session CMCteams ; leur territoire).
@@ -2039,6 +2047,12 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 7. 🤖 **5 pages du site portent des noms** (l'app CMCteams, ses plannings, l'arbre) — dit par
    l'audit d'exposition, ce n'est pas une exclusion qui règle ça : servir ces données **derrière la
    connexion du domaine** (SSO `/__sso/whoami`). Chantier de fond, à découper par surface.
+   **État 10.09** : l'**arbre** est fait par la session arbre (v3.16/v3.17 : 0 personne dans le
+   fichier, données servies par le domaine à qui prouve le code, garde `test:arbre-prive`) ; reste
+   l'app CMCteams + ses 2 fichiers de planning (`tools/shared/planning-seed.js`,
+   `tools/departs/boards-gen.js`) = les noms des employés, **par conception** de l'app (chaque
+   employé voit son équipe). Les mettre derrière le SSO = changer le modèle d'accès de l'app → **feu
+   vert Kevin d'abord** (ETAT-INFRA fait n°12 « ce qui reste ouvert »), territoire CMCteams.
 8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
@@ -2046,19 +2060,24 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 9. ✅ **FAIT 5.09 17h30** — job `etat-sessions` ajouté dans `.gitlab-ci.yml` (stage `etat`, sans
    secret : `pipeline.mjs verifier` puis `etat`, tourne quand le registre change ou en bouton) ;
    m002 clos. Prendra effet sur GitLab à la prochaine remise à niveau.
-10. 🔗 **lingua m'attend** : 3 de leurs workflows programmés déplacés (pas supprimés) + j'ai pris
-    LEUR version de `lingua/app.js` — leur confirmer par message que tout est en ordre de leur côté.
-11. 🔗 **free-apis m'attend** : secrets VUS en vrai — `CEREBRAS_API_KEY` existe déjà, il ne reste
-    que **2 comptes à créer** (à leur préciser lesquels, cf. CLAUDE.md liste des 50 secrets).
+10. ✅ **DÉJÀ FAIT (vérifié 10.09)** — message m017 envoyé à lingua le 4.09 (3 workflows déplacés,
+    leur version de `lingua/app.js` gardée). Rien à renvoyer ; la balle est chez eux.
+11. ✅ **DÉJÀ FAIT (vérifié 10.09)** — le message m013 (3.09) nomme déjà les 2 comptes :
+    **OpenRouter** (`OPENROUTER_API_KEY`) et **NVIDIA NIM** (`NVIDIA_API_KEY`) ; Cerebras existe.
+    Rien à ajouter ; la balle est chez free-apis (leur fiche du registre pointe encore sur m013).
 12. ✅ **FAIT 5.09 17h30** — `pousser.sh` ne touche plus `origin/*` quand `origin` est GitHub
     (il le dit) ; le RAPPEL de début de session affiche la vraie voie : `git push origin` → PR →
     fusion API (GitHub), GitLab = remise à niveau occasionnelle.
 12b. ℹ️ Courrier arbre m022/m023/m025 **clos** : la branche `claude/sarzance-family-tree-3jxi7i`
     est à 0 commit d'avance, v3.15/v3.16/v3.17 déjà dans `main` — rien à ouvrir.
-13. 🤖 **Tests rouges pré-existants sur `main`**, à ne pas laisser traîner :
-    `lingua-voix` (lingua, m046/m051), `router-secours` (domaine, m037), `lingua-connexion`,
-    `tools/departs/verify-xss-delegation.mjs`. Chacun : reproduire, cause racine, fix ou
-    reclassement honnête avec preuve.
+13. 🤖 **Tests rouges pré-existants sur `main`**, à ne pas laisser traîner — état mesuré 10.09 :
+    `lingua-voix` → lingua (m046/m051, P0 live chez eux) · `router-secours` → domaine (m037) ·
+    `lingua-connexion` → **VERT** (20/0, corrigé par la session lingua-connexion) ·
+    `tools/departs/verify-xss-delegation.mjs` → **n'était PAS cassé** : 8/0 lancé depuis son
+    dossier ; lancé depuis la racine du dépôt il servait le `index.html` de la grande app
+    (`ROOT = path.resolve('.')` = dossier courant) → `document.body` absent → « null classList ».
+    Corrigé (racine = dossier du test, `fileURLToPath`), câblé `test:departs-xss` dans `test:ci`
+    (il n'était dans AUCUNE barrière = garde morte, erreur #28), message à cmcteams-departs.
     ✅ **FAIT 10.09 — les DEUX qui étaient à MOI** (m047/m058) : `test:bascule` +
     `test:consigne-reelle` plantaient partout sauf chez moi (référence git en dur
     `github/claude/capcut-mini-versions-66tfum` : distant `github` inexistant sur un clone
