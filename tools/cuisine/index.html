@@ -1,4 +1,14 @@
+<meta charset="utf-8">
 <title>A Cüjina de Mùnegu — Répertoire de la Riviera</title>
+<!-- Icône sur l'écran d'accueil : drapeau de Monaco (rouge/blanc) + blason doré — Kevin 2026-09-10 « Drapeau monaco ». Sans ces lignes, l'iPhone prenait une capture sombre de la page. -->
+<meta name="theme-color" content="#CE1126">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cüjina">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-32.png" type="image/png" sizes="32x32">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
 :root{
@@ -215,6 +225,9 @@ a{color:var(--gold)}
    font-family:system-ui,sans-serif;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .steps li::after{content:"";position:absolute;left:15px;top:34px;bottom:2px;width:1px;background:var(--line)}
 .steps li:last-child::after{display:none}
+/* étape en cours de lecture à voix haute */
+.steps li.reading{color:var(--gold-bright)}
+.steps li.reading::before{background:var(--gold);color:#241f0d;animation:pulse 1s infinite}
 .timer{display:inline-flex;align-items:center;gap:5px;background:var(--gold);color:#241f0d;
    font-family:system-ui,sans-serif;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:20px;margin:0 2px;vertical-align:baseline}
 .timer.run{background:var(--rouge);color:#fff;animation:pulse 1s infinite}
@@ -388,12 +401,18 @@ function scaleIng(text,ratio){
 
 /* ---------- steps + timers ---------- */
 var TIMERS={};
-function buildSteps(method){
-  if(!method) return '';
+/* Découpe la méthode en étapes (même découpage pour l'affichage ET la lecture à voix haute). */
+function splitSteps(method){
+  if(!method) return [];
   var parts=method.replace(/\s+/g,' ').match(/[^.!?]+[.!?]+/g)||[method];
   var merged=[]; var buf='';
   parts.forEach(function(p){ buf+=(buf?' ':'')+p.trim(); if(buf.length>60||/[.!?]$/.test(p.trim())&&buf.length>30){merged.push(buf);buf='';} });
   if(buf)merged.push(buf);
+  return merged;
+}
+function buildSteps(method){
+  var merged=splitSteps(method);
+  if(!merged.length) return '';
   var out='<ol class="steps">';
   merged.forEach(function(s){
     s=esc(s).replace(/(\d+)\s*(?:[àa]\s*(\d+)\s*)?(minutes?|min\b|heures?|h\b)/gi,function(m,a,b,u){
@@ -430,20 +449,110 @@ function startTimer(btn,mins){
   toast('⏱ Minuteur lancé : '+mins+' min');
 }
 
-/* ---------- read aloud ---------- */
-var speaking=false;
-function readAloud(text,btn){
-  if(!('speechSynthesis' in window)){toast('Lecture vocale non disponible');return;}
-  if(speaking){ speechSynthesis.cancel();speaking=false;if(btn)btn.innerHTML='🔊 Lire les étapes';return; }
-  var u=new SpeechSynthesisUtterance(text);u.lang='fr-FR';u.rate=.95;
-  u.onend=function(){speaking=false;if(btn)btn.innerHTML='🔊 Lire les étapes';};
-  speechSynthesis.cancel();speechSynthesis.speak(u);speaking=true;
-  if(btn)btn.innerHTML='⏹ Arrêter la lecture';
+/* ---------- lecture à voix haute (Web Speech) ----------
+ * Jusqu'au 10.09.2026 : toute la recette (600 caractères en moyenne, 1 442 au maximum) partait en UNE
+ * seule phrase vocale, précédée d'un cancel() et gardée dans une variable locale. Sur iPhone,
+ * cancel() collé à speak() fait sauter la lecture et une phrase trop longue se coupe net ; sur Chrome,
+ * l'objet non référencé est ramassé → silence au bout de ~15 s. Résultat : « Lire les étapes ne
+ * fonctionne pas » (Kevin, 10.09.2026). Ici : une phrase par étape, toutes gardées en mémoire,
+ * enchaînées à la fin de la précédente ; l'étape lue est surlignée ; un échec dit sa cause exacte. */
+var TTS={active:false,id:null,btn:null,utts:[],idx:0,started:false,watchdog:null};
+var TTS_ERR={'not-allowed':'la lecture doit partir d\'un appui sur le bouton',
+  'synthesis-unavailable':'aucune voix disponible sur cet appareil','synthesis-failed':'la voix a planté',
+  'language-unavailable':'aucune voix française installée','voice-unavailable':'aucune voix française installée',
+  'audio-busy':'le son est pris par une autre application','audio-hardware':'problème de haut-parleur',
+  'network':'cette voix a besoin d\'internet','text-too-long':'texte trop long'};
+function ttsSupported(){ return ('speechSynthesis' in window)&&(typeof SpeechSynthesisUtterance!=='undefined'); }
+function ttsVoice(){
+  try{
+    var vs=speechSynthesis.getVoices()||[];
+    var fr=vs.filter(function(v){return /^fr/i.test(v.lang||'');});
+    fr.sort(function(a,b){return ((b.localService?1:0)-(a.localService?1:0))||((b.default?1:0)-(a.default?1:0));});
+    return fr[0]||null;
+  }catch(e){return null;}
 }
+/* Coupe un texte en morceaux ≤ max : ponctuation forte, puis virgules, puis espaces (jamais un mot coupé). */
+function ttsCut(txt,max){
+  var out=[]; var parts=txt.match(/[^.!?;:]+[.!?;:]*/g)||[txt];
+  parts.forEach(function(p){
+    if(p.length<=max){ out.push(p); return; }
+    var cur=''; (p.match(/[^,]+,?/g)||[p]).forEach(function(q){ if(cur&&(cur+q).length>max){out.push(cur);cur='';} cur+=q; });
+    if(cur)out.push(cur);
+  });
+  var fin=[];
+  out.forEach(function(p){ while(p.length>max){ var i=p.lastIndexOf(' ',max); if(i<40)i=max; fin.push(p.slice(0,i)); p=p.slice(i); } if(p.trim())fin.push(p); });
+  return fin;
+}
+/* Une phrase par étape (numérotée) ; une étape trop longue est coupée en morceaux ≤ 220 caractères (iPhone coupe les phrases longues). */
+function ttsChunks(r){
+  var out=[{text:'Recette : '+r.name+'.',step:-1}];
+  splitSteps(r.method).forEach(function(s,i){
+    var txt='Étape '+(i+1)+'. '+s.replace(/^\d+\s*[.)]\s*/,'');
+    var buf='';
+    ttsCut(txt,220).forEach(function(p){ if(buf&&(buf+' '+p).trim().length>220){out.push({text:buf.trim(),step:i});buf='';} buf+=(buf&&!/\s$/.test(buf)?' ':'')+p; });
+    if(buf.trim())out.push({text:buf.trim(),step:i});
+  });
+  return out;
+}
+function ttsMakeUtt(chunk){
+  var u=new SpeechSynthesisUtterance(chunk.text); u.lang='fr-FR'; u.rate=.95;
+  var v=ttsVoice(); if(v)u.voice=v;
+  u._step=chunk.step;
+  u.onstart=function(){ TTS.started=true; clearTimeout(TTS.watchdog); };
+  u.onend=function(){ if(!TTS.active||TTS.utts[TTS.idx]!==u)return; TTS.idx++; ttsSpeakNext(); };
+  u.onerror=function(e){ var c=(e&&e.error)||'inconnue'; if(c==='interrupted'||c==='canceled')return; ttsFail(c); };
+  return u;
+}
+function ttsSpeakNext(){
+  if(!TTS.active)return;
+  if(TTS.idx>=TTS.utts.length){ ttsStop(false,true); toast('✅ Lecture terminée'); return; }
+  var u=TTS.utts[TTS.idx];
+  ttsHighlight(u._step);
+  clearTimeout(TTS.watchdog);
+  TTS.watchdog=setTimeout(function(){ if(TTS.active&&!TTS.started)toast('🔇 Aucun son ? Monte le volume et vérifie le bouton silencieux de l\'iPhone.'); },3000);
+  try{ speechSynthesis.speak(u); }catch(e){ ttsFail('speak : '+(e&&e.message||e)); }
+}
+function ttsFail(code){
+  ttsStop(false);
+  toast('🔇 Lecture impossible ('+code+') : '+(TTS_ERR[code]||'réessaie dans un instant'));
+}
+function ttsStop(byUser,finished){
+  var wasActive=TTS.active; TTS.active=false; clearTimeout(TTS.watchdog);
+  if(!finished){ try{ speechSynthesis.cancel(); }catch(e){} } /* fin naturelle : rien à annuler */
+  ttsHighlight(-2); ttsButton(false); TTS.utts=[]; TTS.id=null; TTS.idx=0;
+  if(byUser&&wasActive)toast('⏹ Lecture arrêtée');
+}
+function ttsButton(on){
+  var b=TTS.btn; if(!b||!b.isConnected)b=document.querySelector('[data-tts]'); if(!b)return;
+  b.textContent=on?'⏹ Arrêter la lecture':'🔊 Lire les étapes';
+  b.classList.toggle('on',!!on); b.setAttribute('aria-pressed',on?'true':'false');
+}
+function ttsHighlight(step){
+  var lis=document.querySelectorAll('.steps li');
+  for(var i=0;i<lis.length;i++){
+    var on=(i===step); lis[i].classList.toggle('reading',on);
+    if(on&&lis[i].scrollIntoView){ try{ lis[i].scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){} }
+  }
+}
+function readAloud(id,btn){
+  if(!ttsSupported()){ toast('🔇 Lecture vocale non disponible sur ce navigateur'); return; }
+  if(TTS.active){ ttsStop(true); return; }
+  var r=R[id]; if(!r||!r.method){ toast('Pas d\'étapes à lire pour cette recette'); return; }
+  var chunks=ttsChunks(r);
+  TTS.active=true; TTS.id=id; TTS.btn=btn||null; TTS.idx=0; TTS.started=false;
+  TTS.utts=chunks.map(ttsMakeUtt); /* gardées en mémoire : Chrome coupe la voix si l'objet est ramassé */
+  ttsButton(true);
+  try{ if(speechSynthesis.paused)speechSynthesis.resume(); }catch(e){} /* iPhone : moteur parfois figé « en pause » */
+  var busy=false; try{ busy=!!(speechSynthesis.speaking||speechSynthesis.pending); }catch(e){}
+  /* Jamais cancel() collé à speak() : sur iPhone la phrase saute. On n'annule que s'il reste quelque chose, et on laisse respirer. */
+  if(busy){ try{ speechSynthesis.cancel(); }catch(e){} setTimeout(ttsSpeakNext,150); }
+  else ttsSpeakNext();
+}
+try{ if(ttsSupported()){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=function(){}; } }catch(e){} /* précharge la liste des voix (iPhone la remplit en différé) */
 
 /* ---------- state / router ---------- */
 var STATE={view:'home',cat:null,tome:null,q:''};
-function go(view,opts){ STATE.view=view; if(opts){for(var k in opts)STATE[k]=opts[k];} if(speaking){speechSynthesis.cancel();speaking=false;} window.scrollTo(0,0); render(); }
+function go(view,opts){ STATE.view=view; if(opts){for(var k in opts)STATE[k]=opts[k];} if(TTS.active)ttsStop(false); window.scrollTo(0,0); render(); }
 
 /* ---------- renders ---------- */
 function topbar(title,backFn){
@@ -629,12 +738,16 @@ function renderRecipe(){
   var isFav=FAV[r.id];
   h+='<div class="rp-actions">';
   h+='<button class="'+(isFav?'on':'')+'" onclick="toggleFav('+r.id+',this)">'+(isFav?'♥ Favori':'♡ Favori')+'</button>';
-  if(r.method&&r.method.length>40)h+='<button onclick="readAloud('+JSON.stringify(r.method).replace(/"/g,'&quot;')+',this)">🔊 Lire les étapes</button>';
+  /* On passe l'IDENTIFIANT, plus le texte entier dans l'attribut : le texte est relu au moment de l'appui. */
+  if(r.method&&r.method.length>40){ var lit=TTS.active&&TTS.id===r.id;
+    h+='<button data-tts class="'+(lit?'on':'')+'" aria-pressed="'+(lit?'true':'false')+'" onclick="readAloud('+r.id+',this)">'+(lit?'⏹ Arrêter la lecture':'🔊 Lire les étapes')+'</button>'; }
   h+='<button onclick="window.print()">🖨 Imprimer</button>';
   h+='</div>';
   h+='<div style="text-align:center;margin-top:18px"><button class="ui" style="color:var(--gold);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase" onclick="shareRecipe('+r.id+')">Partager cette recette</button></div>';
   h+='</div></div>';
   APP.innerHTML=h;
+  /* re-rendu pendant une lecture (portions, favori) : on garde l'étape surlignée et le bouton « Arrêter » */
+  if(TTS.active&&TTS.id===r.id){ TTS.btn=document.querySelector('[data-tts]'); var cu=TTS.utts[TTS.idx]; if(cu)ttsHighlight(cu._step); }
 }
 function splitIngredients(text,ratio){
   // split on commas but keep sub-headers like "Pâte :" attached
