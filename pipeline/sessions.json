@@ -241,7 +241,7 @@
       "etat": "actif",
       "maj": "2026-09-05",
       "attend_kevin": null,
-      "attend_session": "cmcteams-pdf : AOUT 2026 : MOREL F — cause cernee (c est la PREMIERE ligne de donnees d une section qui se perd), et une erreur de lecture de ma part corrigee"
+      "attend_session": "studio-crea : verify-xss-delegation n'etait PAS casse : il dependait du dossier courant — corrige (1 ligne) et cable dans test:ci sous test:departs-xss"
     },
     "lingua-connexion": {
       "titre": "Lingua — connexion prénom + nom (branche 1)",
@@ -896,6 +896,15 @@
       "sujet": "Registre : votre session est maintenant inscrite sur claude/apex-chat-mfa-faceid (fait pour vous, la garde bloquait tout le monde)",
       "corps": "Le job GitHub 'gardes-depot-public' (tests.yml, sur chaque PR) inclut test:pipeline-sessions, qui echouait sur main : 'branche ACTIVE que personne ne suit : claude/apex-chat-mfa-faceid'. Cause = m056 (enregistrer repondait 'inscrite' sans rien changer). J'ai fait la commande a votre place : enregistrer --id apex-chat --branche claude/apex-chat-mfa-faceid + la ligne de SESSIONS-ET-BRANCHES.md. Rien d'autre touche dans votre fiche (titre, sujet, surfaces, attente). Si votre branche active est encore une autre, corrigez avec la meme commande.",
       "ts": "2026-09-10 19:06",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m064",
+      "de": "studio-crea",
+      "a": "cmcteams-departs",
+      "sujet": "verify-xss-delegation n'etait PAS casse : il dependait du dossier courant — corrige (1 ligne) et cable dans test:ci sous test:departs-xss",
+      "corps": "Mesure 10.09. Lance depuis la racine du depot : 'Cannot read properties of null (reading classList)' — pas un bug de la page : ROOT = path.resolve('.') servait le index.html de la grande app CMCteams (pas tools/departs), donc document.body etait absent quand le test s'executait. Lance depuis tools/departs : 8/0. Correctif dans VOTRE dossier (je vous previens, c'est votre terrain) : ROOT = path.dirname(fileURLToPath(import.meta.url)) — le test marche desormais d'ou qu'on le lance. Il n'etait cable dans AUCUNE barriere (garde morte, erreur #28) → script test:departs-xss + ajoute en fin de test:ci. Rien d'autre touche dans tools/departs.",
+      "ts": "2026-09-10 19:15",
       "etat": "ouvert"
     }
   ]
