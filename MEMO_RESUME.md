@@ -1769,9 +1769,20 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
     fusion API (GitHub), GitLab = remise à niveau occasionnelle.
 12b. ℹ️ Courrier arbre m022/m023/m025 **clos** : la branche `claude/sarzance-family-tree-3jxi7i`
     est à 0 commit d'avance, v3.15/v3.16/v3.17 déjà dans `main` — rien à ouvrir.
-13. 🤖 **4 tests rouges pré-existants sur `main`**, pas les miens mais à ne pas laisser traîner :
-    `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
-    Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
+13. 🤖 **Tests rouges pré-existants sur `main`**, à ne pas laisser traîner :
+    `lingua-voix` (lingua, m046/m051), `router-secours` (domaine, m037), `lingua-connexion`,
+    `tools/departs/verify-xss-delegation.mjs`. Chacun : reproduire, cause racine, fix ou
+    reclassement honnête avec preuve.
+    ✅ **FAIT 10.09 — les DEUX qui étaient à MOI** (m047/m058) : `test:bascule` +
+    `test:consigne-reelle` plantaient partout sauf chez moi (référence git en dur
+    `github/claude/capcut-mini-versions-66tfum` : distant `github` inexistant sur un clone
+    frais → `git show` 128 → exception). Et leur POSTULAT était périmé : le routeur lit
+    `env.UPSTREAM_BASE` / `env.UPSTREAM_PREFIX` depuis fin août, donc « change UNE ligne »
+    était une consigne fausse (le test cherchait « la ligne à remplacer » → introuvable).
+    Réécrits : référence résolue (`origin/main` = ce que déploie `deploy-kdmc-router.yml`,
+    repli `HEAD` dit clairement), bascule par 2 variables sur le code réel importé tel quel
+    (46/0 : 8 sous-domaines × 2 rangements + 3 discriminants), consigne `REMETTRE_EN_LIGNE.md`
+    remise d'accord avec le code (13/0, 3 sabotages → 3 rouges). Leçon #243.
 
 18. ✅ **FAIT 10.09** — les 7 gardes du dépôt public (no-pin-leak, depot-public-sain,
     secret-jamais-persiste, documents-travail, destinations-workflows, wrangler-assets,
