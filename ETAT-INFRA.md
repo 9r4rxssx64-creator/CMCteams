@@ -1,10 +1,15 @@
 # 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 4.09.2026)
 
-> ✅ **LIS D'ABORD LE FAIT N°10 (tout en bas)** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
+> ✅ **LIS D'ABORD LE FAIT N°10** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
 > restriction**. Le compte n'est plus suspendu, les Actions tournent, la publication du
-> site est relancée. Les faits **1, 2 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
-> plus à Kevin que GitHub est fermé, et ne lui redemande plus d'envoyer la réponse au
-> support : c'est fait, et ça a marché.
+> site est relancée. Les faits **1, 2, 3 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
+> plus à Kevin que GitHub est fermé, ne redis plus que `kdmc-site.pages.dev` est le seul
+> site vivant (fait n°3 → voir fait n°11 : **le site vient de GitHub**, Pages n'est qu'un
+> filet), et ne lui redemande plus d'envoyer la réponse au support : c'est fait, et ça a marché.
+>
+> 📍 **Ce document compte 16 faits**, pas 6 : le titre « Les 6 faits » ci-dessous ne couvre que
+> les six premiers (état au 1.09). Les faits 7 à 16 suivent et sont plus récents — donc
+> prioritaires en cas de désaccord entre deux faits.
 >
 > ⚠️ **Mais la règle « zéro exécution programmée sur GitHub » reste ABSOLUE** — le compte
 > a rouvert dans l'état qui l'avait fait fermer (55 crons encore armés sur `main`),
@@ -23,7 +28,7 @@
    mergent des PR (ex : PR #3621 le 1.09) ; d'autres reçoivent 403 — souvent le **proxy du conteneur**
    (message « sessions are bound to their configured repositories »), pas GitHub. → Teste TON accès
    (`git ls-remote origin`) et ne généralise ni ton 403 ni ton succès.
-3. **Le seul site vivant = `kdmc-site.pages.dev`** (Cloudflare Pages). Il est alimenté par
+3. ~~**Le seul site vivant = `kdmc-site.pages.dev`**~~ **(PÉRIMÉ — voir fait n°11 : le site vivant vient de GitHub depuis le 4.09 ; Pages est le filet de secours.)** (Cloudflare Pages). Il est alimenté par
    **GitLab `kdmc-group/Kdmc-project`** (id 85753352, compte `desarzens.kevin`) : chaque commit sur
    `main` y publie tout le dépôt (job CI `publier-site`). Cette infra a été montée le **27/08 À LA
    DEMANDE DE KEVIN** (« Remet tout en ligne comme avant par GitLab ») pendant le blocage GitHub —
@@ -526,11 +531,11 @@ remettre.
 | Destination | Combien | Exemples |
 |---|---|---|
 | **GitHub** (rapatriées) | **14** | smoke post-déploiement, vérifs Lingua/Décès en direct, MAJ forcée d'Apex Chat, pentest Strix, audit SEO, déploiement Vercel |
-| **GitLab CI** | 24 | liens réels, sources des langues, génération d'images, sauvegardes KV |
-| **Cloudflare Worker** | 5 | alertes World Monitor, agent 24/7, sentinelles |
+| **GitLab CI** | 22 | liens réels, sources des langues, génération d'images, sauvegardes KV |
+| **Cloudflare Worker** | 7 | alertes World Monitor, agent 24/7, sentinelles |
 | **nulle part** | 6 | crypto (nommé mot pour mot dans les conditions GitHub) |
 
-`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+`.github/workflows` : **134 → 145**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
 
 **Le bouton, c'est moi qui l'appuie** : une automatisation rapatriée est manuelle, donc zéro
 volume automatique — et je la lance via l'API, Kevin ne clique rien.
@@ -718,3 +723,65 @@ faites l'appel : le fait n°16 dit lui-même « refais-les chez toi, ne généra
 ### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
 
 Le registre disait `cmcteams → claude/cmcteams-clicking-issue-rmli6m` ; le travail CMCteams réel est sur `claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE), inscrit ce jour comme `cmcteams-departs`. Deux branches Lingua (`lingua-connexion-honnete`, `lingua-prenom-nom`) font **le même travail**, dont une avec `node_modules` commité (m030). Ma session est inscrite comme `domaine-audit`. Avant de commencer : `git fetch --prune` + `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/` — les branches du jour, pas celles du registre.
+
+### Ménage des branches : pourquoi il supprime 0 sur 379 — deux causes, mesurées le 10.09
+
+`auto-merge-claude.yml` publie `menage: 0 branche(s)` livraison après livraison. Ce n'est **ni**
+un problème de jeton **ni** un bug du script. Deux causes **indépendantes** :
+
+**1. Une règle du dépôt interdit toute suppression.** Le ruleset **`16725169`** s'appelle
+« Protection main », mais sa condition est `ref_name.include = ["~ALL"]` : ses règles `deletion`
+et `non_fast_forward` s'appliquent donc à **toutes** les branches, pas seulement `main`. D'où le
+`GH013 — Cannot delete this branch` que le compte-rendu affiche déjà.
+→ **Correctif d'une ligne, côté Kevin** : Réglages → Rules → Rulesets → « Protection main » →
+remplacer `~ALL` par `~DEFAULT_BRANCH`. `main` reste protégée (ni suppression ni force-push),
+`claude/*` redevient supprimable.
+Le ruleset annonce `current_user_can_bypass: always` pour le rôle admin, mais **le
+`GITHUB_TOKEN` du workflow n'est pas un acteur de contournement**, et depuis une session l'appel
+direct est refusé en amont : `403 — Write access to this GitHub API path is not permitted through
+this proxy`. **Personne ne peut supprimer une branche aujourd'hui**, ni la CI, ni une session.
+
+**2. Même la règle levée, le ménage garderait presque tout.** Son filtre de sûreté est
+`git merge-base --is-ancestor "$b" origin/main`. Or **l'historique de `main` a été reconstruit le
+09.08** : `main` ne compte que **115 commits** et l'ancêtre commun avec les branches d'août tient
+en **3 commits**. Mesuré le 10.09 : **314 branches sur 361 n'ont AUCUN ancêtre commun avec `main`**
+→ `--is-ancestor` est faux pour elles, elles sont gardées **pour toujours**, alors que leur
+contenu est déjà dans `main`.
+
+**Rien n'est perdu — vérifié par comparaison d'ARBRES** (la seule méthode valable quand
+l'historique est reconstruit). Sur 37 871 fichiers présents sur les branches et absents de `main` :
+37 120 = sortie de compilation (`apex-ai-v13/chunks`) · 389 = déplacés/renommés · 125 = un lot
+marketing tiers · le reste ≈ 76 = fonctions **retirées exprès** (décès INSEE, robot crypto,
+générateurs vidéo) ou fichiers fabriqués par un workflow. Le seul doute, `arm.webp` cité dans
+`lingua/app.js`, est une ligne de **commentaire** : `node tools/lingua/verify-assets.mjs` passe sur
+`main` (« aucun fichier demandé dans le vide »).
+
+**⚠️ CORRECTION du 10.09 (soir) — la phrase qui suivait ici était FAUSSE.** J'avais écrit
+qu'un « repli par comparaison d'arbres » suffirait : *une branche dont aucun fichier ne diffère de
+`main` est supprimable*. Codé et mesuré, ce critère donne **0 branche sur 385** — inutile. Raison :
+`git diff` répond « différent », pas « plus ancien ». Une branche d'août diffère de `main` **parce
+qu'elle est vieille**. Mesuré sur `claude/lingua-stories-langs-1` : 568 `A` / 378 `M`, dont
+seulement 30 `A` hors sortie de compilation.
+
+**Ce qui marche, et qui est livré** : `node tools/menage/branches-superflues.mjs`. Il ne demande
+pas « la branche diffère-t-elle ? » mais **« quel FICHIER disparaîtrait si on la supprimait ? »**,
+en écartant trois faux positifs mesurés ici :
+1. **fabriqué** — `apex-ai-v13/chunks|core|assets` : le nom porte une empreinte de build, « nouveau »
+   à chaque compilation (37 120 des 37 871 fichiers absents de `main`) ;
+2. **déplacé, même contenu** — l'empreinte du fichier existe ailleurs dans `main` ;
+3. **déplacé, contenu retouché** — le NOM existe ailleurs dans `main`. Indispensable : les 223
+   `apex-ai/v13/services/*.ts` « uniques » d'une branche d'août sont en réalité **rangés en
+   sous-dossiers** dans `main` (`services/vault.ts` → `services/vault/…`). Sans ce troisième
+   filtre, l'outil crie à la perte de tout Apex v13 — je m'y suis laissé prendre.
+
+**Résultat mesuré le 10.09** : 385 branches → **2 sans aucune perte possible**, 319 retenues par
+**190 fichiers distincts** qui n'existent nulle part ailleurs. C'est ça, le vrai travail restant :
+**relire UNE liste de 190 fichiers** (121 = un lot marketing tiers, ~10 = les crons retirés après
+la suspension GitHub, le reste = médias et documents anciens) au lieu de trancher 321 branches.
+`node tools/menage/branches-superflues.mjs --fichiers` imprime cette liste.
+
+**Limite assumée, écrite noir sur blanc** : un fichier seulement *modifié* (`M`) ne retient pas la
+branche. Un `M` peut pourtant être un correctif jamais fusionné — le correctif Lingua du 5.09 était
+exactement ça. Aucune comparaison de contenu ne sait distinguer « version périmée » de « correctif
+oublié » quand l'histoire commune a disparu : c'est pourquoi le seuil est de **30 jours** et que
+les branches inscrites au registre sont intouchables. Garde : `npm run test:menage-branches`.

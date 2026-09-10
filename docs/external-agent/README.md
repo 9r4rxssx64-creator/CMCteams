@@ -1,5 +1,13 @@
 # 🤖 APEX CONTINUATOR — Agent externe Claude Console
 
+> ⚠️ **JAMAIS IMPLÉMENTÉ — vérifié le 6.09.2026.** Tout ce dossier décrit un « agent externe »
+> (`ax_external_agent_enabled`, file Firebase `/apex/external_agent_queue/`, commande `/agent`,
+> kill-switch) annoncé « sera codé en v13.4.6 ». Apex est aujourd'hui en **v13.4.355** et
+> `grep -rl external_agent` sur le code source ne renvoie **rien**. Ne pas suivre ces pages
+> comme un mode d'emploi : elles décrivent du vide.
+
+
+
 **But :** Quand ton forfait Anthropic Claude Code (moi) est épuisé, cet agent prend le relais et continue le travail Apex en autonomie.
 
 ## 🚀 Setup en 3 copier-coller (5 min)

@@ -34,7 +34,7 @@ grep -cE '(onclick|onchange|onsubmit|onload)=' apex-ai/v13/dist/index.html
 # Doit etre 0
 
 # Detecter eval / new Function (incompatibles strict)
-grep -nE '\b(eval|Function)\s*\(' apex-ai/v13/src/**/*.{ts,tsx} | grep -v '\.test\.'
+grep -nE '\b(eval|Function)\s*\(' apex-ai/v13/{core,features,services,ui}/**/*.ts | grep -v '\.test\.'
 # Doit etre vide
 ```
 
@@ -277,7 +277,7 @@ grep -E "(unsafe-inline|unsafe-eval)" apex-ai/v13/dist/index.html
 grep "strict-dynamic" apex-ai/v13/dist/index.html
 
 # 3. Tests E2E CSP passent
-cd apex-ai/v13 && npm run test:e2e -- csp
+cd apex-ai/v13 && npm run e2e -- csp
 
 # 4. CSP Evaluator score (manuel)
 # https://csp-evaluator.withgoogle.com/ → 0 high warnings

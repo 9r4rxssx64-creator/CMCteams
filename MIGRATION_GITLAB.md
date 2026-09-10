@@ -77,7 +77,12 @@ ligne** : c'est un réglage, pas du code (je l'ai préparé et testé).
 | `UPSTREAM_BASE` | `https://cmcteams.pages.dev` *(l'adresse de l'étape 3)* |
 | `UPSTREAM_PREFIX` | *(laisser complètement vide)* |
 
-Sauvegarder. **kd-mc.com et tes 20 sous-domaines reviennent.**
+Sauvegarder. **kd-mc.com et ses sous-domaines reviennent** (ils étaient 20 au moment de la
+panne du 2.09 ; ils sont **26** depuis — liste vérifiée par `npm run test:uptime-couverture`).
+
+> **⚠️ 5.09.2026 : ce document est un plan de SECOURS, pas la marche à suivre du jour.**
+> GitHub a rouvert le 4.09 à 16h34 UTC ; le site est de nouveau servi depuis GitHub et GitLab
+> n'est plus que le miroir + l'endroit des travaux que GitHub interdit.
 
 > Pourquoi deux réglages : GitHub Pages servait tes pages sous `/CMCteams/…`,
 > Cloudflare Pages les sert à la racine. Le second réglage retire ce préfixe.
@@ -88,7 +93,7 @@ Sauvegarder. **kd-mc.com et tes 20 sous-domaines reviennent.**
 Facultatif : les tests tournent sans aucune clé. Ce n'est utile que pour
 remettre en ligne les Workers depuis GitLab.
 
-**▶️ [Variables du projet GitLab](https://gitlab.com/-/user_settings/personal_access_tokens)** → *Settings → CI/CD → Variables*, en cochant **Masked** :
+**▶️ [Variables CI/CD du projet GitLab](https://gitlab.com/kdmc-group/Kdmc-project/-/settings/ci_cd)** → section *Variables*, en cochant **Masked** :
 `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, puis les clés d'IA au besoin.
 
 ---
@@ -104,7 +109,7 @@ remettre en ligne les Workers depuis GitLab.
 | Tests | 126 workflows | tests au push, **0 exécution programmée** |
 | Surveillances, générations d'images | GitHub Actions | **à déplacer vers un Worker** |
 
-**Rien n'est perdu** : les 42 workflows retirés sont conservés dans
+**Rien n'est perdu** : les 35 workflows retirés sont conservés dans
 `.github/workflows-desactives/`, et tout l'historique (395 commits) part sur
 GitLab.
 

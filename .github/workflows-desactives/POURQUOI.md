@@ -14,7 +14,7 @@ restriction. Raison donnée mot pour mot :
 (Citation reproduite **sur une seule ligne et sans mise en forme**, pour rester
 exactement le texte reçu — un test vérifie qu'on ne l'a pas reformulée.)
 
-Ces 42 workflows correspondaient exactement à cette description : génération
+Ces workflows correspondaient exactement à cette description. *(Le chiffre « 42 » longtemps cité n'est pas vérifiable : le dossier contient **35** `.yml` au 6.09.2026, dont **6** ajoutés le 5.09 pour le crypto-bot → **29** issus du déplacement du 15/08. Tout le dossier ayant été ajouté en un seul commit, l'historique ne permet pas de trancher.)* : génération
 d'images (Replicate, OpenAI), surveillance de sites, pilotage de Railway et
 Vercel, sauvegardes Firebase et Cloudflare KV, bulletins d'actualité, photos
 Pexels, alertes sismiques… Aucun ne construisait ni ne testait le code du dépôt.

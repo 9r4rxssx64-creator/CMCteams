@@ -57,7 +57,7 @@ Permissions minimales requises pour le PAT GitHub :
 | `.github/workflows/apex-audit-escalate.yml` | Workflow declenche par event `apex-audit` |
 | `.github/workflows/scripts/escalate.py` | Script Python : appelle Claude + commit plan + Issue |
 | `docs/apex-escalades/` | Plans correctifs auto-generes (commit dans le repo) |
-| `apex-ai/v13/services/apex-self-audit.ts` | Cote Apex : `escalateToClaudeCode()` envoie le dispatch |
+| `apex-ai/v13/services/admin/apex-self-audit.ts` | Cote Apex : `escalateToClaudeCode()` envoie le dispatch |
 
 ## Test manuel rapide
 
@@ -108,5 +108,5 @@ finit par detecter et escalade en backup.
 ## Voir aussi
 
 - `apex-ai/v13/services/apex-self-audit.ts` — moteur self-audit (6 axes parallel)
-- `apex-ai/v13/services/vault.ts` — `readKey('ax_github_token')`
+- `apex-ai/v13/services/vault/vault.ts` — `readKey('ax_github_token')`
 - `.github/workflows/claude-todo-watcher.yml` — failover cron 2h

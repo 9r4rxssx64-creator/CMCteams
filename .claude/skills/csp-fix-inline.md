@@ -228,7 +228,7 @@ grep "Content-Security-Policy" apex-ai/index.html | grep -v 'unsafe-inline'
 # (manuel)
 
 # 5. Tests E2E passent
-cd apex-ai/v13 && npm run test:e2e
+cd apex-ai/v13 && npm run e2e
 ```
 
 Si echec : identifier le handler inline restant via console DevTools "Refused to execute" et migrer.

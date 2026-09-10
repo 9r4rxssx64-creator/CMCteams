@@ -29,7 +29,7 @@ Reference Kevin : "0 code mort" (CLAUDE.md axe Architecture /20). "Bundle ultra-
 
 ```bash
 # 1. Outil de detection automatique - jscpd (JS Copy-Paste Detector)
-npx jscpd apex-ai/v13/src --min-lines 5 --min-tokens 50 --output reports/
+npx jscpd apex-ai/v13 --min-lines 5 --min-tokens 50 --output reports/
 
 # 2. Patterns manuels frequents (basique)
 # Fonctions qui commencent pareil
@@ -281,7 +281,7 @@ test $(echo "$COVERAGE_AFTER >= $COVERAGE_BEFORE" | bc) -eq 1
 npx ts-prune | grep -v 'used in module'  # Doit etre vide
 
 # 5. Helpers documentes (JSDoc)
-grep -B5 'export function' apex-ai/v13/src/utils/*.ts | grep '/\*\*' | wc -l
+grep -B5 'export function' apex-ai/v13/services/**/*.ts | grep '/\*\*' | wc -l
 ```
 
 ## Exemples concrets

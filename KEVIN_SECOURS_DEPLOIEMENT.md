@@ -41,7 +41,10 @@ Puis, sur cette page :
 | **Deploy command** (commande) | `npx wrangler deploy` |
 | **Build command** | *(laisser vide)* |
 
-4. Si tu vois **« Build watch paths »**, mets `services/kdmc-router/*`
+4. Si tu vois **« Build watch paths »** → **laisse `*`** (ne mets RIEN). L'avertissement en tête
+   de ce document explique pourquoi : une mauvaise valeur ne rougit pas, elle désactive le
+   parachute **en silence**. *(Cette étape disait auparavant `services/kdmc-router/*` — c'était
+   en contradiction directe avec l'avertissement ; corrigé le 6.09.2026.)*
    → ça évite qu'il republie à chaque petite modif sans rapport.
 5. **Save**.
 

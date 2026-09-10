@@ -8,6 +8,8 @@ import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
+import { signatureImport } from '../shared/_gen-stabilite.mjs';
+import { jsonStable } from '../shared/_json-stable.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..', '..');
 const PDFJS = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.min.js'));
@@ -44,18 +46,20 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
   // sensible à la contention CPU. On FORCE _cmcFinalGeometricFill puis on POLL jusqu'à
   // ce que la couverture soit STABLE (2 lectures identiques), max ~15s — indépendant du
   // timing/charge machine. Sinon la couverture varie (247 vs 285) selon la charge.
-  const cov = (key) => { const ov = (window.A && A.overrides && A.overrides[key]) || {}; return Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length; };
-  let prev = -1, stable = 0, key = year + '-' + monthIdx;
+  // v9.896 : la sonde couvre personnes + cellules + ÉQUIPES + familles (module partagé).
+  // Passée TELLE QUELLE à page.evaluate : elle ne dépend que de window.A, aucune fermeture.
+  const sonde = signatureImport;
+  let prev = '', stable = 0, key = year + '-' + monthIdx;
   // 60 tours (~30 s) au lieu de 30 : un runner partagé est plus lent que le sandbox.
   for (let i = 0; i < 60 && stable < 2; i++) {
     await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
     await page.waitForTimeout(500);
-    const c = await page.evaluate(cov, key);
-    stable = (c === prev && c > 50) ? stable + 1 : 0; prev = c;
+    const c = await page.evaluate(sonde, key);
+    stable = (c.sig === prev && c.n > 50) ? stable + 1 : 0; prev = c.sig;
   }
   // Abandonner en SILENCE est ce qui rendait ce contrôle faux sur un runner lent : on
   // lisait un import à moitié fini et on criait « la page ≠ le parser ». Ici on le DIT.
-  if (stable < 2) throw new Error('import ' + key + ' non stabilisé après ~30 s (couverture ' + prev + ') — mesure non fiable, ne rien régénérer avec ça');
+  if (stable < 2) throw new Error('import ' + key + ' non stabilisé après ~30 s (signature ' + prev + ') — mesure non fiable, ne rien régénérer avec ça');
   const out = await page.evaluate(({ key, year, monthIdx, MOIS }) => {
     const ov = A.overrides[key] || {};
     const days = new Date(year, monthIdx + 1, 0).getDate();
@@ -131,7 +135,7 @@ async function main() {
   if (_dropped) console.log('miroirs dangling retirés: ' + _dropped);
   const payload = { generatedAt: '2026-06-28', months, boards, mirror };
   const js = '/* GÉNÉRÉ par tools/departs/_gen-boards.mjs depuis les vrais PDF (parser géométrique validé). NE PAS éditer à la main. */\n'
-    + 'window.DEPARTS_GEN=' + JSON.stringify(payload) + ';\n';
+    + 'window.DEPARTS_GEN=' + jsonStable(payload) + ';\n';
   writeFileSync(resolve(__dirname, 'boards-gen.js'), js);
   console.log('→ tools/departs/boards-gen.js écrit (' + js.length + ' octets, ' + Object.keys(boards).length + ' boards, ' + Object.keys(mirror).length + ' miroirs)');
 }

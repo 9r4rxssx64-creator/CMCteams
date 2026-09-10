@@ -28,12 +28,12 @@ npm run playwright:check     # vérifie que Chromium se lance bien
 
 | Commande | Description |
 |---|---|
-| `npm test` | Lance `runtime-audit.mjs` (suite principale, 147 tests régression + E2E V1↔V2 + perf) |
+| `npm test` | Lance `runtime-audit.mjs` (suite principale, tests de régression — **le nombre exact est celui qu'affiche l'exécution** (`runtime-audit.mjs` imprime lui-même son total ; les valeurs « 147 » et « 34+ » qui traînaient dans ce fichier se contredisaient) + E2E V1↔V2 + perf) |
 | `npm run test:runtime` | Idem |
 | `npm run test:encadres` | Test spécifique encadrés statuts SBM (PASSERON G → CP) |
-| `npm run test:all` | Lance les 2 suites |
+| `npm run test:all` | Lance les **21** suites enchaînées (mesuré 6.09.2026) |
 | `npm run test:check-syntax` | `node --check` JS combiné (méthode CLAUDE.md erreur #32) |
-| `npm run test:ci` | check-syntax + test:all (utilisé en CI) |
+| `npm run test:ci` | check-syntax + **~115 scripts** enchaînés (mesuré 6.09.2026) (utilisé en CI) |
 | `npm run playwright:install` | (Re)installe les browsers Playwright |
 
 ## Fixtures
@@ -46,7 +46,7 @@ npm run playwright:check     # vérifie que Chromium se lance bien
 
 Charge `index.html` dans Chromium et exécute :
 
-1. **34+ tests régression** via `_cmcRunParserTests()` (registry `CMC_PARSER_TESTS`)
+1. **tests de régression (voir la note ci-dessus : ne pas figer le nombre)** via `_cmcRunParserTests()` (registry `CMC_PARSER_TESTS`)
    - SW01-SW05 : scoped wipe V1↔V2
    - VS01-VS31 : meta cells, FF, étoiles, decisionMode, cache, sentinelle...
 2. **E2E V1→V2 cohabitation** : injecte employé V1 + cadre V2, vérifie scoped-wipe préserve correctement

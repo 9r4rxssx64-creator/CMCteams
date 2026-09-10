@@ -142,7 +142,7 @@
 - `ax_telemetry_in` — remontée erreurs cross-app
 - `ax_lessons_learned_struct` — lessons partagées (Apex + CMCteams)
 - `CLAUDE_HANDOFF.json` — communication bidirectionnelle
-- `.github/workflows/claude-todo-watcher.yml` cron 6h — escalade auto issues GitHub
+- `.github/workflows-desactives/claude-todo-watcher.yml (**rangé** — plus actif)` cron 6h — escalade auto issues GitHub
 
 ## 🎯 Méthodologie expert (obligatoire chaque session)
 

@@ -92,5 +92,5 @@ allowed_tools: [tool1, tool2]
 ## References
 
 - Inspire de : Anthropic Skill Creator (.claude/skills/skill-creator)
-- Pattern Apex : `apex-ai/v13/services/skills/skill-factory.ts`
+- Pattern Apex : `apex-ai/v13/services/apex-tools-registry/skills-tools.ts`
 - Vue admin : `?view=skill-factory`

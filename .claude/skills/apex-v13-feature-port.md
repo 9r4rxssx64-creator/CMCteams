@@ -44,7 +44,7 @@ grep -nE "K\.\w+" extracted-function.js | sort -u
 
 Architecture cible :
 ```
-apex-ai/v13/src/
+apex-ai/v13/
 ├── views/<feature>/
 │   ├── <feature>View.tsx          # UI component
 │   ├── <feature>View.test.tsx     # Tests UI
