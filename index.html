@@ -5888,7 +5888,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.899";
+var APP_VER="v9.900";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -35787,7 +35787,9 @@ function createEmpFromImport(name,family){
   if(!A.user||A.user.id!==AID)return;
   var exists=A.employees.find(function(e){return e.name===name;});
   if(exists){toast("Cet employ\u00e9 existe d\u00e9j\u00e0 : "+name,"err");return;}
-  var tmpId="U_TMP_"+Date.now().toString(36).toUpperCase().slice(-6);
+  // v9.899 : dernier site tiré de l'HORLOGE (les imports utilisent _cmcTmpEmpId depuis v9.896,
+  // leçon #239) — même règle ici : identifiant dérivé du NOM, jamais de Date.now().
+  var tmpId=(typeof _cmcTmpEmpId==="function")?_cmcTmpEmpId(name,A.employees):("U_TMP_"+Date.now().toString(36).toUpperCase().slice(-6));
   var newEmp={id:tmpId,name:name,team:"1",post:"",chef:false,family:family||"bj",cdpShifts:[]};
   A.employees.push(newEmp);
   ls("cmc_e",A.employees);
