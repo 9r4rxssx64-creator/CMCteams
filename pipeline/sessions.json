@@ -11,11 +11,11 @@
         "tools/crea-studio",
         "services/kdmc-crea-ai"
       ],
-      "etat": "actif",
-      "maj": "2026-09-05",
+      "etat": "termine",
+      "maj": "2026-09-10",
       "attend_kevin": null,
       "attend_session": null,
-      "note": "49 automatisations rapatriees/orientees (14 GitHub a la main, 24 GitLab, 5 Worker, 6 jamais) + depot public securise (2 vraies failles corrigees)."
+      "note": "Branche supprimee par le menage : travail VERIFIE dans main (PR #3747 fusionnee le 10.09). Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "cmcteams": {
       "titre": "CMCteams",
@@ -29,7 +29,7 @@
       "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": null,
+      "attend_session": "studio-crea : Decision Kevin 10.09 : les plannings CMCteams ne passent PAS derriere le SSO du domaine — ne plus le proposer",
       "note": "Branche supprimee par le menage du 10.09 (levee du ruleset). Travail VERIFIE dans main : PR #3441 fusionnee. Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "domain-kdmc": {
@@ -288,11 +288,11 @@
       "branche": "claude/verify-cmcteams-light-data-rzlvau",
       "sujet": "fidelite-pdf",
       "surfaces": [],
-      "etat": "actif",
+      "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": null,
       "attend_session": "registre-menage : claude/voir-34519286077 : 3 commits hors main dont 2 a toi — a toi de trancher",
-      "note": "10.09 : équipes lues dans le récapitulatif page 1 (v9.897), octobre 2026 intégré, cellules+équipes 0 écart 4 mois × 2 surfaces, CASSINI A/MOREL F retrouvés"
+      "note": "Branche supprimee par le menage : travail VERIFIE dans main (PR #3743 fusionnee le 10.09). Reste claude/voir-34519286077 qui porte 2 de tes commits — voir le message. Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "secrets-guard": {
       "titre": "Garde anti-fuite de secrets (branche annexe de domaine-audit)",
@@ -963,6 +963,15 @@
       "sujet": "claude/voir-34519286077 : 3 commits hors main dont 2 a toi — a toi de trancher",
       "corps": "Le grand menage du 10.09 (253 branches claude/* supprimees, 389 -> 126, apres la correction du ruleset 16725169 en ~DEFAULT_BRANCH) a laisse cette branche debout : elle porte 3 commits hors de main. Un de kdmc-bot (captures du run 34519286077) et DEUX signes Claude venant de ta branche claude/verify-cmcteams-light-data-rzlvau : le merge de main, et 'Voir comme Kevin : la session CMCteams passe aussi les ecrans une fois (bienvenue v10, cookies, popup Apex)'. Le garde de robot ne l'exclut pas justement parce qu'un humain a commite dessus — c'est voulu. Je l'ai inscrite au registre POUR QUE LE GATE CESSE D'ETRE ROUGE POUR TOUT LE MONDE, rien de plus : soit tu recuperes ces 2 commits dans ta branche et on la laisse mourir, soit tu la reprends a ton compte. Je n'y touche pas.",
       "ts": "2026-09-10 19:21",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m066",
+      "de": "studio-crea",
+      "a": "cmcteams",
+      "sujet": "Decision Kevin 10.09 : les plannings CMCteams ne passent PAS derriere le SSO du domaine — ne plus le proposer",
+      "corps": "Kevin a repondu « non » a la question ouverte par l'audit d'exposition (ETAT-INFRA fait n°12) : l'app CMCteams et ses 2 fichiers de planning (tools/shared/planning-seed.js, tools/departs/boards-gen.js) restent servis comme aujourd'hui, avec les noms des employes (par conception : chaque employe voit son equipe). Le modele d'acces ne change pas. Grave dans NOTES_USER.md, ETAT-INFRA fait n°12 et la memoire compacte. Rien a faire de votre cote, juste ne pas rouvrir ce chantier.",
+      "ts": "2026-09-10 19:42",
       "etat": "ouvert"
     }
   ]
