@@ -67,8 +67,13 @@
 
 ### 👑 Admin Kevin
 
-- ✅ Reconnu par téléphone E.164 (‹tél. admin›) + aliases ("kevin", "KD", "kdmc")
-- ✅ Bypass network client-side (login admin = 0 appel réseau)
+- ⚠️ **PÉRIMÉ (v1.1.3)** — ces deux lignes décrivaient la reconnaissance de l'admin par son
+  **numéro de téléphone**, et un **contournement admin côté client**. Les deux ont été
+  **supprimés** par l'audit du 05/09 (faille P0) : le numéro était écrit en clair dans le
+  fichier public servi à chaque visiteur, donc il n'était plus un secret. Depuis **v1.1.284**,
+  l'admin se décide **côté serveur uniquement** (SSO central Face ID, ou en-tête
+  `X-Apex-Admin-Token` en anti-lock-out) et le numéro ne figure **nulle part** dans le dépôt.
+  Détail : `audit/apex-chat/03-FINDINGS.md`.
 - ✅ Vue Live Users (géoloc + devices + actions)
 - ✅ Toggles 22 features (global + per-user)
 - ✅ Fiches utilisateurs complètes (clic pseudo = fiche admin)
