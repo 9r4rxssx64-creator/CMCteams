@@ -1,5 +1,22 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 — Lingua : le dernier rouge de `test:ci` était un test qui ne testait rien
+
+Trois jours sans que personne le prenne, et il bloquait la chaîne pour **toutes** les sessions. Tranché en
+ouvrant l'app comme un utilisateur : le bouton 🔊 **existe** (parcours réel, classe `pod-say`, écran à 607
+boutons). C'est le **montage du test** qui était périmé : il fabriquait un compte sans la clé de progression,
+ce qui fait planter la page — page blanche, zéro bouton, attente de 15 s vouée à expirer.
+
+- **Corrigé** : le test injecte la progression de la langue testée. **0 vérification exécutée → 21 réelles.**
+- **Reste 5 échecs de contenu** (phrase dite deux fois sur 4 langues, message qui ne nomme pas la voix de
+  secours). Je ne les ai **pas** qualifiés : c'est la voix, domaine de la session Lingua, et mon espion sur
+  `speechSynthesis` n'a rien capté dans le parcours réel. Donc `test:ci` **reste rouge**, mais pour de vraies
+  raisons mesurables au lieu d'un blocage muet.
+- **Fragilité signalée, non patchée** : un compte sans progression = **écran blanc total**. Si un stockage est
+  partiellement effacé, l'utilisateur n'a plus rien. Leçon #222.
+
+---
+
 ## 7 septembre 2026 (00h10) — la réponse : une RÈGLE du dépôt, pas un droit manquant
 
 - Le robot a enfin écrit la cause exacte : **`GH013 — Cannot delete this branch`**. Une **règle
