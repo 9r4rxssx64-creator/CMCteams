@@ -101,6 +101,54 @@ le relais du domaine, tous projets présents et futurs. Leçons **#217, #218**.
 
 ---
 
+## 📣 RÈGLE ABSOLUE — PRÉVENIR NE SUFFIT PAS : FAIRE RECTIFIER, PUIS VÉRIFIER SOI-MÊME (Kevin 2026-09-10, ABSOLUE)
+
+> **« Prévient les branches concernées et fait les rectifier, vérifier, etc. À chaque fois et les autres aussi. Note le. »** — Kevin 2026-09-10
+
+**Règle absolue, NON-NÉGOCIABLE** — toutes les sessions, toutes les branches, tous projets présents et futurs.
+
+### 1. Déposer un message n'est PAS avoir prévenu
+
+Écrire dans `pipeline/sessions.json` puis passer à autre chose, c'est se donner bonne conscience : le
+message peut rester **des jours** sans que personne ne le lise. Vécu le 10.09 : `test:lingua-voix` signalé
+le 6.09, **3 jours** sans réponse, et pendant ce temps la chaîne de tests restait rouge **pour toutes les
+sessions**. Un signalement sans suite est un signalement qui n'a servi à rien.
+
+### 2. Les 4 temps, à chaque fois, dans cet ordre
+
+1. **PRÉVENIR** — message précis dans `pipeline/sessions.json` : ce que j'ai touché chez eux, la preuve
+   mesurée, la ligne exacte, ce qui reste à faire, et ce que je ne fais PAS à leur place.
+2. **RÉVEILLER** — joindre la session **vivante** (`ListAgents` / `SendMessage`, ou les outils de sessions
+   à distance). Un message déposé dans un fichier n'atteint personne tant que la session ne relit pas le
+   fichier. Si aucune session n'est joignable, le dire et prendre le relais soi-même.
+3. **FAIRE RECTIFIER** — obtenir la correction. Si la session est injoignable ou muette **et que le sujet
+   bloque les autres** (chaîne de tests rouge, fusion impossible, page en panne), corriger soi-même **ce
+   qui est sûr** (un test, un montage, un réglage), **jamais** le code métier d'autrui sans preuve.
+4. **VÉRIFIER SOI-MÊME** — relancer la mesure et le dire avec des chiffres. Ne JAMAIS clore sur
+   « ils ont dit que c'était corrigé » : la seule preuve est la mesure refaite.
+
+### 3. « Et les autres aussi »
+
+Le sujet ne s'arrête pas à la branche qui l'a causé. Quand un défaut touche une pratique commune (un
+montage de test, un générateur, une garde, une règle), prévenir **toutes** les sessions concernées, pas
+seulement la coupable — et vérifier que le même défaut n'existe pas ailleurs (inventaire, pas un cas isolé).
+
+### 4. Garde mécanique — une règle sans automatisme finit sautée (leçon #142)
+
+`npm run test:messages-suivis` (câblé dans `test:ci`) : tout message **ouvert** de plus de **2 jours**
+doit porter un **suivi daté** (`suivi: [{date, action}]` — réveil, relance, correction prise en charge,
+vérification). Sans suivi, le gate **échoue** : impossible d'oublier un signalement en silence.
+
+### 5. Test mental obligatoire avant de clore un signalement
+
+> *« Ai-je seulement DÉPOSÉ un message, ou est-ce que la session a été RÉVEILLÉE, la correction FAITE, et
+> la mesure REFAITE par moi ? Si ça bloque les autres et que personne ne répond, qu'est-ce que je peux
+> corriger moi-même sans risque, tout de suite ? »*
+
+S'applique : toutes les sessions (priorité absolue), tous projets présents et futurs.
+
+---
+
 ## 🌍 RÈGLE ABSOLUE — DÉPÔT PUBLIC : LE CODE SE LIT, LES DONNÉES ET LES CLÉS NON (Kevin 2026-09-05, ABSOLUE)
 
 > **« Public mais sécurisé normalement. »** — Kevin 2026-09-05

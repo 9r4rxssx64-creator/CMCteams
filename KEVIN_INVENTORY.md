@@ -3,6 +3,14 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 📣 Prévenir ne suffit pas : faire rectifier, puis vérifier — session 2026-09-10 (branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `CLAUDE.md` (règle en tête) | La règle absolue en 4 temps : **prévenir** → **réveiller** la session vivante → **faire rectifier** → **vérifier soi-même** en refaisant la mesure. Vaut pour toutes les sessions, tous projets présents et futurs. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `tests/messages-suivis.test.mjs` | La garde qui rend la règle impossible à oublier : tout message **ouvert** de plus de **2 jours** sans suivi daté fait **échouer** `test:ci`. `npm run test:messages-suivis` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis.test.mjs) |
+| `tests/messages-suivis-baseline.json` | Le cliquet : 50 anciens messages figés pour ne pas bloquer sur la dette existante — toute **nouvelle** négligence, elle, est refusée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis-baseline.json) |
+
 ## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
 
 | Fichier | À quoi ça sert | Liens |

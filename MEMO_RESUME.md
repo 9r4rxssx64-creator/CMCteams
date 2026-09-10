@@ -1,5 +1,28 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (soir) — « prévenir » ne suffit pas : réveiller, faire corriger, revérifier soi-même
+
+Demande de Kevin : *« Prévient les branches concernées et fait les rectifier, vérifier, etc. À chaque fois
+et les autres aussi. Note le. »* C'est écrit, et surtout **rendu obligatoire par une garde**.
+
+- **Le défaut constaté sur moi-même** : le 6.09 j'avais signalé le test Lingua dans `pipeline/sessions.json`,
+  puis considéré le dossier clos. **Trois jours** plus tard, personne ne l'avait lu — un message déposé dans
+  un fichier ne réveille personne — et la chaîne de tests restait rouge **pour toutes les sessions**.
+- **La règle, en haut de `CLAUDE.md`** : 4 temps à chaque fois — **prévenir** (message mesuré, ligne exacte),
+  **réveiller** la session vivante, **faire rectifier** (et corriger soi-même ce qui est sûr si personne ne
+  répond et que ça bloque les autres), **vérifier soi-même** en refaisant la mesure. Jamais clore sur
+  « ils ont dit que c'était corrigé ».
+- **La garde mécanique** : `npm run test:messages-suivis`, câblée dans `test:ci`. Tout message **ouvert** de
+  plus de **2 jours** doit porter un `suivi` daté. Sans suivi, la chaîne échoue : un signalement ne peut plus
+  s'oublier en silence. Cliquet initial de 50 identifiants figés (dette existante gelée, dette nouvelle
+  bloquée) — même principe que `improvements-baseline.json`.
+- **Appliqué tout de suite, pas seulement écrit** : 3 sessions réveillées pour de vrai (Lingua, Domaine,
+  Départs) avec la mesure et la ligne exacte, 8 de mes messages ouverts pourvus d'un suivi daté, et une
+  vérification programmée de mon côté pour refaire les mesures moi-même.
+- Leçon **#239**.
+
+---
+
 ## 10 septembre 2026 — Lingua : le dernier rouge de `test:ci` était un test qui ne testait rien
 
 Trois jours sans que personne le prenne, et il bloquait la chaîne pour **toutes** les sessions. Tranché en
