@@ -32,8 +32,14 @@
  *   node tools/ci/ci.mjs runs [workflow.yml] [-n 5] # derniers runs + conclusion
  *   node tools/ci/ci.mjs watch <workflow.yml> [--timeout 900]   # attend la fin, sort 1 si echec
  *   node tools/ci/ci.mjs logs <run_id>              # etapes en echec d'un run
+ *   node tools/ci/ci.mjs report <run_id>            # rapport posé en check-run par le workflow (sécu, strix)
  *
- * Zéro dépendance (fetch natif Node 18+). Aucun secret n'est lu, écrit ni affiché.
+ * ⚠️ Les journaux détaillés et les artifacts d'un run vivent sur d'autres domaines
+ * (blob Azure, github.com) → 403 depuis l'agent. `report` lit ce que le workflow a
+ * volontairement posé dans un check-run sur le commit (api.github.com) — c'est la
+ * voie qui marche pour security-suite.yml et strix-scan.yml.
+ *
+ * Zéro dépendance (curl + Node 18+). Aucun secret n'est lu, écrit ni affiché.
  */
 
 import { execFile } from 'node:child_process';
@@ -203,6 +209,30 @@ async function cmdLogs(runId) {
   return 1;
 }
 
+/**
+ * Lit le rapport qu'un workflow a posé en check-run sur son commit.
+ * (security-suite.yml et strix-scan.yml le font — voir leur dernière étape.)
+ */
+async function cmdReport(runId) {
+  if (!runId) { console.log(`${KO} usage : report <run_id>`); return 2; }
+  const run = await api(`/actions/runs/${runId}`);
+  const d = await api(`/commits/${run.head_sha}/check-runs?per_page=100`);
+  const runs = (d.check_runs || []).filter(c => c.name.includes(`(run ${runId})`));
+  if (!runs.length) {
+    console.log(`${KO} Aucun check-run « rapport » pour le run ${runId} (commit ${run.head_sha.slice(0, 9)}).`);
+    console.log('   → soit le workflow n\'a pas l\'étape « Résumé → check-run », soit il n\'est pas fini.');
+    console.log(`   état du run : ${run.status}${run.conclusion ? ` (${run.conclusion})` : ''}`);
+    return 1;
+  }
+  for (const c of runs) {
+    console.log(`\n${OK} ${c.name} — ${c.output?.title || ''}\n${'─'.repeat(70)}`);
+    if (c.output?.summary) console.log(c.output.summary);
+    if (c.output?.text) console.log('\n' + c.output.text);
+    console.log(`${'─'.repeat(70)}\n   ${c.html_url}`);
+  }
+  return 0;
+}
+
 (async () => {
   const [cmd, ...rest] = process.argv.slice(2);
   const args = [], inputs = {};
@@ -223,6 +253,7 @@ async function cmdLogs(runId) {
       case 'runs':  code = await cmdRuns(args[0], n); break;
       case 'watch': code = await cmdWatch(args[0], timeout); break;
       case 'logs':  code = await cmdLogs(args[0]); break;
+      case 'report': code = await cmdReport(args[0]); break;
       default:
         console.log(`Piloter GitHub Actions sans « gh ».\n
   node tools/ci/ci.mjs check                 l'API répond-elle, suis-je authentifié ?
@@ -230,7 +261,8 @@ async function cmdLogs(runId) {
   node tools/ci/ci.mjs run <wf.yml> [--ref main] [--input cle=val]
   node tools/ci/ci.mjs runs [wf.yml] [-n 5]  derniers runs + conclusion
   node tools/ci/ci.mjs watch <wf.yml>        attend la fin (sortie 1 si échec)
-  node tools/ci/ci.mjs logs <run_id>         étapes en échec, nommées\n
+  node tools/ci/ci.mjs logs <run_id>         étapes en échec, nommées
+  node tools/ci/ci.mjs report <run_id>       rapport posé en check-run (security-suite, strix)\n
 Dépôt ciblé : ${REPO} (surchargeable par CI_REPO).`);
         code = 0;
     }

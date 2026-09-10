@@ -47,6 +47,7 @@ jobs:
     timeout-minutes: 25
     permissions:
       contents: read
+      checks: write     # pour le « check-run » de fin (rapport lisible par l'API, voir plus bas)
     steps:
       - uses: actions/checkout@v6
         with:
@@ -158,7 +159,8 @@ jobs:
       - name: Triage des secrets (vivants ? faux positifs ? où ?)
         if: always()
         run: |
-          python3 - <<'PYEOF' | tee -a "$GITHUB_STEP_SUMMARY"
+          # Écrit dans un fichier (repris par le check-run plus bas) PUIS dans le résumé.
+          python3 - <<'PYEOF' | tee /tmp/sec/triage.txt
           import json, collections, os
           print("")
           print("=== TRUFFLEHOG — combien sont VRAIMENT vivants ? ===")
@@ -250,6 +252,39 @@ jobs:
           print("")
           print("Aucune valeur de secret n'est imprimée ici — ce dépôt est public.")
           PYEOF
+          cat /tmp/sec/triage.txt >> "$GITHUB_STEP_SUMMARY"
+
+      # ── LE RAPPORT, LÀ OÙ L'AGENT PEUT LE LIRE ──────────────────────────────
+      #    Mesuré le 2026-09-10 : depuis une session d'agent, l'artifact (blob Azure)
+      #    et le résumé de l'exécution (github.com) sont derrière un proxy qui répond
+      #    403 — seule `api.github.com` passe. Un rapport qu'on ne peut pas lire est
+      #    un rapport qui n'existe pas (erreur #28). Donc la synthèse + le triage
+      #    sont AUSSI posés dans un « check-run » sur le commit : c'est lu par
+      #    `node tools/ci/ci.mjs report <run_id>`. Même contenu que le résumé, même
+      #    règle : aucune valeur de secret, jamais.
+      - name: Résumé → check-run (lisible par l'API depuis une session d'agent)
+        if: always()
+        uses: actions/github-script@v9
+        env:
+          RUN_ID: ${{ github.run_id }}
+        with:
+          script: |
+            const fs = require('fs');
+            const rd = p => { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } };
+            const synthese = rd('/tmp/sec/summary.txt').trim() || '(pas de synthèse — un outil a planté avant)';
+            const triage = rd('/tmp/sec/triage.txt').trim() || '(pas de triage)';
+            await github.rest.checks.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              name: `security-suite — rapport (run ${process.env.RUN_ID})`,
+              head_sha: context.sha,
+              status: 'completed', conclusion: 'neutral',   // rapport, pas un gate
+              output: {
+                title: 'Security Suite — synthèse + triage',
+                summary: synthese.slice(0, 60000),
+                text: triage.slice(0, 65000),
+              },
+            });
+            core.info(`check-run créé sur ${context.sha.slice(0, 9)}`);
 
       - name: Rapport en artifact
         uses: actions/upload-artifact@v4

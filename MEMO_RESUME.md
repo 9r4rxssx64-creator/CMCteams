@@ -25,6 +25,11 @@
      et le vrai correctif (les brancher) est écrit noir sur blanc.
 - **J'ai créé l'outil** pour que ça ne se reperde jamais : `tools/ci/ci.mjs` — je lance,
   je suis, et je lis la cause exacte d'un échec, sans dépendre d'un logiciel absent.
+- **Deuxième mur, même soir** : le scan de sécurité « arsenal » a fini vert… mais son rapport
+  est rangé à un endroit que je ne peux pas atteindre d'ici (refus 403, mesuré). Un rapport
+  qu'on ne peut pas lire n'existe pas. Correctif : les deux scans de sécurité (arsenal +
+  pentest IA) **posent aussi leur rapport sur le commit** (« check-run »), et
+  `node tools/ci/ci.mjs report <run>` le lit. Relancés pour lire le vrai résultat.
 - **Autre chose vue au passage** (hors Apex Chat) : toutes tes pages du domaine répondent,
   **sauf `lingua.kd-mc.com`** qui est en panne. Je te le signale, je n'y ai pas touché.
 

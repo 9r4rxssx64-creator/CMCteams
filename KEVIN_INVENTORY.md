@@ -32,7 +32,7 @@
 
 | Fichier | À quoi ça sert | Liens |
 |---|---|---|
-| `tools/ci/ci.mjs` | **Je lance tes vérifications moi-même** — plus besoin que tu cliques. `node tools/ci/ci.mjs run <workflow>` pour lancer, `watch` pour attendre le résultat, `logs` pour la cause exacte d'un échec. C'est ce qui a permis de faire tourner les 4 contrôles restés bloqués depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ci/ci.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/ci/ci.mjs) |
+| `tools/ci/ci.mjs` | **Je lance tes vérifications moi-même** — plus besoin que tu cliques. `node tools/ci/ci.mjs run <workflow>` pour lancer, `watch` pour attendre le résultat, `logs` pour la cause exacte d'un échec, `report` pour lire le rapport d'un scan de sécurité (arsenal, pentest IA). C'est ce qui a permis de faire tourner les 4 contrôles restés bloqués depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ci/ci.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/ci/ci.mjs) |
 | `.github/workflows/ai-review-independent.yml` | **Le deuxième avis, réparé.** Il n'avait jamais rendu un seul avis (0 réussite sur 100). Maintenant lançable à la demande sur la demande de ton choix | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/ai-review-independent.yml) · [lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/ai-review-independent.yml) |
 
 ## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
