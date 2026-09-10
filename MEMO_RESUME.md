@@ -1,5 +1,28 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
+
+- **Ce qui n'allait pas** : le dossier `audit/apex-chat/` ne contenait **qu'un seul fichier** sur
+  les six que la méthode exige. Et surtout, ce fichier décrivait encore la **faille la plus
+  grave comme ouverte**, alors qu'elle est fermée depuis le 6. Un rapport d'audit périmé sur son
+  point le plus grave, c'est pire qu'un rapport absent : il fait perdre confiance dans tout le
+  reste. **Corrigé.**
+- **La porte admin est fermée — chaîne vérifiée aujourd'hui, commande par commande** : le numéro
+  de téléphone a disparu du fichier public (0 ligne), le verrou `ADMIN_BYPASS_REQUIRE_MFA` est
+  **actif**, le passe-droit `000000` reste **fermé**, et les deux tests de garde passent (6/6).
+  Connaître le numéro **ne suffit plus** pour devenir admin.
+- **Le filet, re-mesuré aujourd'hui** : **1115 tests sur 1115 verts** (59 fichiers, 18 s).
+  Couverture réelle **89,47 %** — le cœur (`lib/`, temps réel, 3 workers sur 4) est à **100 %**.
+- **Les 5 fichiers manquants sont écrits** : inventaire réel (pile mesurée, 64 routes, 27 tables,
+  0 secret), cartographie **F01→F78** (chaque fonction avec son état de test — **2 seules** sans
+  test, deux écrans admin en lecture seule), résultats chiffrés, design mesuré, journal.
+- **Ce que je ne peux PAS dire, et je l'écris partout** : je certifie **le code du dépôt**, pas
+  **le site en ligne**. Cette session n'a pas le droit de sortir sur internet (refus `403` de la
+  politique réseau — je le signale, je ne le contourne pas). Le seul chemin honnête pour la
+  dernière vérification, c'est la CI : Actions → `apex-chat-e2e.yml` (deux vrais téléphones qui
+  s'écrivent). **Aucun clic obligatoire** : c'est un contrôle de confort, pas un correctif en
+  attente.
+
 ## 7 septembre 2026 (00h10) — la réponse : une RÈGLE du dépôt, pas un droit manquant
 
 - Le robot a enfin écrit la cause exacte : **`GH013 — Cannot delete this branch`**. Une **règle
