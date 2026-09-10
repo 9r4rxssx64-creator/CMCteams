@@ -156,7 +156,7 @@ l'auto-réparation des notifications sont donc **vérifiés sur Chromium/Android
 | Les 4 voies de `messaging-app-tests.yml` sont vertes | 60 derniers runs : **28 échecs, dont 19 « iPhone seulement »**, depuis le 06/09 16:00 | ❌ puis correctif |
 | Cause exacte, pas un symptôme | erreur WebKit : `…/api/system/config due to access control checks` → `LOCAL_DEV` n'acceptait que `http://localhost`, les tests servent `https://localhost:4173` | ✅ VÉRIFIÉ |
 | Le correctif est prouvé sans réseau | `cors-origines-autorisees.test.js` : `https://localhost:4173` autorisé, `https://localhost.evil.example` refusé → 5/5 | ✅ VÉRIFIÉ |
-| Le correctif est prouvé en vrai (4 voies vertes) | premier run après déploiement du worker | 🔴 À LIRE — consigné ci-dessous dès qu'il est passé |
+| Le correctif est prouvé en vrai (4 voies vertes) | run **34520911544** (19:37 UTC, après déploiement du worker) : `tests` ✅ · `e2e (iphone-se)` ✅ · `e2e (iphone-safari)` ✅ · `e2e (chromium-desktop)` ✅ · `e2e (pixel-android)` ✅ — **premier run 4/4 vert depuis le 6 septembre** | ✅ VÉRIFIÉ |
 | Ça ne se reperd pas | `npm run test:specs-lances` (dans `test:ci`) suit ce que chaque workflow **exécute** | ✅ VÉRIFIÉ |
 
 ---
