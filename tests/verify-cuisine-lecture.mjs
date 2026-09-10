@@ -35,6 +35,19 @@ for (const must of ['data-tts', 'function splitSteps', 'function ttsChunks', 'TT
   if (!html.includes(must)) ko('manque « ' + must + ' » dans tools/cuisine/index.html');
 }
 if (!/\.steps li\.reading/.test(html)) ko('pas de style pour l\'étape en cours de lecture');
+/* icône d'écran d'accueil (Kevin 2026-09-10 « Drapeau monaco ») : fichiers présents + déclarés dans la page */
+{
+  const { existsSync } = await import('node:fs');
+  for (const f of ['icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-32.png', 'manifest.json']) {
+    if (!existsSync(join(DIR, f))) ko('icône manquante : tools/cuisine/' + f);
+  }
+  for (const tag of ['rel="apple-touch-icon" href="icon-180.png"', 'rel="manifest" href="manifest.json"', 'name="theme-color" content="#CE1126"', '<meta charset="utf-8">']) {
+    if (!html.includes(tag)) ko('en-tête de page : manque ' + tag);
+  }
+  const svg = readFileSync(join(DIR, 'icon.svg'), 'utf8');
+  if (!/#CE1126/i.test(svg) || !/#FFFFFF/i.test(svg)) ko('icon.svg n\'a pas les couleurs du drapeau de Monaco (rouge #CE1126 / blanc)');
+  else ok('icône drapeau de Monaco présente (svg + png 32/180/192/512 + manifest) et déclarée dans la page');
+}
 
 /* moteur vocal factice — injecté AVANT le script de la page */
 const FAKE = `(() => {
@@ -146,8 +159,9 @@ async function openPage(init) {
     const btn = document.querySelector('[data-tts]'); if (!btn) return { err: 'pas de bouton' };
     L.spoken = []; L.cancels = 0; L.cancelWhileIdle = 0;
     btn.click();
-    await new Promise(r => setTimeout(r, 9)); /* titre puis étape 1 en cours */
-    const lit = [...document.querySelectorAll('.steps li')].findIndex(li => li.classList.contains('reading'));
+    /* le titre « Recette : … » est lu d'abord (rien à surligner), puis l'étape 1 : on attend le premier surlignage (≤ 500 ms) */
+    const t1 = Date.now(); let lit = -1;
+    while (Date.now() - t1 < 500) { lit = [...document.querySelectorAll('.steps li')].findIndex(li => li.classList.contains('reading')); if (lit >= 0) break; await new Promise(r => setTimeout(r, 1)); }
     const spokenBefore = L.spoken.length;
     btn.click(); /* ARRÊT */
     const afterStopLabel = btn.textContent, cancels = L.cancels, activeAfterStop = window.TTS.active;

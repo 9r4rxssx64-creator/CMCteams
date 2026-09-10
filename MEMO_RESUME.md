@@ -1,5 +1,22 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
+
+- **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
+  vignette sombre (capture automatique de la page) : la page n'avait **aucune icône déclarée**,
+  ni manifest, ni couleur de thème.
+- **Livré** : une vraie icône **aux couleurs du drapeau de Monaco** (rouge Pantone 186 `#CE1126`
+  en haut, blanc en bas) avec le blason doré de la couverture au centre —
+  [icon.svg](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg)
+  (source) + PNG 32/180/192/512 rendus depuis le SVG ; `manifest.json` (nom « Cüjina », plein
+  écran, couleur rouge) ; en-tête de page : `apple-touch-icon`, `theme-color`, titre
+  d'écran d'accueil « Cüjina », favicon. La barre du haut gère déjà l'encoche (safe-area).
+- **Pour voir le changement sur l'iPhone** : supprimer l'ancienne icône de l'écran d'accueil et
+  refaire « Partager → Sur l'écran d'accueil » (iOS ne remplace pas l'icône d'un raccourci déjà
+  posé).
+- **Garde** : `tests/verify-cuisine-lecture.mjs` vérifie aussi la présence des 6 fichiers d'icône,
+  leurs couleurs (rouge/blanc) et leur déclaration dans la page.
+
 ## 10 septembre 2026 (soir) — « Lire les étapes ne fonctionne pas » : la voix du livre de cuisine partait en une seule phrase de 1 400 caractères
 
 - **Ce que Kevin a vu** : sur une recette, le bouton « 🔊 Lire les étapes » ne lisait rien (ou
