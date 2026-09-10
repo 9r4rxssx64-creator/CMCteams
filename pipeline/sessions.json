@@ -343,10 +343,11 @@
       "branche": "claude/registre-branches-supprimees",
       "sujet": "19 sessions pointaient vers des branches supprimees",
       "surfaces": [],
-      "etat": "actif",
+      "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Branche fusionnee (PR #3750) puis supprimee par le menage — la demonstration exacte de la regle ajoutee a PIPELINE-SESSIONS.md ce jour."
     },
     "menage-verif": {
       "titre": "Ménage — vérification de la levée du verrou",
@@ -369,6 +370,17 @@
       "attend_kevin": null,
       "attend_session": "cmcteams-pdf",
       "note": "Inscrite UNIQUEMENT pour que test:pipeline-sessions cesse d'etre rouge pour tout le monde. Ce n'est pas ma zone : elle porte 3 commits hors de main, dont 2 signes Claude venant de claude/verify-cmcteams-light-data-rzlvau (session cmcteams-pdf). A ELLE de decider : recuperer ces 2 commits puis laisser mourir la branche, ou la reprendre. Je n'y touche pas."
+    },
+    "registre-clore": {
+      "titre": "Ménage — clôture",
+      "branche": "claude/registre-clore-menage",
+      "sujet": "clôture des sessions du chantier ménage",
+      "surfaces": [],
+      "etat": "termine",
+      "maj": "2026-09-10",
+      "attend_kevin": null,
+      "attend_session": null,
+      "note": "Chantier menage termine. Bilan : ruleset corrige, 264 branches claude/* supprimees (389 -> 125), outil branches-superflues.mjs + gardes test:menage-branches (12/12) et test:pipeline-sessions (9/9), registre remis a plat, regle 'branche fusionnee = branche supprimee' ecrite dans PIPELINE-SESSIONS.md."
     }
   },
   "messages": [
