@@ -10,6 +10,8 @@ import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
+import { signatureImport } from './_gen-stabilite.mjs';
+import { jsonStable } from './_json-stable.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..', '..');
 const PDFJS = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.min.js'));
@@ -47,13 +49,15 @@ async function extract(browser, pdfRel, year, monthIdx) {
   // DÉTERMINISME (lesson #88) : FORCE la passe géométrique différée + POLL jusqu'à
   // couverture STABLE (2 lectures identiques), indépendant de la contention CPU.
   {
-    const cov = (key) => { const ov = (window.A && A.overrides && A.overrides[key]) || {}; return Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length; };
-    let prev = -1, stable = 0, key = year + '-' + monthIdx;
+    // v9.896 : la sonde couvre personnes + cellules + ÉQUIPES + familles (module partagé).
+    // Passée TELLE QUELLE à page.evaluate : elle ne dépend que de window.A, aucune fermeture.
+    const sonde = signatureImport;
+    let prev = '', stable = 0, key = year + '-' + monthIdx;
     for (let i = 0; i < 30 && stable < 2; i++) {
       await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
       await page.waitForTimeout(500);
-      const c = await page.evaluate(cov, key);
-      stable = (c === prev && c > 50) ? stable + 1 : 0; prev = c;
+      const c = await page.evaluate(sonde, key);
+      stable = (c.sig === prev && c.n > 50) ? stable + 1 : 0; prev = c.sig;
     }
   }
   const out = await page.evaluate((key) => {
@@ -94,7 +98,7 @@ async function main() {
   const js = '/* SEED planning CMCteams — GÉNÉRÉ par tools/shared/_gen-seed.mjs depuis les vrais PDF\n'
     + '   (même source que la page Départs). NE PAS éditer à la main. Appliqué en affichage\n'
     + '   par l\'app pour les mois sans données live (jamais d\'écrasement). */\n'
-    + 'window.CMC_PLANNING_SEED=' + JSON.stringify(payload) + ';\n';
+    + 'window.CMC_PLANNING_SEED=' + jsonStable(payload) + ';\n';
   writeFileSync(resolve(__dirname, 'planning-seed.js'), js);
   console.log('→ tools/shared/planning-seed.js écrit (' + js.length + ' octets, ' + Object.keys(months).length + ' mois)');
 }

@@ -6,6 +6,79 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 — « continu » : les fichiers de planning étaient tirés au sort, et ça cachait une MAUVAISE ÉQUIPE
+
+### Ce qui a été trouvé (et pourquoi c'est important)
+
+Les deux fichiers de planning (CMCteams et la page Départs) sont **fabriqués** en
+faisant tourner la vraie application. Je me suis aperçu que **deux fabrications à
+partir des MÊMES PDF ne donnaient pas le même fichier** — alors que les données
+étaient identiques (285 personnes, 8515 cases des deux côtés).
+
+Première conséquence, gênante : impossible de relire un changement. Le fichier
+changeait en entier à chaque fois, donc **impossible de prouver** qu'une
+correction servait à quelque chose. C'est ce qui m'a fait perdre une passe
+entière sur le dossier « MOREL F ».
+
+Deuxième conséquence, **beaucoup plus grave**, que je n'ai vue qu'une fois ce
+bruit retiré : la fabrication s'arrêtait **trop tôt**. Elle attendait que le
+nombre de personnes se stabilise, mais **pas les équipes**, qui sont posées plus
+tard. Résultat, sur **août 2026** :
+
+| Personne | Un tirage | L'autre tirage |
+|---|---|---|
+| **CONNEN R** (roulettes) | équipe **« 1 » — une équipe BJ, donc FAUSSE** | équipe « r2 » (juste) |
+| **BLANCHY F** (baccara) | équipe « c12 », famille absente | équipe « c7 », famille présente |
+
+Autrement dit : **un employé pouvait s'afficher dans la mauvaise équipe selon la
+charge de la machine au moment de la fabrication.** Aucun test ne le voyait — ils
+comparent les *cases* (pas les équipes), et la comparaison CMCteams ⇄ Départs est
+aveugle ici parce que **les deux surfaces tiraient le même mauvais numéro en même
+temps** (c'est exactement la leçon #142).
+
+### Ce qui est corrigé
+
+1. L'identifiant d'un employé créé à l'import venait de l'**horloge** → il vient
+   maintenant de son **nom**. Même nom = même identifiant, toujours.
+2. Les fichiers sont écrits dans un **ordre fixe** (plus l'ordre d'arrivée).
+3. La fabrication attend maintenant que **tout** soit posé : personnes, cases,
+   **équipes** et familles — plus seulement le nombre de personnes.
+
+Les pièces 2 et 3 sont **un seul module partagé** par les deux fabricants, pas
+deux copies (sinon elles divergent — leçon #142).
+
+### Les preuves
+
+- Deux fabrications de suite : **fichiers identiques à l'octet près**, des deux côtés.
+- Les valeurs retenues sont les **bonnes** : CONNEN R en `r2`, BLANCHY F en `c7`.
+- **Rien n'a changé dans les données** par rapport à `main` (juin, juillet, août :
+  0 équipe modifiée, mêmes cases). Le fichier publié était un **tirage chanceux** ;
+  il est désormais **garanti** au lieu d'être chanceux.
+- Fidélité au PDF inchangée : septembre 248/248 · 7440/7440, juillet 254/254 ·
+  7874/7874, août 250/251 (le manquant connu, MOREL F). Départs : 22 723 contrôles
+  d'horaires, 0 anomalie.
+- Nouveau garde `npm run test:generateurs-reproductibles` (dans `test:ci`, moins
+  d'une seconde, sans navigateur), **prouvé par 3 sabotages** : remettre l'horloge,
+  remettre l'ancienne sonde, ou dérégler un fichier → rouge à chaque fois.
+
+### Un rouge qui bloquait TOUT LE MONDE, réparé au passage
+
+`test:ci` échouait **déjà sur `main`** (vérifié en mettant mes changements de côté) :
+« une règle a été ajoutée sans garde-fou ». En réalité la règle « J'ai internet et
+des outils » **a** sa garde depuis le 6.09 — il manquait juste son inscription au
+registre. Exactement la même cause que la fois précédente, c'est écrit dans le
+fichier lui-même. Inscrite → vert, **sans toucher au compteur de référence**.
+
+### MOREL F : où on en est, honnêtement
+
+La cause est **établie** : les marqueurs de couleur sont collés à **toutes** les
+cases de la ligne, **le nom compris**, ce qui empêche l'application de reconnaître
+le format de la ligne. Mais **les deux corrections évidentes régressent** : elles
+font tomber COSTAGLIOLI J de 31 à 10 cases. Je ne les ai donc pas retenues, et
+j'ai écrit le témoin chiffré à viser pour la prochaine tentative (leçon #240).
+**MOREL F est toujours absent d'août** — c'est le seul manquant.
+
+
 ## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité) + un faux rouge de ma propre garde
 
 La PR n'était plus bloquée par ce que j'avais mesuré la veille. Un robot a laissé un
