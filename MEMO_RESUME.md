@@ -69,6 +69,14 @@ garde `test:bg-sync-benin` (rejoue la panne, discriminante par sabotage). Et la 
 restait sur « Première connexion » : `session-kevin.mjs` pose maintenant `cmc_dep_identity` +
 `cmc_dep_me` (+8 contrôles).
 
+**3e run (34519286077), après v9.899 + session complète** : je VOIS ce que Kevin voit —
+CMCteams v9.899 connecté DESARZENS K : *Mon planning* septembre (16/22c, 14/19c, 20/5* CDP, RH/R,
+« prochain service ven 11 · 20/5* 20h-5h CDP »), *Départs* « MA SECTION ⇌ BJ Éq.9 (16/3) », bloc
+BJ Éq.3 (16/22) DESARZENS / MAGARA M / ROSSI J (CP) / ALDRIGHETTI JP / CASTEL N avec les numéros
+1-3-2-1 ; la page Départs light connectée montre la même équipe et les mêmes numéros. Accueil :
+71 alertes / 71 conflits, 1 en ligne, couverture septembre 30/30. 0 erreur JS. (Le nom de vue
+« plan » n'existe pas : l'app retombe sur l'accueil — utiliser les vrais noms `sv()`.)
+
 Preuve réelle de la version servie (ce matin je l'avais seulement déduite du déploiement vert) :
 CMCteams **v9.898**, light **v1.42**. Skill `.claude/skills/voir/SKILL.md`, leçon #249.
 Limite honnête : la session posée est nommée, pas « admin prouvé » Face ID ; le workflow ne se
