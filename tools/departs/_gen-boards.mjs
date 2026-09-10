@@ -63,7 +63,9 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
   const out = await page.evaluate(({ key, year, monthIdx, MOIS }) => {
     const ov = A.overrides[key] || {};
     const days = new Date(year, monthIdx + 1, 0).getDate();
-    const ABS_TEAMS = { conges: 'Congés', maladie: 'Maladie', formation: 'Formation', deplacement: 'Déplacement' };
+    // v1.42 : « amenage » (horaires aménagés, section aménagement du récapitulatif) = un board sans
+    // rotation ni miroir, comme les absences — avant, son libellé sortait « CMC Éq.menage ».
+    const ABS_TEAMS = { conges: 'Congés', maladie: 'Maladie', formation: 'Formation', deplacement: 'Déplacement', amenage: 'Horaires aménagés' };
     const famLabel = { bj: 'BJ', roulettes: 'Roul.', cmc: 'CMC', amenage: 'CMC aménagé', baccara: 'CMC' };
     // 1er code de travail (pour le libellé horaire)
     const ABS = { RH:1,R:1,CP:1,M:1,MAL:1,AF:1,AT:1,PAT:1,ABI:1,SS:1,CFL:1,CRH:1,CDP:1,EDC:1,RRT:1,PRT:1,RTP:1,RTR:1,DEPL:1,DEP:1,CL:1 };
@@ -116,7 +118,8 @@ async function main() {
   const targets = [
     // Le mois COURANT en premier : c'est celui que Kevin ouvre. (Septembre ajouté
     // le 2026-09-02 depuis le PDF qu'il a fourni — SEPTEMBRE_2026_V2.pdf.)
-    { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
+    { pdf: 'tests/fixtures/octobre-2026.pdf', year: 2026, monthIdx: 9 },
+  { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
     { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
     { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
   ];

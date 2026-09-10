@@ -6,6 +6,71 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 (suite) — « il y a des erreurs, personnes dans les mauvaises équipes » : VÉRIFIÉ EN RÉEL contre SEPTEMBRE et OCTOBRE, corrigé, 0 écart des deux côtés
+
+### Ce que Kevin a signalé, et ce que j'ai mesuré
+
+Kevin a fourni `SEPTEMBRE_2026_V2.pdf` (identique à celui déjà dans le dépôt) et
+`OCTOBRE_2026.pdf` (nouveau : octobre n'existait **nulle part** dans l'app ni sur la
+page Départs). J'ai relu **la page 1 de chaque PDF** — le récapitulatif où SBM écrit
+chaque équipe en un bloc « effectif · horaire du 1er jour · du · au » — avec un
+lecteur indépendant, et comparé aux deux surfaces :
+
+| Mois | Personnes mal placées CMCteams | … page Départs |
+|---|---|---|
+| Octobre | (mois absent) puis **41** | (absent) puis **46** |
+| Septembre | **56** | **61** |
+| Août | **81** | **87** |
+| Juillet | **113** | **119** |
+
+Kevin avait raison, et aucun test ne le voyait : `pdf-fidelite` compare les
+**cases**, pas les équipes ; `teams-compare` compare l'app à la page Départs — qui
+se trompaient **pareil** (leçon #142).
+
+### Pourquoi c'était faux
+
+L'app **devinait** les équipes à partir des jours de repos et des codes. Or dans un
+même bloc SBM, des collègues diffèrent sur 1 à 3 jours (horaire modifié en rouge,
+congé partiel) : la devinette les séparait (SESTINI F seul, MORRA A seul, LUBIN O
+en « congés ») ou collait un chef à l'équipe voisine. **La réponse était écrite dans
+le PDF** : je la lis maintenant au lieu de la deviner (`_cmcDetectTeamsByRecap`,
+v9.897), avec un auto-contrôle — un bloc n'est retenu que si le nombre de lignes lues
+est égal à l'effectif annoncé (0 rejet sur 144 blocs). Ce n'est **pas** la « position
+dans la grille » réfutée par la leçon #112 : c'est le bloc explicite, avec son effectif.
+
+### Au passage, deux disparus retrouvés (la vraie cause du dossier MOREL F)
+
+CASSINI A (octobre) et MOREL F (août) n'avaient **aucune case** : la 1re ligne de
+données d'une section héritait du fond rose de l'en-tête, parce que l'extracteur
+prenait « le dernier rectangle dessiné » pour le fond du texte. Corrigé à la source
+(fond lu par géométrie), et une couleur ne réécrit plus jamais un code (« CLM » sur
+fond rose devenait CP = invention). Témoin de la leçon #242 atteint : MOREL F 31 cases
+**et** COSTAGLIOLI J / FAUTRIER M gardent les leurs.
+
+### Les preuves (mesurées, 4 mois × 2 surfaces)
+
+- **Cases** : octobre 249/249 · 7 719/7 719 ; septembre 248/248 · 7 440/7 440 ;
+  août 251/251 · 7 781/7 781 ; juillet 254/254 · 7 874/7 874 — **identiques au PDF
+  des deux côtés, cliquet vidé** (plus aucun « manquant connu »).
+- **Équipes** : 36 blocs et 18 miroirs par mois, **0 écart** des deux côtés ; **100 %
+  des personnes ont une équipe** (281/281 · 285/285 · 288/288 · 290/290). Qui n'est
+  que dans un encadré (M / CP / CSS / FORMATION) va sur le board d'absence, comme
+  dans le PDF (VERZELLO O, LANTERI E) ; l'aménagement a son équipe (ACCOMASSO F,
+  GENDREAU C apparaissent enfin sur la page Départs).
+- **Nouveau garde** `npm run test:pdf-equipes` (dans `test:ci`), prouvé
+  discriminant : déplacer Kevin d'une équipe → rouge ; restauré → vert.
+- Deux fabrications de suite → fichiers identiques à l'octet près (règle du 10.09).
+
+- **Octobre chargé le 10 septembre** : la page Départs ouvrait sur octobre (« le mois
+  le plus récent chargé »). Corrigé (v1.42) : elle ouvre sur le mois **courant** s'il
+  existe, sinon le plus récent non futur — la règle de Kevin du 5.09 tient même quand
+  un mois d'avance est déjà là. Le garde `test:mois-ouverture` suit la même règle.
+
+Versions : CMCteams **v9.897**, page Départs **v1.42**. Leçons #243, #244, #245.
+**Ce que je n'ai pas pu vérifier** : l'affichage sur l'iPhone de Kevin (l'agent ne
+peut pas atteindre kd-mc.com) — les données publiées sont celles testées ici.
+
+
 ## 10 septembre 2026 — « continu » : les fichiers de planning étaient tirés au sort, et ça cachait une MAUVAISE ÉQUIPE
 
 ### Ce qui a été trouvé (et pourquoi c'est important)

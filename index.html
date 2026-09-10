@@ -5821,7 +5821,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.896";
+var APP_VER="v9.897";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11442,6 +11442,7 @@ function dc(){
             });
             try{localStorage.removeItem("cmc_team_mirror_"+_dkKm);}catch(_){}
             try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(_dkKm);}catch(_){}
+            try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(_dkY,_dkM);}catch(_){}   // v9.897
             if(_dkHash>3){
               try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(_dkY,_dkM);}catch(_agt){}
               try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(_dkY,_dkM);}catch(_dcuf){}
@@ -11454,6 +11455,7 @@ function dc(){
               // étaient perdus après le wipe (régression rattrapée par test:vplan).
               try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(_dkY,_dkM);}catch(_fbErr){}
               try{if(typeof _cmcApplyMaladieLongueDuree==="function")_cmcApplyMaladieLongueDuree(_dkY,_dkM);}catch(_ldErr){}
+              try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(_dkY,_dkM);}catch(_){}   // v9.897 : le PDF fait foi
             }
           }catch(_detErr){}
           // UN SEUL re-render (cache key déjà posé → pas de re-détection → rapide).
@@ -27560,12 +27562,14 @@ function cmcExportTeamsDetectionDiag(){
     // v9.808 — autorité union-find (verrouille) AVANT le filet rest-pattern, pour que
     // le diag reflète l'état FINAL réel (équipes séparées par codes journaliers).
     try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_){}   // v9.897
     // v9.810 — ré-applique l'autorité géométrique persistée (auto-pin) AVANT les
     // détecteurs d'horaire, pour que le diag reflète l'état FINAL réel (équipes
     // séparées par POSITION). window._cmcPdfGeometry absente ici → on lit cmc_geom_teams.
     try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_){}   // v9.897 : le PDF fait foi
     try{ls("cmc_e",A.employees);}catch(_){}
 
     // Re-run algo pour avoir le report (FILET fill-only : ne touche pas les emps verrouillés)
@@ -38007,6 +38011,7 @@ function _cmcFinalGeometricFill(iy,im){
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_b){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_c){}
     try{if(typeof _cmcApplyMaladieLongueDuree==="function")_cmcApplyMaladieLongueDuree(iy,im);}catch(_ld){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_ra2){}   // v9.897 : le PDF fait foi
     try{ls("cmc_ov",A.overrides);ls("cmc_e",A.employees);}catch(_e2){}
     try{if(typeof fbWrite==="function"){fbWrite("cmc_ov",A.overrides);fbWrite("cmc_e",A.employees);}}catch(_f){}
     try{if(typeof dc==="function"&&!window._silentReplayMode)dc();}catch(_g){}
@@ -38258,6 +38263,9 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     var _teamMap={};
     _nodes.forEach(function(n){var tk=n.fam+"|"+n.restKey+"|"+n.fwBase;(_teamMap[tk]=_teamMap[tk]||[]).push(n);});
     var famCounters={bj:0,roulettes:0,cmc:0,baccara:0,amenage:0};
+    // v9.897 — les équipes du récapitulatif (verrouillées) occupent déjà des numéros :
+    // repartir APRÈS le plus grand pour ne jamais fusionner un groupe d'horaire dans un bloc du PDF.
+    try{(A.employees||[]).forEach(function(_e){var _t=_e&&_e.teamHistory&&_e.teamHistory[key];if(!_t)return;var _mm=String(_t).match(/^(r|c|b)?(\d+)$/);if(!_mm)return;var _f=_mm[1]==="r"?"roulettes":_mm[1]==="c"?"cmc":_mm[1]==="b"?"baccara":"bj";var _n=parseInt(_mm[2],10);if(_n>(famCounters[_f]||0))famCounters[_f]=_n;});}catch(_fc){}
     var teamGroups=[],_singles=[];
     Object.keys(_teamMap).forEach(function(tk){
       var grp=_teamMap[tk];
@@ -38789,6 +38797,209 @@ function _cmcApplyGeomTeams(iy,im){
   }catch(e){console.warn("[v9.810 applyGeomTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
 }
 
+// ============================================================================
+// v9.897 (Kevin 2026-09-10 « Personnes dans les mauvaises équipes… Aucune erreur n'est
+// tolérée ») — ÉQUIPES = BLOCS DU RÉCAPITULATIF (page 1 du PDF SBM).
+//
+// La page 1 du planning SBM est un récapitulatif où CHAQUE ÉQUIPE EST UN BLOC :
+// en-tête « <effectif> <horaire du 1er jour> du au », puis la liste de ses membres, sur
+// 6 colonnes (une par horaire de la rotation : 20/5 · 19/4 · 16/22 · 14/19 · RH · R).
+// Deux rangées de blocs par section = l'équipe et son MIROIR (même colonne). C'est le
+// « trait noir » de la règle métier de Kevin (2026-05-15 : « le trait noir délimite les
+// équipes quand il y est, sinon regarde les jours de repos ») — lu ici par GÉOMÉTRIE
+// (pdf.js, colonnes de ~101,5 pt), pas par le texte copié-collé où il disparaît.
+//
+// Pourquoi les détecteurs d'horaire ne suffisent pas (mesuré sur 4 PDF réels, 10.09) :
+// des membres d'un même bloc diffèrent sur 1-3 jours (horaire modifié en rouge, CP
+// partiel) → le regroupement « mêmes repos + mêmes codes » les sépare (SESTINI F seul,
+// MORRA A seul, LUBIN O en « congés »…) ou colle un chef à une autre équipe. Résultat :
+// 41 à 119 personnes mal placées par mois, des deux côtés (test:pdf-equipes).
+//
+// GARDE-FOU contre la leçon #112 (« position ≠ équipe ») : ce n'est PAS la position dans
+// la GRILLE (voisins verticaux) qui est lue, mais un BLOC EXPLICITE avec son EFFECTIF
+// annoncé — un bloc n'est retenu que si le nombre de lignes lues == l'effectif écrit
+// (auto-contrôle) ; un bloc d'absence (M/CP/FORMATION/CSS/DEPL…) n'est jamais une équipe.
+//
+// Numérotation : n = (rangée-1)*6 + colonne+1 par section → bj « 1..12 », roulettes
+// « r1..r12 », cartes « c1..c12 » ; miroir = rangée 1 ⇄ rangée 2 de la même colonne.
+// Résultat PERSISTÉ (cmc_recap_teams[key]) pour survivre aux re-détections (boot/diag,
+// où la géométrie n'existe plus) ; membres VERROUILLÉS (_cmcTeamLockAdd) → les détecteurs
+// d'horaire ne les réassignent pas ; ré-appliqué en FIN de chaîne (les filets n'écrasent
+// jamais un bloc du PDF). NE TOUCHE JAMAIS les codes de cellules (reproduction identique).
+// ============================================================================
+function _cmcRecapNorm(s){
+  try{return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim().replace(/ ([A-Z]{1,3}) \1$/," $1");}
+  catch(_){return String(s||"").toUpperCase().replace(/\s+/g," ").trim();}
+}
+// Lit les blocs de la page 1 (items {str,x,y}). Retourne [{section,fam,abs,col,y,count,code,membres:[...]}]
+// Un bloc = un EN-TÊTE « <effectif> <code> du au » (4 items consécutifs en x sur une ligne) ; sa
+// largeur = de l'effectif au « au » (~100 pt). Un nom appartient à l'en-tête le plus PROCHE
+// AU-DESSUS dont la largeur le contient. (Pas de colonnes à pas fixe : les encadrés M/CP/CSS
+// de droite sont décalés de ~20 pt par rapport aux 6 colonnes d'équipes.)
+function _cmcRecapBlocks(items){
+  var HORAIRE=/^(\d{1,2}\/\d{1,2}[^A-Za-z0-9]*c?[^A-Za-z0-9]*|RH|R)$/;   // 20/5 · 19/4"" · 22/6'c (chefs) · RH · R
+  var ABSHDR=/^(M|MAL|AT|CP|CSS|CDP|CRH|CLM|FORMATION|AF|DEPL|DEP|DELDS|SS)$/i;  // encadrés d'absence
+  var NAMERE=/^[A-ZÉÈÀÂÎÔÛÇ][A-Z' \-]*[A-Z]( [A-Za-z]{1,3})?$/;
+  var SECTION=/^(Roulettes|Chefs black Jack|Employés cartes)/i;
+  var its=[];
+  (items||[]).forEach(function(i){var t=String(i.str||"").trim();if(t)its.push({s:t,x:+i.x,y:+i.y});});
+  if(!its.length)return[];
+  var sections=its.filter(function(i){return SECTION.test(i.s);}).sort(function(a,b){return b.y-a.y;});
+  function sectionAt(y){var best="";for(var k=0;k<sections.length;k++){if(sections[k].y>y)best=sections[k].s;}return best;}   // le titre le plus PROCHE au-dessus
+  function famOf(sec){var n=_cmcRecapNorm(sec);if(/AMENAGEMENT/.test(n))return "amenage";if(/^ROULETTES/.test(n))return "roulettes";if(/^CHEFS BLACK/.test(n))return "bj";if(/^EMPLOYES CARTES/.test(n))return "cmc";return null;}
+  // lignes par proximité (« 1 30 » ou le code d'un encadré peuvent être 1 pt à côté)
+  var ys={};its.forEach(function(i){ys[Math.round(i.y*10)/10]=1;});
+  var ancres=[];Object.keys(ys).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){if(!ancres.length||Math.abs(ancres[ancres.length-1]-y)>3)ancres.push(y);});
+  function ligne(i){var b=ancres[0],bd=Infinity;for(var k=0;k<ancres.length;k++){var d=Math.abs(ancres[k]-i.y);if(d<bd){bd=d;b=ancres[k];}}return b;}
+  var lignes={};its.forEach(function(i){var l=ligne(i);(lignes[l]=lignes[l]||[]).push(i);});
+  var lys=Object.keys(lignes).map(Number).sort(function(a,b){return b-a;});
+  // 1) en-têtes
+  var blocs=[];
+  lys.forEach(function(y){
+    var r=lignes[y].sort(function(a,b){return a.x-b.x;});
+    for(var k=0;k+3<r.length;k++){
+      if(!/^\d{1,2}$/.test(r[k].s)||r[k+2].s!=="du"||r[k+3].s!=="au")continue;
+      if(r[k+3].x-r[k].x>130)continue;                          // un en-tête tient dans ~100 pt
+      var cnt=parseInt(r[k].s,10),code=r[k+1].s,sec=sectionAt(y),fam=famOf(sec);
+      var b={section:sec,y:y,x0:r[k].x-25,x1:r[k+3].x+6,hx:r[k].x,count:cnt,code:code,membres:[],sousBlocs:0,ok:false};
+      // un en-tête à effectif 0 (« 0 M du au », rangées aménagement « 0 14/20 ») FERME le bloc du
+      // dessus : les noms qui suivent (ROBIN M, CAPRA C… en maladie longue durée) lui appartiennent
+      if(HORAIRE.test(code)&&fam){b.fam=fam;b.abs=null;}
+      else if(ABSHDR.test(code)){b.fam=null;b.abs=code.toUpperCase();}
+      else continue;
+      b.col=Math.max(0,Math.round((b.hx-22)/101.5));            // 0..5 pour les équipes
+      blocs.push(b);k+=3;
+    }
+  });
+  if(!blocs.length)return[];
+  function blocDe(item){var best=null;for(var k=0;k<blocs.length;k++){var b=blocs[k];if(b.y>item.y+1&&item.x>=b.x0&&item.x<=b.x1&&(!best||b.y<best.y))best=b;}return best;}
+  // 2) membres et sous-blocs
+  lys.forEach(function(y){
+    var r=lignes[y].sort(function(a,b){return a.x-b.x;});
+    r.forEach(function(it,idx){
+      if(/^GR\d CRAPS$/.test(it.s)){var bc=blocDe(it);if(bc)bc.sousBlocs++;return;}   // « GR1 CRAPS 1 31 » : compté comme une ligne par SBM
+      if(!NAMERE.test(it.s)||!/\s/.test(it.s))return;                 // un NOM = « PATRONYME I » (un code de poste « BRTE » n'a pas d'espace)
+      var b=blocDe(it);if(!b)return;
+      var nums=[];for(var q=idx+1;q<r.length&&r[q].x<=b.x1+6;q++){if(/^\d{1,2}$/.test(r[q].s))nums.push(parseInt(r[q].s,10));}
+      b.membres.push({nom:it.s,from:nums.length>=2?nums[0]:null,to:nums.length>=2?nums[1]:null});
+    });
+  });
+  // 3) rangée (équipe = 1, miroir = 2) = rang de l'en-tête parmi ceux de SA section ; auto-contrôle d'effectif
+  var rowsBySec={};
+  blocs.forEach(function(b){if(b.abs)return;(rowsBySec[b.section]=rowsBySec[b.section]||{})[Math.round(b.y)]=1;});
+  blocs.forEach(function(b){
+    var rows=b.abs?[]:Object.keys(rowsBySec[b.section]).map(Number).sort(function(a,c){return c-a;});
+    b.rangee=b.abs?0:rows.indexOf(Math.round(b.y))+1;
+    // auto-contrôle : l'effectif lu == l'effectif annoncé (équipes de rotation seulement ; les
+    // encadrés d'absence et l'aménagement sont pris tels quels, SBM y compte autrement)
+    b.ok=!!b.abs||b.fam==="amenage"||(b.membres.length+b.sousBlocs===b.count);
+  });
+  return blocs;
+}
+function _cmcDetectTeamsByRecap(iy,im){
+  var key=iy+"-"+im;
+  try{
+    var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
+    var page=null;
+    if(geo&&Array.isArray(geo.pages)){for(var pi=0;pi<geo.pages.length;pi++){if(geo.pages[pi]&&geo.pages[pi].pageNum===1){page=geo.pages[pi];break;}}}
+    if(!page||!Array.isArray(page.items)||!page.items.length)return _cmcApplyRecapRecord(iy,im); // hors import : record persisté
+    var blocs=_cmcRecapBlocks(page.items).filter(function(b){return b.membres.length;});
+    var absBlocs=blocs.filter(function(b){return !!b.abs;});
+    blocs=blocs.filter(function(b){return !b.abs;});
+    if(!blocs.length){console.info("[v9.897 recap] aucun bloc d'équipe lisible en page 1 → détecteurs d'horaire");return{ok:false,reason:"no_blocks"};}
+    var ov=(A.overrides&&A.overrides[key])||{};
+    // index des employés : ceux qui ont des cellules ce mois d'abord, puis les autres
+    var byNorm={},byNormAny={};
+    (A.employees||[]).forEach(function(e){
+      if(!e||!e.id||!e.name)return;var n=_cmcRecapNorm(e.name);
+      if(ov[e.id]&&Object.keys(ov[e.id]).length){if(!byNorm[n])byNorm[n]=e;}
+      if(!byNormAny[n])byNormAny[n]=e;
+    });
+    var rec={t:{},f:{},m:{},blocs:0,abs:0,rejets:0,inconnus:[],ts:Date.now()};
+    var byPos={};
+    blocs.forEach(function(b){
+      if(!b.ok){rec.rejets++;console.warn("[v9.897 recap] bloc rejeté (effectif "+b.count+" annoncé, "+(b.membres.length+b.sousBlocs)+" lu) : "+b.section+" col"+b.col+" "+b.code);return;}
+      var n=(b.rangee-1)*6+b.col+1;
+      // horaires aménagés (section « … aménagement ») = UNE équipe dédiée, pas une rotation
+      var tid=b.fam==="amenage"?"amenage":b.fam==="roulettes"?("r"+n):b.fam==="cmc"?("c"+n):String(n);
+      if(b.fam!=="amenage")byPos[b.section+"|"+b.col+"|"+b.rangee]=tid;
+      rec.blocs++;
+      b.membres.forEach(function(mb){
+        var nn=_cmcRecapNorm(mb.nom),e=byNorm[nn]||byNormAny[nn];
+        if(!e){rec.inconnus.push(mb.nom);return;}
+        rec.t[e.id]=tid;if(b.fam!=="amenage")rec.f[e.id]=b.fam;
+      });
+    });
+    // Encadrés d'absence : qui n'est dans AUCUN bloc d'équipe est là où le PDF le met
+    // (M → Maladie, CP/CSS → Congés, FORMATION/AF → Formation, DEPL → Déplacement). Un congé
+    // PARTIEL reste dans son équipe de travail (bloc d'équipe prioritaire). Si plusieurs
+    // encadrés, la période la plus longue l'emporte.
+    var ABSMAP={M:"maladie",MAL:"maladie",AT:"maladie",CP:"conges",CSS:"conges",CDP:"conges",CRH:"conges",CLM:"conges",FORMATION:"formation",AF:"formation",DEPL:"deplacement",DEP:"deplacement",DELDS:"deplacement",SS:"conges"};
+    var absLen={};
+    absBlocs.forEach(function(b){
+      var tid=ABSMAP[b.abs]||"conges";
+      b.membres.forEach(function(mb){
+        var nn=_cmcRecapNorm(mb.nom),e=byNorm[nn]||byNormAny[nn];
+        if(!e||rec.t[e.id]&&!absLen[e.id])return;                 // déjà dans un bloc d'équipe
+        var len=(mb.from&&mb.to)?(mb.to-mb.from+1):31;
+        if(absLen[e.id]&&absLen[e.id]>=len)return;
+        absLen[e.id]=len;rec.t[e.id]=tid;rec.abs++;
+      });
+    });
+    // miroirs : rangée 1 ⇄ rangée 2 d'une même colonne, même section
+    Object.keys(byPos).forEach(function(k){
+      var p=k.split("|");if(p[2]!=="1")return;
+      var m=byPos[p[0]+"|"+p[1]+"|2"];if(!m)return;
+      rec.m[byPos[k]]=m;rec.m[m]=byPos[k];
+    });
+    var all=lg("cmc_recap_teams",{})||{};all[key]=rec;
+    try{ls("cmc_recap_teams",all);}catch(_){}
+    if(rec.inconnus.length)console.warn("[v9.897 recap] "+rec.inconnus.length+" nom(s) du récapitulatif sans employé : "+rec.inconnus.join(", "));
+    var res=_cmcApplyRecapRecord(iy,im);
+    console.info("[v9.897 recap] "+rec.blocs+" blocs d'équipe, "+Object.keys(rec.t).length+" personnes, "+(Object.keys(rec.m).length/2)+" miroirs ("+rec.rejets+" bloc(s) rejeté(s))");
+    try{if(typeof _audit==="function")_audit("teams_recap_v897",AID,key,rec.blocs+" blocs / "+Object.keys(rec.t).length+" emps / "+(Object.keys(rec.m).length/2)+" miroirs",JSON.stringify({rejets:rec.rejets,inconnus:rec.inconnus.slice(0,20)}));}catch(_){}
+    return res;
+  }catch(e){console.warn("[v9.897 recap]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+// Pendant l'import (géométrie présente) : RE-LIT la page 1 — des employés sont créés TARD
+// (passe géométrique finale, v9.822) et doivent être rattachés ; hors import : record persisté.
+function _cmcApplyRecapTeams(iy,im){
+  try{
+    var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
+    if(geo&&Array.isArray(geo.pages)&&geo.pages.some(function(p){return p&&p.pageNum===1&&p.items&&p.items.length;}))return _cmcDetectTeamsByRecap(iy,im);
+  }catch(_){}
+  return _cmcApplyRecapRecord(iy,im);
+}
+// Ré-applique le record persisté : teamHistory + familyHistory + verrou + miroirs (fusion
+// dans cmc_team_mirror_<key>, les paires du récapitulatif faisant foi). Idempotent.
+function _cmcApplyRecapRecord(iy,im){
+  var key=iy+"-"+im;
+  try{
+    var all=lg("cmc_recap_teams",{})||{};var rec=all[key];
+    if(!rec||!rec.t||!Object.keys(rec.t).length)return{ok:false,reason:"no_record"};
+    var byId={};(A.employees||[]).forEach(function(e){if(e&&e.id)byId[e.id]=e;});
+    var applied=0;
+    Object.keys(rec.t).forEach(function(eid){
+      var e=byId[eid];if(!e)return;var tid=rec.t[eid];
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(tid);
+      if(!e.teamHistory)e.teamHistory={};e.teamHistory[key]=tid;
+      if(rec.f&&rec.f[eid]){if(!e.familyHistory)e.familyHistory={};e.familyHistory[key]=rec.f[eid];}
+      if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,eid);
+      applied++;
+    });
+    if(rec.m&&Object.keys(rec.m).length){
+      var mir=lg("cmc_team_mirror_"+key,{})||{};
+      Object.keys(mir).forEach(function(a){if(rec.m[a]||rec.m[mir[a]])delete mir[a];}); // retire les paires stale touchant une équipe du récap
+      Object.keys(rec.m).forEach(function(a){mir[a]=rec.m[a];});
+      try{ls("cmc_team_mirror_"+key,mir);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_team_mirror_"+key,mir);}catch(_){}
+    }
+    try{ls("cmc_e",A.employees);}catch(_){}
+    try{ls("cmc_t",A.teams);}catch(_){}
+    return{ok:true,applied:applied};
+  }catch(e){console.warn("[v9.897 applyRecap]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
 // v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
 // reproduction exacte"). Voir _postValidateImport pour l'enregistrement.
 
@@ -38905,6 +39116,8 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     var ov=A.overrides[key]||{};
     // v9.808 : reset le LOCK union-find pour ce mois (fresh import).
     try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    // v9.897 — AUTORITÉ : équipes = blocs du récapitulatif (page 1), verrouillées.
+    try{if(typeof _cmcDetectTeamsByRecap==="function")_cmcDetectTeamsByRecap(iy,im);}catch(_rc){console.warn("[v9.897 recap]",_rc&&_rc.message);}
     // v9.810 : ré-applique d'abord l'éventuel résultat géométrique déjà persisté
     // (auto-pin survivant) — il sera rafraîchi juste après par le compute frais
     // (_cmcDetectTeamsByGeometry, plus bas, une fois les cellules géométriques
@@ -38991,6 +39204,8 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // v9.825 — maladie longue durée (PORASSO C/ROBIN M/CAPRA C) : nom dans le PDF sans
     // grille → M intégral + équipe Maladie (en DERNIER, aucun détecteur ne l'écrase).
     try{_cmcApplyMaladieLongueDuree(iy,im);}catch(_ldErr){console.warn("[v9.825 maladie-LD]",_ldErr&&_ldErr.message);}
+    // v9.897 — les blocs du PDF font foi jusqu'au bout : ré-assertion (équipes + miroirs) après les filets.
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_ra){}
     // v9.734 (Kevin 2026-05-23 "Aucune invention. Reproduction exacte de l'import") :
     // Le RESCUE PASS v9.733 (assignation par signature similaire) a été RETIRÉ.
     // Inférer une équipe à partir d'autres emps de signature similaire = INVENTION.
@@ -39914,24 +40129,70 @@ function _doExtractPdfLines(file,onDone,onErr){
           Promise.all([page.getTextContent(),page.getOperatorList()]).then(function(results){
             var tc=results[0],ops=results[1];
             // Construire une map des couleurs texte + fond pour chaque item texte
-            var _colorMap={},_bgColorMap={},_curColor=null,_curBgColor=null,_textIdx=0;
+            var _colorMap={},_curColor=null,_textIdx=0;
             var OPS=pdfjsLib.OPS;
-            var _lastFillBeforeRect=null;
+            // v9.897 (Kevin 2026-09-10 « aucune erreur n'est tolérée ») — FOND DE CELLULE PAR
+            // GÉOMÉTRIE. Avant : « le dernier rectangle rempli avant le texte » servait de fond
+            // à CHAQUE texte suivant, sans regarder OÙ il est. La 1re ligne de données d'une
+            // section héritait donc du fond rose de l'en-tête « Colonne… » : « CASSINI A{{CP}}
+            // 1{{CP}} 31{{CP}} » → format positionnel non reconnu → la personne DISPARAÎT du mois
+            // (CASSINI A oct. 2026, MOREL F août 2026 — leçon #242 : la vraie correction est à
+            // la SOURCE, pas dans les 34 lecteurs en aval). Ici chaque rectangle rempli est gardé
+            // AVEC ses coordonnées (matrice de transformation suivie : save/restore/transform),
+            // et le fond d'un texte = le plus petit rectangle qui CONTIENT son centre. Un fond
+            // ne déborde plus ni sur la cellule d'à côté ni sur la ligne du dessous.
+            var _bgRects=[],_ctm=[1,0,0,1,0,0],_ctmStack=[],_pendingPaths=[],_curBg=null;
+            function _ctmMul(m,n){return [m[0]*n[0]+m[1]*n[2],m[0]*n[1]+m[1]*n[3],m[2]*n[0]+m[3]*n[2],m[2]*n[1]+m[3]*n[3],m[4]*n[0]+m[5]*n[2]+n[4],m[4]*n[1]+m[5]*n[3]+n[5]];}
+            function _ctmPt(x,y){return [_ctm[0]*x+_ctm[2]*y+_ctm[4],_ctm[1]*x+_ctm[3]*y+_ctm[5]];}
             for(var oi=0;oi<ops.fnArray.length;oi++){
-              if(ops.fnArray[oi]===OPS.setFillRGBColor){
-                var rgb=ops.argsArray[oi];
+              var _fn=ops.fnArray[oi],_ar=ops.argsArray[oi];
+              if(_fn===OPS.save){_ctmStack.push(_ctm.slice());}
+              else if(_fn===OPS.restore){_ctm=_ctmStack.pop()||_ctm;}
+              else if(_fn===OPS.transform&&_ar&&_ar.length===6){_ctm=_ctmMul(_ar,_ctm);}
+              else if(_fn===OPS.setFillRGBColor){
+                var rgb=_ar;
                 _curColor=rgb?{r:Math.round(rgb[0]*255),g:Math.round(rgb[1]*255),b:Math.round(rgb[2]*255)}:null;
-                _lastFillBeforeRect=_curColor;
+                // Fond : VRAIE échelle 0-255 (pdf.js 3.x livre déjà 0-255 ; ×255 rendait les seuils
+                // {{CP}}/{{RH}}/{{R}} insensés — un fond lavande RH passait pour du rose CP, et le
+                // parseur FORCE le code au tag : « RH{{CP}} » devenait CP). L'encre du texte garde
+                // l'ancienne échelle (comportement {{REDNAME}}/{{MODH}} inchangé).
+                var _bsc=(rgb&&rgb[0]<=1&&rgb[1]<=1&&rgb[2]<=1)?255:1;
+                _curBg=rgb?{r:Math.round(rgb[0]*_bsc),g:Math.round(rgb[1]*_bsc),b:Math.round(rgb[2]*_bsc)}:null;
               }
-              // Rectangles remplis = fonds de cellules
-              if(ops.fnArray[oi]===OPS.constructPath||ops.fnArray[oi]===OPS.fill){
-                _curBgColor=_lastFillBeforeRect;
+              else if(_fn===OPS.constructPath&&_ar&&_ar[0]&&_ar[1]){
+                var _po=_ar[0],_pa=_ar[1],_pk=0,_cur=[];
+                for(var _pi=0;_pi<_po.length;_pi++){
+                  var _op=_po[_pi];
+                  if(_op===OPS.moveTo){if(_cur.length)_pendingPaths.push(_cur);_cur=[_ctmPt(_pa[_pk],_pa[_pk+1])];_pk+=2;}
+                  else if(_op===OPS.lineTo){_cur.push(_ctmPt(_pa[_pk],_pa[_pk+1]));_pk+=2;}
+                  else if(_op===OPS.rectangle){var _rx=_pa[_pk],_ry=_pa[_pk+1],_rw=_pa[_pk+2],_rh=_pa[_pk+3];_pk+=4;_pendingPaths.push([_ctmPt(_rx,_ry),_ctmPt(_rx+_rw,_ry),_ctmPt(_rx+_rw,_ry+_rh),_ctmPt(_rx,_ry+_rh)]);}
+                  else if(_op===OPS.curveTo){_pk+=6;}
+                  else if(_op===OPS.curveTo2||_op===OPS.curveTo3){_pk+=4;}
+                  else if(_op===OPS.closePath){if(_cur.length)_pendingPaths.push(_cur);_cur=[];}
+                }
+                if(_cur.length)_pendingPaths.push(_cur);
               }
-              if(ops.fnArray[oi]===OPS.showText||ops.fnArray[oi]===OPS.showSpacedText){
+              else if(_fn===OPS.fill||_fn===OPS.eoFill||_fn===OPS.fillStroke||_fn===OPS.eoFillStroke||_fn===OPS.closeFillStroke||_fn===OPS.closeEOFillStroke){
+                for(var _pp=0;_pp<_pendingPaths.length;_pp++){
+                  var _p=_pendingPaths[_pp],_x0=Infinity,_x1=-Infinity,_y0=Infinity,_y1=-Infinity;
+                  for(var _q=0;_q<_p.length;_q++){var _px=_p[_q][0],_py=_p[_q][1];if(_px<_x0)_x0=_px;if(_px>_x1)_x1=_px;if(_py<_y0)_y0=_py;if(_py>_y1)_y1=_py;}
+                  if(_x1>_x0&&_y1>_y0)_bgRects.push({x0:_x0,x1:_x1,y0:_y0,y1:_y1,a:(_x1-_x0)*(_y1-_y0),c:_curBg});
+                }
+                _pendingPaths=[];
+              }
+              else if(_fn===OPS.endPath||_fn===OPS.stroke||_fn===OPS.closeStroke){_pendingPaths=[];}
+              if(_fn===OPS.showText||_fn===OPS.showSpacedText){
                 _colorMap[_textIdx]=_curColor;
-                _bgColorMap[_textIdx]=_curBgColor;
                 _textIdx++;
               }
+            }
+            // fond RÉEL d'un item texte : le plus petit rectangle rempli contenant son centre
+            function _cmcBgAt(it){
+              try{
+                var cx=it.transform[4]+(it.width||0)/2,cy=it.transform[5]+(it.height||0)/2,best=null;
+                for(var ri=0;ri<_bgRects.length;ri++){var r=_bgRects[ri];if(cx>=r.x0&&cx<=r.x1&&cy>=r.y0&&cy<=r.y1&&(!best||r.a<=best.a))best=r;}
+                return best?best.c:null;
+              }catch(_bg){return null;}
             }
             var TOL=3,rowMap={};
             // v9.892 (Kevin 2026-09-06 « vérifie en réel, tout à l'identique ») —
@@ -39966,7 +40227,7 @@ function _doExtractPdfLines(file,onDone,onErr){
               var x=it.transform[4];
               var t=(it.str||"").replace(/\s+/g," ").trim();
               var col=_colorMap[_ti]||null;
-              var bgCol=_bgColorMap[_ti]||null;
+              var bgCol=_cmcBgAt(it);   // v9.897 : fond par géométrie (plus d'héritage du rectangle précédent)
               _ti++;
               // v9.766 — collecte item brut avant le filtre du texte vide
               try{
@@ -40071,18 +40332,24 @@ function _doExtractPdfLines(file,onDone,onErr){
               });
               // Encoder la couleur de fond dans le texte avec un marqueur {{TYPE}}
               // v9.614 — Ajout {{FF}} faisant fonction (bleu) + {{STAR}} étoile (rouge) + {{REDNAME}} nom rouge non reconnu
-              var line=items.map(function(i){
+              var line=items.map(function(i,_ix){
                 var tag="";
-                if(i.bg){
+                // v9.897 — un marqueur de FOND ne se pose que sur une CELLULE de code, jamais sur
+                // un jeton STRUCTUREL : code de poste (1er de la ligne), nom (contient un espace),
+                // « * » (chef/CDP, fond rose décoratif), numéros « du / au ». Sinon le format
+                // positionnel ne reconnaît plus la ligne et la personne disparaît (leçon #242).
+                var _tStruct=(_ix===0)||/\s/.test(i.t||"")||/^\*$/.test(i.t||"")||/^\d{1,2}$/.test(i.t||"");
+                if(i.bg&&!_tStruct){
                   // v9.614 — Faisant fonction (fond bleu) prioritaire car spécifique
                   if(i.bg.b>180&&i.bg.r<150&&i.bg.g<180&&i.bg.b>i.bg.r+40)tag="{{FF}}";
-                  else if(i.bg.r>200&&i.bg.g>=80&&i.bg.g<=180&&i.bg.b<100)tag="{{CDP}}";
-                  else if(i.bg.g>150&&i.bg.r<150&&i.bg.b<150)tag="{{AF}}";
                   else if(i.bg.r>200&&i.bg.g<80&&i.bg.b<80)tag="{{CONV}}";
-                  else if(i.bg.r>200&&i.bg.g>150&&i.bg.b>180&&i.bg.r>i.bg.g)tag="{{CP}}";
-                  else if(i.bg.r>80&&i.bg.r<160&&i.bg.b>150&&i.bg.g<100)tag="{{RH}}";
-                  else if(i.bg.r>160&&i.bg.b>180&&i.bg.g>140&&i.bg.g<200&&i.bg.b>i.bg.g)tag="{{R}}";
-                  else if(i.bg.r>220&&i.bg.g>200&&i.bg.b<120)tag="{{RRT}}";
+                  // v9.897 — {{CDP}}/{{AF}}/{{CP}}/{{RH}}/{{R}}/{{RRT}} RETIRÉS : le parseur FORÇAIT le
+                  // code au tag (« CLM » sur fond rose devenait CP = une INVENTION, règle « reproduction
+                  // à l'identique » : le TEXTE du PDF fait foi, la couleur n'est qu'une méta). Avec les
+                  // vraies couleurs (fond par géométrie, échelle 0-255) ces tags tombaient sur des
+                  // centaines de cellules réelles ; l'ancien état « dernier rectangle » ne les posait
+                  // qu'au hasard, et la fidélité était déjà 100 % sans eux. CONV (méta rouge) et FF
+                  // (nom sur fond bleu) ne modifient jamais un code : conservés.
                 }
                 // v9.614 — Star explicite dans le texte
                 if(/[★☆⭐]/.test(i.t||"")) tag+="{{STAR}}";
@@ -40101,7 +40368,7 @@ function _doExtractPdfLines(file,onDone,onErr){
                 // codes). Le tag est confirmé APRÈS coup par correspondance à un vrai
                 // employé (_cmcApplyEcoleToRoulettes) → DELTTRA/faux positifs = ignorés.
                 if(i.bg && i.bg.b>=i.bg.r+15 && i.bg.b>=i.bg.g+8 && i.bg.b>190 && i.bg.r>130
-                   && /^[A-Z][A-Z\s.\-]{2,}$/.test((i.t||"").trim()) && tag.indexOf("{{ECOLE}}")<0){
+                   && /^[A-Z][A-Z\s.\-]{2,}$/.test((i.t||"").trim()) && /\s/.test((i.t||"").trim()) && tag.indexOf("{{ECOLE}}")<0){   // v9.897 : un NOM porte un espace (« DELDS » sur fond bleu clair n'est pas une école)
                   tag+="{{ECOLE}}";
                 }
                 // v9.831 — Reproduction identique : fond rouge = {{CONV}} (convention),
@@ -48756,6 +49023,7 @@ setTimeout(function(){
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_){}   // v9.897 : le PDF fait foi
     try{ls("cmc_e",A.employees);}catch(_){}
     if(typeof dc==="function")setTimeout(dc,200);
     console.info("[v9.749 auto-fix-boot] terminé");

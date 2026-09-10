@@ -22,6 +22,7 @@ const TARGETS = [
   // Règle Kevin 2026-09-02 : « fais CMCteams ET light aussi, toujours ». Un mois
   // importé d'un seul côté = l'app principale et la page Départs désaccordées.
   // Un test de parité le vérifie (tests/verify-parite-cmcteams-light.mjs).
+  { pdf: 'tests/fixtures/octobre-2026.pdf', year: 2026, monthIdx: 9 },
   { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
   { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
   { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
