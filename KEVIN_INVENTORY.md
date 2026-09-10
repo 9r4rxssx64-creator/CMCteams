@@ -1,7 +1,18 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
+> Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
+
+### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/automerge-diag/README.md` | **Nouveau.** Explique pourquoi le robot écrit maintenant **un fichier par branche** quand une fusion échoue : avant, toutes les branches écrivaient dans le même fichier avec un contenu différent → conflit garanti dès que deux branches se croisaient. C'est ce qui avait bloqué la PR #3679. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/automerge-diag/README.md) |
+| `tests/verify-actions-conformes.mjs` | Modifié : **règle 5** — un robot qui écrit sur les branches ne doit plus jamais utiliser un chemin partagé. Prouvée par sabotage. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-actions-conformes.mjs) |
+| `.github/workflows/auto-merge-claude.yml` | Modifié : le diagnostic va dans `.github/automerge-diag/<branche>.md` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) |
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
 
 ### 6 septembre 2026 — garde « aucun secret écrit dans un document »
 
@@ -2141,3 +2152,20 @@ quelle — il faut l'emballer en app native (je le fais en CI sur un Mac GitHub)
 refuse les coquilles vides autour d'un site : les candidates crédibles sont **CMCteams**,
 **Apex Chat** et **Lingua**, qui ont un vrai contenu propre.
 
+
+---
+
+## 🧾 Journal des déploiements ratés (2026-09-06)
+
+Le connecteur GitHub Actions a été **refusé deux fois par GitHub** → je ne peux pas lire
+les journaux de la CI. Ce filet le remplace : quand une mise en ligne rate, la CI lit le
+journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic pour toi.
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| Le journal (à lire) | La cause exacte des dernières pannes, en français | [audit/deploiements-rates.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/deploiements-rates.md) |
+| Le déclencheur | Écoute les 23 mises en ligne, n'agit **que** sur échec | [journal-deploiements.yml](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/journal-deploiements.yml) |
+| Le rédacteur | Trie le journal brut et n'en garde que ce qui explique | [journal-deploiement.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/journal-deploiement.py) |
+| Le garde | Vérifie que les 23 restent surveillées, sans volume ni spam | [verify-deploiement-declenche.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-deploiement-declenche.mjs) |
+
+**Rien dans le journal = tout va bien.** Il ne se remplit que sur panne.

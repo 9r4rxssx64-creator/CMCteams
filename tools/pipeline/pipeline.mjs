@@ -93,20 +93,40 @@ switch (cmd) {
     if (!a.id || !a.branche) { console.error('  --id et --branche sont obligatoires'); process.exit(1); }
     const dejaBranche = Object.entries(d.sessions).find(([k, s]) => s.branche === a.branche && k !== a.id);
     if (dejaBranche) { console.error(`  ❌ la branche ${a.branche} est déjà celle de « ${dejaBranche[0]} » — deux sessions sur la même branche se marchent dessus`); process.exit(1); }
+    /* BUG CORRIGÉ LE 10.09.2026 — le message disait « inscrite » SANS inscrire.
+       L'ancien code étalait `...d.sessions[a.id]` APRÈS les nouvelles valeurs :
+       pour un identifiant DÉJÀ connu, l'ancien objet réécrasait tout ce qu'on
+       venait de demander — `--branche` compris — et le message annonçait quand
+       même le succès. Conséquence : une session qui changeait de branche restait
+       inscrite sur l'ANCIENNE, sans le savoir, et son travail devenait invisible
+       du registre — précisément ce que ce registre existe pour empêcher.
+       Ordre correct : l'existant sert de BASE, les valeurs demandées passent
+       PAR-DESSUS. */
+    const ancien = d.sessions[a.id] || {};
+    const creation = !d.sessions[a.id];
     d.sessions[a.id] = {
-      titre: a.titre || a.id,
-      branche: a.branche,
-      sujet: a.sujet || '',
-      surfaces: a.surfaces ? String(a.surfaces).split(',').map((x) => x.trim()) : [],
-      etat: 'actif',
+      ...ancien,                                   /* on ne perd aucun champ existant */
+      titre: a.titre || ancien.titre || a.id,
+      branche: a.branche,                          /* obligatoire → toujours appliqué */
+      sujet: a.sujet || ancien.sujet || '',
+      surfaces: a.surfaces
+        ? String(a.surfaces).split(',').map((x) => x.trim())
+        : (ancien.surfaces || []),
+      etat: ancien.etat || 'actif',
       maj: AUJ,
-      attend_kevin: null,
-      attend_session: null,
-      ...(d.sessions[a.id] || {}),
-      ...(a.titre ? { titre: a.titre } : {}),
+      attend_kevin: ancien.attend_kevin ?? null,
+      attend_session: ancien.attend_session ?? null,
     };
     ecrire(d);
-    console.log(`  ✅ « ${a.id} » inscrite (${a.branche}). Commite pipeline/sessions.json et pousse.`);
+    /* On DIT ce qui a changé : « inscrite » sur une session existante dont rien
+       n'a bougé est un message qui ment (c'était le cas jusqu'ici). */
+    if (creation) {
+      console.log(`  ✅ « ${a.id} » inscrite (${a.branche}). Commite pipeline/sessions.json et pousse.`);
+    } else if (ancien.branche !== a.branche) {
+      console.log(`  ✅ « ${a.id} » : branche ${ancien.branche} → ${a.branche}. Commite pipeline/sessions.json et pousse.`);
+    } else {
+      console.log(`  ✅ « ${a.id} » à jour (${a.branche}) — rien à changer.`);
+    }
     break;
   }
 

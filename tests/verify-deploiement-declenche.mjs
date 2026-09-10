@@ -144,6 +144,50 @@ chk(/set \+e/.test(apis.split('Preuve live')[1] || ''), 'la preuve live n\'est J
 const proxy = lire('.github/workflows/sync-apex-secrets-to-cf-worker.yml');
 chk(/qwen HTTP/.test(proxy), 'le relais Apex teste réellement Qwen après déploiement');
 
+/* ── 5. QUAND UNE MISE EN LIGNE RATE, EST-CE QUE J'APPRENDS POURQUOI ? ───────
+   Kevin 2026-09-06 « Go ». Le connecteur GitHub Actions a été refusé DEUX FOIS
+   par GitHub (« l'enregistrement automatique du client n'est pas pris en
+   charge ») → je ne peux pas lire les journaux de la CI. Sans ça, un
+   déploiement rouge ne m'apprend RIEN : je vois l'échec, pas la cause.
+   Le contournement (déjà éprouvé par verifie-ia-gratuites.yml, leçon #229) :
+   la CI, qui LIT le journal, en dépose l'essentiel dans le dépôt.
+   Cette garde vérifie que le filet couvre bien TOUT ce qui part en autonomie —
+   sinon une nouvelle mise en ligne serait ajoutée demain sans surveillance,
+   et son échec redeviendrait muet. */
+console.log('— 5. Une mise en ligne qui rate laisse-t-elle sa cause exacte dans le dépôt ? —');
+{
+  const jf = '.github/workflows/journal-deploiements.yml';
+  const j = lire(jf);
+  chk(j.length > 0, `le journal des déploiements ratés existe (${jf})`);
+  chk(existsSync('tools/audit/journal-deploiement.py'),
+    'le script qui met la panne en français existe (tools/audit/journal-deploiement.py)');
+  chk(/conclusion == 'failure'/.test(j),
+    'il ne tourne QUE sur un échec (un déploiement réussi n\'écrit rien = 0 volume ajouté)');
+  /* On exige le [skip ci] SUR LA COMMANDE `git commit`, pas n'importe où :
+     un simple commentaire qui dit « [skip ci] obligatoire » suffisait à faire
+     passer le test (faux positif trouvé en le sabotant — même piège qu'au §3bis). */
+  chk(/git commit -m[^\n]*\[skip ci\]/.test(j),
+    'son commit porte [skip ci] (sinon cascade de workflows + boîte mail saturée)');
+  chk(!/^\s*schedule:/m.test(j),
+    'aucune exécution programmée (le compte a été suspendu le 15/08 pour du volume)');
+  chk(/actions:\s*read/.test(j),
+    'il a le droit de LIRE le journal du run raté (actions: read)');
+
+  /* Le cœur : la liste surveillée doit couvrir chaque mise en ligne autonome. */
+  const bloc = (j.match(/workflows:\n([\s\S]*?)\n\s*types:/) || ['', ''])[1];
+  const surveilles = new Set(
+    bloc.split('\n').map((l) => (l.match(/^\s*-\s*"?(.+?)"?\s*$/) || [])[1]).filter(Boolean));
+  const oublies = [];
+  for (const f of readdirSync('.github/workflows').filter((n) => n.endsWith('.yml'))) {
+    const y = lire(`.github/workflows/${f}`);
+    if (!/branches:[\s\S]{0,160}?claude\/\*\*/.test(y) || !PUBLIE.test(y)) continue;
+    const nom = ((y.match(/^name:\s*(.+)$/m) || [])[1] || '').trim().replace(/^["']|["']$/g, '');
+    if (nom && !surveilles.has(nom)) oublies.push(`${f} (« ${nom} »)`);
+  }
+  chk(oublies.length === 0,
+    `chaque mise en ligne autonome est surveillée${oublies.length ? ' — OUBLIÉES : ' + oublies.join(', ') : ` (${surveilles.size} au journal)`}`);
+}
+
 R.ko.forEach((m) => console.log('  FAIL ' + m));
 R.ok.forEach((m) => console.log('  OK   ' + m));
 console.log(`\n=== ${R.ok.length} OK / ${R.ko.length} FAIL ===`);

@@ -120,6 +120,41 @@ chk(cryptos.length === 0,
     ? 'Règle 3 : aucun workflow crypto (nommé par GitHub parmi les usages interdits)'
     : `Règle 3 VIOLÉE : ${cryptos.length} workflow(s) crypto → ${cryptos.join(', ')} — le deploiement du bot passe par GitLab CI`);
 
+/* --- Règle 5 : un robot qui écrit sur les branches ne partage pas de chemin ---
+ *
+ * Née d'un vrai blocage, le 6-7.09.2026. `auto-merge-claude.yml` écrivait son
+ * diagnostic d'échec dans `.github/AUTOMERGE-DIAGNOSTIC.md` — le MÊME chemin
+ * pour TOUTES les branches, avec un contenu différent à chaque fois (le numéro
+ * de PR, la branche, l'heure). Mesuré : 8 écritures en une journée sur 4
+ * branches. Dès que deux de ces branches croisent `main`, le conflit est
+ * CERTAIN : même fichier, contenus incompatibles, aucun des deux n'a tort.
+ * C'est ce qui a bloqué la PR #3679, et une autre session avait déjà tenté de
+ * supprimer le fichier — il revenait au run suivant.
+ *
+ * La règle : un fichier qu'un robot committe DEPUIS une branche doit porter le
+ * nom de cette branche. Deux branches ne se disputent alors jamais un chemin.
+ */
+const CHEMINS_PARTAGES = [
+  { motif: /["'`]\.github\/AUTOMERGE-DIAGNOSTIC\.md["'`]/, quoi: '.github/AUTOMERGE-DIAGNOSTIC.md' },
+];
+const partages = [];
+for (const f of fichiers) {
+  const s = readFileSync(join(DOSSIER, f), 'utf8');
+  if (!/git push origin ["']?HEAD:/.test(s)) continue;   /* n'écrit pas sur une branche */
+  /* On ne lit QUE le code : le commentaire qui RACONTE l'ancien chemin partagé ne
+     doit pas déclencher l'alarme (même piège que la règle 1 — vécu ici même :
+     ma propre explication du correctif faisait échouer ma propre garde). */
+  const code = s.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  for (const { motif, quoi } of CHEMINS_PARTAGES) {
+    if (motif.test(code)) partages.push(`${f} → ${quoi}`);
+  }
+}
+chk(partages.length === 0,
+  partages.length === 0
+    ? 'Règle 5 : aucun robot n\'écrit toutes les branches dans un chemin partagé (conflit garanti)'
+    : `Règle 5 VIOLÉE : ${partages.join(', ')} — un fichier committé depuis une branche doit porter ` +
+      'son nom (ex. .github/automerge-diag/<branche>.md), sinon deux branches entrent en conflit');
+
 /* --- La note explicative doit rester lisible ----------------------------- */
 const note = '.github/workflows-desactives/POURQUOI.md';
 chk(existsSync(note), 'la note qui explique le retrait est présente (' + note + ')');
