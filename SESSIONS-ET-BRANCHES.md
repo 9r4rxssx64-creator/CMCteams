@@ -69,6 +69,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Ménage des branches — pourquoi 0 supprimée sur 379 | `claude/menage-branches-cause-exacte` | 🟢 diagnostic mesuré le 10.09 : ruleset `16725169` en `~ALL` (bloque toute suppression) + historique de `main` reconstruit le 09.08 (314 branches sur 361 sans ancêtre commun). PR #3725 |
 | Ménage des branches — l'outil | `claude/menage-repli-arbres` | 🟢 `tools/menage/branches-superflues.mjs` + garde `test:menage-branches` (12/12). 385 branches → 2 sûres et **190 fichiers** à relire une fois. Corrige la promesse fausse du matin |
 | Registre — remise à plat après le ménage | `claude/registre-branches-supprimees` | 🟢 19 sessions repointées, PR de fusion notée pour chacune |
+| Ménage — clôture | `claude/registre-clore-menage` | ✅ chantier terminé : 389 → 125 branches, gardes câblées, règle écrite |
 | « Voir comme Kevin » (sous-produit de workflow) | `claude/voir-34519286077` | 🟡 3 commits hors main, dont 2 de `cmcteams-pdf` — à elle de trancher (inscrite seulement pour éteindre le rouge du gate) |
 | Ménage — vérification de la levée | `claude/menage-verif-suppression` | ⚫ épuisée : fusionnée (PR #3746) avant mon dernier commit, contenu repris dans la ligne au-dessus |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
