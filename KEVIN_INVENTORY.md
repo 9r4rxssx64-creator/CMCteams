@@ -1,7 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
+> Dernière mise à jour : **2026-09-10** (soir : le bouton « Lire les étapes » du livre de cuisine lit enfin, étape par étape, avec surlignage)
+
+### 10 septembre 2026 (soir) — « Lire les étapes » du livre de cuisine, réparé et prouvé
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/cuisine/index.html` | **Corrigé.** Le bouton « 🔊 Lire les étapes » lit la recette **une étape à la fois** (phrases courtes, enchaînées, gardées en mémoire), surligne l'étape en cours, devient « ⏹ Arrêter la lecture », et dit la cause exacte si la voix échoue. Plus de `cancel()` collé à `speak()` (le piège iPhone). Encodage déclaré. | [🧪 Ouvrir le livre](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html) |
+| `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
+| `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
 
 ### 10 septembre 2026 (nuit) — « voir comme toi » : je peux maintenant regarder tes vraies pages
 
