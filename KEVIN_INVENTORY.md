@@ -1,6 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
+> Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
+
+### 10 septembre 2026 (soir) — ton ancien septembre est remplacé tout seul, et les horaires des chefs ne disparaissent plus au redémarrage
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/verify-seed-remplace-import-perime.mjs` | **Nouveau.** Simule ton téléphone (ancien septembre importé) et prouve dans un vrai navigateur que la version vérifiée le remplace (ancien archivé V1, tes modifications manuelles gardées), qu'un import récent est respecté, et que les codes chef survivent au redémarrage. 22 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-seed-remplace-import-perime.mjs) |
+| `index.html` (v9.898) | Modifié : remplacement automatique d'un mois importé par un parseur plus ancien que le seed vérifié + correction du nettoyage de boot qui effaçait les horaires des chefs (« 20/5c ») à chaque ouverture. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/index.html) |
+| `tools/shared/_gen-seed.mjs` + `planning-seed.js` | Modifié : le seed porte la version du parseur qui l'a produit (`parser`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/shared/_gen-seed.mjs) |
+| `LESSONS.md` #246-247 | Le P0 du nettoyage de boot et la règle « import périmé remplacé ». | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
 > Dernière mise à jour : **2026-09-10 (soir)** (les configs des workflows arrivent enfin dans `main` — 73 branches robot n'allaient nulle part depuis juin)
 
 ### 10 septembre 2026 (soir) — les configs écrites par les workflows arrivent dans `main`
@@ -152,6 +162,9 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 
 | Fichier | À quoi ça sert | Liens |
 |---|---|---|
+| `tests/verify-pdf-equipes.mjs` **(nouveau, 10.09)** | **Le garde qui manquait pour les ÉQUIPES.** Relit la page 1 (récapitulatif) de chaque PDF avec pdfjs, reconstruit les 36 blocs d'équipe + 18 miroirs par mois, et exige qu'ils soient reproduits à l'identique dans CMCteams **et** sur la page Départs. C'est ce qui a mesuré 41 à 119 personnes mal placées par mois avant correction. `npm run test:pdf-equipes` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-equipes.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-equipes.mjs) |
+| `tests/fixtures/octobre-2026.pdf` **(nouveau, 10.09)** | Le planning d'octobre 2026 que tu as fourni — désormais dans les deux générateurs (CMCteams et Départs) et dans les deux gardes de fidélité. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/octobre-2026.pdf) |
+| `index.html` (v9.897) | Équipes lues dans le récapitulatif du PDF (`_cmcDetectTeamsByRecap`) au lieu d'être devinées · fond des cellules lu par géométrie (CASSINI A / MOREL F retrouvés) · plus aucune couleur ne réécrit un code. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
 | `tests/verify-pdf-vs-surfaces.mjs` **(nouveau)** | **Le garde qui manquait.** Relit les VRAIS PDF avec pdfjs **sans passer par le parser de l'app**, reconstruit la grille par géométrie, et exige que CHAQUE personne et CHAQUE cellule se retrouvent à l'identique dans CMCteams **et** dans la page Départs. C'est ce qui a trouvé MATTERA M (disparu), NICASTRO M (planning inventé) et BLANCHY F / DEGIOVANNI R (sans équipe). `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) |
 | `tests/fixtures/pdf-fidelite-baseline.json` **(nouveau)** | Le **cliquet** : la liste des manques CONNUS d'août (MOREL F + 10 sans équipe). Le test échoue si un manque NOUVEAU apparaît — jamais de faux rouge sur l'existant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/pdf-fidelite-baseline.json) |
 | `index.html` (v9.894) | 3 correctifs : lignes du PDF regroupées par **proximité** (1,8 pt) et non par arrondi · les passes de réparation **n'inventent plus** de planning pour qui n'est pas dans le PDF · rattachement d'équipe par la **rotation d'horaires** quand les jours de repos ne suffisent pas (cadres exclus). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
