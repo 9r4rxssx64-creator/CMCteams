@@ -208,13 +208,17 @@ Tu ne peux pas en créer une comme ça toi-même — **dis-moi le thème, je te 
 reste le geste qui rétablirait tout d'un coup — mais tant que le compte est suspendu,
 il ne servira à rien. Inutile de le retenter avant que GitHub réponde.)*
 
-### ✅ 3. Planning — septembre EST importé (plus rien à faire)
-Mesuré ce matin dans un vrai navigateur, des deux côtés : **septembre 2026 est bien là**
-(285 personnes, 18 miroirs). L'app et la page Départs donnent **exactement les mêmes
-numéros de départ** — 13 980 cellules comparées, **0 écart**. Ton équipe de septembre :
-**BJ Éq.6 (16/22)**, miroir **BJ Éq.10 (16/3)**.
-*Un test disait le contraire : il ne regardait que juillet et août, donc septembre était
-comparé à du vide. Corrigé — il déduit maintenant les mois tout seul.*
+### 3. Planning — septembre ET octobre : corrigés le 10.09, rien à faire de ton côté
+Tu avais raison le 10.09 (« trop d'erreurs ») : ce que j'avais écrit ici le 6.09 (« plus rien à
+faire ») ne regardait que les **cases** et l'égalité app ⇄ page Départs, pas les **équipes**
+contre le PDF. Mesuré : 56 personnes mal placées en septembre, 41 en octobre (mois qui
+n'existait même pas). Corrigé : l'app **lit** maintenant les équipes dans le récapitulatif
+(page 1) du PDF au lieu de les deviner. Ton équipe de septembre d'après le PDF : bloc
+**16/22c** = toi, MAGARA M, ROSSI J (1-15), ALDRIGHETTI JP, CASTEL N — affiché « BJ Éq.3 »,
+miroir « BJ Éq.9 (16/3) ». Les numéros d'équipe suivent désormais les colonnes du PDF.
+*Ton téléphone : le septembre que tu y as importé avec l'ancienne version est remplacé
+automatiquement par la version vérifiée dès la mise à jour (l'ancien est archivé, restaurable
+en 1 clic dans Import → versions).*
 
 ---
 

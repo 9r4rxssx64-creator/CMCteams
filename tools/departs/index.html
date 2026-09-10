@@ -194,7 +194,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.41";
+var APP_VER="v1.42";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -453,14 +453,22 @@ function setMonth(mk){ CURMO=mk;
   fillSel(); load(); render(); }
 var BID=null, B=null;
 function defaultBoard(){ var k=Object.keys(BOARDS);
-  // 1) board non-abs du mois GÉNÉRÉ le plus récent (Août > Juillet) — données à jour
+  var now=new Date(), nowN=now.getFullYear()*12+now.getMonth();
+  function firstOf(y,m){ return k.filter(function(id){var b=BOARDS[id];return b.year===y&&b.monthIdx===m&&b.kind!=="abs";})[0]; }
+  // v1.42 (octobre 2026 chargé le 10 septembre) — ORDRE : 1) le mois COURANT s'il est généré
+  // (Kevin 2026-09-05 « quand j'ouvre, ce n'est pas la date du jour, mauvais mois ») ; 2) sinon
+  // le mois généré le plus récent qui n'est PAS dans le futur ; 3) sinon le plus récent généré.
+  // Avant : « le mois généré le plus récent » d'abord — juste tant que ce mois était le courant ;
+  // un mois FUTUR déjà chargé passait devant le mois en cours.
   if(DEP_GEN_MONTHS&&DEP_GEN_MONTHS.length){
     var ms=DEP_GEN_MONTHS.slice().sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
-    for(var i=0;i<ms.length;i++){ var hit=k.filter(function(id){var b=BOARDS[id];return b.year===ms[i].year&&b.monthIdx===ms[i].monthIdx&&b.kind!=="abs";}); if(hit[0])return hit[0]; }
+    var i,hit;
+    for(i=0;i<ms.length;i++){ if(ms[i].year*12+ms[i].monthIdx===nowN){ hit=firstOf(ms[i].year,ms[i].monthIdx); if(hit)return hit; } }
+    for(i=0;i<ms.length;i++){ if(ms[i].year*12+ms[i].monthIdx<nowN){ hit=firstOf(ms[i].year,ms[i].monthIdx); if(hit)return hit; } }
+    for(i=0;i<ms.length;i++){ hit=firstOf(ms[i].year,ms[i].monthIdx); if(hit)return hit; }
   }
-  // 2) sinon mois courant
-  var now=new Date(); var cur=k.filter(function(id){var b=BOARDS[id];return b.year===now.getFullYear()&&b.monthIdx===now.getMonth()&&b.kind!=="abs";});
-  return cur[0]||k[0]; }
+  var cur=firstOf(now.getFullYear(),now.getMonth());
+  return cur||k[0]; }
 
 var ST=null;
 function load(){
@@ -906,8 +914,13 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
 function _depTeamOf(id){ var b=BOARDS[id]; if(!b)return "";
   var p=String(b.label||"").split(" — "); return (p[1]||"").replace(/\s*\([^)]*\)\s*$/,"").trim(); }
 function _depRank(id){ var b=BOARDS[id]; return b?(b.year*12+b.monthIdx):-1; }
-function _depLatestRank(){ var r=-1; Object.keys(BOARDS).forEach(function(id){ var b=BOARDS[id];
-  if(b&&b.kind!=="abs"){ var v=b.year*12+b.monthIdx; if(v>r)r=v; } }); return r; }
+/* v1.42 — le mois de RÉFÉRENCE n'est plus « le plus récent chargé » mais le mois COURANT s'il a des
+   tableaux (octobre 2026 chargé dès le 10 septembre ne doit pas devenir « le mois » avant le 1er),
+   sinon le plus récent qui n'est pas dans le futur, sinon le plus récent. */
+function _depLatestRank(){ var now=new Date(), nowN=now.getFullYear()*12+now.getMonth(), r=-1, past=-1, has=false;
+  Object.keys(BOARDS).forEach(function(id){ var b=BOARDS[id];
+    if(b&&b.kind!=="abs"){ var v=b.year*12+b.monthIdx; if(v===nowN)has=true; if(v<nowN&&v>past)past=v; if(v>r)r=v; } });
+  return has?nowN:(past>=0?past:r); }
 /* clés triées du mois le plus récent au plus ancien : garantit qu'on trouve l'équipe ACTUELLE
    d'une personne, sans dépendre de l'ordre d'écriture du fichier de données. */
 function _depKeysRecent(){ return Object.keys(BOARDS).sort(function(a,b){ return _depRank(b)-_depRank(a); }); }

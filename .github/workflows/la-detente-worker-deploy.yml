@@ -18,6 +18,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write   # publier-config : PR vers main
+  actions: write         # publier-config : relance deploy.yml après fusion
 
 jobs:
   deploy:
@@ -59,18 +61,21 @@ jobs:
           echo "GET $URL"
           curl -fsS "$URL" | head -c 300 || echo "(health non-200, le worker peut mettre qq sec)"
 
-      - name: Commit proxy-config.json
+      - name: Écrire proxy-config.json
         run: |
           URL="${{ steps.deploy.outputs.worker_url }}"
           mkdir -p shops/la-detente
           printf '{\n  "worker_url": "%s",\n  "app_tag": "ld-studio-v1",\n  "updated_at": "%s"\n}\n' "$URL" "$(date -u +%FT%TZ)" > shops/la-detente/proxy-config.json
           cat shops/la-detente/proxy-config.json
-          git config user.name "kdmc-bot"; git config user.email "bot@kdmc.local"
-          BR="claude/worker-config-${{ github.run_id }}"
-          git checkout -b "$BR"
-          git add shops/la-detente/proxy-config.json
-          if git diff --cached --quiet; then echo "config inchangée"; else
-            git commit -m "La Détente — URL worker Gemini auto ($URL) [skip ci]"
-            git push -u origin "$BR"
-            echo "Poussé $BR (auto-merge)."
-          fi
+
+      - name: Publier proxy-config.json dans main (PR fusionnée par le robot)
+        # Jusqu'au 10.09.2026 : `git push` d'une branche claude/worker-config-<run_id> avec
+        # « (auto-merge) » écrit dans le journal — sauf qu'un push signé par GITHUB_TOKEN ne
+        # réveille JAMAIS l'auto-merge, et le message portait [skip ci]. Résultat mesuré :
+        # 8 branches orphelines, main jamais mis à jour. L'action fait PR + fusion + redéploiement,
+        # et ne crée rien si seul l'horodatage a changé. Leçon #243.
+        uses: ./.github/actions/publier-config
+        with:
+          fichiers: shops/la-detente/proxy-config.json
+          message: "La Détente — URL worker Gemini auto (${{ steps.deploy.outputs.worker_url }})"
+          prefixe: worker-config
