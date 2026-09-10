@@ -11,11 +11,11 @@
         "tools/crea-studio",
         "services/kdmc-crea-ai"
       ],
-      "etat": "actif",
-      "maj": "2026-09-05",
+      "etat": "termine",
+      "maj": "2026-09-10",
       "attend_kevin": null,
       "attend_session": null,
-      "note": "49 automatisations rapatriees/orientees (14 GitHub a la main, 24 GitLab, 5 Worker, 6 jamais) + depot public securise (2 vraies failles corrigees)."
+      "note": "Branche supprimee par le menage : travail VERIFIE dans main (PR #3747 fusionnee le 10.09). Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "cmcteams": {
       "titre": "CMCteams",
@@ -288,11 +288,11 @@
       "branche": "claude/verify-cmcteams-light-data-rzlvau",
       "sujet": "fidelite-pdf",
       "surfaces": [],
-      "etat": "actif",
+      "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": null,
       "attend_session": "registre-menage : claude/voir-34519286077 : 3 commits hors main dont 2 a toi — a toi de trancher",
-      "note": "10.09 : équipes lues dans le récapitulatif page 1 (v9.897), octobre 2026 intégré, cellules+équipes 0 écart 4 mois × 2 surfaces, CASSINI A/MOREL F retrouvés"
+      "note": "Branche supprimee par le menage : travail VERIFIE dans main (PR #3743 fusionnee le 10.09). Reste claude/voir-34519286077 qui porte 2 de tes commits — voir le message. Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "secrets-guard": {
       "titre": "Garde anti-fuite de secrets (branche annexe de domaine-audit)",
