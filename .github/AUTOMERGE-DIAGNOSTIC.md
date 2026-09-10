@@ -1,15 +1,15 @@
-# Diagnostic auto-merge — PR #3679 (claude/surveillance-domaine-26-adresses)
+# Diagnostic auto-merge — PR #3725 (claude/menage-branches-cause-exacte)
 
-Généré le 2026-09-06 20:42 UTC par auto-merge-claude.yml.
+Généré le 2026-09-10 09:23 UTC par auto-merge-claude.yml.
 Ce fichier existe parce que le merge automatique a été REFUSÉ.
 
 ## Cause exacte renvoyée par GitHub
 ```
 GraphQL: Pull Request has merge conflicts (mergePullRequest)
-X Pull request 9r4rxssx64-creator/CMCteams#3679 is not mergeable: the merge commit cannot be cleanly created.
+X Pull request 9r4rxssx64-creator/CMCteams#3725 is not mergeable: the merge commit cannot be cleanly created.
 To have the pull request merged after all the requirements have been met, add the `--auto` flag.
 Run the following to resolve the merge conflicts locally:
-  gh pr checkout 3679 && git fetch origin main && git merge origin/main
+  gh pr checkout 3725 && git fetch origin main && git merge origin/main
 ```
 
 ## État de la PR vu par GitHub
