@@ -37,7 +37,20 @@ export const masque = (s) =>
 export function marquesPour(host, { pinHash } = {}) {
   const h = String(host || '').toLowerCase();
   const now = Date.now();
-  if (/^cmcteams(-light)?\./.test(h)) {
+  if (/^(cmcteams-light|departs)\./.test(h)) {
+    /* Page Départs / light (tools/departs/index.html ~1013) : la porte « Première connexion »
+       se ferme sur cmc_dep_identity {prenom, nom, cgu:true} ; cmc_dep_me = « NOM I » (format SBM)
+       ouvre l'équipe de Kevin. VU le 10.09 (run 34517319384) : sans ces marques la page restait
+       sur l'écran d'identification — on « voyait » un écran de login, pas Kevin. */
+    return {
+      local: {
+        cmc_dep_identity: JSON.stringify({ prenom: 'Kevin', nom: 'DESARZENS', cgu: true, ts: now }),
+        cmc_dep_me: 'DESARZENS K',
+      },
+      note: 'session Départs/light (identité Kevin DESARZENS, équipe DESARZENS K)',
+    };
+  }
+  if (/^cmcteams\./.test(h)) {
     return { local: { cmc_uid: ADMIN.uid, cmc_lastact: String(now) }, note: 'session CMCteams (admin U11804)' };
   }
   if (/^apex-ai\./.test(h)) {
