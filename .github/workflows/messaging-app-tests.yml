@@ -74,23 +74,33 @@ jobs:
             echo "❌ coverage-summary.json missing"
             exit 1
           fi
-          node -e "
-            const cov = require('./coverage/coverage-summary.json');
-            const FLOOR = { 'api-worker.js': { statements: 80, branches: 74, functions: 86, lines: 80 } };
+          # 10/09/2026 — SOURCE UNIQUE : les seuils sont LUS dans vitest.config.js (un seuil
+          # par fichier = cliquet sur la mesure vitest 5). Avant, une table copiée ici
+          # (FLOOR) devait être tenue à la main en miroir — deux vérités, une dérive garantie.
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const cov = JSON.parse(readFileSync('./coverage/coverage-summary.json', 'utf8'));
+            const { default: cfg } = await import('./vitest.config.js');
+            const T = cfg.test.coverage.thresholds;
             const KEYS = ['lines','statements','branches','functions'];
-            let failed = false;
+            let failed = false, seen = 0;
             for (const [path, s] of Object.entries(cov)) {
               if (path === 'total' || !s || !s.lines) continue;
-              const base = path.split('/').pop();
-              const floor = FLOOR[base];
-              const bad = KEYS.filter(k => s[k].pct < (floor ? floor[k] : 100));
+              const rel = path.replace(/^.*\/messaging-app\//, '');
+              const t = T[rel];
+              if (!t) { failed = true; console.error('❌', rel, 'aucun seuil dans vitest.config.js — un fichier nouveau doit avoir le sien'); continue; }
+              seen++;
+              // total === 0 : rien de mesurable (fichier de pur réexport, ex. durable-objects/*DO.js
+              // shims) — json-summary écrit pct 0 alors que vitest considère le seuil satisfait.
+              // On aligne la lecture sur vitest : une métrique vide ne peut pas être « en dessous ».
+              const bad = KEYS.filter(k => s[k].total > 0 && s[k].pct < t[k]);
               if (bad.length) {
                 failed = true;
-                console.error('❌', base, bad.map(k => k+'='+s[k].pct+'% (min '+(floor?floor[k]:100)+')').join(', '));
+                console.error('❌', rel, bad.map(k => k+'='+s[k].pct+'% (min '+t[k]+')').join(', '));
               }
             }
             if (failed) process.exit(1);
-            console.log('✅ Couverture conforme : 100 % partout, api-worker.js au-dessus du plancher.');
+            console.log('✅ Couverture conforme : ' + seen + ' fichiers au-dessus de leur seuil (vitest.config.js).');
           "
 
       - name: Upload coverage HTML report

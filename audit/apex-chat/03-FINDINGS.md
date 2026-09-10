@@ -602,15 +602,24 @@ le touchent), avec pour chaque classe : ce que dit l'outil, ce que j'ai vérifi�
 | Semgrep « plaintext-http-link » × 2 | `tests/unit/media-gallery.test.js` | `http://b.io` = URL de **fixture** dans un test, jamais appelée | faux positif |
 | OSV × 17 (dépôt entier) | dépendances | `messaging-app` : production 0 (mesuré `npm audit`) ; les 7 de test corrigées ci-dessus. Les autres lignes sont dans d'autres lockfiles du dépôt | hors périmètre |
 
-### Ce que je n'ai **pas** pu trier — et l'outil construit pour le faire
+### Ce que je n'avais **pas** pu trier — trié le soir même, avec l'outil construit pour ça
 
-**9 des 11 signalements Semgrep de `messaging-app` restent anonymes.** Le rapport lisible depuis
-cette session ne portait que des comptes par règle et par dossier, pas les lignes. Rejouer
-Semgrep ici est impossible : ses règles se téléchargent depuis `semgrep.dev`, injoignable
-(mesuré : réponse 000). J'ai donc ajouté à `security-suite.yml` une entrée `detail_path` :
+**9 des 11 signalements Semgrep de `messaging-app` étaient anonymes** à 20 h : le rapport
+lisible depuis cette session ne portait que des comptes par règle et par dossier, pas les
+lignes. Rejouer Semgrep ici est impossible : ses règles se téléchargent depuis `semgrep.dev`,
+injoignable (mesuré : réponse 000). J'ai ajouté à `security-suite.yml` une entrée `detail_path` :
 pour les préfixes demandés, le check-run liste **chaque signalement** (outil · gravité ·
 fichier:ligne · règle), plafonné à 400 lignes, sans jamais imprimer la valeur d'un secret.
-Résultat de cette lecture : § 6.5 de `02-RESULTATS.md`.
+
+**Relancé (run 34527892077) et lu : 47 lignes, 47 ouvertes, 0 faille.** Le détail est au
+§ 6.5 de `02-RESULTATS.md`. En résumé : 4 `missing-integrity` sur des `<link canonical /
+dns-prefetch>` (pas de SRI possible), 5 `unsafe-formatstring` INFO sur des `console.warn`, 1
+`urllib` dans un script CI sans entrée utilisateur, 1 `cors-misconfiguration` sur la réflexion
+d'origine **après** liste blanche (voulu, testé), **3 `gha-curl-pipe-shell` classés ERROR qui
+sont des `curl | python3 -c "json.load…"`** — la réponse d'API est parsée, jamais exécutée —,
+et les 7 gitleaks (clé VAPID publique ×3, CSS, `'TEAMID'` de test, en-têtes PEM ×2). Deux
+recommandations P3 restent ouvertes, ni l'une ni l'autre n'est une faille : remplacer
+`python3 -c` par `jq` dans les trois workflows, et épingler les actions sur un SHA.
 
 ### Pentest IA (Strix) — exécuté, mais tué par le délai
 
