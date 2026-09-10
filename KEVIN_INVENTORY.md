@@ -1,7 +1,18 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
+> Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
+
+### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/automerge-diag/README.md` | **Nouveau.** Explique pourquoi le robot écrit maintenant **un fichier par branche** quand une fusion échoue : avant, toutes les branches écrivaient dans le même fichier avec un contenu différent → conflit garanti dès que deux branches se croisaient. C'est ce qui avait bloqué la PR #3679. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/automerge-diag/README.md) |
+| `tests/verify-actions-conformes.mjs` | Modifié : **règle 5** — un robot qui écrit sur les branches ne doit plus jamais utiliser un chemin partagé. Prouvée par sabotage. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-actions-conformes.mjs) |
+| `.github/workflows/auto-merge-claude.yml` | Modifié : le diagnostic va dans `.github/automerge-diag/<branche>.md` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) |
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
 
 ### 6 septembre 2026 — garde « aucun secret écrit dans un document »
 
