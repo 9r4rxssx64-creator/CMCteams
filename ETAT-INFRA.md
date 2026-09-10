@@ -785,3 +785,21 @@ branche. Un `M` peut pourtant être un correctif jamais fusionné — le correct
 exactement ça. Aucune comparaison de contenu ne sait distinguer « version périmée » de « correctif
 oublié » quand l'histoire commune a disparu : c'est pourquoi le seuil est de **30 jours** et que
 les branches inscrites au registre sont intouchables. Garde : `npm run test:menage-branches`.
+
+
+### ✅ 10.09 au soir — le verrou est levé : le ruleset ne vise plus que la branche par défaut
+
+Kevin l'a fait à 20 h 57. Vérifié par l'API : `conditions.ref_name.include` est passé de
+`["~ALL"]` à **`["~DEFAULT_BRANCH"]`**, règles inchangées (`deletion`, `non_fast_forward`).
+`main` reste donc protégée contre la suppression ET le force-push ; les 386 `claude/*` et les
+461 `auto-deploy/*` redeviennent supprimables.
+
+⚠️ Piège vu en direct, à connaître si vous refaites la manipulation : **ajouter** « Default branch »
+ne suffit pas, il faut **enlever** « All branches ». Entre les deux enregistrements la cible valait
+`["~ALL","~DEFAULT_BRANCH"]` — l'union couvre toujours tout, donc rien n'était débloqué.
+
+**Depuis une session, la suppression reste impossible** et ce n'est PAS la règle du dépôt :
+`git push --delete` répond `HTTP 403` **du proxy de la session** (message générique), là où un refus
+du dépôt s'affiche `GH013 — Cannot delete this branch`. Ne confondez pas les deux messages : c'est
+la CI (`auto-merge-claude.yml`, étape « Menage ») qui supprime, pas nous. Elle s'exécute à chaque
+envoi sur `claude/**`, par paquets de 60.

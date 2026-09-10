@@ -148,8 +148,9 @@ cousins. L'ancien chemin en ligne est effacé automatiquement.
 par celui de ton iPhone, il écrase ce que j'ai déposé.)*
 
 ### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
-- **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
-- **Boutiques** (tableau de bord) : `Paramètres → Changer le PIN admin`.
+- **CMCteams** (l'app principale) : onglet **Admin** → **🔒 Sécurité** → bouton **🔐 Modifier PIN admin**
+  (vérifié dans le code le 10.09 : la vue `vAdminSecurity` ; l'ancien chemin « Réglages → Sécurité » était faux).
+- **Boutiques** (tableau de bord `dashboard.kd-mc.com`) : **Paramètres** → carte **🔑 Changer le PIN admin**.
 
 *Ne m'écris jamais le nouveau code. Si tu veux que je vérifie que tout suit, je le fais sans le
 connaître (les tests envoient l'empreinte, jamais le code).*

@@ -6,8 +6,13 @@ import { chromium } from 'playwright';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = path.resolve('.');
+// 10.09.2026 — la racine servie est le dossier DU TEST, plus le dossier courant :
+// lancé depuis la racine du dépôt, `path.resolve('.')` servait le index.html de la
+// grande app CMCteams (document.body absent au moment du test) → « Cannot read
+// properties of null (reading 'classList') », faux rouge signalé comme « test cassé ».
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const MIME = { '.html':'text/html', '.js':'text/javascript', '.txt':'text/plain', '.json':'application/json', '.css':'text/css' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);

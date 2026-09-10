@@ -53,6 +53,18 @@ ok(pageJs.includes("kdmc_access_pinhash"), 'la page admin lit bien kdmc_access_p
 ok(Object.keys(marquesPour('admin.kd-mc.com').local).length === 0,
   'sans code fourni, on ne fabrique RIEN (la page restera verrouillée — honnête)');
 
+/* Départs / light (ajout 10.09.2026 — vu en vrai : sans ces marques, écran d'identification) */
+const dep = readFileSync(join(ROOT, 'tools/departs/index.html'), 'utf8');
+for (const host of ['cmcteams-light.kd-mc.com', 'departs.kd-mc.com']) {
+  const l = marquesPour(host);
+  const id = JSON.parse(l.local.cmc_dep_identity || 'null');
+  ok(id && id.cgu === true && id.nom === 'DESARZENS' && id.prenom === 'Kevin', host + ' : cmc_dep_identity = Kevin DESARZENS, CGU acceptées');
+  ok(l.local.cmc_dep_me === 'DESARZENS K', host + ' : cmc_dep_me = DESARZENS K (format SBM, ouvre son équipe)');
+  ok(!l.local.cmc_uid, host + ' : pas de fausse marque CMCteams sur la page light');
+}
+ok(dep.includes('cmc_dep_identity') && dep.includes('cmc_dep_me'), 'la page Départs lit bien cmc_dep_identity + cmc_dep_me (vérifié dans son code)');
+ok(/v&&v\.cgu&&v\.nom&&v\.prenom/.test(dep), 'la porte de la page Départs se ferme sur {cgu, nom, prenom} (vérifié)');
+
 const arbre = marquesPour('arbre.kd-mc.com');
 ok(arbre.local.arbre_trust === '1', 'Arbre : arbre_trust (règle « reconnu auto après 1re connexion »)');
 
