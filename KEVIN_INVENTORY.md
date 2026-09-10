@@ -95,7 +95,9 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 |---|---|---|
 | `CLAUDE.md` (règle en tête) | La règle absolue en 4 temps : **prévenir** → **réveiller** la session vivante → **faire rectifier** → **vérifier soi-même** en refaisant la mesure. Vaut pour toutes les sessions, tous projets présents et futurs. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
 | `tests/messages-suivis.test.mjs` | La garde qui rend la règle impossible à oublier : tout message **ouvert** de plus de **2 jours** sans suivi daté fait **échouer** `test:ci`. `npm run test:messages-suivis` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis.test.mjs) |
-| `tests/messages-suivis-baseline.json` | Le cliquet : 50 anciens messages figés pour ne pas bloquer sur la dette existante — toute **nouvelle** négligence, elle, est refusée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis-baseline.json) |
+| `tests/messages-suivis-baseline.json` | Le cliquet : 42 anciens messages figés pour ne pas bloquer sur la dette existante — toute **nouvelle** négligence, elle, est refusée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis-baseline.json) |
+| `services/kdmc-router/prepare-secours.mjs` | La bouée de secours du domaine copiait **cuisine.kd-mc.com** et **shops.kd-mc.com** nulle part depuis le 13.08 : si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent. Bouché. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-router-secours.mjs` | Le contrôle accusait 4 dossiers d'être « oubliés » alors qu'ils sont copiés avec leur parent. Un faux rouge coûte aussi cher qu'un faux vert. **43/6 → 49/0**. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-router-secours.mjs) |
 
 ## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
 

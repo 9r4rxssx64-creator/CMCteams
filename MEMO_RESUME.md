@@ -21,6 +21,21 @@ et les autres aussi. Note le. »* C'est écrit, et surtout **rendu obligatoire p
   vérification programmée de mon côté pour refaire les mesures moi-même.
 - Leçon **#251**.
 
+**Appliqué à moi-même dans la foulée (les 4 temps, pas seulement écrits) :**
+
+- **Lingua** — remesuré par moi à 19h15, pas cru sur parole : `test:lingua-voix` toujours **21 OK / 5 FAIL**,
+  inchangé depuis le réveil de 19h03. La session n'a pas repris les 5 échecs de voix ; je ne les corrige pas
+  (leur domaine, aucune mesure probante de mon côté). Suivi daté au registre.
+- **Départs** — annoncé corrigé par eux ; **vérifié par moi** : l'identifiant est bien dérivé du nom
+  (`_cmcTmpEmpId`, FNV-1a) et `test:generateurs-reproductibles` passe **8 OK** — mêmes PDF, mêmes fichiers
+  à l'octet près. Reste un identifiant tiré de l'horloge (`createEmpFromImport`), signalé, non bloquant.
+- **Domaine** — réveillé, muet, et ça bloquait `test:ci` pour tout le monde → **corrigé moi-même** :
+  4 des 6 rouges de `test:router-secours` étaient de **faux rouges** (le test cherchait la chaîne exacte
+  d'un dossier alors que la copie est récursive : `kdmc-home/osint` était déjà copié avec `kdmc-home`).
+  Les 2 vrais trous existaient depuis le 13.08 : **cuisine.kd-mc.com** et **shops.kd-mc.com** n'avaient
+  aucune copie de secours — si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent.
+  Mesuré après : **43/6 → 49 OK / 0 FAIL**, paquet 497 fichiers / 18,2 Mo (limite 20 000).
+
 ---
 
 ## 10 septembre 2026 — Lingua : le dernier rouge de `test:ci` était un test qui ne testait rien
