@@ -101,7 +101,7 @@ Migrations versionnées dans `d1-migrations/` (`0001_init.sql` → `0008_users_m
 |---|---|
 | `sk-ant-`, `AIza`, `ghp_`, `whsec_`, `sk_live_` | **0 résultat** ✅ |
 | Numéro admin dans le fichier servi (`index.html`) | **0 résultat** ✅ (retiré v1.1.285) |
-| Numéro admin ailleurs | `tests/unit/*` (non servis) + `MEMO_KEVIN_RESTE_A_FAIRE.md` (fichier de travail) — **à nettoyer**, mais aucun n'est publié par le site |
+| Numéro admin ailleurs | **12 fichiers de test** uniquement (non servis). Retiré des documents en prose le 10/09 — voir finding **P3** (vie privée, pas sécurité) |
 
 **Aucun secret actif n'est présent dans le dépôt.** Je le dis avec la preuve, plutôt que de
 fabriquer un P0 pour faire riche.

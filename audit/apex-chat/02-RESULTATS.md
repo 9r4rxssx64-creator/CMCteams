@@ -55,8 +55,8 @@ n'y a rien d'important dedans sans les lister une par une, ce que je n'ai pas fa
 
 | # | Attendu | Commande | Obtenu | Statut |
 |---|---|---|---|---|
-| 3.1 | Le numéro admin a quitté le fichier public | `grep -rn "336…277" index.html` | **0 ligne** | ✅ |
-| 3.2 | Il ne subsiste que hors du site servi | `grep -rln "336…277" .` | `tests/unit/*` + `MEMO_KEVIN_RESTE_A_FAIRE.md` | ✅ (à nettoyer, non servi) |
+| 3.1 | Le numéro admin a quitté le fichier public | `grep -rn "‹tél. admin›" index.html` | **0 ligne** | ✅ |
+| 3.2 | Il ne subsiste que hors du site servi | `grep -rln "‹tél. admin›" .` | **12 fichiers de test uniquement** — plus aucun `.md` (nettoyé le 10/09) | ✅ voir finding P3 |
 | 3.3 | La garde est active en config | `grep … wrangler.toml` | `ADMIN_BYPASS_REQUIRE_MFA = "true"` (l. 140) | ✅ |
 | 3.4 | Le backdoor OTP universel est fermé | `grep … wrangler.toml` | `ALLOW_TEST_OTP = "false"` (l. 149) | ✅ |
 | 3.5 | Les deux gardes passent | `npx vitest run …mfa… …phone…` | **6 / 6 verts** en 1,01 s | ✅ |
@@ -84,7 +84,7 @@ chemin légitime existe et a le réseau ouvert : Actions → `apex-chat-e2e.yml`
 | Dépendances de production | 0 | **0** (`"dependencies": {}`) | ✅ |
 | Secrets en dur | 0 hors tests | **0** | ✅ |
 | README | à jour | annonce une « Phase 1 en cours » alors que tout existe | ❌ **périmé** |
-| `MEMO_KEVIN_RESTE_A_FAIRE.md` | à jour | **285 versions de retard**, contient encore le numéro admin | ❌ **périmé** |
+| `MEMO_KEVIN_RESTE_A_FAIRE.md` | à jour | **285 versions de retard** ; le numéro admin en a été **retiré le 10/09**, avec la ligne périmée qui le portait | 🟡 **partiellement corrigé** |
 
 ## 6. Ce qui n'a **pas** pu être exécuté — et pourquoi
 
@@ -107,7 +107,7 @@ chemin légitime existe et a le réseau ouvert : Actions → `apex-chat-e2e.yml`
 |---|---|
 | Tests | **1115 / 1115** verts, 59 fichiers |
 | Couverture globale | **89,47 %** lignes · 84,30 % branches · 94,96 % fonctions |
-| Findings d'audit ouverts | **0 / 5** (les 5 sont corrigés et prouvés) |
+| Findings d'audit | **6** — les **5 de sécurité corrigés et prouvés** (0 ouvert) + **1 P3 vie privée** partiellement traité (numéro personnel dans 12 fichiers de test) |
 | Fonctions cartographiées | **78** (F01–F78) |
 | Fonctions sans aucun test | **2** (F18 sentinelles, F19 chronologie — vues admin en lecture seule) |
 | Routes API | **64** dont **20 d'administration** |

@@ -124,8 +124,8 @@ drapeau n'a été activé qu'**après** que le chemin de secours existe.
 
 | Contrôle | Commande | Résultat |
 |---|---|---|
-| Le numéro a quitté la page publique | `grep -rn "33672280277" index.html` | **0 ligne** ✅ |
-| Il ne reste que dans les tests | `grep -rln … .` | `tests/unit/*` + `MEMO_KEVIN_RESTE_A_FAIRE.md` (non servis) ✅ |
+| Le numéro a quitté la page publique | `grep -rn "‹tél. admin›" index.html` | **0 ligne** ✅ |
+| Il ne reste que dans les tests | `grep -rln … .` | **12 fichiers de test** (non servis) — plus aucun `.md` depuis le 10/09, voir P3 ✅ |
 | La garde est ACTIVE en config déployée | `grep … workers/wrangler.toml:140` | `ADMIN_BYPASS_REQUIRE_MFA = "true"` ✅ |
 | Le backdoor universel reste fermé | `workers/wrangler.toml:149` | `ALLOW_TEST_OTP = "false"` ✅ |
 | Les deux gardes passent | `npx vitest run …mfa… …phone…` | **6/6 verts** (1,01 s) ✅ |
@@ -318,6 +318,41 @@ Suite complète **1109/1109**, couverture `cors.js` **100 %**, navigateur réel 
 **Limite honnête** : le CORS est un contrôle **du navigateur**. Il n'empêche pas un appel direct
 (curl, script serveur) — ça, ce sont l'authentification et les limites de débit qui le tiennent.
 Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
+
+---
+
+## [P3] Le numéro personnel de Kevin reste écrit dans 12 fichiers de test d'un dépôt **public**
+
+- **Axe** : Vie privée (plus sécurité)
+- **Fichiers** : `messaging-app/tests/unit/*.js` (11) + `tests/e2e/auth-flow.spec.js`
+- **Statut** : ✅ VÉRIFIÉ (`grep -rln`) · **partiellement traité** le 10/09
+
+**Ce que ce n'est PAS** : ce n'est plus une faille. Depuis v1.1.284, connaître ce numéro
+n'ouvre **aucune** porte — l'admin exige une preuve serveur (`X-Apex-Admin-Token` ou SSO
+Face ID). Le classer P0 serait crier au loup.
+
+**Ce que c'est** : une **donnée personnelle** publiée. Le dépôt `9r4rxssx64-creator/CMCteams`
+est public ; n'importe qui peut lire le numéro de portable de Kevin, et un moissonneur
+automatique le récupérera. Le risque est du démarchage et de l'hameçonnage par SMS, pas une
+intrusion dans l'app.
+
+**Traité le 10/09** : le numéro a été retiré de `messaging-app/MEMO_KEVIN_RESTE_A_FAIRE.md`
+(le seul document en prose qui le portait — la ligne décrivait en plus un comportement
+supprimé depuis, elle a été corrigée en même temps). ✅ Vérifié : **plus aucun `.md`** du
+dépôt ne contient le numéro.
+
+**Reste à faire — délibérément pas fait dans cette passe** : les 12 fichiers de test l'utilisent
+comme donnée de scénario (ils testent justement le chemin admin). Les modifier, c'est toucher
+**12 fichiers d'une suite verte à 1115/1115** pour un gain de confidentialité, pas de sécurité.
+Le faire à la fin d'une passe d'audit, sans nécessité, c'est prendre un risque de régression
+contre un bénéfice modeste — l'inverse de « jamais régresser ».
+
+**Correctif recommandé (étape séparée, à froid)** : extraire le numéro dans **une** constante
+de test partagée (`tests/unit/api-worker-helpers.js` porte déjà les fixtures communes), lue
+depuis `process.env.APEX_TEST_ADMIN_PHONE` avec un numéro fictif par défaut — même schéma que
+le code admin, qui ne s'écrit jamais et se lit dans l'environnement. Douze occurrences
+deviennent alors une, et la suite reste verte.
+**Effort** : S · **Régression possible** : faible mais réelle (12 fichiers, 1115 tests).
 
 ---
 
