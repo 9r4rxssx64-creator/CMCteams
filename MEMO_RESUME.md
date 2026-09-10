@@ -1,5 +1,66 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
+
+Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le
+signalement d'origine — le message **m051** du 6.09 : la « Vérif RÉELLE » sur le VRAI domaine
+avait **27 surfaces vertes et une seule rouge**, `lingua.kd-mc.com` :
+`deep: exception TimeoutError: page.fill: Timeout 30000ms exceeded`. La page ne se montait pas
+assez pour qu'on puisse seulement **remplir un champ**. Un élève tombait sur une page vide,
+sans message : la panne la plus pénible, celle qui ne fait aucun bruit.
+
+**C'était exactement le bug corrigé quelques heures plus tôt** (`u0-0` sur `undefined`, l'app
+rendait 2 boutons au lieu de 607). Preuve que c'est en ligne : le déploiement Pages a **réussi
+à 20 h 59 sur `d023a18ad`**, le commit de fusion du correctif.
+
+### État mesuré maintenant, sur le code de `main`
+Parcours complet dans un vrai navigateur : arrivée → **Nouveau compte** → prénom + nom + code →
+choix de la langue → **607 boutons**, bouton d'écoute présent, **0 erreur JavaScript**. Les 5
+cours (en/es/it/de/mc) s'ouvrent, y compris **sans progression enregistrée**.
+
+### Ce qui manquait, et qui est ajouté : une garde sur le PARCOURS
+Les tests existants partaient tous d'un compte **déjà fabriqué en mémoire**. Ils ne passaient
+donc jamais par l'écran d'arrivée, la création de compte ni le choix de la langue — **les trois
+étapes cassées en production**. D'où une panne visible par les utilisateurs pendant 4 jours
+avec des tests au vert.
+
+`npm run test:lingua-parcours` (**11 OK / 0 FAIL**, câblé dans `test:ci`) rejoue ce parcours.
+**Prouvé discriminant** : correctif retiré → **6 échecs**, dont l'erreur mot pour mot de la
+panne (`Cannot read properties of undefined (reading 'u0-0')`).
+
+---
+
+## 10 septembre 2026 (nuit) — Lingua : 3 vrais bugs, dont un écran blanc total
+
+La session « arbre » signalait 5 échecs rouges dans `test:lingua-voix`, qui bloquaient
+`test:ci` **pour toutes les sessions** depuis le 6.09. Vérifié moi-même avant d'agir — et
+son message disait le correctif « déjà poussé sur main » : **il n'y était pas**.
+
+### 1. Un compte sans progression = écran BLANC (le plus grave, et pas qu'un test)
+Mesuré dans un vrai navigateur : sans la clé `prog[cours]`, `unitDone()` lit
+`S.prog[S.course]["u0-0"]` sur `undefined`, l'erreur remonte au démarrage et l'app rend
+**2 boutons au lieu de 607** (22 caractères de texte). L'élève n'a plus rien — ni leçons,
+ni réglages, ni moyen de se reconnecter. Il suffit qu'un navigateur vide une partie du
+stockage. Corrigé à la racine dans `loadS()` : la clé est recréée **vide** (aucune
+progression inventée). Mesuré après : **607 boutons**, identique à un compte sain.
+
+### 2. Le mot était prononcé DEUX FOIS, dans les 4 langues
+« to the left » ×2, « a la izquierda » ×2, « a sinistra » ×2, « nach links » ×2. Cause :
+quand la belle voix tombe, **deux chemins** se déclenchent pour le même clic — la promesse
+de `play()` qui échoue ET l'événement `error` de la balise audio. Le garde existant ne
+voyait rien : les deux appartiennent à la même demande. Un seul repli par demande
+désormais. Prouvé hors test : 1 clic → 1 prononciation.
+
+### 3. Le message de repli ne nommait pas la voix qui marche sans réseau
+Il disait « je passe sur la voix du téléphone ». Il nomme maintenant
+**« Voix du téléphone (hors-ligne) »** et explique comment la choisir pour de bon.
+
+### Preuve
+`test:lingua-voix` : **26 OK / 0 FAIL** (était 21/5, et avant ça 0 vérification exécutée).
+Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité verts.
+
+---
+
 ## 10 septembre 2026 (suite) — le clic que je t'avais rendu n'existait pas
 
 - **Je m'étais trompé** : je t'ai écrit « je ne peux pas lancer la vérification, il te reste un
