@@ -86,18 +86,79 @@ chemin légitime existe et a le réseau ouvert : Actions → `apex-chat-e2e.yml`
 | README | à jour | annonce une « Phase 1 en cours » alors que tout existe | ❌ **périmé** |
 | `MEMO_KEVIN_RESTE_A_FAIRE.md` | à jour | **285 versions de retard** ; le numéro admin en a été **retiré le 10/09**, avec la ligne périmée qui le portait | 🟡 **partiellement corrigé** |
 
-## 6. Ce qui n'a **pas** pu être exécuté — et pourquoi
+## 6. Les passes obligatoires — **exécutées** le 2026-09-10
 
-| Passe exigée par le protocole | Bloquant mesuré | Comment la lancer |
+> Ces quatre passes étaient déclarées « non exécutées » plus tôt dans la journée, au motif que
+> l'egress de la session est refusé. C'était une **conclusion prématurée** : je n'avais testé
+> que `gh` (absent) et les outils MCP. L'**API GitHub**, elle, répond — le proxy y injecte
+> l'authentification (`curl https://api.github.com/user` → 200, 15 000 req/h). Les quatre
+> passes ont donc été **déclenchées depuis cette session**, via l'outil `tools/ci/ci.mjs`.
+
+| Passe | Statut | Résultat mesuré |
 |---|---|---|
-| **LIVE réelle** (vraies pages, vrai navigateur) | Egress refusé (`403 connect_rejected`) sur `workers.dev` et `kd-mc.com` | Actions → `apex-chat-e2e.yml`, `audit-live.yml` |
-| **Second avis indépendant (non-Claude)** | Idem — je n'ai pas déclenché le workflow dans cette passe | Actions → `ai-review-independent.yml` (Qodo/GPT, clé déjà en secret) |
-| **Scan sécu outillé** (gitleaks, Semgrep, OSV, Trivy, zizmor) | Idem | Actions → `security-suite.yml`, `strix-scan.yml` |
-| **E2E Playwright** (19 scénarios) | Navigateurs non installés dans cette session ; la passe unitaire ne les couvre pas | Actions → `apex-chat-e2e.yml` |
+| **LIVE Apex Chat** (`apex-chat-e2e.yml`) | ✅ **EXÉCUTÉE, puis VERTE** | 1ʳᵉ passe : **prod HTTP 200**, **18 OK / 2 KO** (le même test sur 2 navigateurs) → cause identifiée, test corrigé → **2ᵉ passe : 20/20 ✅** (run `34518010574`, l'issue d'échec #3742 s'est refermée automatiquement) |
+| **LIVE domaine** (`audit-live.yml`) | ✅ **EXÉCUTÉE** | Toutes les surfaces répondent **sauf `lingua.kd-mc.com`** (hors périmètre Apex Chat, signalé à part) |
+| **Second avis indépendant** (`ai-review-independent.yml`) | 🔴 **ÉTEINT — découverte majeure** | **0 succès sur 100 runs** (92 sautés, 6 échecs, 2 annulés). Cause + correctif : voir ci-dessous |
+| **Scan sécu outillé** (`security-suite.yml`) | ✅ **EXÉCUTÉ, LU, TRIÉ** (run `34519764156`) | **2 211 signalements bruts** sur tout le dépôt, **0 secret confirmé vivant** (TruffleHog). Pour Apex Chat : voir § 6.5 — 0 vulnérabilité en production, 7 dans les outils de test **corrigées**, 3 durcissements de workflows **appliqués**, 9 signalements Semgrep encore à identifier (outil livré pour les lire) |
+| **Pentest IA** (`strix-scan.yml`) | ⏱ **EXÉCUTÉ mais TUÉ par le délai** (run `34520670517`, rc = 124 à 26 min) | Le tableau de bord annonce **1 vulnérabilité MEDIUM** dont le contenu n'a pas été écrit avant l'arrêt. Coût mesuré : **13,77 $** (31,8 M jetons). Pas relancé sans ton accord (ça coûte) |
 
-**Conséquence à dire clairement** : cet audit est **statique + tests unitaires**. Il prouve que
-*le code du dépôt* est correct. Il ne prouve pas que *le service en ligne* l'est. Les deux
-énoncés sont différents et je ne les confonds pas.
+### 6.1 Le seul échec e2e était un **test périmé**, pas une régression de l'app
+
+```
+[chromium-desktop] smoke.spec.js:23 > SEO meta complets — expect(received).toContain(expected)
+[webkit-iphone]    smoke.spec.js:23 > SEO meta complets — expect(received).toContain(expected)
+```
+
+| | Valeur |
+|---|---|
+| Ce que le test exigeait | `canonical` contient `messaging-app` (ancienne URL GitHub Pages) |
+| Ce que l'app déclare | `<link rel="canonical" href="https://apex-chat.kd-mc.com/">` (l. 35) |
+| Qui avait raison | **L'app.** Le domaine propre est le canonique depuis v1.1.287 |
+
+Rétrograder le `canonical` pour faire verdir le test aurait **dispersé le référencement** entre
+deux adresses pour une seule page. C'est donc le **test** qui a été corrigé — en gardant sa
+force : il exige toujours une URL absolue `https://` **et** le domaine propre.
+
+**Vérifié après correction** : l'e2e relancé depuis cette session passe **entièrement** contre
+la production (`Pre-flight check (HTTP 200)` ✅ · `Run Playwright smoke tests` ✅), et le
+workflow a **refermé tout seul** l'issue d'échec qu'il avait ouverte (#3742 → `closed`). C'est
+la boucle complète : détecter → diagnostiquer → corriger → re-prouver, sans intervention.
+
+### 6.2 Le « second avis indépendant » n'avait jamais produit une seule revue
+
+C'est la passe que le protocole d'audit rend obligatoire précisément pour éviter que ce soit
+moi qui relise mon propre travail. Mesuré sur les 100 derniers runs : **0 succès**.
+**Cause racine** : **29 PR sur 30** sont créées par `github-actions[bot]` (le robot
+d'auto-fusion des branches `claude/*`), et la condition du workflow excluait explicitement ce
+robot. Le dispositif existait, était marqué « actif », et ne s'exécutait jamais — erreur **#28**
+(Déclaration ≠ Déploiement) dans sa forme la plus coûteuse : **on croyait avoir un contre-pouvoir
+externe, il n'y en avait aucun depuis le début.**
+**Correctif livré** : un job `revue-a-la-demande` (`workflow_dispatch` + numéro de PR) qui ne
+dépend plus de qui a ouvert la PR. Laissé **manuel à dessein** : chaque revue consomme des
+jetons OpenAI réels — l'activer sur toutes les PR du robot, c'est une revue payante à chaque
+push, et cet arbitrage revient à Kevin.
+
+### 6.3 Ce que ces passes changent pour la valeur de l'audit
+
+Ce qui reste vrai : je certifie **le code du dépôt**. Ce qui a changé : le **service en ligne
+a été touché pour de vrai** — il répond, et 18 de ses 20 contrôles de bout en bout passent
+contre la vraie production. Ce n'est plus un audit purement statique.
+Ce qui reste ouvert (corrigé le même soir, voir § 6.4) : les 19 autres scénarios navigateur
+**sont** lancés (`messaging-app-tests.yml`, 4 navigateurs) — mais leurs deux voies iPhone étaient
+rouges depuis le 6 septembre (finding **P2**). Le chiffrement bout en bout, le verrou Face ID et
+l'auto-réparation des notifications sont donc **vérifiés sur Chromium/Android**, et sur iPhone
+à partir du premier run vert après correctif.
+
+### 6.4 Les 19 scénarios de `tests/e2e/` — exécutés (2026-09-10)
+
+| Attendu | Obtenu | Statut |
+|---|---|---|
+| Les 19 fichiers (56 tests) passent sur Chromium, serveur HTTPS local | `npx playwright test` (Chromium préinstallé) → **56 passed (29.6s)** | ✅ VÉRIFIÉ |
+| Les 4 voies de `messaging-app-tests.yml` sont vertes | 60 derniers runs : **28 échecs, dont 19 « iPhone seulement »**, depuis le 06/09 16:00 | ❌ puis correctif |
+| Cause exacte, pas un symptôme | erreur WebKit : `…/api/system/config due to access control checks` → `LOCAL_DEV` n'acceptait que `http://localhost`, les tests servent `https://localhost:4173` | ✅ VÉRIFIÉ |
+| Le correctif est prouvé sans réseau | `cors-origines-autorisees.test.js` : `https://localhost:4173` autorisé, `https://localhost.evil.example` refusé → 5/5 | ✅ VÉRIFIÉ |
+| Le correctif est prouvé en vrai (4 voies vertes) | run **34520911544** (19:37 UTC, après déploiement du worker) : `tests` ✅ · `e2e (iphone-se)` ✅ · `e2e (iphone-safari)` ✅ · `e2e (chromium-desktop)` ✅ · `e2e (pixel-android)` ✅ — **premier run 4/4 vert depuis le 6 septembre** | ✅ VÉRIFIÉ |
+| Ça ne se reperd pas | `npm run test:specs-lances` (dans `test:ci`) suit ce que chaque workflow **exécute** | ✅ VÉRIFIÉ |
 
 ---
 
@@ -105,11 +166,12 @@ chemin légitime existe et a le réseau ouvert : Actions → `apex-chat-e2e.yml`
 
 | Indicateur | Valeur mesurée |
 |---|---|
-| Tests | **1115 / 1115** verts, 59 fichiers |
+| Tests | **1117 / 1117** verts, 59 fichiers (après passage à vitest 5 / happy-dom 20) |
 | Couverture globale | **89,47 %** lignes · 84,30 % branches · 94,96 % fonctions |
 | Findings d'audit | **6** — les **5 de sécurité corrigés et prouvés** (0 ouvert) + **1 P3 vie privée** partiellement traité (numéro personnel dans 12 fichiers de test) |
 | Fonctions cartographiées | **78** (F01–F78) |
 | Fonctions sans aucun test | **2** (F18 sentinelles, F19 chronologie — vues admin en lecture seule) |
 | Routes API | **64** dont **20 d'administration** |
 | Secrets dans le dépôt | **0** |
-| Passes obligatoires non exécutées | **4** (live, second avis, scan outillé, e2e navigateur) |
+| Passes obligatoires | **exécutées le 10/09** — live Apex Chat ✅ **20/20 après correction** (prod HTTP 200) · live domaine ✅ (1 surface KO hors périmètre) · **scan sécu exécuté, lu et trié** (§ 6.5) · pentest IA tué par le délai (1 MEDIUM non lisible) · **second avis : trouvé ÉTEINT (0 succès/100), réparé** |
+| Tests navigateur réellement lancés en CI | **3 fichiers sur 22** — les 19 autres ne sont branchés nulle part (finding P2) |

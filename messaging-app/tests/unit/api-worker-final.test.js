@@ -226,7 +226,7 @@ describe('handleSendOtp Vonage success path direct', () => {
 // ---------------------------------------------------------------------------
 describe('handleVerifyOtp success paths', () => {
   it('admin Kevin via KEVIN_PHONE_E164 → JWT signé + ok', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277' });
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001' });
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
       bind: function () { return this; },
       first: async () => {
@@ -238,7 +238,7 @@ describe('handleVerifyOtp success paths', () => {
     }));
     const req = new Request('https://api.apex/api/auth/verify-otp', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: '+33672280277', pseudo: 'kdmc', name: 'Kevin Desarzens' }),
+      body: JSON.stringify({ phone: '+33600000001', pseudo: 'kdmc', name: 'Kevin Desarzens' }),
     });
     const r = await handleVerifyOtp(req, env);
     expect([200, 400, 500]).toContain(r.status);
@@ -293,7 +293,7 @@ describe('handleSsoFromApex', () => {
     const apexToken = await signJWT({ sub: 'kevin-apex', exp: Math.floor(Date.now()/1000) + 3600 }, 'apex-secret');
     const req = new Request('https://api.apex/api/auth/sso-from-apex', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apex_token: apexToken, apex_uid: 'kevin-apex', pseudo: 'kdmc', name: 'Kevin Desarzens', phone: '+33672280277' }),
+      body: JSON.stringify({ apex_token: apexToken, apex_uid: 'kevin-apex', pseudo: 'kdmc', name: 'Kevin Desarzens', phone: '+33600000001' }),
     });
     const r = await handleSsoFromApex(req, env);
     expect([200, 400, 401, 500]).toContain(r.status);
