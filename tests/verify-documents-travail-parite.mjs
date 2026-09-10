@@ -2,15 +2,17 @@
 /* ============================================================================
  * LES DOCUMENTS DE TRAVAIL NE DOIVENT JAMAIS ÊTRE PUBLIÉS — SUR AUCUNE SURFACE
  * ----------------------------------------------------------------------------
- * Le dépôt est PUBLIC et les deux publications servent « tout ce qu'il y a
- * dedans ». Trois fichiers, écrits à trois endroits, décrivent la même règle :
+ * Le dépôt est PUBLIC et les publications servent « tout ce qu'il y a
+ * dedans ». Quatre fichiers, écrits à quatre endroits, décrivent la même règle :
  *
  *   1. .github/workflows/deploy.yml   → l'étape qui RETIRE les documents avant
  *                                        de publier sur kd-mc.com (GitHub Pages)
  *   2. tools/gitlab/publier.sh        → les --exclude du miroir Cloudflare
  *   3. tools/audit/exposition-publique.mjs → ce que l'audit va SONDER en vrai
+ *   4. services/kdmc-router/prepare-secours.mjs → la copie de SECOURS, celle qui
+ *                                        sert kd-mc.com quand GitHub est éteint
  *
- * Trois listes séparées dérivent toujours. Et un test d'égalité entre deux
+ * Quatre listes séparées dérivent toujours. Et un test d'égalité entre deux
  * surfaces ne verrait rien si les deux oubliaient le MÊME fichier (leçon #142 :
  * app et page light se trompaient pareil, la comparaison restait verte). D'où
  * ce garde, qui contrôle le CONTENU :
@@ -22,7 +24,9 @@
  *      par l'audit — sinon un retrait qui échoue passerait inaperçu ;
  *   C. les documents les plus sensibles restent nommés dans l'audit ;
  *   D. l'audit sort en erreur sur une fuite, casse le cache, et deploy.yml le
- *      lance vraiment après publication.
+ *      lance vraiment après publication ;
+ *   E. la copie de SECOURS obéit aux mêmes règles — sinon la panne publie ce
+ *      que le fonctionnement normal cache (trouvé le 10.09, voir plus bas).
  *
  * Lancer : node tests/verify-documents-travail-parite.mjs
  * ========================================================================== */
@@ -133,9 +137,61 @@ if (!/exposition-publique\.mjs/.test(deploy)) {
   echec(`${DEPLOY} ne vérifie plus, après publication, que le site ne sert aucun document de travail`);
 }
 
+/* ── E. La QUATRIÈME liste : la copie de secours ───────────────────────────
+ *
+ * TROU TROUVÉ LE 10.09.2026. Ce garde surveillait trois listes et se déclarait
+ * complet. Mais quand GitHub est éteint, kd-mc.com n'est servi ni par GitHub
+ * Pages ni par le miroir : il est servi par la COPIE DE SECOURS fabriquée par
+ * prepare-secours.mjs. C'est une publication comme les autres — et elle
+ * n'obéissait à aucune des règles ci-dessus. Mesuré ce jour-là : **33
+ * Markdown** dedans (dont 21 fiches de recherche généalogique nommant la
+ * famille), plus `arbre/research/actes.json` et `coffre-fort/memo` que les deux
+ * autres surfaces retirent depuis le 5.09. Autrement dit : la panne publiait ce
+ * que le fonctionnement normal cachait.
+ *
+ * Même raisonnement qu'en tête de ce fichier : une quatrième liste séparée
+ * dérive aussi. On la rattache donc ici.
+ */
+const SECOURS = 'services/kdmc-router/prepare-secours.mjs';
+if (!existsSync(SECOURS)) {
+  echec(`${SECOURS} introuvable — la copie de secours n'est plus contrôlée`);
+} else {
+  const secours = readFileSync(SECOURS, 'utf8');
+  /* Un commentaire ne protège rien : on retire les blocs de commentaires avant
+     de lire (même piège que la règle A ci-dessus, tombée dedans le 5.09). */
+  const secoursActif = secours.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+
+  if (!secoursActif.includes('.md$/i.test(base)) return false')) {
+    echec(`${SECOURS} ne retire plus tous les Markdown — GitHub éteint, la copie de secours publierait les documents de travail que les deux autres surfaces cachent`);
+  } else ok('copie de secours : tous les Markdown exclus');
+
+  /* Ce que la copie embarque réellement (listes déclarées, pas commentaires). */
+  const listeDe = (nom) => {
+    const m = secoursActif.match(new RegExp('const ' + nom + ' = \\[([\\s\\S]*?)\\n\\];'));
+    return m ? [...m[1].matchAll(/chemin:\s*'([^']+)'/g)].map((x) => x[1]) : [];
+  };
+  const recopies = [...listeDe('APPS'), ...listeDe('MEDIAS'), ...listeDe('PARTAGES')];
+  const travail = new Set([...(secoursActif.match(/const TRAVAIL = new Set\(\[([^\]]*)\]/) || [, ''])[1]
+    .matchAll(/'([^']+)'/g)].map((m) => m[1]));
+
+  /* Un document de travail n'est un problème ICI que s'il peut être embarqué,
+     c'est-à-dire s'il vit sous un dossier recopié. Sinon il n'y arrive jamais
+     et l'exiger serait du bruit. */
+  const embarquable = (nom) => recopies.some((c) => nom === c || nom.startsWith(c + '/'));
+  let manquants = 0;
+  for (const nom of enPlus) {
+    if (!embarquable(nom)) continue;
+    if (!travail.has(nom)) {
+      echec(`« ${nom} » est retiré de GitHub Pages ET du miroir, mais la copie de secours l'embarque encore (il est sous un dossier recopié) — ajoute-le à TRAVAIL dans ${SECOURS}`);
+      manquants++;
+    }
+  }
+  if (!manquants) ok(`copie de secours : les documents de travail embarquables (${[...travail].filter(embarquable).length}) sont exclus`);
+}
+
 console.log('');
 if (ko) {
   console.log(`${ko} problème(s). Les documents de travail n'ont rien à faire sur un site public.`);
   process.exit(1);
 }
-console.log('Les trois listes (GitHub Pages, miroir Cloudflare, audit) disent la même chose. ✅');
+console.log('Les quatre listes (GitHub Pages, miroir Cloudflare, audit, copie de secours) disent la même chose. ✅');

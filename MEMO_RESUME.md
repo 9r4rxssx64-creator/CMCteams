@@ -1,5 +1,33 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 — la bouée de secours du domaine : deux adresses sans filet, et 33 documents de travail qu'elle publiait
+
+**Point de départ** : la session « arbre » signale un test rouge (`test:router-secours`,
+**43 OK / 6 FAIL**) — six sous-domaines « oubliés » dans la copie de secours, celle qui sert
+kd-mc.com quand GitHub est éteint (déjà vécu le 14/08). J'ai tout remesuré avant d'agir.
+
+- **Les six ne disaient pas la même chose.** Quatre étaient de **faux rouges** :
+  worldmonitor, osint, ia et outils sont **dans** `kdmc-home`, recopié avec ses sous-dossiers —
+  les fichiers arrivaient déjà. Le contrôle cherchait un **texte** dans le script au lieu de
+  regarder la copie ; il criait sur du travail fait, et **une simple mention en commentaire
+  suffisait à le rassurer**. Réécrit, puis prouvé par sabotage.
+- **Deux étaient de vrais trous** : le livre de cuisine (`cuisine`, `cocina`, `cujina`) n'était
+  recopié **nulle part** depuis son ouverture le 13/08, et la **page d'accueil des boutiques**
+  non plus (seules ses vitrines l'étaient). GitHub éteint = **quatre adresses en 404**, sans
+  secours. Corrigé.
+- **Le plus grave, trouvé en passant** : cette copie est une **publication** comme les deux
+  autres, et elle n'en suivait **aucune règle**. Elle embarquait **33 documents de travail**,
+  dont les **21 fiches de recherche généalogique** qui nomment la famille, et le fichier
+  d'actes d'état civil — tous retirés du site normal depuis le 5/09. Autrement dit : **la panne
+  publiait ce que le fonctionnement normal cache.** Aligné sur les autres surfaces (les images
+  d'actes restent : l'app s'en sert vraiment).
+- **Pour que ça ne reparte pas** : le garde qui vérifiait que « les trois listes disent la même
+  chose » en surveille maintenant **quatre**. Il se disait complet alors qu'une quatrième
+  existait depuis le 14/08.
+- **Preuve, pas déclaration** : `test:router-secours` **50 OK / 0 FAIL**, et les **22
+  applications ouvertes une par une dans un vrai navigateur** (`test:paquet-pages` **67 OK /
+  0 FAIL**, aucun fichier manquant). Leçon **#249**.
+
 ## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
 
 - **Ce qui n'allait pas** : le dossier `audit/apex-chat/` ne contenait **qu'un seul fichier** sur
