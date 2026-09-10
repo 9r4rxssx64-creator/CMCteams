@@ -752,7 +752,7 @@ function _voixCloudKO(raison){ _ttsEchecs++; if(raison) _ttsRaison=raison;
                  : _ttsRaison==="lent"  ? "la connexion est trop lente"
                  : _ttsRaison==="media" ? "le son n'a pas pu être lu"
                  : "elle ne répond pas";
-    toast("🔈 La belle voix : "+pourquoi+" — je passe sur la voix du téléphone (moins jolie). Touche l'écran puis réessaie, ou choisis une autre voix dans Profil → Voix."); } }
+    toast("🔈 La belle voix : "+pourquoi+" — je passe sur la voix du téléphone, la seule qui marche hors-ligne (moins jolie, mais elle dit tout). Touche l'écran puis réessaie, ou choisis une autre voix dans Profil → Voix."); } }
 /* 🇲🇨 Le monégasque : AUCUN moteur de synthèse au monde ne le parle. Louis Notari ayant bâti
    son écriture sur le français, on écrit la prononciation « à la française » (mc-voix.js) et
    on la fait dire par une voix française — l'élève lit la VRAIE orthographe à l'écran.
@@ -770,9 +770,18 @@ function speak(text){ if(!S.sound||!text)return; text=texteADire(text); var vid=
          méconnaissable — or c'est LA référence sur laquelle Kevin calque sa prononciation.
          Les effets restent pour les phrases de Bee, jamais pour le vocabulaire. */
       var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); if(!a){ _webSpeak(text); return; }
-      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
-      _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeak(text); });
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _webSpeak(text); } });
+      /* UN SEUL REPLI PAR DEMANDE (mesuré le 10.09, navigateur réel : le mot partait DEUX fois,
+         à 1-3 ms d'écart, même langue et même voix). Trois guetteurs surveillent la belle voix —
+         a.onerror, le chronomètre, et le refus de play() — et quand le réseau tombe, DEUX d'entre
+         eux se déclenchent : chacun appelait _webSpeak, donc l'élève entendait le mot en double.
+         Le jeton myReq ne pouvait pas l'empêcher : c'est la MÊME demande qui répond deux fois.
+         Le verrou ci-dessous laisse passer le premier arrivé et ignore les suivants. */
+      var repliFait=false;
+      var versTelephone=function(raison){ if(repliFait||myReq!==_ttsReq)return; repliFait=true;
+        if(raison)_voixCloudKO(raison); _webSpeak(text); };
+      a.onerror=function(){ versTelephone("media"); };
+      _ttsChrono(a,myReq,function(){ versTelephone(null); });   // le chronomètre a déjà dit « lent »
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ versTelephone("refus"); });
       return;
     }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
   }

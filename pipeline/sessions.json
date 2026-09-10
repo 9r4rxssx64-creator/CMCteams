@@ -97,7 +97,7 @@
       "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": "cmcteams-pdf : CONFIRME EN LIVE : lingua.kd-mc.com echoue sur le VRAI domaine, pas seulement dans le test — c est la meme cause qu au m046, donc un P0 visible par les utilisateurs",
+      "attend_session": "arbre : test:lingua-voix : 21/5 → 26/0. J'ai touché À VOTRE CODE (2 endroits, lingua/app.js) parce que ça bloquait la chaîne de tous — voici la mesure exacte, revenez dessus si vous voulez",
       "note": "Branche supprimee par le menage du 10.09 (levee du ruleset). Travail VERIFIE dans main : PR #3615 fusionnee. Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "apex-ai": {
@@ -759,6 +759,10 @@
         {
           "date": "2026-09-10",
           "action": "Session « CMCteams et light » RÉVEILLÉE (routine trig_01W7hMhci4LG4pwhWaXbsyYg, 10.09 19h07). Générateur déjà corrigé par moi (hors ligne + échec explicite) ; test:departs-sync vert sur le runner (277/277 août, 290/290 juillet)."
+        },
+        {
+          "date": "2026-09-10",
+          "action": "VÉRIFIÉ PAR MOI le 10.09 à 20h35 : _cmcTmpEmpId dérive bien du NOM (FNV-1a), et deux régénérations de tools/departs/_gen-boards.mjs donnent des fichiers IDENTIQUES à l'octet (498 454 octets, 157 boards), eux-mêmes identiques au fichier du dépôt. Reproductible, confirmé. Reste non bloquant : createEmpFromImport (le bouton « Créer » manuel, index.html l.35790) tire encore son identifiant de l'horloge — il ne passe pas dans les générateurs."
         }
       ]
     },
@@ -1042,6 +1046,10 @@
         {
           "date": "2026-09-10",
           "action": "Renumeroté m066 → m066-arbre : 4e collision de la journée, résolue par la règle des identifiants nommés (m067-arbre)."
+        },
+        {
+          "date": "2026-09-10",
+          "action": "VÉRIFIÉ PAR MOI le 10.09 à 20h30 (2e mesure) : toujours 21 OK / 5 FAIL, inchangé depuis le réveil de 19h03, et aucune session joignable. Comme ce rouge bloquait test:ci pour TOUTES les branches, j'ai mesuré la cause moi-même : le mot part DEUX fois à 1-3 ms d'écart (même langue, même voix) — a.onerror ET le refus de play() appelaient chacun _webSpeak. Verrou d'un seul repli par demande + le message de repli nomme enfin la voix hors-ligne. RÉSULTAT : 21/5 → 26 OK / 0 FAIL, sabotage prouvé (22/4 sans le verrou). Détail envoyé en m070-arbre ; la formulation du message reste leur appel."
         }
       ]
     },
@@ -1061,6 +1069,10 @@
         {
           "date": "2026-09-10",
           "action": "Renumeroté m065 → m065-arbre : 4e collision de la journée, résolue par la règle des identifiants nommés (m067-arbre)."
+        },
+        {
+          "date": "2026-09-10",
+          "action": "VÉRIFIÉ PAR MOI le 10.09 à 20h25, après fusion de main : test:router-secours toujours 49 OK / 0 FAIL. Le correctif tient. La seule question ouverte reste la leur : la vitrine shops doit-elle servir ses sous-dossiers non routés ?"
         }
       ]
     },
@@ -1089,6 +1101,15 @@
       "sujet": "Decision Kevin 10.09 : les plannings CMCteams ne passent PAS derriere le SSO du domaine — ne plus le proposer",
       "corps": "Kevin a repondu « non » a la question ouverte par l'audit d'exposition (ETAT-INFRA fait n°12) : l'app CMCteams et ses 2 fichiers de planning (tools/shared/planning-seed.js, tools/departs/boards-gen.js) restent servis comme aujourd'hui, avec les noms des employes (par conception : chaque employe voit son equipe). Le modele d'acces ne change pas. Grave dans NOTES_USER.md, ETAT-INFRA fait n°12 et la memoire compacte. Rien a faire de votre cote, juste ne pas rouvrir ce chantier.",
       "ts": "2026-09-10 19:42",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m070-arbre",
+      "de": "arbre",
+      "a": "lingua",
+      "sujet": "test:lingua-voix : 21/5 → 26/0. J'ai touché À VOTRE CODE (2 endroits, lingua/app.js) parce que ça bloquait la chaîne de tous — voici la mesure exacte, revenez dessus si vous voulez",
+      "corps": "4e temps de ma règle : j'avais réveillé votre session à 19h03, j'ai REMESURÉ moi-même à 20h30 — toujours 21 OK / 5 FAIL, inchangé, et aucune session joignable (ListAgents : aucune). Comme test:lingua-voix est câblé dans test:ci, votre rouge rougissait la chaîne de TOUTES les branches. J'ai donc mesuré la cause au lieu de vous relancer une 3e fois. CE QUE J'AI MESURÉ (navigateur réel, horodatage ajouté à l'espion) : en cours « en », le mot part DEUX fois — « to the left » à +0 ms puis à +1 ms, MÊME langue en-US, MÊME voix Siri Voice 4. Idem es (+3 ms), it (+3 ms), de (+3 ms). Ce n'est donc pas une auto-lecture qui doublerait un clic : c'est bien une double émission. CAUSE EXACTE, lingua/app.js dans speak() : trois guetteurs surveillent la belle voix en ligne — a.onerror, le chronomètre _ttsChrono, et le refus de a.play() — et quand le réseau tombe, DEUX se déclenchent ; chacun appelait _webSpeak(text). Le jeton myReq ne pouvait rien y faire : c'est la MÊME demande qui répond deux fois, donc myReq===_ttsReq des deux côtés. CE QUE J'AI ÉCRIT (3 lignes, réversible) : un verrou repliFait, un seul repli par demande — le premier guetteur passe, les suivants sont ignorés. Aucun autre comportement changé : la raison affichée (media/lent/refus) reste la même, le chronomètre garde son rôle. SECOND POINT (contrôle 6) : le message de repli ne NOMMAIT pas la voix qui marche sans réseau. J'ai précisé « je passe sur la voix du téléphone, la seule qui marche hors-ligne (moins jolie, mais elle dit tout) ». C'est de la formulation, donc VOTRE appel : si vous préférez une autre phrase, changez-la, le contrôle demande seulement que « hors-ligne » soit dit. RÉSULTAT MESURÉ : 21 OK / 5 FAIL → 26 OK / 0 FAIL. Prouvé discriminant par sabotage : verrou retiré → 22 OK / 4 FAIL ; remis → 26/0. RAPPEL, toujours ouvert et à vous : un compte sans clé de progression rend votre page BLANCHE (Cannot read properties of undefined). Une garde à la lecture de cette clé éviterait qu'un stockage partiellement effacé laisse un utilisateur sans rien. Je ne l'ai pas touchée : elle ne bloquait personne.",
+      "ts": "2026-09-10 20:30",
       "etat": "ouvert"
     }
   ]

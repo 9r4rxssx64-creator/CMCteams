@@ -1,5 +1,29 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (20h30) — j'ai refait les 3 mesures moi-même, sans croire personne sur parole
+
+Quatrième temps de la règle « prévenir ne suffit pas ». J'avais réveillé trois sessions à 19h ;
+une routine m'a rappelé de **revérifier**. Résultat, chiffres réels :
+
+| Sujet | Avant | Après ma vérification | Qui a corrigé |
+|---|---|---|---|
+| **Lingua** — `test:lingua-voix` | 21 OK / 5 FAIL | **26 OK / 0 FAIL** | **moi** (leur session muette, ça bloquait tout le monde) |
+| **Domaine** — `test:router-secours` | 43 OK / 6 FAIL | **49 OK / 0 FAIL** (tient après fusion de main) | moi, hier soir |
+| **Départs** — fichiers reproductibles | changeaient à chaque génération | **2 générations identiques à l'octet** (498 454 o) | eux (vérifié par moi) |
+
+- **Lingua, ce que j'ai trouvé au lieu de les relancer une 3ᵉ fois** : le mot à apprendre partait
+  **deux fois**, à **1–3 ms d'écart**, même langue et même voix. Cause exacte : quand la belle voix
+  en ligne tombe, **deux guetteurs** répondent (l'erreur de lecture ET le refus de démarrer le son)
+  et chacun relançait la voix du téléphone. J'ai posé un verrou : **un seul repli par demande**.
+  Prouvé en le retirant (22/4) puis en le remettant (26/0). J'ai aussi précisé le message de repli,
+  qui ne **nommait** pas la voix qui marche hors-ligne. C'est leur fichier : je leur ai envoyé la
+  mesure et la ligne exacte (m070-arbre), la formulation reste leur appel.
+- **Départs** : reste non bloquant, le bouton « Créer » manuel (`createEmpFromImport`) tire encore
+  son identifiant de l'horloge — il ne passe pas dans les générateurs.
+- Suivis datés inscrits au registre pour les trois (la garde `test:messages-suivis` les exige).
+
+---
+
 ## 10 septembre 2026 (nuit) — Ajouter la famille de Marie-France sans toucher à sa fiche
 
 Demande de Kevin (répétée deux fois, donc c'est sa décision) : *« Marie France est marié à kim
