@@ -3,6 +3,17 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
 
+### 10 septembre 2026 (nuit) — « voir comme toi » : je peux maintenant regarder tes vraies pages
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/workflows/voir-comme-kevin.yml` | **Nouveau.** Ouvre n'importe quelle page kd-mc.com dans un vrai navigateur (écran iPhone, connecté comme toi), photographie, relève la version et les erreurs, dépose tout sur une branche que je peux lire. Tu peux aussi le lancer toi-même. | [▶️ Lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/voir-comme-kevin.yml) |
+| `tools/voir/voir.mjs` | Le script du workflow (périmètre kd-mc.com, lecture seule, aucun secret). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/voir/voir.mjs) |
+| `tools/voir/rapatrier.sh` | Ramène les captures d'un run dans ma session pour que je les ouvre. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/voir/rapatrier.sh) |
+| `tests/verify-background-sync-benin.mjs` | **Nouveau.** Rejoue la panne vue à l'écran (Background Sync refusé) et exige que l'app reste utilisable — v9.899 corrige l'écran d'erreur qui remplaçait toute l'app sur Brave/Chrome. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-background-sync-benin.mjs) |
+| `tools/smoke/session-kevin.mjs` | Modifié : sait aussi « être toi » sur la page Départs/light (elle restait sur l'écran de première connexion). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/smoke/session-kevin.mjs) |
+| `.claude/skills/voir/SKILL.md` | Ma marche à suivre : les canaux qui marchent (Zapier pour le code servi, le workflow pour l'écran) et ceux qui sont bloqués. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/voir/SKILL.md) |
+
 ### 10 septembre 2026 (soir) — ton ancien septembre est remplacé tout seul, et les horaires des chefs ne disparaissent plus au redémarrage
 
 | Fichier | À quoi ça sert | Ouvrir |

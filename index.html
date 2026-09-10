@@ -1315,7 +1315,8 @@ html[data-theme="light"] #topbar{
       /cmcteams-c16ab/i,          // Firebase d\u00e9j\u00e0 g\u00e9r\u00e9 par circuit breaker
       /anthropic\.com/i,          // Erreurs IA g\u00e9r\u00e9es par .catch du fetch IA
       /Failed to fetch/i,         // Chrome : r\u00e9seau
-      /QuotaExceeded/i            // localStorage plein, on a d\u00e9j\u00e0 un fallback
+      /QuotaExceeded/i,           // localStorage plein, on a d\u00e9j\u00e0 un fallback
+      /Background Sync/i          // v9.899 : Background Sync refusé/désactivé (Chrome/Brave) — la file a un repli online, jamais bloquant
     ];
     for(var i=0;i<benign.length;i++){
       if(benign[i].test(msg)||benign[i].test(stack)){
@@ -5887,7 +5888,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.898";
+var APP_VER="v9.899";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -14330,7 +14331,13 @@ try{if(typeof window!=="undefined")window.cmcDrillEmpsKpi=cmcDrillEmpsKpi;}catch
     setTimeout(function(){
       navigator.serviceWorker.ready.then(function(reg){
         if(reg && reg.sync){
-          try{ reg.sync.register("cmc-sync-queue"); }catch(_){}
+          // v9.899 (VU en vrai sur cmcteams.kd-mc.com, capture run 34517319384) : register()
+          // renvoie une PROMESSE — quand Background Sync est désactivé (Chrome : réglage
+          // du site, Brave par défaut, Chromium sans permission), elle est REJETÉE, le try/catch
+          // ne l'attrape pas, et l'écran « Erreur asynchrone non gérée » remplaçait TOUTE l'app
+          // 5 s après l'ouverture. La file de sync a déjà son repli (événement online) : on
+          // ignore l'échec (leçon #250).
+          try{ var _bs=reg.sync.register("cmc-sync-queue"); if(_bs&&typeof _bs.catch==="function")_bs.catch(function(){}); }catch(_){}
         }
       }).catch(function(){});
     }, 5000);
