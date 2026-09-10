@@ -2013,6 +2013,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    `tools/departs/boards-gen.js`) = les noms des employés, **par conception** de l'app (chaque
    employé voit son équipe). Les mettre derrière le SSO = changer le modèle d'accès de l'app → **feu
    vert Kevin d'abord** (ETAT-INFRA fait n°12 « ce qui reste ouvert »), territoire CMCteams.
+   ✅ **TRANCHÉ 10.09 par Kevin : « non »** — les plannings CMCteams restent accessibles comme
+   aujourd'hui. Tâche close, ne plus la reproposer (gravé : ETAT-INFRA fait n°12, NOTES_USER).
 8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
