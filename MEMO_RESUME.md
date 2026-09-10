@@ -6,7 +6,136 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 — « continu » : les fichiers de planning étaient tirés au sort, et ça cachait une MAUVAISE ÉQUIPE
+
+### Ce qui a été trouvé (et pourquoi c'est important)
+
+Les deux fichiers de planning (CMCteams et la page Départs) sont **fabriqués** en
+faisant tourner la vraie application. Je me suis aperçu que **deux fabrications à
+partir des MÊMES PDF ne donnaient pas le même fichier** — alors que les données
+étaient identiques (285 personnes, 8515 cases des deux côtés).
+
+Première conséquence, gênante : impossible de relire un changement. Le fichier
+changeait en entier à chaque fois, donc **impossible de prouver** qu'une
+correction servait à quelque chose. C'est ce qui m'a fait perdre une passe
+entière sur le dossier « MOREL F ».
+
+Deuxième conséquence, **beaucoup plus grave**, que je n'ai vue qu'une fois ce
+bruit retiré : la fabrication s'arrêtait **trop tôt**. Elle attendait que le
+nombre de personnes se stabilise, mais **pas les équipes**, qui sont posées plus
+tard. Résultat, sur **août 2026** :
+
+| Personne | Un tirage | L'autre tirage |
+|---|---|---|
+| **CONNEN R** (roulettes) | équipe **« 1 » — une équipe BJ, donc FAUSSE** | équipe « r2 » (juste) |
+| **BLANCHY F** (baccara) | équipe « c12 », famille absente | équipe « c7 », famille présente |
+
+Autrement dit : **un employé pouvait s'afficher dans la mauvaise équipe selon la
+charge de la machine au moment de la fabrication.** Aucun test ne le voyait — ils
+comparent les *cases* (pas les équipes), et la comparaison CMCteams ⇄ Départs est
+aveugle ici parce que **les deux surfaces tiraient le même mauvais numéro en même
+temps** (c'est exactement la leçon #142).
+
+### Ce qui est corrigé
+
+1. L'identifiant d'un employé créé à l'import venait de l'**horloge** → il vient
+   maintenant de son **nom**. Même nom = même identifiant, toujours.
+2. Les fichiers sont écrits dans un **ordre fixe** (plus l'ordre d'arrivée).
+3. La fabrication attend maintenant que **tout** soit posé : personnes, cases,
+   **équipes** et familles — plus seulement le nombre de personnes.
+
+Les pièces 2 et 3 sont **un seul module partagé** par les deux fabricants, pas
+deux copies (sinon elles divergent — leçon #142).
+
+### Les preuves
+
+- Deux fabrications de suite : **fichiers identiques à l'octet près**, des deux côtés.
+- Les valeurs retenues sont les **bonnes** : CONNEN R en `r2`, BLANCHY F en `c7`.
+- **Rien n'a changé dans les données** par rapport à `main` (juin, juillet, août :
+  0 équipe modifiée, mêmes cases). Le fichier publié était un **tirage chanceux** ;
+  il est désormais **garanti** au lieu d'être chanceux.
+- Fidélité au PDF inchangée : septembre 248/248 · 7440/7440, juillet 254/254 ·
+  7874/7874, août 250/251 (le manquant connu, MOREL F). Départs : 22 723 contrôles
+  d'horaires, 0 anomalie.
+- Nouveau garde `npm run test:generateurs-reproductibles` (dans `test:ci`, moins
+  d'une seconde, sans navigateur), **prouvé par 3 sabotages** : remettre l'horloge,
+  remettre l'ancienne sonde, ou dérégler un fichier → rouge à chaque fois.
+
+### Un rouge qui bloquait TOUT LE MONDE, réparé au passage
+
+`test:ci` échouait **déjà sur `main`** (vérifié en mettant mes changements de côté) :
+« une règle a été ajoutée sans garde-fou ». En réalité la règle « J'ai internet et
+des outils » **a** sa garde depuis le 6.09 — il manquait juste son inscription au
+registre. Exactement la même cause que la fois précédente, c'est écrit dans le
+fichier lui-même. Inscrite → vert, **sans toucher au compteur de référence**.
+
+### MOREL F : où on en est, honnêtement
+
+La cause est **établie** : les marqueurs de couleur sont collés à **toutes** les
+cases de la ligne, **le nom compris**, ce qui empêche l'application de reconnaître
+le format de la ligne. Mais **les deux corrections évidentes régressent** : elles
+font tomber COSTAGLIOLI J de 31 à 10 cases. Je ne les ai donc pas retenues, et
+j'ai écrit le témoin chiffré à viser pour la prochaine tentative (leçon #242).
+**MOREL F est toujours absent d'août** — c'est le seul manquant.
+
+
 ## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité) + un faux rouge de ma propre garde
+## 10 septembre 2026 — l'outil de diagnostic du robot fabriquait les conflits qu'il diagnostiquait
+
+Le 7.09, la PR #3679 a fusionné (04h14) — la résolution de conflits l'a débloquée. **Depuis,
+`main` n'a pas bougé** : aucune branche n'a de commit après le 7.09 à 04h07. Ce n'est pas un
+blocage, c'est le calme.
+
+J'ai donc repris le défaut que j'avais **mesuré sans corriger** ce jour-là : le robot
+d'auto-fusion écrivait la cause de chaque refus dans **un seul fichier partagé**,
+`.github/AUTOMERGE-DIAGNOSTIC.md`, avec un contenu différent à chaque écriture. Mesuré :
+**8 écritures en une journée sur 4 branches**. Deux de ces branches qui croisent `main` →
+**conflit certain**. C'est ce qui avait bloqué ma propre PR : l'outil de diagnostic *était*
+la cause. Une autre session avait déjà tenté de supprimer le fichier — il revenait, parce
+que le problème n'était pas le fichier mais le **chemin**.
+
+**Corrigé** : un fichier **par branche** (`.github/automerge-diag/<branche>.md`). Deux branches
+ne se disputent plus jamais un chemin, et la capacité de diagnostic — seul canal lisible depuis
+une session sans accès à l'API GitHub — est intégralement gardée. Le diagnostic périmé qui
+traînait sur `main` depuis 3 jours (celui d'une PR déjà fusionnée) est retiré.
+
+**Garde** : règle 5 de `tests/verify-actions-conformes.mjs`, dans `test:ci`. Prouvée par
+sabotage : arbre propre **9 OK / 0 FAIL** · chemin partagé réintroduit → **FAIL** · restauré →
+**9 OK / 0 FAIL**.
+
+**Un correctif écarté, et je le dis** : j'avais d'abord ajouté un ménage du diagnostic périmé
+juste avant la fusion. Poussé sur la branche, ce commit **remet à zéro les contrôles de la PR** —
+le ménage aurait bloqué la fusion qu'il prétendait faciliter. Retiré avant d'aller plus loin.
+
+### Puis, en m'inscrivant au registre, deux faux succès — dont un à moi
+
+**1. L'outil du pipeline disait « inscrite » sans inscrire.** En inscrivant ma branche neuve,
+il a répondu `✅ inscrite (claude/suivi-domaine-suite)` — et le registre pointait toujours
+l'ancienne. L'objet existant était appliqué *après* les valeurs demandées : pour un identifiant
+déjà connu, l'ancien réécrasait tout, `--branche` compris, message de succès inclus.
+
+Ce n'est pas théorique : `apex-chat` était inscrite sur une branche du **10 juillet** alors que
+ses branches actives datent des **5 et 7 septembre** ; `cuisine` sur une du **14 août**, active
+le **5 septembre**. Le registre censé empêcher qu'une session travaille sans que personne le
+sache **produisait** cette situation. Corrigé, et le message nomme maintenant ce qui change
+(`branche X → Y` ou `à jour, rien à changer`). J'ai prévenu toutes les sessions (message m056)
+sans toucher à leurs branches : je ne sais pas laquelle chacune considère comme la sienne.
+
+**2. Mon propre contrôle des « branches orphelines » criait au loup.** Il en signalait 7 ;
+mesuré aujourd'hui, **les 7 ont 0 commit hors de `main`** — entièrement fusionnées, donc aucun
+travail à perdre, alors que c'est précisément le risque qu'il doit couvrir. J'avais donc créé
+une alarme sur du travail terminé, puis un cliquet pour **taire ma propre alarme**. Le critère
+est maintenant le bon : on ne signale qu'une branche qui porte du travail **non fusionné**.
+Résultat **0 orpheline**, cliquet **vidé (7 → 0)**. Prouvé dans les deux sens : travail non
+fusionné non suivi → **FAIL** ; branche fusionnée non suivie → **silence**.
+
+**Et la carte des branches était fausse** : elle annonçait « urgent, à fusionner » pour deux
+branches déjà dans `main`, et « +1 devant main » pour 7 branches à 0 commit. Remesurée : sur
+**378** branches, **4** portent réellement du travail hors de `main`.
+
+---
+
+## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité)
 
 La PR n'était plus bloquée par ce que j'avais mesuré la veille. Un robot a laissé un
 diagnostic sur ma branche (`.github/AUTOMERGE-DIAGNOSTIC.md`, commit `1424673f4`) : GitHub
@@ -1643,6 +1772,17 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
 13. 🤖 **4 tests rouges pré-existants sur `main`**, pas les miens mais à ne pas laisser traîner :
     `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
     Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
+
+18. ✅ **FAIT 10.09** — les 7 gardes du dépôt public (no-pin-leak, depot-public-sain,
+    secret-jamais-persiste, documents-travail, destinations-workflows, wrangler-assets,
+    pipeline-sessions) **tournent enfin sur GitHub** : job `gardes-depot-public` dans
+    `tests.yml` (PR vers main + main, node seul, ~20 s). Avant : câblées dans `test:ci`, que
+    seul le job GitLab lance (mesure m049 de cmcteams-pdf) — donc jamais sur une PR.
+    **Preuve sur GitHub (pas seulement en local)** : fusionné par le bot via PR #3723 (09:17 UTC) ;
+    le job a tourné VERT en 3 s sur la PR suivante (`claude/menage-branches-cause-exacte`,
+    run 34473620618, job 102859054674). Honnêteté : sur MA PR le bot a fusionné 60 s après
+    l'ouverture, AVANT que les jobs démarrent (run 34459707355 : 0 job, « failure ») — le bot
+    auto-merge ne laisse pas le temps à la CI de la PR ; la preuve vient donc de la PR d'après.
 
 ### 👤 Ce que les AUTRES sessions attendent de Kevin (vu au registre, pour ne rien perdre)
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
