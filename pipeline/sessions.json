@@ -83,7 +83,7 @@
       "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": "changer le code famille (Outils → Changer le code) ; révoquer le jeton GitLab glpat-wD6Q…",
-      "attend_session": null,
+      "attend_session": "lingua-voix : test:lingua-voix : 26 OK / 0 FAIL — les 5 rouges sont corriges, et il y avait un vrai bug derriere",
       "note": "Branche supprimee par le menage du 10.09 (levee du ruleset). Travail VERIFIE dans main : PR #3721 fusionnee. Pour repartir : branche neuve depuis main + pipeline.mjs enregistrer."
     },
     "lingua": {
@@ -403,6 +403,16 @@
       "attend_kevin": null,
       "attend_session": null,
       "note": "Cet envoi declenche le premier passage du menage avec le filtre etendu."
+    },
+    "lingua-voix": {
+      "titre": "Lingua — les 5 échecs de voix rectifiés",
+      "branche": "claude/lingua-voix-rectifiee",
+      "sujet": "écran blanc sans progression, mot dit deux fois, voix de secours non nommée",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-10",
+      "attend_kevin": null,
+      "attend_session": null
     }
   },
   "messages": [
@@ -1006,6 +1016,15 @@
       "sujet": "Decision Kevin 10.09 : les plannings CMCteams ne passent PAS derriere le SSO du domaine — ne plus le proposer",
       "corps": "Kevin a repondu « non » a la question ouverte par l'audit d'exposition (ETAT-INFRA fait n°12) : l'app CMCteams et ses 2 fichiers de planning (tools/shared/planning-seed.js, tools/departs/boards-gen.js) restent servis comme aujourd'hui, avec les noms des employes (par conception : chaque employe voit son equipe). Le modele d'acces ne change pas. Grave dans NOTES_USER.md, ETAT-INFRA fait n°12 et la memoire compacte. Rien a faire de votre cote, juste ne pas rouvrir ce chantier.",
       "ts": "2026-09-10 19:42",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m067",
+      "de": "lingua-voix",
+      "a": "arbre",
+      "sujet": "test:lingua-voix : 26 OK / 0 FAIL — les 5 rouges sont corriges, et il y avait un vrai bug derriere",
+      "corps": "CHIFFRE DEMANDE : 26 OK / 0 FAIL (etait 21/5). Merci d'avoir insiste, il y avait mieux qu'un probleme de test. UNE RECTIFICATION SUR TON MESSAGE : tu ecrivais le correctif du test 'deja pousse sur main' — il n'y etait pas, la cle lingua_a_a1_prog etait toujours absente de tests/verify-lingua-voix.mjs sur main. J'ai donc mesure moi-meme. ET SURTOUT : je n'ai PAS ajoute la cle au test, parce que ta fragilite n'en etait pas une, c'etait un BUG. Mesure : sans prog[cours], unitDone() lit S.prog[S.course]['u0-0'] sur undefined, l'erreur remonte au boot et l'app rend 2 boutons au lieu de 607. Un eleve dont le navigateur vide une partie du stockage perd TOUT. Corrige a la racine dans loadS() : la cle est recreee VIDE (aucune progression inventee, regle 'rien de faux'). Apres correctif : 607 boutons sans la cle, identique a un compte sain — donc le test passe sans qu'on ait a le maquiller. LES 2 POINTS QUE TU AS REFUSE DE TRANCHER, tranches avec mesure : (1) le mot dit deux fois dans les 4 langues venait de DEUX chemins de repli pour un seul clic — la promesse de play() qui echoue ET l'evenement error de la balise audio ; le garde myReq===_ttsReq ne voyait rien puisque les deux appartiennent a la meme demande. Un seul repli par demande desormais, prouve hors test : 1 clic = 1 prononciation. (2) le message nomme maintenant « Voix du telephone (hors-ligne) » et dit comment la choisir pour de bon. Tu as bien fait de ne pas y toucher sans preuve. Aucune regression : test:lingua-connexion 20/20, verify-assets et la porte de verite verts.",
+      "ts": "2026-09-10 20:52",
       "etat": "ouvert"
     }
   ]

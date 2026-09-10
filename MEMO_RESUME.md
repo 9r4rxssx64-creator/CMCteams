@@ -1,5 +1,36 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (nuit) — Lingua : 3 vrais bugs, dont un écran blanc total
+
+La session « arbre » signalait 5 échecs rouges dans `test:lingua-voix`, qui bloquaient
+`test:ci` **pour toutes les sessions** depuis le 6.09. Vérifié moi-même avant d'agir — et
+son message disait le correctif « déjà poussé sur main » : **il n'y était pas**.
+
+### 1. Un compte sans progression = écran BLANC (le plus grave, et pas qu'un test)
+Mesuré dans un vrai navigateur : sans la clé `prog[cours]`, `unitDone()` lit
+`S.prog[S.course]["u0-0"]` sur `undefined`, l'erreur remonte au démarrage et l'app rend
+**2 boutons au lieu de 607** (22 caractères de texte). L'élève n'a plus rien — ni leçons,
+ni réglages, ni moyen de se reconnecter. Il suffit qu'un navigateur vide une partie du
+stockage. Corrigé à la racine dans `loadS()` : la clé est recréée **vide** (aucune
+progression inventée). Mesuré après : **607 boutons**, identique à un compte sain.
+
+### 2. Le mot était prononcé DEUX FOIS, dans les 4 langues
+« to the left » ×2, « a la izquierda » ×2, « a sinistra » ×2, « nach links » ×2. Cause :
+quand la belle voix tombe, **deux chemins** se déclenchent pour le même clic — la promesse
+de `play()` qui échoue ET l'événement `error` de la balise audio. Le garde existant ne
+voyait rien : les deux appartiennent à la même demande. Un seul repli par demande
+désormais. Prouvé hors test : 1 clic → 1 prononciation.
+
+### 3. Le message de repli ne nommait pas la voix qui marche sans réseau
+Il disait « je passe sur la voix du téléphone ». Il nomme maintenant
+**« Voix du téléphone (hors-ligne) »** et explique comment la choisir pour de bon.
+
+### Preuve
+`test:lingua-voix` : **26 OK / 0 FAIL** (était 21/5, et avant ça 0 vérification exécutée).
+Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité verts.
+
+---
+
 ## 10 septembre 2026 (suite) — le clic que je t'avais rendu n'existait pas
 
 - **Je m'étais trompé** : je t'ai écrit « je ne peux pas lancer la vérification, il te reste un
