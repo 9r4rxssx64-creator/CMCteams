@@ -10,7 +10,7 @@
 
 **[P1] État dans le Cache API = par datacenter** · Exactitude · Correctif : KV `ACCOUNTS` (id réel partagé), clé `upt:state:v1`, repli cache. · S.
 
-**[P2] `push: claude/**` déployait la production depuis n'importe quelle branche** · Sécurité · 2 `deploy-*.yml` · Preuve : `auto-merge-claude.yml:202-225` dispatche déjà chaque `deploy-*.yml` après fusion. · Correctif : `main` seul + `workflow_dispatch`, concurrence globale. Leçon #213 et fait n°16 corrigés. · S.
+**[P2] `push: claude/**` déployait la production depuis n'importe quelle branche** · Sécurité · 2 `deploy-*.yml` corrigés — ⚠️ **mais un TROISIÈME reste ouvert** : `deploy-apex-chat.yml:16` a toujours `- 'claude/**'` (re-mesuré 6.09.2026), donc tout push d'une branche de travail touchant `messaging-app/workers/**` déploie les Workers de production. C'est **délibéré et daté** dans le fichier (« v1.1.125 : tout push claude/* avec workers/** déclenche deploy ») → arbitrage rapidité de dev vs prod protégée, **à trancher par Kevin**, pas à changer en silence. · Preuve : `auto-merge-claude.yml:202-225` dispatche déjà chaque `deploy-*.yml` après fusion. · Correctif : `main` seul + `workflow_dispatch`, concurrence globale. Leçon #213 et fait n°16 corrigés. · S.
 
 **[P2] `npm i -g wrangler` non épinglé, avec le jeton dans l'env du job** · Sécurité (Sonar C) · Correctif : `wrangler@4 --ignore-scripts`, jeton uniquement sur les étapes wrangler, `/accounts/<id>` masqué dans annotations et résumé. · S.
 
@@ -26,7 +26,7 @@
 
 **[P1] kdmc-rag : le jeton `CLOUDFLARE_API_TOKEN` n'a pas le droit Vectorize** · Infra · run 33979141283 `Authentication error [code: 10000]` · Impact : mémoire longue d'Apex jamais déployée (worker du 08/07, `/health` 404). · Correctif : Kevin, 1 clic (`KEVIN_ACTIONS_TODO.md`), puis relancer. · Effort : 1 min Kevin.
 
-**[P1] 6 workers « en panne » au premier relevé — dont un qui n'existe pas (`apex-v13-backend`)** · Fonctionnalités · Preuve : annotation run 33979141313. · Cause probable : `/health` absent en ligne (rag = code du 08/07), rate-limit, ou worker jamais déployé. · Correctif : lire les annotations par cible du prochain smoke ; retirer `apex-v13-backend` de `WORKERS` s'il est bien mort, sinon le déployer ; ajouter les 17 workers non sondés qui ont un `/health`. · M.
+**[P1] 6 workers « en panne » au premier relevé — dont un qui n'existe pas (`apex-v13-backend`)** · Fonctionnalités · Preuve : annotation run 33979141313. · Cause probable : `/health` absent en ligne (rag = code du 08/07), rate-limit, ou worker jamais déployé. · Correctif **APPLIQUÉ le 6.09.2026** : cause racine = un Worker ne peut pas joindre un `*.workers.dev` du même compte (faux rouge, pas une panne) ; `apex-v13-backend` retiré de `WORKERS` ; santé des workers mesurée depuis le runner CI. · M.
 
 **[P2] `apex-chat-api` tient 4 des 5 crons du compte** · Infra · `messaging-app/workers/wrangler.toml` · Correctif proposé (m027, territoire apex-chat) : 1 cron `*/5` + aiguillage sur l'heure → 3 places rendues (sonde horaire, monaco, sentinels). · M.
 

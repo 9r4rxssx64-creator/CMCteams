@@ -1,5 +1,14 @@
 # 🚀 Remettre kd-mc.com en ligne
 
+> **⚠️ ÉTAT DU 5.09.2026 — ce document décrit la panne du 2-3.09, elle est TERMINÉE.**
+> **GitHub a rouvert le 4.09 à 16h34 UTC**, le site vit de nouveau depuis GitHub et les
+> **26** sous-domaines répondent (26 entrées dans `ROUTES` du routeur, vérifiées par
+> `npm run test:uptime-couverture`). Les chiffres ci-dessous datent de la panne :
+> « 20 sous-domaines » et « 17 Workers » étaient justes ce jour-là, ils ne le sont plus —
+> aujourd'hui **26 sous-domaines** et **25 workers** sur le compte. Le mode d'emploi reste
+> valable comme **secours** si GitHub retombe : la marche à suivre n'a pas changé, seuls
+> les nombres ont bougé.
+
 > **Inventaire d'abord**, comme demandé. Voilà ce qu'on a réellement, mesuré —
 > pas supposé — avant toute recommandation.
 
@@ -46,10 +55,15 @@ et une quinzaine d'autres. Dans le mauvais, seulement 4 ou 5.
 
 ### 🅰️ Dépannage : le ZIP *(3 clics, 5 minutes)*
 
-**`kd-mc-sites.zip`** — 7 Mo, 469 fichiers, **13 applications**.
+**Le paquet des applications** — à FABRIQUER, il n'est pas dans le dépôt :
+`node services/kdmc-router/prepare-secours.mjs --pages` → produit `services/kdmc-router/pages-upload/`
+(c'est ce dossier qu'on dépose). *(Ce document citait un `kd-mc-sites.zip` qui n'existe pas —
+corrigé le 6.09.2026.)*
 
 1. **Créer un projet Pages** → onglet **« Upload assets »** (pas « Connect to Git ») → glisser le dossier des applications
-2. **Changer UNE ligne dans le routeur** (compte `9r4rxssx64`) → *Modifier le code* → ligne **111** :
+2. **Changer UNE ligne dans le routeur** (compte `9r4rxssx64`) → *Modifier le code* → cherche la ligne
+   qui commence par `const upstreamUrl = UPSTREAM` (**ligne ~309** aujourd'hui — le numéro bouge à
+   chaque commit, cherche par le contenu, jamais par le numéro) :
 
 ```js
     const upstreamUrl = UPSTREAM + upstreamPath + url.search;   // ← avant
@@ -57,8 +71,10 @@ et une quinzaine d'autres. Dans le mauvais, seulement 4 ou 5.
 ```
 
 → *Deploy*. C'est tout. Prouvé par `tests/verify-bascule-une-ligne.mjs`
-(44 contrôles, 8 sous-domaines rendus depuis le VRAI code déployé, dans les
-deux rangements possibles du paquet).
+(8 sous-domaines rendus depuis le VRAI code déployé, dans les deux rangements possibles
+du paquet). ⚠️ **Ce test ne tourne plus tel quel** : sa référence git est codée en dur sur une
+branche supprimée (`const REF` en tête du fichier) — à repointer sur `origin/main` avant de
+s'en servir comme preuve.
 
 **Le défaut** : à chaque modification, il faut refaire le paquet et le renvoyer.
 Ce n'est pas « tout auto ».
@@ -78,7 +94,7 @@ je pousse sur GitLab  →  Cloudflare construit et publie tout seul  →  kd-mc.
 3. **▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)** → **« Connect to Git »** → GitLab → `CMCteams`, avec :
    - Build command : `node services/kdmc-router/prepare-secours.mjs --pages`
    - Output directory : `services/kdmc-router/pages-upload`
-4. La même ligne 14 du routeur qu'en 🅰️
+4. La même ligne du routeur qu'en 🅰️ (`const upstreamUrl = UPSTREAM…`)
 
 **Ce que ça apporte en plus** : **16 applications** au lieu de 13 — l'arbre
 généalogique, Chez Lolo et La Détente reviennent aussi. Et plus jamais de ZIP.
@@ -144,4 +160,5 @@ n'atteint pas Cloudflare (`CONNECT 403`, mesuré plus haut). Ce sont les seuls
 gestes qui restent de ton côté.
 
 Tout le reste est fait et vérifié : le paquet, son contenu fichier par fichier,
-son innocuité, et la bascule du routeur (35 contrôles sur le vrai code).
+son innocuité, et la bascule du routeur (contrôles automatiques sur le vrai code —
+nombre donné par le test lui-même, plus figé ici parce qu'il bouge).

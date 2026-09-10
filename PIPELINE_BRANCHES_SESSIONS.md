@@ -436,3 +436,146 @@ pourquoi la version automatique ne fait rien — et je pourrai finir le travail 
 - **Rien n'est en danger** : les 240 branches candidates à la suppression sont des ancêtres de
   `main` (leur contenu y est déjà), et chaque SHA est noté ici, donc tout reste restaurable.
 - Le ménage est de l'**hygiène**, pas de la valeur : 371 branches encombrent, elles ne perdent rien.
+
+---
+
+## Compactage — état final honnête (21h40)
+
+### Ce qui est prouvé
+
+| Fait | Preuve |
+|---|---|
+| Le nettoyeur **voit** enfin les branches | compte-rendu du robot : **371 vues** (avant : 0) |
+| Le mécanisme de compte-rendu **fonctionne** | fichier écrit et poussé par le robot à 20 h 44 |
+| **235 suppressions tentées, 235 échecs** | 371 vues − 136 gardées − 0 supprimée |
+| Trois identités ont refusé | relais git (connexion coupée) · connecteur (**lecture seule**, `403` en écriture) · jeton de CI (les 235 échecs) |
+| Aucune donnée en danger | les 235 sont des **ancêtres de `main`** : leur contenu y est déjà, et chaque SHA est noté plus haut |
+
+### Ce que je ne sais toujours pas
+
+**Le nom exact du verrou.** J'ai livré la capture d'erreur qui le donnera, mais aucun nouveau
+compte-rendu n'est arrivé depuis. Pour savoir pourquoi, il faudrait le **journal d'exécution** —
+et c'est précisément ce que je ne peux pas atteindre :
+
+```
+déclencher un workflow (API)      : HTTP 403
+lire un journal d'exécution (API) : HTTP 403
+outil Actions dans le connecteur  : aucun
+```
+
+### J'arrête de tâtonner — et voici pourquoi
+
+Le compactage est de l'**hygiène** : 374 branches encombrent, elles ne perdent rien. J'ai déjà
+consommé plusieurs cycles dessus, et chaque nouvelle tentative sans journal revient à **deviner**.
+Continuer coûterait du forfait pour du rangement — exactement le travers que Kevin me reproche.
+
+### Le chemin le plus court, et il tient en un clic
+
+**▶️ [Lancer « Compact stale claude/* branches »](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/cleanup-stale-branches.yml)**
+→ « Run workflow » · branche `main` · `dry_run` = `false`
+
+Ce workflow porte le correctif de cécité (vérifié présent sur `main`). Deux issues, toutes deux utiles :
+
+- **il supprime** → le ménage est fait, et il repartira seul à chaque livraison ;
+- **il échoue** → son journal, que *toi* tu peux lire, **nomme le verrou**. Colle-moi la ligne
+  d'erreur et je termine sans autre clic.
+
+C'est un vrai clic — pas un que j'aurais pu m'épargner : déclencher un workflow et lire un journal
+sont les deux seules choses qu'aucun de mes trois accès ne permet.
+
+---
+
+## Suite — 23 h 30 : le verrou a enfin un nom, et les 18 annulations sont fermées
+
+### 1. Les 18 annulations dormantes : **fermées**, pour de vrai
+
+Ce n'était plus « prévu », c'est **fait et vérifié** :
+
+| Mesure | Valeur |
+|---|---|
+| PR `revert/auto-rollback-*` encore ouvertes | **0** |
+| Fermées le | **2026-09-06, entre 21 h 48 min 17 s et 21 h 48 min 46 s UTC** |
+| Par qui | `github-actions[bot]` — l'étape « Ménage » du robot de fusion |
+| Avec quel mot | le commentaire exact que j'avais écrit (« annulation jamais appliquée… Réouvrable en un clic ») |
+| Pull requests ouvertes restantes | **27** (contre 46 ce matin) |
+
+Vérifié en interrogeant GitHub directement, pas déduit. Chaque fermeture est **réversible en un
+clic** si Kevin veut revoir l'une d'elles.
+
+### 2. Le verrou de suppression des branches : **mesuré, nommé**
+
+Je l'ai tenté moi-même, en capturant la sortie au lieu de l'avaler :
+
+```
+$ git push origin --delete claude/actions-done-doc
+error: RPC failed; HTTP 403 curl 22 The requested URL returned error: 403
+send-pack: unexpected disconnect while reading sideband packet
+fatal: the remote end hung up unexpectedly
+Everything up-to-date
+```
+
+**Traduction** : mon accès git de session sait **ajouter** des commits (je pousse toute la
+journée), il n'a **pas le droit d'effacer une référence**. GitHub répond `403` à la demande de
+suppression, et git termine par un trompeur « Everything up-to-date » — c'est ce mot qui m'a fait
+tourner en rond.
+
+Ce n'est pas non plus le pare-feu de l'environnement : son journal de refus
+(`recentRelayFailures`) est **vide**, donc le `403` vient bien de GitHub, contre mon jeton.
+Le mode d'emploi de ce pare-feu est explicite sur ce point : un `403` **se rapporte, il ne se
+contourne pas**. Je ne le contourne donc pas.
+
+### 3. Ce qui reste, et pourquoi ce n'est plus un tâtonnement
+
+| Question | Réponse |
+|---|---|
+| Combien de branches sont supprimables aujourd'hui ? | **231** — toutes déjà entièrement dans `main`, plus de 7 jours sans activité |
+| Risque à les supprimer ? | **aucun** : leur contenu est dans `main`, et chaque SHA est listé plus haut |
+| Qui peut les supprimer ? | le **jeton de la CI** (`contents: write`), pas moi |
+| Pourquoi la CI n'y arrivait pas ? | **on ne le sait pas encore** — mais le compte-rendu du robot avale l'erreur dans son ancienne version |
+| Qu'est-ce qui change maintenant ? | la version **corrigée** (qui écrit la cause exacte) est sur cette branche ; la prochaine exécution du robot **écrira le message d'erreur du jeton de CI** dans `.github/CLEANUP-REPORT.md`, ou supprimera les 231 |
+
+Autrement dit : plus rien à deviner. La prochaine livraison répond d'elle-même.
+
+---
+
+## Réponse finale (7 septembre, 00 h 03) — ce n'était **pas** une histoire de droits
+
+Le robot a enfin écrit la cause exacte, et elle change tout le dossier :
+
+```
+remote: error: GH013: Repository rule violations found for refs/heads/claude/actions-done-doc
+remote: - Cannot delete this branch
+ ! [remote rejected]  (push declined due to repository rule violations)
+```
+
+**Ce n'est pas un jeton trop faible. C'est une règle du dépôt qui interdit de supprimer
+une branche** — une protection posée dans les réglages, au-dessus de tout le monde.
+
+### Ce que ça invalide dans ce que j'ai écrit hier
+
+| Ce que j'avais écrit | La vérité |
+|---|---|
+| « trois identités ont refusé, chacune pour sa raison » | **une seule raison, la même pour les trois** : la règle du dépôt |
+| « mon accès n'a pas le droit d'effacer une référence » (#235) | vrai en apparence, **faux en cause** : même un accès administrateur reçoit ce refus |
+| « il reste à savoir si le jeton de la CI y arrive » | il n'y arrive pas non plus, **et il n'y arrivera jamais** tant que la règle est là |
+
+Le `403` que j'avais mesuré à la main était la **même** règle, vue de l'extérieur.
+
+### Ce que ça veut dire concrètement
+
+- **Aucun automatisme ne peut supprimer ces 375 branches.** Ni moi, ni le connecteur, ni la CI.
+- La seule voie est de **modifier la règle** dans *Réglages → Rules → Rulesets* — un réglage de
+  **sécurité** du dépôt, donc une décision de Kevin, pas une action que je prends seul.
+- Le robot **arrête maintenant de s'acharner** : il sonde une fois par livraison, constate la
+  règle, l'écrit, et passe. Le jour où la règle change, **il repart tout seul**, par paquets de 60.
+
+### Ma recommandation : **laisser la règle en place**
+
+Les 375 branches ne coûtent rien : elles n'apparaissent pas dans l'application, ne ralentissent
+rien, ne peuvent pas être fusionnées par accident (contrairement aux 18 annulations, qui elles
+étaient un vrai danger — et qui sont fermées). Cette règle, en revanche, protège chaque branche
+d'une suppression accidentelle par un automatisme. **Le rangement ne vaut pas d'affaiblir ça.**
+
+Si Kevin veut quand même faire le ménage un jour, la marche est courte et il n'y a aucun risque :
+les 231 branches concernées sont **entièrement contenues dans `main`** — leur contenu est déjà
+livré, et chaque SHA est noté plus haut dans ce document.

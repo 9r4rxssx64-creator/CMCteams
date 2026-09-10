@@ -1,6 +1,9 @@
 # CLAUDE.md — CMCteams Codebase Guide
 
-Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-05-26 (Apex v13.4.277 / CMC v9.741).
+Guide pour assistants IA travaillant sur ce dépôt. Mis à jour 2026-09-06 (Apex v13.4.355 / CMC v9.891).
+> ⚠️ **Les numéros de version et les tailles cités plus bas dans ce document sont des instantanés
+> historiques et dérivent.** Les valeurs vivantes se lisent dans le code :
+> `grep -oE 'var APP_VER *= *"v[0-9.]+"' index.html` (CMCteams) et `apex-ai/v13/package.json` (Apex).
 
 ---
 
@@ -338,6 +341,18 @@ GitHub n'est plus une dépendance de travail. Ce qui a été mesuré le 2.09 :
 - une session **sans dépôt** → **démarre normalement**, et clone GitLab elle-même. ✅ C'est la voie.
 - Kevin ne peut pas créer de session sans dépôt depuis l'iPhone (l'interface l'exige) → **c'est moi
   qui les crée pour lui**, une par thème, avec le même titre qu'avant.
+
+> **⚠️ MISE À JOUR DU 5.09.2026 — le point 4 ci-dessus est LEVÉ, ne plus l'appliquer tel quel.**
+> **GitHub a rouvert le 4.09 à 16h34 UTC** (fait n°10 d'`ETAT-INFRA.md`, message d'Appeals cité
+> mot pour mot). Le dépôt de travail est **de nouveau GitHub** : `origin` pointe sur
+> `github.com/9r4rxssx64-creator/CMCteams`, les branches `claude/*` y sont poussées, la fusion
+> automatique et les déploiements y tournent. **GitLab garde son rôle** — il reçoit ce que GitHub
+> interdit (jobs à la demande qui appellent l'extérieur) et sert de miroir de secours ; il n'est
+> plus le dépôt principal. Le texte du point 4 est conservé car il raconte comment on a continué
+> à travailler pendant la suspension : la leçon (« trouver un chemin, ne jamais transmettre le
+> mur ») reste absolue, c'est seulement le constat de plateforme qui a changé.
+> Deux documents lus au démarrage se contredisaient (celui-ci disait GitLab, `ETAT-INFRA.md`
+> disait GitHub rouvert) : une session neuve pouvait pousser au mauvais endroit.
 
 ### 5. Test mental obligatoire avant d'annoncer un blocage
 
@@ -827,7 +842,7 @@ déterministe)**, pas seulement ma revue. `auto-pr-review.yml` est un reviewer C
 4. **CARTOGRAPHIE EXHAUSTIVE NUMÉROTÉE** : liste complète F01…Fnn de TOUT ce que l'app sait faire (vues/routes/fonctions), chacune avec son statut de couverture test. **Une fonction non listée est une fonction non testée.** Aucun « etc. ».
 5. **LIVRABLES FICHIERS dans `audit/`** (pas juste une réponse chat) : `00-INVENTAIRE.md` (stack réelle, build, secrets, deps) · `01-FONCTIONS.md` (F01…Fnn) · `02-RESULTATS.md` (matrice attendu/obtenu/statut + sorties réelles) · `03-FINDINGS.md` · `04-DESIGN.md` (mesures, pas au feeling) · `05-JOURNAL.md` (décisions, hypothèses, non-vérifié). Committés + mergés.
 6. **FORMAT FINDING OBLIGATOIRE** : `[P0-P3] Titre factuel` + Axe · Fichier:ligne · **Preuve** (sortie réelle) · Impact · **Cause racine** (pas le symptôme) · Correctif complet · Test qui prouve · Effort S/M/L · Régression possible. Priorités : P0 faille/crash · P1 dégrade fort · P2 net · P3 confort. Corriger P0→P3, un commit par correctif, gate relancé après chacun.
-7. **CAUSE RACINE → PRÉVENTION** (la partie la plus importante) : pour chaque bug, répondre à « pourquoi a-t-il pu naître, et qu'est-ce qui l'aurait attrapé automatiquement ? » → le correctif prioritaire est souvent un **garde CI** (grep bloquant, test régression), pas un pansement. Vérifier d'abord ce qui EXISTE déjà (CMCteams : 121 workflows, gitleaks/semgrep/strix/gate/audit-live) — ne pas réinstaller une prévention déjà en place.
+7. **CAUSE RACINE → PRÉVENTION** (la partie la plus importante) : pour chaque bug, répondre à « pourquoi a-t-il pu naître, et qu'est-ce qui l'aurait attrapé automatiquement ? » → le correctif prioritaire est souvent un **garde CI** (grep bloquant, test régression), pas un pansement. Vérifier d'abord ce qui EXISTE déjà (CMCteams : **145** workflows actifs au 6.09.2026, gitleaks/semgrep/strix/gate/audit-live) — ne pas réinstaller une prévention déjà en place.
 8. **RÈGLE DE FIN + AUTO-CRITIQUE OBLIGATOIRE** : ne pas s'arrêter tant qu'il reste une ligne non traitée de `01-FONCTIONS.md` (un blocage → consigné au `05-JOURNAL.md`, on passe au suivant, on ne s'arrête pas). Terminer TOUJOURS par : *« Le point le plus faible de mon audit est… · Ce que je n'ai pas pu vérifier est… · Ce dont je ne suis pas certain est… »* — déclarer les angles morts au lieu de les masquer.
 9. **AUTONOMIE** : zéro question avant la fin des phases d'exploration ; hypothèses écrites noir sur blanc ; jamais « veux-tu que je continue » ; livrer LE TRAVAIL, pas un plan. Branche dédiée `claude/audit-*`, zéro donnée réelle de personnel dans les tests, zéro touche à la prod.
 10. **PASSE 2 — FERMER CHAQUE ANGLE MORT DE L'AUTO-CRITIQUE (par du CODE, pas de la prose)** : quand on relance un audit (« passe 2 », « corrige ton auto-critique »), CHAQUE manquant listé au `05-JOURNAL.md` doit être fermé par l'UN de ces trois moyens, jamais laissé en texte : (a) **un test** qui le prouve (ex : `render-views` = smoke qui rend LES N vues d'une app multi-vues en session admin → attrape crash/vue-morte/pageerror ; c'est la couverture la moins chère et la plus haute pour une app à beaucoup de vues) ; (b) **un garde ratchet/baseline** pour la dette legacy (compter l'existant, échouer seulement si ça AUGMENTE → bloque le NOUVEAU sans faux-rouge sur l'ancien — ex garde XSS `innerHTML` sans `esc()`, baseline figé) ; (c) **une reclassification honnête AVEC preuve** si ce n'était pas un bug (ex : « 2 croupiers même table » = N/A car le modèle est jour-par-code, 1 lieu/jour par construction — vérifié par lecture, pas supposé). **Tout nouveau test/garde est câblé dans le gate (`test:ci`)** = la correction devient permanente. Puis **refaire l'auto-critique de la passe 2** (le rendu ≠ le comportement : un smoke de rendu attrape les crashes, pas les bugs de logique de chaque bouton — le dire).
@@ -2161,7 +2176,7 @@ Apex IA DOIT auto-invoquer le bon skill sans demander confirmation. Section déd
 
 - `.claude/skills/apex-*.md` (20 skills SKILL.md auto-syncés par Apex meta-cache)
 - `apex-ai/v13/services/skills/{docx,pptx,xlsx,pdf}-generator.ts` (runtime client-side)
-- `apex-ai/v13/services/mcp-client.ts` + `mcp-registry.ts` (3 serveurs MCP)
+- `apex-ai/v13/services/ai/mcp-client.ts` + `mcp-registry.ts` (3 serveurs MCP)
 - `apex-ai/v13/services/apex-tools-registry/skills-tools.ts` (16 tools)
 - `apex-ai/v13/services/apex-tools-dispatch/skills-dispatch.ts` (dispatcher)
 
@@ -2572,7 +2587,8 @@ Audit obligatoire :
 - Identity section présente dans system prompt → sinon alarme
 - Top 50 facts user courant disponibles → sinon refetch Firebase
 - Top 10 lessons cross-session injectées → sinon refetch
-- 7 docs racine sync (CLAUDE.md, NOTES_USER, etc.) → sinon refetch GitHub raw
+- 8 docs racine sync (CLAUDE.md, NOTES_USER, MEMO_RESUME, KEVIN_INVENTORY,
+  KEVIN_ACTIONS_TODO, MEMORY_PERSISTENT, APEX_HANDOFF, CLAUDE_FEED) → sinon refetch GitHub raw
 - Knowledge graph entities (Kevin, Laurence, projets) présentes Pinecone/MCP Memory
 
 Si une vérification fail → escalade Claude Code via `ax_claude_todo` immédiat.
@@ -3236,7 +3252,7 @@ Cache 6h dans IndexedDB pour éviter rate limit GitHub. `memory.getDocsContext()
 
 ### 2. Mémoire long-terme PER-USER (admin Kevin, Laurence, clients, amis, familles)
 
-`ax_persistent_memory_<uid>` (via `services/persistent-memory-store.ts`) — facts illimités, classés par catégories :
+`ax_persistent_memory_<uid>` (via `services/storage/persistent-memory-store.ts`) — facts illimités, classés par catégories :
 - `profile` (âge, lieu, métier, allergies)
 - `preferences` (aime/déteste)
 - `relationships` (ma femme, mon fils, mon collègue X)
@@ -4927,15 +4943,23 @@ Si 3+ commits dans la dernière heure pour corriger les commits précédents →
 
 `node --check` peut MENTIR si on combine les blocs `<script>` avec un séparateur (`\n//---\n`). Le pre-commit hook fait `''.join(blocks)` SANS séparateur — le contexte d'un script déborde sur le suivant et révèle des erreurs masquées (ex: `try{` sans `catch` à la fin).
 
-**MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT** :
+> ⚠️ **MISE À JOUR 6.09.2026 — cette commande porte sur un fichier VIDE.** `apex-ai/index.html`
+> ne fait plus que **80 octets** (un commentaire : « Apex v12 archivé `_archive_v12/`, voir
+> `apex-ai/v13/` pour la version active »). La lancer dessus **passe toujours au vert sans rien
+> vérifier** — faux vert, exactement la classe d'erreur de la leçon #103. L'app Apex vivante est
+> **`apex-ai/v13/`** (TypeScript, contrôlée par `tsc --noEmit` + vitest, pas par `node --check`).
+> Ce qui reste un vrai mono-fichier à contrôler, c'est **`index.html` à la racine** (CMCteams).
+
+**MÉTHODE OBLIGATOIRE AVANT CHAQUE COMMIT** (sur le mono-fichier CMCteams, pas sur Apex) :
 ```bash
 python3 -c "
 import re
-html=open('apex-ai/index.html','r',encoding='utf-8').read()
+html=open('index.html','r',encoding='utf-8').read()
 blocks=re.findall(r'<script>(.*?)</script>',html,re.DOTALL)
-open('/tmp/apex_combined.js','w',encoding='utf-8').write(''.join(blocks))
-" && node --check /tmp/apex_combined.js
+open('/tmp/cmc_combined.js','w',encoding='utf-8').write(''.join(blocks))
+" && node --check /tmp/cmc_combined.js
 ```
+Pour **Apex v13** : `cd apex-ai/v13 && npx tsc --noEmit && npx vitest run`.
 
 Cas vécu v12.365 : `try{...}` sans `catch` injecté → `node --check` avec séparateur a passé OK, pre-commit a planté, app crashait au boot ("Apex ne fonctionne plus" Kevin). Fix v12.365b.
 
@@ -6771,7 +6795,7 @@ S'applique : Apex (clients) + CMCteams (employés) + tous projets futurs.
 
 ---
 
-## 💾 RÈGLE PERMANENTE — RIEN PERDRE + SYNTHÈSE + SAUVEGARDE TEMPS RÉEL (Kevin 2026-04-25, ABSOLUE)
+## 💾 RÈGLE PERMANENTE — NE PLUS JAMAIS RESAISIR UNE INFO DÉJÀ DONNÉE (triple sauvegarde vérifiée) (Kevin 2026-04-25, ABSOLUE)
 
 > **"Toutes les infos que j'ai rentrées dans Apex, elles doivent y être sauvegardées toujours quand on ne les redemande plus. Ça fait 15 fois que je rentre les clés API. Ne faut pas que ce soit pareil partout, donc il faut surveiller que ça s'enregistre bien, soit sûr. Partout dans Apex, partout dans CMC Teams. Partout partout."**
 
@@ -8657,7 +8681,7 @@ Même dans le code de l'app : l'IA Pit Boss (v9.298-300) est un agent interne. E
 |--------|-----------------|----------|
 | Recherche keyword ciblée | `Grep` | Instantané, ne pollue pas le contexte |
 | Fichier par nom/pattern | `Glob` | Plus rapide que `find` |
-| Lecture partielle d'un gros fichier | `Read offset+limit` | Évite "token limit exceeded" sur index.html (1.1 MB) |
+| Lecture partielle d'un gros fichier | `Read offset+limit` | Évite "token limit exceeded" sur index.html (**3.20 Mo** au 6.09.2026) |
 | Exploration ouverte multi-étapes | Subagent `Explore` | Délègue la lourdeur, rapport condensé |
 | Plan avant gros chantier | Subagent `Plan` | Évite de refactorer à l'aveugle |
 | **Audit parallèle** | **N subagents `Explore` en parallèle** sur zones distinctes | 4× plus rapide, contexte principal préservé |
@@ -9017,10 +9041,10 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 **CMCteams** est une SPA de planification de shifts et de gestion d'équipes pour le Casino de Monaco. Application entièrement client-side — pas de backend, pas de build, pas de dépendances — servie comme un unique fichier HTML statique hébergé sur GitHub Pages.
 
 - **Langue :** Français (UI, commentaires, identifiants, messages de commit)
-- **Version actuelle :** `APP_VER = "v9.303"`, `DATA_VER = 30`
+- **Version actuelle :** lue dans le code (`v9.891` au 6.09.2026), `DATA_VER = 30`
 - **Stockage :** `localStorage` navigateur + **Firebase Realtime Database** (sync temps réel)
-- **Effectif :** ~258 employés sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC + 4 casinos SBM (CMC/CDP/Sun/MCB, v9.197)
-- **Taille fichier :** ~1.80 MB (HTML + CSS + JS) — v9.303
+- **Effectif :** **261 entrées `DEF_EMP`** au 6.09.2026 (260 sans date de départ) sur 10 équipes BJ + 13 équipes roulettes + 13 équipes CMC + 4 casinos SBM (CMC/CDP/Sun/MCB, v9.197)
+- **Taille fichier :** **3.20 Mo** au 6.09.2026 (plafond cliquet : `tests/runtime-audit-file-size-guard.mjs`)
 - **IA Pit Boss** (v9.298-300) : orchestrateur auto avec prédictions proactives, opt-in `cmc_pit_ai_mode`
 - **Conventions intégrées :** Convention Collective Jeux de Table SBM (1er avril 2015) + Note DRH 2021 (congés familiaux) + Règles des 8 jeux de table (Blackjack, Roulette anglaise/européenne, Punto Banco, Punto High Roller, Texas Hold'em, Poker Cash Game, Craps) + Constitution de Monaco (v9.148b) + Indice Monaco Fonction Publique pour calcul paie (v9.186)
 - **Audits externes** : moyenne **8.50/10** (benchmark niche casino SBM **9.9/10**) — voir `AUDIT_EXTERNE_2026-04-17.md`
@@ -9031,7 +9055,7 @@ Le rôle n'est pas de cocher mécaniquement une liste mais :
 
 ```
 CMCteams/
-├── index.html          # Application entière (HTML + CSS + JS, ~440 KB)
+├── index.html          # Application entière (HTML + CSS + JS, ~3.20 Mo)
 ├── sw.js               # Service Worker (cache offline — ajouté v8.78)
 ├── README.md           # Description minimale
 ├── CLAUDE.md           # Ce fichier
@@ -9694,25 +9718,25 @@ function empLabel(emp)      // nom + ★ texte (pour title="")
 // CMCteams (référence index.html racine)
 var AID      = "U11804";   // Admin = DESARZENS K
 var DATA_VER = 30;
-var APP_VER  = "v9.522";   // bumpé session 2026-04-25
+var APP_VER  = "v9.891";   // instantané 6.09.2026 — LIRE LE CODE, ce nombre dérive
 var SESSION_TTL = 8 * 60 * 60 * 1000; // 8h
 var FB_DEFAULT = "https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app";
 
 // Apex AI (apex-ai/index.html)
-var APP_VER  = "v12.242";  // bumpé session 2026-04-25 (nom+prenom+pass obligatoires + agent parallèle)
+// Apex v12 est ARCHIVÉ (apex-ai/index.html = 80 octets). Version vivante : apex-ai/v13/package.json (v13.4.355 au 6.09.2026)
 var ADMIN_ID = "kdmc_admin";
 ```
 
 **Versions vivantes** (lecture grep) :
 - CMCteams : voir `var APP_VER` ligne ~3365 dans `index.html`
-- Apex : voir `var APP_VER` ligne 385 dans `apex-ai/index.html`
+- Apex : **`apex-ai/v13/package.json`** (`apex-ai/index.html` n'est plus qu'un commentaire d'archivage de 80 octets)
 - Sentinelle `sw-cache-sync.yml` rattrape automatiquement le drift sw.js↔index.html
 
 ---
 
 ## Workflow expert — Développement CMCteams
 
-> Procédure obligatoire pour chaque modification. Conçu pour une SPA monofichier casino avec 258 employés, sync Firebase temps réel, et contraintes mobiles.
+> Procédure obligatoire pour chaque modification. Conçu pour une SPA monofichier casino avec ~260 employés, sync Firebase temps réel, et contraintes mobiles.
 
 ### Phase 0 — Prise de contexte (avant tout code)
 
