@@ -59,23 +59,33 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Crypto trading bot | `claude/crypto-trading-bot-irrfu6` | 🟢 travail prêt |
 | Free APIs | `claude/free-apis-analysis-c4sy5d` | 🟢 travail prêt |
 | Reverse-engineering / consolidation | `claude/reverse-engineer-app-consolidation-t0y4u5` | 🟢 travail prêt |
-| Audit du domaine + surveillance | `claude/surveillance-domaine-26-adresses` | ✅ fusionnée dans main le 5.09 (PR #3652) — suite en cours sur la même branche |
-| Correctif Vercel (annexe de la précédente) | `claude/vercel-config-main` | 🔴 **urgent, à fusionner** — partie de `main` le 6.09, 4 fichiers. Répare les 2 `vercel.json` refusés par le schéma Vercel : tant qu'elle n'est pas dans `main`, **chaque push de chaque branche envoie un mail d'échec à Kevin**. Voir message m036. |
-| Garde anti-fuite de secrets (annexe) | `claude/secrets-guard-main` | 🔴 **urgent, à fusionner** — partie de `main` le 6.09. 4 secrets encore en clair sur `main` (dépôt PUBLIC) + la garde qui les attrape. Voir message m036. |
+| Audit du domaine + surveillance | `claude/suivi-domaine-suite` | 🟢 branche neuve partie de main le 10.09 — la précédente (surveillance-domaine-26-adresses, sans accents graves : le garde lirait ce tableau comme une déclaration) a fusionné le 7.09, PR #3679 |
+| Correctif Vercel (annexe de la précédente) | `claude/vercel-config-main` | ✅ **fusionnée** (0 commit hors de main, mesuré le 10.09) — l'alerte ci-dessous est conservée pour l'historique : — partie de `main` le 6.09, 4 fichiers. Répare les 2 `vercel.json` refusés par le schéma Vercel : tant qu'elle n'est pas dans `main`, **chaque push de chaque branche envoie un mail d'échec à Kevin**. Voir message m036. |
+| Garde anti-fuite de secrets (annexe) | `claude/secrets-guard-main` | ✅ **fusionnée** (0 commit hors de main, mesuré le 10.09) — l'alerte ci-dessous est conservée pour l'historique : — partie de `main` le 6.09. 4 secrets encore en clair sur `main` (dépôt PUBLIC) + la garde qui les attrape. Voir message m036. |
+| Lingua — connexion prénom + nom | `claude/lingua-connexion-honnete` | ✅ fusionnée (0 commit hors de main, mesuré le 10.09) |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
 | CMCteams — fidélité au PDF (planning/équipes/départs) | `claude/verify-cmcteams-light-data-rzlvau` | 🟢 septembre 2026 : 248/248 personnes et 7 440/7 440 cellules identiques au PDF, des deux côtés (6.09) |
 
-## 📅 État RÉEL mesuré le 5.09 (16h40) — `git fetch --prune` puis `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/`
+## 📅 État RÉEL mesuré le 10.09.2026 — `git for-each-ref` + `git rev-list origin/main..<branche>`
 
-Le registre ci-dessus date du 2.09 : les branches ont bougé. **367 branches `claude/*`** sur origin, **12 touchées le 5.09**, dont **8 déjà fusionnées** dans `main` par le robot (capcut-mini-versions, fix-mois-ouverture, apex-chat-mfa-faceid, sarzance-family-tree, apex-chat-secu-numero-public, apex-ultra-review-crew, cuisine-6-recettes, fix-messages-photo — leur travail est en prod, sauf déploiement worker en échec, voir `ETAT-INFRA.md` fait n°16) et **4 encore devant main** :
+**378 branches `claude/*`** sur origin. Ce qui compte n'est pas leur nombre mais ceci :
+**combien portent du travail qui n'est PAS encore dans `main`** — c'est le seul travail
+qui puisse se perdre. Réponse mesurée : **4** (hors branches de robot).
 
 | Branche | Avance | Ce qu'elle fait | Territoire |
 |---|---|---|---|
-| `claude/surveillance-domaine-26-adresses` | +1 | déploiements uptime/rag qui disent la vérité (annotations), cron d'Outlook → uptime | `services/kdmc-uptime`, `services/kdmc-outlook` (6 lignes), 2 `deploy-*.yml` |
+| `claude/apex-ultra-review-crew-MZ8nS` | +2 | Apex AI — revue croisée | `apex-ai-v13` |
 | `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
-| `claude/lingua-connexion-honnete` | +3 | connexion PRÉNOM + NOM sans perdre les anciens comptes | `lingua/app.js` |
-| `claude/lingua-prenom-nom` | +1 | **le même travail** que la précédente (+ un lien `node_modules` commité par erreur) — message m030 | `lingua/app.js` |
-| `claude/verify-cmcteams-light-data-rzlvau` | +2 | le PDF relu **sans le parser de l'app** : 3 défauts que « app == light » ne pouvait pas voir (v9.894 / light v1.40) — messages m039 à m043 | parser d'import d'`index.html`, `tools/shared/planning-seed.js`, `tools/departs/boards-gen.js`, `tests/verify-pdf-vs-surfaces.mjs` |
+| `claude/lingua-prenom-nom` | +1 | connexion PRÉNOM + NOM (voir m030 : fait doublon avec `lingua-connexion-honnete`, désormais fusionnée) | `lingua/app.js` |
+| `claude/suivi-domaine-suite` | +1 | audit du domaine — suite (diagnostic d'auto-fusion par branche) | `.github/workflows`, `tests/` |
+
+6 autres branches en avance sont fabriquées par des **workflows** (`printify-order-config-…`,
+`worker-config-…`, nom terminé par l'identifiant du run) : aucune session à inscrire.
+
+> ⚠️ **Le tableau précédent (5.09) était devenu FAUX** : il annonçait « +1 devant main » pour
+> `surveillance-domaine-26-adresses`, `fix-mois-ouverture`, `apex-chat-mfa-faceid`,
+> `cuisine-6-recettes`… alors que **les 7 ont 0 commit hors de `main`** (mesuré le 10.09) —
+> leur travail est en prod. Un instantané daté se périme : le mesurer vaut mieux que le lire.
 
 Avant de commencer une session : **regarde les branches du jour, pas celles du tableau** — et inscris la tienne (`node tools/pipeline/pipeline.mjs enregistrer …`), sinon les autres ne te voient pas.
 

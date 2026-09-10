@@ -6,7 +6,62 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
-## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité) + un faux rouge de ma propre garde
+## 10 septembre 2026 — l'outil de diagnostic du robot fabriquait les conflits qu'il diagnostiquait
+
+Le 7.09, la PR #3679 a fusionné (04h14) — la résolution de conflits l'a débloquée. **Depuis,
+`main` n'a pas bougé** : aucune branche n'a de commit après le 7.09 à 04h07. Ce n'est pas un
+blocage, c'est le calme.
+
+J'ai donc repris le défaut que j'avais **mesuré sans corriger** ce jour-là : le robot
+d'auto-fusion écrivait la cause de chaque refus dans **un seul fichier partagé**,
+`.github/AUTOMERGE-DIAGNOSTIC.md`, avec un contenu différent à chaque écriture. Mesuré :
+**8 écritures en une journée sur 4 branches**. Deux de ces branches qui croisent `main` →
+**conflit certain**. C'est ce qui avait bloqué ma propre PR : l'outil de diagnostic *était*
+la cause. Une autre session avait déjà tenté de supprimer le fichier — il revenait, parce
+que le problème n'était pas le fichier mais le **chemin**.
+
+**Corrigé** : un fichier **par branche** (`.github/automerge-diag/<branche>.md`). Deux branches
+ne se disputent plus jamais un chemin, et la capacité de diagnostic — seul canal lisible depuis
+une session sans accès à l'API GitHub — est intégralement gardée. Le diagnostic périmé qui
+traînait sur `main` depuis 3 jours (celui d'une PR déjà fusionnée) est retiré.
+
+**Garde** : règle 5 de `tests/verify-actions-conformes.mjs`, dans `test:ci`. Prouvée par
+sabotage : arbre propre **9 OK / 0 FAIL** · chemin partagé réintroduit → **FAIL** · restauré →
+**9 OK / 0 FAIL**.
+
+**Un correctif écarté, et je le dis** : j'avais d'abord ajouté un ménage du diagnostic périmé
+juste avant la fusion. Poussé sur la branche, ce commit **remet à zéro les contrôles de la PR** —
+le ménage aurait bloqué la fusion qu'il prétendait faciliter. Retiré avant d'aller plus loin.
+
+### Puis, en m'inscrivant au registre, deux faux succès — dont un à moi
+
+**1. L'outil du pipeline disait « inscrite » sans inscrire.** En inscrivant ma branche neuve,
+il a répondu `✅ inscrite (claude/suivi-domaine-suite)` — et le registre pointait toujours
+l'ancienne. L'objet existant était appliqué *après* les valeurs demandées : pour un identifiant
+déjà connu, l'ancien réécrasait tout, `--branche` compris, message de succès inclus.
+
+Ce n'est pas théorique : `apex-chat` était inscrite sur une branche du **10 juillet** alors que
+ses branches actives datent des **5 et 7 septembre** ; `cuisine` sur une du **14 août**, active
+le **5 septembre**. Le registre censé empêcher qu'une session travaille sans que personne le
+sache **produisait** cette situation. Corrigé, et le message nomme maintenant ce qui change
+(`branche X → Y` ou `à jour, rien à changer`). J'ai prévenu toutes les sessions (message m056)
+sans toucher à leurs branches : je ne sais pas laquelle chacune considère comme la sienne.
+
+**2. Mon propre contrôle des « branches orphelines » criait au loup.** Il en signalait 7 ;
+mesuré aujourd'hui, **les 7 ont 0 commit hors de `main`** — entièrement fusionnées, donc aucun
+travail à perdre, alors que c'est précisément le risque qu'il doit couvrir. J'avais donc créé
+une alarme sur du travail terminé, puis un cliquet pour **taire ma propre alarme**. Le critère
+est maintenant le bon : on ne signale qu'une branche qui porte du travail **non fusionné**.
+Résultat **0 orpheline**, cliquet **vidé (7 → 0)**. Prouvé dans les deux sens : travail non
+fusionné non suivi → **FAIL** ; branche fusionnée non suivie → **silence**.
+
+**Et la carte des branches était fausse** : elle annonçait « urgent, à fusionner » pour deux
+branches déjà dans `main`, et « +1 devant main » pour 7 branches à 0 commit. Remesurée : sur
+**378** branches, **4** portent réellement du travail hors de `main`.
+
+---
+
+## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité)
 
 La PR n'était plus bloquée par ce que j'avais mesuré la veille. Un robot a laissé un
 diagnostic sur ma branche (`.github/AUTOMERGE-DIAGNOSTIC.md`, commit `1424673f4`) : GitHub

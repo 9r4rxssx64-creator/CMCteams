@@ -227,8 +227,18 @@ jobs:
             echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."
             cat "$MERGE_LOG" || true
             # État de fusion vu par GitHub + règles qui bloquent (lisible par GITHUB_TOKEN)
-            DIAG=".github/AUTOMERGE-DIAGNOSTIC.md"
-            mkdir -p .github
+            #
+            # v2026-09-10 : UN FICHIER PAR BRANCHE, plus un chemin partagé.
+            # Avant, TOUTES les branches écrivaient dans `.github/AUTOMERGE-DIAGNOSTIC.md`
+            # avec un contenu différent → dès que deux branches en retard se
+            # rencontraient sur main, CONFLIT GARANTI au même chemin. Mesuré le
+            # 6.09 : 8 écritures en une journée sur 4 branches ; c'est ce qui a
+            # bloqué la PR #3679 (mergeable_state "dirty") et une autre session
+            # avait déjà tenté de supprimer le fichier — il revenait au run suivant.
+            # Chaque branche a maintenant son propre fichier : deux branches ne
+            # touchent plus jamais le même chemin, donc plus de conflit possible.
+            DIAG=".github/automerge-diag/$(echo "$BRANCH" | tr '/' '-').md"
+            mkdir -p .github/automerge-diag
             {
               echo "# Diagnostic auto-merge — PR #$PR ($BRANCH)"
               echo
