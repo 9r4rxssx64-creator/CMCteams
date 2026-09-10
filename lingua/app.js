@@ -36,6 +36,17 @@ function loadS(){
   S.streak=lg("streak",0); S.lastDay=lg("lastDay",null); S.freeze=lg("freeze",0);
   S.dailyXP=lg("dailyXP",0); S.dailyDay=lg("dailyDay",today()); S.goal=lg("goal",30);
   S.prog=lg("prog",{}); S.srs=lg("srs",{});
+  /* GARDE — un cours choisi SANS sa progression = écran totalement blanc.
+     Mesuré le 10.09 dans un vrai navigateur : sans `prog[cours]`, `unitDone()`
+     lit `S.prog[S.course]["u0-0"]` sur `undefined` → l'erreur remonte au boot et
+     l'app rend **2 boutons au lieu de 607** (22 caractères de texte). L'élève
+     n'a plus rien : ni leçons, ni réglages, ni moyen de se reconnecter.
+     Ça n'a rien de théorique : il suffit qu'un navigateur vide une partie du
+     stockage, ou qu'une sauvegarde restaurée d'avant une mise à jour n'ait pas
+     cette clé. On la recrée simplement — vide, donc aucune progression inventée
+     (règle « rien de faux ») : les leçons repartent à zéro seulement à l'écran,
+     et la vraie progression revient dès la synchro en ligne. */
+  if(S.course && !S.prog[S.course]) S.prog[S.course]={};
   S.sound=lg("sound",true); S.voice=lg("voice","nova"); S.voixChoisie=lg("voixChoisie",false);
   /* Kevin 2026-08-11 « change de voix plus humain ». « nova » n'a jamais été un choix :
      c'était le réglage d'usine. On bascule donc UNE FOIS vers une voix du nouveau moteur.
@@ -752,7 +763,7 @@ function _voixCloudKO(raison){ _ttsEchecs++; if(raison) _ttsRaison=raison;
                  : _ttsRaison==="lent"  ? "la connexion est trop lente"
                  : _ttsRaison==="media" ? "le son n'a pas pu être lu"
                  : "elle ne répond pas";
-    toast("🔈 La belle voix : "+pourquoi+" — je passe sur la voix du téléphone (moins jolie). Touche l'écran puis réessaie, ou choisis une autre voix dans Profil → Voix."); } }
+    toast("🔈 La belle voix : "+pourquoi+" — je passe sur « Voix du téléphone (hors-ligne) », la seule qui marche sans réseau. Touche l'écran puis réessaie, ou choisis-la pour de bon dans Profil → Voix."); } }
 /* 🇲🇨 Le monégasque : AUCUN moteur de synthèse au monde ne le parle. Louis Notari ayant bâti
    son écriture sur le français, on écrit la prononciation « à la française » (mc-voix.js) et
    on la fait dire par une voix française — l'élève lit la VRAIE orthographe à l'écran.
@@ -760,6 +771,21 @@ function _voixCloudKO(raison){ _ttsEchecs++; if(raison) _ttsRaison=raison;
 function texteADire(text){
   try{ if(S.course==="mc" && typeof mcVoix==="function"){ var v=mcVoix(text); if(v) return v; } }catch(_){}
   return text;
+}
+/* UN SEUL repli par demande — sinon l'élève entend le mot DEUX FOIS.
+   Mesuré le 10.09 sur les 4 langues : « to the left » ×2, « a la izquierda » ×2,
+   « a sinistra » ×2, « nach links » ×2. Cause : quand la belle voix tombe, deux
+   chemins se déclenchent pour le MÊME clic — la promesse de `play()` qui échoue
+   ET l'événement `error` de la balise audio. Chacun basculait sur la voix du
+   téléphone, donc deux lectures. Le garde `myReq===_ttsReq` ne suffisait pas :
+   les deux appartiennent à la même demande. On mémorise donc la demande DÉJÀ
+   basculée. Le comptage des échecs (`_voixCloudKO`) reste inchangé : c'est lui
+   qui décide quand prévenir, ce n'est pas le même sujet. */
+var _ttsRepliFait=0;
+function _repliVoixTelephone(text,req){
+  if(req!==_ttsReq) return;          /* une demande plus récente a pris la main */
+  if(_ttsRepliFait===req) return;    /* déjà basculé pour CETTE demande */
+  _ttsRepliFait=req; _webSpeak(text);
 }
 function speak(text){ if(!S.sound||!text)return; text=texteADire(text); var vid=S.voice||"nova"; var myReq=++_ttsReq;
   try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(_){} _wsStopKA();   // coupe toute voix EN FILE (anti-décalage « répond à la question d'avant »)
@@ -770,11 +796,11 @@ function speak(text){ if(!S.sound||!text)return; text=texteADire(text); var vid=
          méconnaissable — or c'est LA référence sur laquelle Kevin calque sa prononciation.
          Les effets restent pour les phrases de Bee, jamais pour le vocabulaire. */
       var a=_ttsJoue(SYNC_BASE+"/tts?v="+encodeURIComponent(vr.tts||vid)+"&t="+encodeURIComponent(text)); if(!a){ _webSpeak(text); return; }
-      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _webSpeak(text); } };   // ne parle que si c'est TOUJOURS la dernière demande
-      _ttsChrono(a,myReq,function(){ if(myReq===_ttsReq) _webSpeak(text); });
-      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _webSpeak(text); } });
+      a.onerror=function(){ if(myReq===_ttsReq){ _voixCloudKO("media"); _repliVoixTelephone(text,myReq); } };   // ne parle que si c'est TOUJOURS la dernière demande
+      _ttsChrono(a,myReq,function(){ _repliVoixTelephone(text,myReq); });
+      var p=a.play(); if(p&&p.catch) p.catch(function(){ if(myReq===_ttsReq){ _voixCloudKO("refus"); _repliVoixTelephone(text,myReq); } });
       return;
-    }catch(e){ if(myReq===_ttsReq)_webSpeak(text); return; }
+    }catch(e){ _repliVoixTelephone(text,myReq); return; }
   }
   _webSpeak(text);
 }

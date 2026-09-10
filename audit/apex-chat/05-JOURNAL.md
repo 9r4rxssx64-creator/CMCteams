@@ -69,7 +69,7 @@ règle changeait.
 |---|---|---|---|
 | 1 | Le comportement du service **en production** | Egress 403 | Actions → `apex-chat-e2e.yml` |
 | 2 | La **version déployée** du worker | `workers_get_worker` ne renvoie pas `modified_on` | Onglet Actions, dernier `deploy-apex-chat.yml` réussi |
-| 3 | Les **19 scénarios Playwright** | Navigateurs absents de cette session | Actions → `apex-chat-e2e.yml` |
+| 3 | Les **19 scénarios Playwright** | ~~Navigateurs absents de cette session~~ → **fermé le 10/09** : Chromium **était** préinstallé (`/opt/pw-browsers`), 56/56 en local ; en CI, voies iPhone rouges depuis le 06/09 (P2, corrigé) | Lire le premier run vert de `messaging-app-tests.yml` |
 | 4 | Le **second avis indépendant** (non-Claude) | Non déclenché dans cette passe | Actions → `ai-review-independent.yml` |
 | 5 | Le **scan sécu outillé** (gitleaks, Semgrep, OSV, Trivy, zizmor) | Idem | Actions → `security-suite.yml`, `strix-scan.yml` |
 | 6 | La **passe de stabilité** (re-rendus au repos, scintillement) | Pas de navigateur | Mesure `MutationObserver` en CI |
@@ -117,3 +117,22 @@ elle attrape tout ce qui a une adresse ou un nom de rendu. Une fonctionnalité q
 uniquement dans un gestionnaire d'événement anonyme, sans route ni vue, n'apparaîtrait pas.
 Je n'ai pas de moyen de prouver qu'il n'y en a aucune ; je dis donc « 78 fonctions
 identifiées », pas « les 78 fonctions de l'application ».
+
+---
+
+## 2026-09-10 (soir) — le scan sécu est lu ; ce que j'ai décidé
+
+| Décision | Pourquoi |
+|---|---|
+| Trier le scan **par reproduction locale** (npm audit, lecture des fichiers, awk sur les workflows) plutôt qu'attendre le rapport détaillé | Le rapport détaillé est derrière un 403 ; ce qui se reproduit sans réseau se prouve ici, ligne par ligne |
+| Mettre à jour les outils de test (vitest 5, happy-dom 20) au lieu de « noter pour plus tard » | 7 vulnérabilités connues, correctif sans risque pour l'app (paquets de test), prouvé par 1117/1117 |
+| Ne **pas** épingler les actions officielles sur un SHA | La règle du dépôt exige une version publiée, c'est le cas ; le SHA est un durcissement, pas une faille — consigné en recommandation |
+| Ne **pas** relancer Strix | 13,77 $ l'exécution, tuée par le délai ; relancer sans allonger le délai reproduirait l'échec. Décision de Kevin |
+| Construire `detail_path` sur `security-suite.yml` | 9 signalements Semgrep impossibles à identifier autrement ; un compte ne se trie pas |
+
+**Hypothèse écrite** : les 9 signalements Semgrep non identifiés de `messaging-app` sont
+probablement de la même famille que les 1 159 du dépôt (balises sans `integrity`, liens `http`,
+`path.join`), donc des recommandations plutôt que des failles — **c'est une hypothèse, pas un
+résultat**, et elle sera remplacée par la lecture du check-run détaillé.
+
+**Non vérifié** : le contenu de la vulnérabilité MEDIUM annoncée par Strix.

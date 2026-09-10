@@ -1,7 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
+> Dernière mise à jour : **2026-09-10** (soir : « Lire les étapes » réparé + icône drapeau de Monaco pour le livre de cuisine)
+
+### 10 septembre 2026 (soir) — « Lire les étapes » du livre de cuisine, réparé et prouvé
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/cuisine/index.html` | **Corrigé.** Le bouton « 🔊 Lire les étapes » lit la recette **une étape à la fois** (phrases courtes, enchaînées, gardées en mémoire), surligne l'étape en cours, devient « ⏹ Arrêter la lecture », et dit la cause exacte si la voix échoue. Plus de `cancel()` collé à `speak()` (le piège iPhone). Encodage déclaré. | [🧪 Ouvrir le livre](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html) |
+| `tools/cuisine/icon.svg` + `icon-32/180/192/512.png` + `manifest.json` | **Nouveau.** Icône d'écran d'accueil du livre de cuisine aux couleurs du drapeau de Monaco (rouge/blanc) avec le blason doré ; manifest « Cüjina » plein écran. **Sur l'iPhone : supprimer l'ancienne icône puis refaire « Sur l'écran d'accueil ».** | [voir l'icône](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg) · [ouvrir le livre](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) |
+| `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
+| `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
 
 ### 10 septembre 2026 (nuit) — « voir comme toi » : je peux maintenant regarder tes vraies pages
 
@@ -38,6 +47,15 @@
 <!-- ancienne date -->
 > Précédente mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 > Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🚀 Piloter les vérifications sans toi (2026-09-10)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/ci/ci.mjs` | **Je lance tes vérifications moi-même** — plus besoin que tu cliques. `node tools/ci/ci.mjs run <workflow>` pour lancer, `watch` pour attendre le résultat, `logs` pour la cause exacte d'un échec, `report` pour lire le rapport d'un scan de sécurité (arsenal, pentest IA). C'est ce qui a permis de faire tourner les 4 contrôles restés bloqués depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ci/ci.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/ci/ci.mjs) |
+| `tests/specs-lances.test.mjs` | **Aucun test d'app ne peut dormir sans qu'on le sache** — vérifie que chaque dossier de tests navigateur du dépôt est vraiment exécuté par un workflow (en suivant ce que le workflow lance, pas un mot-clé). Né d'une erreur du 10/09 où j'avais déclaré 19 tests « dormants » sur un grep trop étroit | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/specs-lances.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/specs-lances.test.mjs) |
+| `tests/verify-cleanup-nom-reutilise.mjs` | **Le ménage ne supprime plus une branche vivante parce que son nom a déjà servi** — le 10/09, ma branche a été effacée deux fois dans la minute qui suivait mon push (son nom avait eu 5 PR fusionnées avant) ; ce test rejoue la boucle du workflow sur un faux dépôt et prouve qu'une branche avec de nouveaux commits est gardée | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cleanup-nom-reutilise.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-cleanup-nom-reutilise.mjs) |
+| `.github/workflows/ai-review-independent.yml` | **Le deuxième avis, réparé.** Il n'avait jamais rendu un seul avis (0 réussite sur 100). Maintenant lançable à la demande sur la demande de ton choix | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/ai-review-independent.yml) · [lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/ai-review-independent.yml) |
 
 ## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
 
@@ -291,7 +309,7 @@ Les 6 dernières recettes incomplètes sur 128 ont été écrites. **128/128 com
 | `tests/verify-bascule-une-ligne.mjs` | Preuve (réécrite 10.09) : la bascule d'hébergeur du routeur tient avec le code réellement en ligne (`origin/main`, importé tel quel) par 2 variables `UPSTREAM_BASE` + `UPSTREAM_PREFIX`, 0 ligne à toucher — 8 sous-domaines × 2 rangements + 3 discriminants. Nom historique (époque « une ligne ») | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-bascule-une-ligne.mjs) |
 | `tests/verify-consigne-reelle.mjs` | Garde (réécrite 10.09) : la consigne de `REMETTRE_EN_LIGNE.md` est d'accord avec le code en ligne — variables citées vraiment lues, plus de « change la ligne N » invérifiable, `UPSTREAM_PREFIX` vide pour un paquet à la racine, générateur et test cités existent | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-consigne-reelle.mjs) |
 | `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
-| `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
+| `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep, zizmor. Depuis le 10/09 : le rapport est aussi **posé sur le commit** (lisible par `node tools/ci/ci.mjs report <run>`), et l'entrée `detail_path` (ex. `messaging-app`) liste **chaque signalement avec sa ligne** au lieu d'un simple compte | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
 
 ## 🚨 Le site ne publie plus tes documents de travail — session 2026-09-05
 
@@ -2113,6 +2131,7 @@ Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · 
 | `tools/crea-studio/index.html` | L'app (Photo, Vidéo, Cartoon, Danse IA, Magie, **Mes créas**, **Studio musique**) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
 | `services/kdmc-crea-ai/worker.js` | Le moteur IA (images, voix, paroles, partition) + **2ᵉ IA gratuite en secours** | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
 | `tests/verify-crea-song.mjs` | Preuve : le morceau est un vrai fichier audio, la voix est bien mixée | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-song.mjs) |
+| `tests/verify-crea-camera.mjs` | Preuve (16 contrôles) : caméra, 16 filtres distincts, photo et film rangés dans « Mes créas », formats iPhone ; depuis v9.18.2 une erreur d'encodeur est **dite** et ne bloque plus le bouton, le film déjà tourné est rangé | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-camera.mjs) |
 | `tests/verify-crea-gallery.mjs` | Preuve : « Mes créas » garde tout, même après rechargement | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-gallery.mjs) |
 | `tests/verify-crea-ai-fallback.mjs` | Preuve : l'app marche même si l'IA principale tombe | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-ai-fallback.mjs) |
 | `tests/no-conflict-markers.test.mjs` | Garde : aucun conflit de fusion ne peut plus entrer dans le dépôt | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-conflict-markers.test.mjs) |

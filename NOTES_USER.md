@@ -19,6 +19,17 @@ l'arbre, c'est sa place.
 
 # NOTES_USER — Informations métier données par l'admin
 
+## 🔓 Décision Kevin 2026-09-10 : les plannings CMCteams NE passent PAS derrière la connexion du domaine
+
+Question posée (audit d'exposition du 5.09, ETAT-INFRA fait n°12) : faut-il servir l'app CMCteams et
+ses deux fichiers de planning (`tools/shared/planning-seed.js`, `tools/departs/boards-gen.js`, qui
+portent les noms des employés) derrière le SSO du domaine (`/__sso/whoami`) ?
+**Réponse de Kevin : « non ».** Les noms des employés y sont **par conception** (chaque employé
+voit son équipe, la page Départs aussi) ; le modèle d'accès actuel (connexion prénom + nom + code
+dans l'app) reste. L'arbre généalogique, lui, est bien passé derrière le domaine (v3.16/v3.17).
+**Ne plus reproposer** ce chantier ; si l'exposition des noms doit changer un jour, c'est Kevin
+qui rouvrira le sujet.
+
 > **Lecture obligatoire à chaque session.**
 > Apex relit ce doc au boot via `memory.syncDocsAtBoot()` (cache 6h IDB).
 

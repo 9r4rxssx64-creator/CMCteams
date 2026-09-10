@@ -1,5 +1,202 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
+
+Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le
+signalement d'origine — le message **m051** du 6.09 : la « Vérif RÉELLE » sur le VRAI domaine
+avait **27 surfaces vertes et une seule rouge**, `lingua.kd-mc.com` :
+`deep: exception TimeoutError: page.fill: Timeout 30000ms exceeded`. La page ne se montait pas
+assez pour qu'on puisse seulement **remplir un champ**. Un élève tombait sur une page vide,
+sans message : la panne la plus pénible, celle qui ne fait aucun bruit.
+
+**C'était exactement le bug corrigé quelques heures plus tôt** (`u0-0` sur `undefined`, l'app
+rendait 2 boutons au lieu de 607). Preuve que c'est en ligne : le déploiement Pages a **réussi
+à 20 h 59 sur `d023a18ad`**, le commit de fusion du correctif.
+
+### État mesuré maintenant, sur le code de `main`
+Parcours complet dans un vrai navigateur : arrivée → **Nouveau compte** → prénom + nom + code →
+choix de la langue → **607 boutons**, bouton d'écoute présent, **0 erreur JavaScript**. Les 5
+cours (en/es/it/de/mc) s'ouvrent, y compris **sans progression enregistrée**.
+
+### Ce qui manquait, et qui est ajouté : une garde sur le PARCOURS
+Les tests existants partaient tous d'un compte **déjà fabriqué en mémoire**. Ils ne passaient
+donc jamais par l'écran d'arrivée, la création de compte ni le choix de la langue — **les trois
+étapes cassées en production**. D'où une panne visible par les utilisateurs pendant 4 jours
+avec des tests au vert.
+
+`npm run test:lingua-parcours` (**11 OK / 0 FAIL**, câblé dans `test:ci`) rejoue ce parcours.
+**Prouvé discriminant** : correctif retiré → **6 échecs**, dont l'erreur mot pour mot de la
+panne (`Cannot read properties of undefined (reading 'u0-0')`).
+
+---
+
+## 10 septembre 2026 (nuit) — Lingua : 3 vrais bugs, dont un écran blanc total
+
+La session « arbre » signalait 5 échecs rouges dans `test:lingua-voix`, qui bloquaient
+`test:ci` **pour toutes les sessions** depuis le 6.09. Vérifié moi-même avant d'agir — et
+son message disait le correctif « déjà poussé sur main » : **il n'y était pas**.
+
+### 1. Un compte sans progression = écran BLANC (le plus grave, et pas qu'un test)
+Mesuré dans un vrai navigateur : sans la clé `prog[cours]`, `unitDone()` lit
+`S.prog[S.course]["u0-0"]` sur `undefined`, l'erreur remonte au démarrage et l'app rend
+**2 boutons au lieu de 607** (22 caractères de texte). L'élève n'a plus rien — ni leçons,
+ni réglages, ni moyen de se reconnecter. Il suffit qu'un navigateur vide une partie du
+stockage. Corrigé à la racine dans `loadS()` : la clé est recréée **vide** (aucune
+progression inventée). Mesuré après : **607 boutons**, identique à un compte sain.
+
+### 2. Le mot était prononcé DEUX FOIS, dans les 4 langues
+« to the left » ×2, « a la izquierda » ×2, « a sinistra » ×2, « nach links » ×2. Cause :
+quand la belle voix tombe, **deux chemins** se déclenchent pour le même clic — la promesse
+de `play()` qui échoue ET l'événement `error` de la balise audio. Le garde existant ne
+voyait rien : les deux appartiennent à la même demande. Un seul repli par demande
+désormais. Prouvé hors test : 1 clic → 1 prononciation.
+
+### 3. Le message de repli ne nommait pas la voix qui marche sans réseau
+Il disait « je passe sur la voix du téléphone ». Il nomme maintenant
+**« Voix du téléphone (hors-ligne) »** et explique comment la choisir pour de bon.
+
+### Preuve
+`test:lingua-voix` : **26 OK / 0 FAIL** (était 21/5, et avant ça 0 vérification exécutée).
+Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité verts.
+
+---
+
+## 10 septembre 2026 (suite) — le clic que je t'avais rendu n'existait pas
+
+- **Je m'étais trompé** : je t'ai écrit « je ne peux pas lancer la vérification, il te reste un
+  clic ». J'avais testé **deux** choses (l'outil `gh`, absent · les connecteurs) et j'en avais
+  conclu un mur. **Je n'avais jamais essayé l'API GitHub directement.** Elle répond, et elle me
+  reconnaît déjà comme toi. **Zéro clic pour toi.**
+- **J'ai donc tout lancé moi-même.** Les 4 vérifications « obligatoires » de l'audit, laissées
+  de côté depuis des mois faute de savoir les déclencher, ont enfin tourné. Elles ont trouvé
+  **trois choses que rien d'autre ne pouvait voir** :
+  1. **Apex Chat en ligne répond, et 18 de ses 20 contrôles passent** contre la vraie prod.
+     Les 2 échecs sont **un seul test périmé** (il réclamait ton ancienne adresse GitHub au lieu
+     de ton vrai domaine `apex-chat.kd-mc.com`). **C'est le test qui avait tort, pas l'app** —
+     corrigé sans toucher au site.
+  2. 🔴 **Le « deuxième avis » — l'IA indépendante censée relire mon travail — n'a JAMAIS
+     rendu un seul avis.** Sur ses 100 dernières exécutions : **0 réussite**. Elle était réglée
+     pour ignorer les demandes créées par le robot… alors que **29 sur 30** viennent du robot.
+     Elle semblait active, elle ne tournait jamais. **Réparé** : je peux maintenant la lancer
+     quand je veux, sur la demande de mon choix.
+  3. ~~🔴 19 tests d'app sur 22 ne sont lancés nulle part~~ — **je m'étais trompé, et je l'ai
+     mesuré une heure plus tard** : ces 19 tests **tournent** à chaque push, sur 4 navigateurs.
+     Ce qui était vrai, et pire : **les deux voies iPhone étaient rouges à chaque exécution
+     depuis le 6 septembre** (19 runs sur 60), à cause du durcissement CORS de ce jour-là qui
+     n'acceptait le local qu'en `http` alors que les tests se servent en `https`. Chromium
+     restait vert et cachait le rouge de Safari — le seul navigateur que tu utilises.
+     Corrigé (une lettre dans la règle CORS, prouvé par test), et un garde empêche qu'une
+     suite de tests soit de nouveau déclarée « lancée » ou « dormante » sur un simple mot.
+- **J'ai créé l'outil** pour que ça ne se reperde jamais : `tools/ci/ci.mjs` — je lance,
+  je suis, et je lis la cause exacte d'un échec, sans dépendre d'un logiciel absent.
+- **Ton numéro de téléphone ne figure plus nulle part dans le dépôt** (il y était 113 fois, dans
+  12 fichiers de test, et dans le garde censé l'empêcher d'apparaître). Remplacé partout par des
+  numéros inventés, sans que je l'affiche une seule fois ; le garde vérifie maintenant
+  « aucun numéro réel, quel qu'il soit », au lieu de connaître le tien. 1115 tests toujours verts.
+- **Deuxième mur, même soir** : le scan de sécurité « arsenal » a fini vert… mais son rapport
+  est rangé à un endroit que je ne peux pas atteindre d'ici (refus 403, mesuré). Un rapport
+  qu'on ne peut pas lire n'existe pas. Correctif : les deux scans de sécurité (arsenal +
+  pentest IA) **posent aussi leur rapport sur le commit** (« check-run »), et
+  `node tools/ci/ci.mjs report <run>` le lit. Relancés pour lire le vrai résultat.
+- **Autre chose vue au passage** (hors Apex Chat) : toutes tes pages du domaine répondent,
+  **sauf `lingua.kd-mc.com`** qui est en panne. Je te le signale, je n'y ai pas touché.
+- **Les deux scans de sécurité ont fini, je les ai lus.** L'arsenal donne **2 211 signalements
+  bruts** sur tout le dépôt — un chiffre qui fait peur et qui ne veut rien dire tant qu'on n'a
+  pas vérifié chaque ligne. Pour Apex Chat, le tri (preuves dans `audit/apex-chat/03-FINDINGS.md`) :
+  **aucun secret vivant**, **aucune faille dans l'app déployée**. Ce qui était vrai et que j'ai
+  corrigé : **7 failles connues dans les outils de test** (mis à jour, 1117/1117 tests verts),
+  **2 installations de `wrangler` « dernière version, quelle qu'elle soit » avec ton jeton
+  Cloudflare en main** (version majeure épinglée), **1 job de déploiement sans permissions
+  déclarées** (limité à la lecture). Le reste, sur Apex Chat, est faux positif prouvé (clé
+  VAPID publique par conception, en-têtes PEM sans valeur, URL de fixture dans un test).
+- **9 signalements Semgrep restent à identifier** : le rapport ne donnait que des comptes, pas
+  les lignes, et Semgrep ne peut pas tourner d'ici. J'ai ajouté au scan une option qui liste
+  chaque signalement avec sa ligne, et je le relance sur Apex Chat.
+- **Le pentest IA (Strix) a été tué par son délai de 26 min** avant d'écrire son rapport ; il
+  annonce **1 vulnérabilité MEDIUM** que je ne peux pas lire. Cette exécution t'a coûté
+  **13,77 $**. Je ne la relance pas sans ton accord.
+- **L'automate de fusion a refusé ma branche deux fois ce soir** : à chaque fois, une autre
+  session avait ajouté un test à la même ligne de `package.json` que moi. Résolu à la main les
+  deux fois (les deux tests gardés). Le correctif CORS des iPhone est **toujours en attente sur
+  `main`** tant que cette fusion n'a pas abouti.
+- **Trouvé pourquoi ça bloquait, et corrigé** : ce n'était pas seulement le conflit. Le
+  **nettoyage automatique des branches** effaçait la mienne **dans la minute qui suivait chaque
+  push**, parce que son nom avait déjà eu des demandes fusionnées avant (5 fois). Il jugeait sur
+  le nom, pas sur le contenu. Corrigé : il ne supprime plus que ce qui est déjà entièrement dans
+  `main`, et un test rejoue le cas (`tests/verify-cleanup-nom-reutilise.mjs`). Ça touchait
+  aussi les autres sessions qui réutilisent un nom de branche.
+## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
+
+- **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
+  vignette sombre (capture automatique de la page) : la page n'avait **aucune icône déclarée**,
+  ni manifest, ni couleur de thème.
+- **Livré** : une vraie icône **aux couleurs du drapeau de Monaco** (rouge Pantone 186 `#CE1126`
+  en haut, blanc en bas) avec le blason doré de la couverture au centre —
+  [icon.svg](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg)
+  (source) + PNG 32/180/192/512 rendus depuis le SVG ; `manifest.json` (nom « Cüjina », plein
+  écran, couleur rouge) ; en-tête de page : `apple-touch-icon`, `theme-color`, titre
+  d'écran d'accueil « Cüjina », favicon. La barre du haut gère déjà l'encoche (safe-area).
+- **Pour voir le changement sur l'iPhone** : supprimer l'ancienne icône de l'écran d'accueil et
+  refaire « Partager → Sur l'écran d'accueil » (iOS ne remplace pas l'icône d'un raccourci déjà
+  posé).
+- **Garde** : `tests/verify-cuisine-lecture.mjs` vérifie aussi la présence des 6 fichiers d'icône,
+  leurs couleurs (rouge/blanc) et leur déclaration dans la page.
+
+## 10 septembre 2026 (soir) — « Lire les étapes ne fonctionne pas » : la voix du livre de cuisine partait en une seule phrase de 1 400 caractères
+
+- **Ce que Kevin a vu** : sur une recette, le bouton « 🔊 Lire les étapes » ne lisait rien (ou
+  s'arrêtait net). **Ce qui se passait** : toute la recette (600 caractères en moyenne, 1 442 au
+  maximum) était envoyée en **UNE seule phrase vocale**, juste après un `cancel()`, et l'objet
+  n'était gardé nulle part. Sur iPhone, `cancel()` collé à `speak()` fait sauter la lecture et
+  une phrase trop longue se coupe ; sur Chrome, l'objet ramassé fait taire la voix au bout de
+  ~15 s. Le texte entier était en plus copié dans l'attribut du bouton (jusqu'à 1 442 caractères
+  dans le HTML, pour chaque recette ouverte).
+- **Corrigé** ([tools/cuisine/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html)) :
+  la lecture se fait **une phrase par étape** (« Recette : … », « Étape 1. … », « Étape 2. … »,
+  jamais plus de 220 caractères, coupure sur la ponctuation puis les virgules puis les espaces),
+  toutes les phrases sont **gardées en mémoire** et **enchaînées** à la fin de la précédente ;
+  **l'étape lue est surlignée** dans la liste et suit le défilement ; le bouton devient rouge
+  « ⏹ Arrêter la lecture » (un appui arrête, changer les portions ou mettre en favori ne perd
+  pas la lecture, quitter la recette l'arrête) ; plus jamais de `cancel()` à vide avant `speak()`
+  (moteur réveillé s'il est figé « en pause », annulation seulement s'il reste quelque chose,
+  puis 150 ms de respiration) ; une voix **française** est choisie quand l'appareil en a une ;
+  une **erreur du moteur est dite avec sa cause exacte** (« Lecture impossible
+  (synthesis-unavailable) : aucune voix disponible sur cet appareil ») ; si rien ne démarre en
+  3 s, conseil « monte le volume et vérifie le bouton silencieux de l'iPhone ». Bonus : la page
+  déclare enfin son encodage (`<meta charset>`) — sans lui, servie ailleurs que GitHub Pages,
+  tous les accents cassaient.
+- **Preuve** : [tests/verify-cuisine-lecture.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs)
+  (`npm run test:cuisine-lecture`, dans `test:ci`) charge la **vraie page** dans un vrai
+  Chromium avec un moteur vocal simulé qui note chaque phrase : **128 recettes, 991 phrases, la
+  plus longue 216 caractères, chaque étape couverte**, arrêt/quitter/re-rendu/erreur/muet/sans
+  moteur tous vérifiés, 0 erreur JS. Lancé sur l'**ancien** code : 141 problèmes (discriminant).
+  Captures iPhone regardées : étape 1 surlignée en or, bouton rouge « Arrêter ».
+- **Limite honnête** : le vrai iPhone n'a pas été écouté (pas d'iPhone dans le conteneur) ; le
+  test rejoue les événements du moteur comme un navigateur, et le correctif applique les
+  parades connues de Safari. Si Kevin n'entend toujours rien : le message dira la cause exacte,
+  et le bouton silencieux (interrupteur latéral) coupe la voix de synthèse sur iPhone.
+- Leçon **#251** ; inventaire mis à jour.
+## 10 septembre 2026 (soir, studio-crea) — « continu » : liste reprise, deux rouges à moi réparés, la caméra du Studio ne perd plus un film en silence
+
+- **`test:bascule` + `test:consigne-reelle`** (m047/m058) : référence git en dur → résolue ; postulat
+  périmé (« change UNE ligne ») → bascule par 2 variables prouvée sur le vrai code de `main`
+  (46/0, 13/0, 3 sabotages → 3 rouges) ; `REMETTRE_EN_LIGNE.md` remis d'accord. PR #3745. Leçon #243.
+- **Test XSS Départs** : pas cassé, dépendait du dossier courant → 1 ligne, câblé `test:departs-xss`
+  dans `test:ci` (m064 à cmcteams-departs). Vrais chemins des PIN par app dans KEVIN_ACTIONS_TODO.
+  Tâches 7/10/11/13 remesurées. PR #3747.
+- **Studio créa v9.18.2 — caméra** : `test:crea-camera` rouge **une fois sur ~20** (« galerie 2 → 2 »),
+  vert ensuite, sans aucune cause lisible. Sonde : 6 enregistrements de suite, tous rangés en 1,7 s
+  (donc pas une lenteur). Lecture du code : (a) le film n'était archivé **qu'après** la remise en
+  place des boutons — une exception là = film **perdu sans trace** ; (b) l'enregistreur n'avait
+  **aucun `onerror`** — après une erreur d'encodage, `rec` restait posé et le bouton ne faisait plus
+  rien, pour toujours, sans un mot. Corrigé : archiver **d'abord**, `onerror` qui dit la cause,
+  libère le bouton et range ce qui a été filmé. **Prouvé** (test 5b, 16/0) : erreur simulée avant
+  toute image → « Vidéo impossible : UnknownError : … », bouton libre, l'enregistrement suivant
+  marche ; erreur après 1,2 s d'images → film rangé + « Enregistrement interrompu (QuotaExceeded…) ».
+  Le test journalise désormais l'enregistreur : le prochain rouge dira POURQUOI. Attente 12 → 30 s
+  (machine chargée). `sw.js` bumpé avec (`crea-studio-v9.18.2`). Leçon #251.
+- Mon terrain, mesuré : 17 tests Studio créa verts ; `retard-branches` : à jour.
+
 ## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
 
 - **Ce qui n'allait pas** : le dossier `audit/apex-chat/` ne contenait **qu'un seul fichier** sur
@@ -2005,6 +2202,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    `tools/departs/boards-gen.js`) = les noms des employés, **par conception** de l'app (chaque
    employé voit son équipe). Les mettre derrière le SSO = changer le modèle d'accès de l'app → **feu
    vert Kevin d'abord** (ETAT-INFRA fait n°12 « ce qui reste ouvert »), territoire CMCteams.
+   ✅ **TRANCHÉ 10.09 par Kevin : « non »** — les plannings CMCteams restent accessibles comme
+   aujourd'hui. Tâche close, ne plus la reproposer (gravé : ETAT-INFRA fait n°12, NOTES_USER).
 8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande

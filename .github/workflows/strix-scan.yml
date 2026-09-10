@@ -55,6 +55,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      checks: write     # « check-run » de fin = rapport lisible par l'API (voir dernière étape)
     steps:
       - uses: actions/checkout@v6
 
@@ -128,6 +129,49 @@ jobs:
           name: strix-report-${{ github.run_id }}
           path: /tmp/strix-out/
           retention-days: 14
+
+      # Même raison que dans security-suite.yml (mesuré 2026-09-10) : l'artifact et
+      # le résumé sont inatteignables depuis une session d'agent (proxy 403), seule
+      # `api.github.com` passe. Le rapport Strix (fichiers .md produits par l'agent
+      # + fin du journal) est donc AUSSI posé dans un check-run → lu par
+      # `node tools/ci/ci.mjs report <run_id>`. Contenu identique à ce que le
+      # résumé et l'artifact exposent déjà — rien de plus.
+      - name: Résumé → check-run (lisible par l'API depuis une session d'agent)
+        if: always()
+        uses: actions/github-script@v9
+        env:
+          RUN_ID: ${{ github.run_id }}
+          TARGET: ${{ steps.p.outputs.target }}
+          MODEL: ${{ steps.p.outputs.model }}
+          RC: ${{ steps.scan.outputs.rc }}
+          NOKEY: ${{ steps.scan.outputs.no_key }}
+        with:
+          script: |
+            const fs = require('fs'), path = require('path');
+            const rd = p => { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } };
+            const walk = (d, out = []) => {
+              let ents = []; try { ents = fs.readdirSync(d, { withFileTypes: true }); } catch { return out; }
+              for (const e of ents) { const p = path.join(d, e.name); e.isDirectory() ? walk(p, out) : out.push(p); }
+              return out;
+            };
+            const { TARGET, MODEL, RC, NOKEY, RUN_ID } = process.env;
+            let summary = `Cible \`${TARGET}\` · modèle \`${MODEL}\` · rc=${RC || '?'}`;
+            if (NOKEY === '1') summary += '\n\n❌ OPEN_AI_API_KEY absent — le scan n\'a PAS eu lieu.';
+            const rapports = walk('/tmp/strix-out').filter(p => /\.(md|json)$/i.test(p) && !p.endsWith('strix.log'));
+            let text = '';
+            for (const p of rapports) {
+              text += `\n\n===== ${p.replace('/tmp/strix-out/', '')} =====\n` + rd(p);
+              if (text.length > 50000) break;
+            }
+            text += '\n\n===== fin du journal strix.log (4000 derniers caractères) =====\n' + rd('/tmp/strix-out/strix.log').slice(-4000);
+            await github.rest.checks.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              name: `strix-scan — rapport (run ${RUN_ID})`,
+              head_sha: context.sha,
+              status: 'completed', conclusion: 'neutral',   // rapport, pas un gate
+              output: { title: 'Strix — pentest IA', summary: summary.slice(0, 60000), text: text.slice(0, 65000) },
+            });
+            core.info(`check-run créé (${rapports.length} fichier(s) de rapport)`);
 
       - name: Résumé → Firebase (Apex lit ax_strix_last)
         if: always()

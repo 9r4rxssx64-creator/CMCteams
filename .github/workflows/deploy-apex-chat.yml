@@ -46,7 +46,10 @@ jobs:
           node-version: 20
 
       - name: Install Wrangler
-        run: npm install -g wrangler
+        # Majeure épinglée (triage sécu 10/09, zizmor « adhoc-packages ») : sans
+        # version, « wrangler » = ce que npm publiera demain, avec le jeton Cloudflare
+        # en main. 4.x est ce qui tourne déjà ici (dernier déploiement vert 34520637740).
+        run: npm install -g wrangler@4
 
       - name: Verify token
         run: |

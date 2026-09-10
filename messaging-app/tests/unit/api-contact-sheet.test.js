@@ -57,12 +57,12 @@ const USER = (sub) => makeJWT({ sub, is_admin: false, iat: Math.floor(Date.now()
 
 describe('Fiches contacts (v1.1.201)', () => {
   it('GET /api/contact/:id — admin voit tous les champs', async () => {
-    const state = { users: [{ id: 'kdmc_admin', is_admin: 1, status: 'active' }, { id: 'lolo', pseudo: 'lolo', real_name: 'Laurence', phone: '+33640616184', city: 'Monaco', status: 'active' }], contacts: [], members: [] };
+    const state = { users: [{ id: 'kdmc_admin', is_admin: 1, status: 'active' }, { id: 'lolo', pseudo: 'lolo', real_name: 'Laurence', phone: '+33600000010', city: 'Monaco', status: 'active' }], contacts: [], members: [] };
     const env = ENV({ APEX_CHAT_DB: db(state) });
     const res = await worker.fetch(makeRequest({ method: 'GET', path: '/api/contact/lolo', token: await ADMIN() }), env);
     expect(res.status).toBe(200);
     const d = await res.json();
-    expect(d.contact.phone).toBe('+33640616184');
+    expect(d.contact.phone).toBe('+33600000010');
     expect(d.contact.city).toBe('Monaco');
     expect(d.contact.can_edit).toBe(true);
     expect(d.contact.can_delete).toBe(true);

@@ -25,7 +25,7 @@ function makeReq(body) {
 
 describe('handleVerifyOtp — bypass admin Kevin otp 000000', () => {
   it('phone=KEVIN_PHONE + otp=000000 + user n\'existe pas → INSERT admin + JWT', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277', JWT_SIGN_KEY: 'sign-key' });
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001', JWT_SIGN_KEY: 'sign-key' });
     let userCreated = false;
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
       bind: function () { return this; },
@@ -43,7 +43,7 @@ describe('handleVerifyOtp — bypass admin Kevin otp 000000', () => {
       },
     }));
     const r = await handleVerifyOtp(makeReq({
-      phone: '+33672280277', pseudo: 'kevin', otp: '000000',
+      phone: '+33600000001', pseudo: 'kevin', otp: '000000',
     }), env);
     expect(r.status).toBe(200);
     const b = await r.json();
@@ -52,7 +52,7 @@ describe('handleVerifyOtp — bypass admin Kevin otp 000000', () => {
   });
 
   it('phone=KEVIN_PHONE + otp=000000 + user existe → JWT direct', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277', JWT_SIGN_KEY: 'sign-key' });
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001', JWT_SIGN_KEY: 'sign-key' });
     env.APEX_CHAT_DB.prepare = vi.fn(() => ({
       bind: function () { return this; },
       first: async () => ({ id: 'kdmc_admin', pseudo: 'kevin', is_admin: 1, real_name: 'Kevin' }),
@@ -60,7 +60,7 @@ describe('handleVerifyOtp — bypass admin Kevin otp 000000', () => {
       run: async () => ({ success: true }),
     }));
     const r = await handleVerifyOtp(makeReq({
-      phone: '+33672280277', pseudo: 'kevin', otp: '000000', name: 'Kevin Desarzens',
+      phone: '+33600000001', pseudo: 'kevin', otp: '000000', name: 'Kevin Desarzens',
     }), env);
     expect(r.status).toBe(200);
     const b = await r.json();
@@ -68,7 +68,7 @@ describe('handleVerifyOtp — bypass admin Kevin otp 000000', () => {
   });
 
   it('phone=KEVIN_PHONE + otp pas 000000 → continue normal flow OTP', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277', JWT_SIGN_KEY: 'sign-key' });
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001', JWT_SIGN_KEY: 'sign-key' });
     env.APEX_CHAT_DB.prepare = vi.fn(() => ({
       bind: function () { return this; },
       first: async () => null,
@@ -76,7 +76,7 @@ describe('handleVerifyOtp — bypass admin Kevin otp 000000', () => {
       run: async () => ({ success: true }),
     }));
     const r = await handleVerifyOtp(makeReq({
-      phone: '+33672280277', pseudo: 'kevin', otp: '999999', name: 'Kevin Desarzens',
+      phone: '+33600000001', pseudo: 'kevin', otp: '999999', name: 'Kevin Desarzens',
     }), env);
     expect([200, 400, 401]).toContain(r.status);
   });
@@ -135,8 +135,8 @@ describe('handleVerifyOtp — OTP flow success/error paths', () => {
   });
 
   it('OTP correct + user existant + KEVIN_PHONE → UPDATE is_admin=1', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277', JWT_SIGN_KEY: 'sign-key' });
-    const phone = '+33672280277';
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001', JWT_SIGN_KEY: 'sign-key' });
+    const phone = '+33600000001';
     const otp = '111111'; // pas '000000', donc on prend le path OTP normal
     const otpHash = await sha256(otp + ':' + phone);
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({

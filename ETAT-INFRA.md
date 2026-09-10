@@ -431,6 +431,10 @@ le même fichier (leçon #142). Prouvée discriminante par sabotage.
    n'est vérifié qu'**après** le chargement. On ne peut pas le retirer : c'est l'app.
    Correctif = sortir les données du fichier et les servir derrière la connexion du
    domaine (SSO). **Chantier à part, en attente du feu vert de Kevin.**
+   → **Arbre : FAIT** (v3.16/v3.17, suite ci-dessous). → **CMCteams et ses plannings : NON, décision
+   de Kevin du 10.09.2026** (« 4- non ») : les noms des employés restent servis comme aujourd'hui
+   (l'app est faite pour que chaque employé voie son équipe). **Ne plus reproposer** de mettre
+   CMCteams / `planning-seed.js` / `boards-gen.js` derrière `/__sso/whoami`.
 2. Le **dépôt et son historique** restent publics : le retrait protège le **site**, pas
    `github.com`. Nettoyer l'historique se décide avec Kevin (réécriture = tous les liens
    de commit changent).
@@ -803,3 +807,25 @@ ne suffit pas, il faut **enlever** « All branches ». Entre les deux enregistre
 du dépôt s'affiche `GH013 — Cannot delete this branch`. Ne confondez pas les deux messages : c'est
 la CI (`auto-merge-claude.yml`, étape « Menage ») qui supprime, pas nous. Elle s'exécute à chaque
 envoi sur `claude/**`, par paquets de 60.
+
+
+### Ménage étendu aux `auto-deploy/*` — 452 de plus (10.09, soir)
+
+Après le grand passage sur `claude/*` (389 → 122), il restait **461 branches
+`auto-deploy/*`** — la plus grosse famille du dépôt, fabriquée par le robot de build
+Apex v13. Le ménage ne les supprimait pas pour une raison simple : **sa boucle ne les
+regardait pas** (`grep '^origin/claude/'` en dur).
+
+Mesuré avant de toucher à quoi que ce soit : **453 des 461 sont déjà des ancêtres de
+`main`**, donc supprimables par le critère le plus prudent, celui que le ménage utilise
+déjà. Les 8 restantes sont gardées par ce même filtre — 5 ne portent qu'un ou deux
+commits de `apex-deploy-bot`, 3 datent d'avant la reconstruction d'historique du 09.08.
+
+Le changement est **une variable**, `FAMILLES='^origin/\(claude\|auto-deploy\)/'`, et
+**rien d'autre** : le filtre de sûreté (`merge-base --is-ancestor`), le seuil de 7 jours,
+les branches protégées et le plafond de 60 par exécution sont inchangés. Projection à
+l'instant du commit : **452 supprimables, 9 gardées.**
+
+Garde : `npm run test:menage-branches` contrôle désormais la source du workflow — les
+deux familles présentes, plus de filtre en dur, et le `--is-ancestor` intact. **Prouvé
+discriminant** : remettre l'ancien filtre → 2 échecs.

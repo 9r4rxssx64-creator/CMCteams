@@ -16,7 +16,7 @@
 import { describe, it, expect } from 'vitest';
 import { handleVerifyOtp } from '../../workers/api-worker.js';
 
-const KEVIN = '+33672280277';
+const KEVIN = '+33600000001';
 
 function makeDB() {
   const stmt = () => ({
