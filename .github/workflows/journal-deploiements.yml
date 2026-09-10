@@ -47,6 +47,14 @@ on:
       - "La Détente — Déploie le Worker de commande Printify"
       - "La Détente — Déploie le Worker Gemini (autonome)"
       - "Sync Apex Secrets to Cloudflare Worker"
+      # ⬇️ PAS un déploiement, mais le maillon dont la panne BLOQUE TOUT.
+      #    Vécu le 2026-09-06 → 09-10 : la fusion automatique n'a pas créé de PR
+      #    pour mon dernier push, et le travail est resté DEHORS de `main`
+      #    pendant 4 jours — sans que je puisse savoir pourquoi (c'est justement
+      #    le journal de la CI que je ne peux pas lire). Le comble : le filet que
+      #    je venais d'écrire pour ça était lui-même coincé dehors.
+      #    Désormais, si la fusion rate, la raison exacte atterrit dans le dépôt.
+      - "Auto-merge Claude branches into main"
     types: [completed]
   workflow_dispatch:
     inputs:

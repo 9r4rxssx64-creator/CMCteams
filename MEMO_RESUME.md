@@ -6365,3 +6365,39 @@ corrigé, il exige maintenant la vraie commande.
 type de surveillance que depuis la branche principale. Le bot s'en charge.
 
 Leçon #234.
+
+## 2026-09-10 — Le filet était resté coincé dehors, et je ne pouvais pas le voir
+
+**Ce que j'ai trouvé en reprenant** : le journal des pannes que je t'ai livré mardi soir
+**n'était jamais arrivé dans `main`**. Il est resté 4 jours sur ma branche.
+
+Le robot de fusion avait pourtant très bien marché pour mes 5 livraisons précédentes.
+Pour la dernière — justement celle qui portait le filet — il n'a rien fait. Pourquoi ?
+**Je ne peux pas le savoir** : la seule trace est le journal de la CI, celui-là même que
+je ne peux pas lire. Le filet censé rendre les pannes visibles était bloqué par une
+panne invisible.
+
+**Réglé** : j'ai refusionné, résolu un conflit sur un rapport de robot, revérifié, et
+repoussé. La fusion s'est faite en **15 secondes**. Ce n'était donc pas un blocage de
+fond, juste un raté silencieux — mais qui a coûté 4 jours.
+
+**Vérifié pour de vrai** : le journal est bien **sur `main`** maintenant. Il est actif.
+
+### Ce que j'en tire, et que j'ai corrigé dans la foulée
+
+La fusion automatique est le maillon dont la panne **bloque tout** : si le travail ne
+rejoint pas `main`, plus rien ne se déploie — et aucune de mes 23 surveillances ne se
+déclenche jamais. Elle **n'était pas surveillée**. Elle l'est maintenant.
+
+La prochaine fois qu'elle rate, la raison exacte atterrira toute seule dans
+`audit/deploiements-rates.md`, et je ne perdrai plus 4 jours.
+
+Garde : **47 contrôles, 0 échec**, le nouveau prouvé discriminant par sabotage.
+
+### Toujours en attente (rien à faire de mon côté)
+
+Les **poses de danse** refusent encore, pour la même raison que mardi : les deux moteurs
+d'image sont à sec (Gemini « crédits épuisés », Replicate « palier gratuit »). C'est de
+l'argent, pas du code. Recharger l'un des deux suffit.
+
+Leçon #235.
