@@ -79,9 +79,11 @@ est discriminante (ancien nettoyage → 4 échecs ; remplacement désactivé →
 la version vérifiée (8 515 cellules, ancien … archivé en V1, restaurable) », puis les bonnes
 équipes et les bons horaires — chefs compris — qui **restent** après redémarrage.
 
-### Reste
-PR de la branche à fusionner par le robot (v9.897 était encore ouverte en #3731 à 17h48 UTC), puis
-déploiement GitHub Pages. Leçons #246-247 dans `LESSONS.md`.
+### Fusion + déploiement
+PR #3731 fusionnée par le robot à 18h40 UTC (`f60c81550`), déploiement GitHub Pages lancé dans la
+foulée (run 34515748321). Trois fusions de `main` dans la branche ont été nécessaires en 20 min
+(`pipeline/sessions.json`, puis `package.json` deux fois) ; l'une a été poussée AVEC ses marqueurs
+de conflit pendant 60 s (leçon #248 : un garde derrière `| tail` ne garde rien). Leçons #246-248.
 
 ## 10 septembre 2026 (suite) — « il y a des erreurs, personnes dans les mauvaises équipes » : VÉRIFIÉ EN RÉEL contre SEPTEMBRE et OCTOBRE, corrigé, 0 écart des deux côtés
 
