@@ -31,7 +31,7 @@ pas d'étape de build, pas une seule dépendance en production.
 | Fichiers | **R2** | `wrangler.toml` |
 | Cache / éphémère | **KV** | `wrangler.toml` |
 | Tests unitaires | **Vitest** + happy-dom | `vitest.config.js` |
-| Tests navigateur | **Playwright** — ⚠️ **2 dossiers**, un seul est lancé | `e2e/` (**3** fichiers, **lancés en CI**) · `tests/e2e/` (**19** fichiers, **lancés nulle part** — finding P2) |
+| Tests navigateur | **Playwright** — 2 dossiers, **deux rôles** (les deux sont lancés — correction du 10/09) | `e2e/` (**3** fichiers, contre la **prod**, `apex-chat-e2e.yml`) · `tests/e2e/` (**19** fichiers, 56 tests, en **local HTTPS** sur 4 navigateurs, `messaging-app-tests.yml`) — voies iPhone rouges du 6 au 10/09 (finding P2, corrigé) |
 | Hébergement du front | GitHub Pages | `.github/workflows/deploy-apex-chat.yml` |
 
 > ⚠️ Le `README.md` du projet décrit une « Phase 1 (Foundation) en cours » avec des fichiers

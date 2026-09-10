@@ -142,10 +142,22 @@ push, et cet arbitrage revient à Kevin.
 Ce qui reste vrai : je certifie **le code du dépôt**. Ce qui a changé : le **service en ligne
 a été touché pour de vrai** — il répond, et 18 de ses 20 contrôles de bout en bout passent
 contre la vraie production. Ce n'est plus un audit purement statique.
-Ce qui reste ouvert : les 19 autres scénarios navigateur ne sont lancés par aucun workflow
-(finding **P2** de `03-FINDINGS.md`), donc le chiffrement bout en bout entre deux vrais
-clients, le verrou Face ID et l'auto-réparation des notifications **restent non vérifiés en
-conditions réelles**.
+Ce qui reste ouvert (corrigé le même soir, voir § 6.4) : les 19 autres scénarios navigateur
+**sont** lancés (`messaging-app-tests.yml`, 4 navigateurs) — mais leurs deux voies iPhone étaient
+rouges depuis le 6 septembre (finding **P2**). Le chiffrement bout en bout, le verrou Face ID et
+l'auto-réparation des notifications sont donc **vérifiés sur Chromium/Android**, et sur iPhone
+à partir du premier run vert après correctif.
+
+### 6.4 Les 19 scénarios de `tests/e2e/` — exécutés (2026-09-10)
+
+| Attendu | Obtenu | Statut |
+|---|---|---|
+| Les 19 fichiers (56 tests) passent sur Chromium, serveur HTTPS local | `npx playwright test` (Chromium préinstallé) → **56 passed (29.6s)** | ✅ VÉRIFIÉ |
+| Les 4 voies de `messaging-app-tests.yml` sont vertes | 60 derniers runs : **28 échecs, dont 19 « iPhone seulement »**, depuis le 06/09 16:00 | ❌ puis correctif |
+| Cause exacte, pas un symptôme | erreur WebKit : `…/api/system/config due to access control checks` → `LOCAL_DEV` n'acceptait que `http://localhost`, les tests servent `https://localhost:4173` | ✅ VÉRIFIÉ |
+| Le correctif est prouvé sans réseau | `cors-origines-autorisees.test.js` : `https://localhost:4173` autorisé, `https://localhost.evil.example` refusé → 5/5 | ✅ VÉRIFIÉ |
+| Le correctif est prouvé en vrai (4 voies vertes) | premier run après déploiement du worker | 🔴 À LIRE — consigné ci-dessous dès qu'il est passé |
+| Ça ne se reperd pas | `npm run test:specs-lances` (dans `test:ci`) suit ce que chaque workflow **exécute** | ✅ VÉRIFIÉ |
 
 ---
 

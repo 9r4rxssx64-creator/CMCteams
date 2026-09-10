@@ -18,11 +18,14 @@
      pour ignorer les demandes créées par le robot… alors que **29 sur 30** viennent du robot.
      Elle semblait active, elle ne tournait jamais. **Réparé** : je peux maintenant la lancer
      quand je veux, sur la demande de mon choix.
-  3. 🔴 **19 tests d'app sur 22 ne sont lancés nulle part.** Ils existent, ils ont l'air de
-     protéger (chiffrement, Face ID, notifications, photos)… et ils dorment. Du test qui ne
-     tourne pas ne protège de rien, mais donne l'impression du contraire — y compris à moi :
-     mon propre rapport les comptait comme une couverture acquise. Corrigé dans le rapport,
-     et le vrai correctif (les brancher) est écrit noir sur blanc.
+  3. ~~🔴 19 tests d'app sur 22 ne sont lancés nulle part~~ — **je m'étais trompé, et je l'ai
+     mesuré une heure plus tard** : ces 19 tests **tournent** à chaque push, sur 4 navigateurs.
+     Ce qui était vrai, et pire : **les deux voies iPhone étaient rouges à chaque exécution
+     depuis le 6 septembre** (19 runs sur 60), à cause du durcissement CORS de ce jour-là qui
+     n'acceptait le local qu'en `http` alors que les tests se servent en `https`. Chromium
+     restait vert et cachait le rouge de Safari — le seul navigateur que tu utilises.
+     Corrigé (une lettre dans la règle CORS, prouvé par test), et un garde empêche qu'une
+     suite de tests soit de nouveau déclarée « lancée » ou « dormante » sur un simple mot.
 - **J'ai créé l'outil** pour que ça ne se reperde jamais : `tools/ci/ci.mjs` — je lance,
   je suis, et je lis la cause exacte d'un échec, sans dépendre d'un logiciel absent.
 - **Deuxième mur, même soir** : le scan de sécurité « arsenal » a fini vert… mais son rapport

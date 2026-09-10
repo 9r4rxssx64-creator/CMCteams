@@ -69,7 +69,7 @@ règle changeait.
 |---|---|---|---|
 | 1 | Le comportement du service **en production** | Egress 403 | Actions → `apex-chat-e2e.yml` |
 | 2 | La **version déployée** du worker | `workers_get_worker` ne renvoie pas `modified_on` | Onglet Actions, dernier `deploy-apex-chat.yml` réussi |
-| 3 | Les **19 scénarios Playwright** | Navigateurs absents de cette session | Actions → `apex-chat-e2e.yml` |
+| 3 | Les **19 scénarios Playwright** | ~~Navigateurs absents de cette session~~ → **fermé le 10/09** : Chromium **était** préinstallé (`/opt/pw-browsers`), 56/56 en local ; en CI, voies iPhone rouges depuis le 06/09 (P2, corrigé) | Lire le premier run vert de `messaging-app-tests.yml` |
 | 4 | Le **second avis indépendant** (non-Claude) | Non déclenché dans cette passe | Actions → `ai-review-independent.yml` |
 | 5 | Le **scan sécu outillé** (gitleaks, Semgrep, OSV, Trivy, zizmor) | Idem | Actions → `security-suite.yml`, `strix-scan.yml` |
 | 6 | La **passe de stabilité** (re-rendus au repos, scintillement) | Pas de navigateur | Mesure `MutationObserver` en CI |

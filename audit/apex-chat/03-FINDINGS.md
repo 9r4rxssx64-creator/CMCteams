@@ -321,62 +321,81 @@ Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 
 ---
 
-## [P2] 19 tests navigateur sur 22 ne sont lancés par **aucune** automatisation
+## [P2] Les deux voies **iPhone** des tests navigateur sont rouges à chaque exécution depuis le 6 septembre — et personne ne le voyait
 
-- **Axe** : Fiabilité / fausse assurance
-- **Fichiers** : `messaging-app/tests/e2e/*.spec.js` (19) vs `messaging-app/e2e/*.spec.js` (3)
-- **Statut** : ✅ **VÉRIFIÉ** (2026-09-10, mesuré sur les workflows réels)
+- **Axe** : Fiabilité / fausse assurance (le test qui compte le plus pour Kevin est celui qui échoue)
+- **Fichier:ligne** : `messaging-app/workers/lib/cors.js:40` (`LOCAL_DEV = /^http:\/\/…/`) · symptôme dans `messaging-app/tests/e2e/smoke.spec.js:78`
+- **Statut** : ✅ **VÉRIFIÉ** (2026-09-10, mesuré sur 60 runs réels) · ✅ **CORRIGÉ** (même jour)
 
-### Preuve (commandes exécutées)
+> ⚠️ **Correction de ma propre erreur.** La première version de ce finding disait :
+> *« 19 tests navigateur sur 22 ne sont lancés par aucune automatisation »*. **C'était faux.**
+> Les 19 fichiers de `messaging-app/tests/e2e/` **sont** lancés — par `messaging-app-tests.yml`
+> (job `e2e`, 4 navigateurs : iphone-safari, iphone-se, chromium-desktop, pixel-android), à
+> chaque push sur `claude/**` et `main`. Mon grep cherchait `test:e2e` dans les workflows ;
+> celui-ci appelle `npx playwright test` directement. Une recherche trop étroite m'a fait
+> déclarer dormante une suite qui tournait — et m'a fait **rater ce qu'elle disait vraiment**.
+> Le garde `tests/specs-lances.test.mjs` (ajouté) ne cherche plus un mot : il suit ce que
+> chaque workflow **exécute** (étape `playwright test` + `testDir` de sa config).
+
+### Preuve (sorties réelles)
 
 ```
-$ ls messaging-app/e2e/*.spec.js       | wc -l   →  3   (smoke, two-clients, push)
-$ ls messaging-app/tests/e2e/*.spec.js | wc -l   →  19
+$ 60 derniers runs de messaging-app-tests.yml (API GitHub, 2026-09-10 19:20 UTC)
+  60 runs terminés · 28 en échec · 19 où SEULES les voies iPhone échouent
+  plus ancien échec « iPhone seulement » : 2026-09-06T16:00:55Z
 
-$ grep -n "working-directory" .github/workflows/apex-chat-e2e.yml
-  50:  working-directory: messaging-app/e2e      ← la CI ne lance QUE ce dossier
+$ run 34519030133 (le dernier avant correction)
+  success   tests
+  success   e2e (chromium-desktop)
+  success   e2e (pixel-android)
+  failure   e2e (iphone-safari)   → smoke.spec.js:70 « crypto-core ESM module chargé sans erreur »
+  failure   e2e (iphone-se)       → idem
+  erreur capturée : "…/apex-chat-api.9r4rxssx64.workers.dev/api/system/config due to access control checks."
 
-$ grep -rln "test:e2e" .github/workflows/       →  (aucun résultat)
+$ localement, les 19 fichiers (56 tests) sur Chromium préinstallé → 56 passed (29.6s)
 ```
 
-`messaging-app/package.json` déclare bien `"test:e2e": "playwright test"`, mais **aucun
-workflow ne l'appelle**. Le seul workflow e2e d'Apex Chat travaille dans `messaging-app/e2e/`,
-un dossier **différent** de `messaging-app/tests/e2e/`.
+### Impact
 
-### Ce qui dort
+Le navigateur de Kevin est **Safari sur iPhone**. C'est précisément la seule voie qui échoue.
+Depuis le 6 septembre, **chaque** push d'Apex Chat produit un run rouge sur iPhone, noyé dans
+un workflow qui n'est ni bloquant ni lu (28 échecs sur 60, aucun n'a été traité). Un contrôle
+rouge en permanence finit par ne plus être regardé : c'est le contraire d'un contrôle.
 
-Les 19 scénarios non exécutés couvrent exactement ce qui ne se teste pas autrement :
-`crypto-e2e` (chiffrement bout en bout entre deux clients), `faceid-app-lock` (le verrou
-biométrique), `push-key-heal` et `push-recreate-gesture` (auto-réparation des notifications),
-`media-gallery`, `media-bigger-heal`, `avatar-refresh`, `swipe-reply`, `find-in-chat`,
-`privacy-reciprocity`, `delete-message-persist`, `scroll-to-bottom`, `message-grouping`,
-`gif-picker`, `e2e-selfheal`, `e2e-send-freshkey`, `auth-flow`, `screenshots`, `smoke`.
+### Cause racine (pas le symptôme)
 
-### Cause racine
+Le 6 septembre, l'audit P2b (v1.1.287) a remplacé `Access-Control-Allow-Origin: *` par une
+liste d'origines — un vrai durcissement. L'exception « développement local » a été écrite
+`http://localhost` **uniquement**. Or les tests navigateur se servent en **HTTPS**
+(`tests/serve-https.sh`), et ce n'est pas un caprice : WebKit applique
+`upgrade-insecure-requests` même sur localhost, donc en HTTP tous les modules ES échouent.
+L'origine des tests est `https://localhost:4173` → refusée → **WebKit** signale l'appel API
+bloqué comme une erreur de page → le test « 0 erreur » tombe. **Chromium**, lui, ne remonte
+pas cet échec de la même façon → vert. Le durcissement a cassé sa propre vérification, sur
+le seul navigateur qui compte, et la couleur verte de Chromium a masqué le rouge de WebKit.
 
-Ce n'est pas un oubli de configuration : c'est **deux dossiers e2e qui ont divergé**. L'un
-(`e2e/`) a sa propre `playwright.config.js` et son `package.json`, et c'est celui que la CI
-connaît ; l'autre (`tests/e2e/`) a grossi à 19 fichiers sans jamais être branché. Personne ne
-peut le voir : les deux ressemblent à des suites de tests légitimes, et la CI est **verte**.
+Le fait qui prouve le lien : la date du premier échec « iPhone seulement » (6.09 16:00) est
+celle du déploiement de v1.1.287.
 
-C'est l'erreur **#28 (Déclaration ≠ Déploiement)** appliquée aux tests — et sous cette forme
-elle est plus dangereuse qu'ailleurs : **du code de test jamais exécuté ne protège de rien,
-mais donne l'impression du contraire.** Mon propre `01-FONCTIONS.md` annonçait « 19 scénarios
-Playwright » comme une couverture acquise. C'était faux, et je l'ai corrigé.
+### Correctif (appliqué)
 
-### Correctif recommandé
+`LOCAL_DEV = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/` — `https?` au lieu de
+`http`. Même machine, même confiance : autoriser `https://localhost` n'ouvre **rien** de plus
+que `http://localhost` déjà autorisé. Le déploiement du worker est automatique (push sur
+`claude/**` touchant `workers/**`).
 
-1. **Décider** lequel des deux dossiers fait foi (probablement fusionner `tests/e2e/` dans
-   `e2e/`, qui porte déjà la config et les deux navigateurs chromium + webkit-iphone).
-2. **Brancher** le dossier retenu dans `apex-chat-e2e.yml`, en une seule invocation.
-3. **Garde permanente** : un test qui vérifie que **tout** fichier `*.spec.js` du dépôt
-   appartient à un dossier réellement lancé par un workflow — sinon on recrée le trou dans six
-   mois. Sans cette garde, le correctif ne tient pas.
+### Test qui le prouve
 
-**Effort** : M (fusionner deux configs Playwright, vérifier que les 19 passent réellement
-contre la prod — certains peuvent être périmés, comme l'était le test SEO ci-dessous).
-**Régression possible** : faible sur l'app ; le risque est d'allonger la CI et de découvrir
-des tests rouges restés cachés. C'est le but.
+- `tests/unit/cors-origines-autorisees.test.js` : `https://localhost:4173` et
+  `https://127.0.0.1:4173` → autorisés ; `https://localhost.evil.example` → refusé (5/5 ✅).
+- La preuve **réelle** : le prochain run de `messaging-app-tests.yml` avec les 4 voies vertes
+  (consigné dans `02-RESULTATS.md` § 6.4 dès qu'il est passé).
+- Garde permanente ajoutée : `npm run test:specs-lances` (dans `test:ci`) — tout dossier de
+  specs Playwright du dépôt doit être exécuté par un workflow, en suivant ce que le workflow
+  **lance**, pas un mot-clé.
+
+**Effort** : S · **Régression possible** : aucune sur la prod (les origines réelles ne
+changent pas) ; la seule chose qui change, c'est qu'un test rouge devient vert pour de vrai.
 
 ---
 
