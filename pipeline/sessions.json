@@ -315,10 +315,11 @@
       "branche": "claude/menage-repli-arbres",
       "sujet": "branches-superflues.mjs + garde test:menage-branches + correction de la promesse du matin",
       "surfaces": [],
-      "etat": "actif",
+      "etat": "termine",
       "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Outil livre et fusionne (PR #3732) : branches-superflues.mjs + garde test:menage-branches (12/12). Ruleset corrige par Kevin le 10.09 20h57 (~ALL -> ~DEFAULT_BRANCH) : le menage CI peut enfin supprimer."
     }
   },
   "messages": [
