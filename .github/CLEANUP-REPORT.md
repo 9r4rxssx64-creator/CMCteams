@@ -7,7 +7,7 @@ Genere le 2026-09-10 19:33 UTC par auto-merge-claude.yml.
 
 | vues | supprimees | gardees |
 |---:|---:|---:|
-| 125 | 0 | 125 |
+| 124 | 0 | 124 |
 
 Echecs de suppression : **0**
 
