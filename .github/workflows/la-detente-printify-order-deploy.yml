@@ -18,6 +18,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write   # publier-config : PR vers main
+  actions: write         # publier-config : relance deploy.yml après fusion
 
 jobs:
   deploy:
@@ -77,7 +79,7 @@ jobs:
           echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
       - name: Health check
         run: curl -fsS "${{ steps.deploy.outputs.worker_url }}" | head -c 200 || echo "(health peut mettre qq sec)"
-      - name: Commit configs (worker URL + clé push)
+      - name: Écrire les configs (worker URL + clé push)
         run: |
           URL="${{ steps.deploy.outputs.worker_url }}"
           PUB="${{ steps.vapid.outputs.vapid_public }}"
@@ -85,11 +87,14 @@ jobs:
           printf '{\n  "worker_url": "%s",\n  "app_tag": "ld-order-v1",\n  "shop_id": 27791653,\n  "updated_at": "%s"\n}\n' "$URL" "$TS" > shops/la-detente/printify-order-config.json
           printf '{\n  "vapid_public": "%s",\n  "updated_at": "%s"\n}\n' "$PUB" "$TS" > shops/la-detente/push-config.json
           cat shops/la-detente/printify-order-config.json shops/la-detente/push-config.json
-          git config user.name "kdmc-bot"; git config user.email "bot@kdmc.local"
-          BR="claude/printify-order-config-${{ github.run_id }}"
-          git checkout -b "$BR"
-          git add shops/la-detente/printify-order-config.json shops/la-detente/push-config.json
-          if git diff --cached --quiet; then echo "config inchangée"; else
-            git commit -m "La Détente — URL worker + clé push VAPID ($URL) [skip ci]"
-            git push -u origin "$BR"; echo "Poussé $BR (auto-merge)."
-          fi
+
+      - name: Publier les configs dans main (PR fusionnée par le robot)
+        # Jusqu'au 10.09.2026 : 18 branches claude/printify-order-config-<run_id> poussées « pour
+        # auto-merge » — jamais fusionnées (push GITHUB_TOKEN + [skip ci] = invisible pour le
+        # robot). Conséquence réelle : la boutique lit push-config.json (index.html, ldPushConfig)
+        # et main ne l'a JAMAIS eu → clé push absente en production depuis juin. Leçon #243.
+        uses: ./.github/actions/publier-config
+        with:
+          fichiers: shops/la-detente/printify-order-config.json shops/la-detente/push-config.json
+          message: "La Détente — URL worker + clé push VAPID (${{ steps.deploy.outputs.worker_url }})"
+          prefixe: printify-order-config
