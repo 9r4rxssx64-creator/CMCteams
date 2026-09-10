@@ -1,5 +1,34 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (soir) — Arbre v3.19 : les « orphelins » n'étaient pas ceux qu'on croit
+
+Demande de Kevin : *« as-tu attribué les orphelins ? tous, chaque arbre ? organise au plus clair.
+Marielle est séparé des deux. »*
+
+- **Ce que j'ai trouvé en lisant le code, et qui change tout** : le vrai cas n'est pas la personne
+  toute seule, c'est la **branche entière qui flotte**. Une mère et sa fille reliées entre elles
+  forment un groupe — donc pas une « personne seule » — et l'arbre leur donnait **le même bandeau
+  que le tronc principal**. Rien ne disait qu'elles étaient à côté au lieu d'être raccrochées.
+  C'est exactement la situation signalée.
+- **Ce qui change à l'écran** : chaque bloc séparé du tronc s'appelle maintenant
+  « 🔗 Branche à rattacher · Famille … (N) » et indique **qui** rattacher (la personne la plus
+  ancienne du groupe). Les personnes seules sont regroupées **par cause puis par lignée**, la
+  cause la plus grave d'abord, chaque bandeau portant son compte.
+- **Les 4 causes, enfin distinguées** : fiche du parent introuvable (le seul vrai défaut de
+  données : le lien est perdu dans les **deux** arbres) · relié dans l'autre arbre · couple sans
+  parents ni enfants · aucun lien renseigné.
+- **Un panneau « 🔗 À relier » dans les Réglages** répond à « tous ? chaque arbre ? » en chiffres,
+  pour les **deux** arbres à la fois, chaque nom ouvrant sa fiche en un geste.
+- **Ce que je ne pouvais pas faire, et que je dis** : les vraies données ne sont ni dans le dépôt
+  ni joignables depuis ma session (mesuré : `403 CONNECT` sur le domaine, aucun export privé dans
+  le conteneur). Je n'ai donc pas inventé de chiffre — j'ai livré l'instrument qui le donne sur
+  l'iPhone.
+- Vérifié en vrai navigateur (`tools/arbre/verify-relier.mjs`) sur les deux arbres : 0 erreur JS,
+  personne ne disparaît, les 5 cas exercés par la famille synthétique. Garde `test:arbre-relier`
+  câblée dans `test:ci`, discriminante prouvée par sabotage. Leçon **#254**.
+
+---
+
 ## 10 septembre 2026 (soir) — « prévenir » ne suffit pas : réveiller, faire corriger, revérifier soi-même
 
 Demande de Kevin : *« Prévient les branches concernées et fait les rectifier, vérifier, etc. À chaque fois

@@ -281,7 +281,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.18";
+var APP_VER="v3.19";
 /* ===== MUNEGU — thème monégasque (v3.18, Kevin 2026-09-05 « Accentue le thème spécialité monégasque, Monaco. Va plus loin ») =====
    Vocabulaire vérifié (Comité National des Traditions Monégasques / chroniques « A lenga munegasca ») :
    Munegu = Monaco · àrburu = arbre · famiya = famille · munegascu = la langue. Devise de la Principauté : Deo Juvante.
@@ -500,7 +500,44 @@ function layoutMainFamily(){
   var anchors=[viewerId()].concat(FAMKEY==="c"?["seed_gerard","seed_guy","seed_kevin"]:["seed_marienoel","seed_victor_sauvaigo","seed_kevin"]);
   return layoutForest(filter,anchors);
 }
+/* POURQUOI cette personne n'est-elle reliée à aucun tronc ? (v3.19, Kevin 10.09.2026)
+   Quatre causes, très différentes — les confondre, c'est chercher au mauvais endroit :
+   · fantome  = son père/sa mère est RENSEIGNÉ mais la fiche n'existe plus dans la base.
+                Le lien est alors abandonné SANS RIEN DIRE, dans les DEUX arbres — c'est
+                un défaut de données (fiche supprimée, identifiant changé), pas un oubli.
+   · autrefam = ses parents/conjoint existent mais appartiennent à l'AUTRE arbre : le
+                filtre par famille coupe le lien ici, la personne est bien reliée à côté.
+   · couple   = mariée, mais le couple ne touche ni parents ni enfants.
+   · seul     = aucun lien renseigné du tout : seule une personne peut le savoir.
+   `inSet` = « fait partie de l'arbre actuellement affiché ». */
+var aRelierGroupes=[],aRelierBranches=[];   /* remplis par layoutForest — lus par le panneau « À relier » */
+/* Combien restent détachés dans l'arbre AFFICHÉ — lu depuis la mise en page qui vient
+   d'être faite, donc jamais recalculé (et jamais en désaccord avec ce qu'on voit). */
+function _relierBadge(){var n=0,b=(aRelierBranches||[]).length;(aRelierGroupes||[]).forEach(function(g){n+=g.ids.length;});
+  var t=[];if(b)t.push(b+(b>1?" branches":" branche")+" à rattacher");if(n)t.push(n+" personne"+(n>1?"s":"")+" à relier");
+  return t.length?" · 🔗 "+t.join(" · "):"";}
+/* Les personnes à relier de la famille `k`, SANS toucher à l'affichage courant :
+   on rejoue la même mise en page sur l'autre famille et on lit son résultat. */
+function aRelierDe(k){
+  var avantG=aRelierGroupes,avantB=aRelierBranches,fam=FAMKEY;aRelierGroupes=[];aRelierBranches=[];
+  try{FAMKEY=k;layoutMainFamily();}catch(e){}
+  var r={groupes:aRelierGroupes||[],branches:aRelierBranches||[]};
+  FAMKEY=fam;aRelierGroupes=avantG;aRelierBranches=avantB;return r;
+}
+function relierPourquoi(id,inSet){
+  var p=P(id);if(!p)return {code:"inconnu",lab:"Fiche introuvable"};
+  inSet=inSet||function(){return true;};
+  var par=[p.pere,p.mere].filter(Boolean);
+  if(par.some(function(x){return !P(x);}))return {code:"fantome",lab:"fiche du parent introuvable"};
+  var conj=(p.conjoints||[]).filter(function(c){return P(c);});
+  if(par.some(function(x){return !inSet(x);})||conj.some(function(c){return !inSet(c);}))
+    return {code:"autrefam",lab:"relié dans l'autre arbre"};
+  if(!par.length&&!conj.length)return {code:"seul",lab:"aucun lien renseigné"};
+  return {code:"couple",lab:"couple sans parents ni enfants"};
+}
 function layoutForest(filter,anchors){
+  aRelierGroupes=[];aRelierBranches=[];   /* remis à zéro À CHAQUE mise en page : sans ça, une famille sans
+                          personne détachée hériterait de la liste de la précédente. */
   var T=TREE,ROWH=T.ROWH,BOXW=T.BOXW,COUPLEGAP=T.COUPLEGAP,UNITGAP=T.UNITGAP,PAD=T.PAD,COMPGAP=T.COMPGAP;
   var persons=DB.persons;
   /* union-find : regroupe par famille reliée (père/mère/conjoint).
@@ -528,19 +565,53 @@ function layoutForest(filter,anchors){
   var BANDH=76,nodes=[],links=[],bands=[],y=PAD;
   laid.forEach(function(t,i){
     var offx=(totalW-t.w)/2 - t.minx + BOXW/2;
-    bands.push({y:y,label:compLabel(trees[i])});
+    /* v3.19 — une famille reliée mais SÉPARÉE du tronc portait le même bandeau que le
+       tronc lui-même (« Famille X ») : impossible de voir, d'un coup d'œil, qu'un petit
+       groupe de 2-3 personnes flotte à côté de l'arbre principal au lieu d'y être
+       raccroché. C'est le cas le plus fréquent — bien plus qu'une personne toute seule —
+       et le plus invisible. Le premier bloc est le tronc (il contient « moi ») ; tous
+       les suivants sont nommés pour ce qu'ils sont, avec leur taille et QUI rattacher. */
+    if(i>0){
+      var dedans={};trees[i].forEach(function(x){dedans[x]=1;});
+      var racines=trees[i].filter(function(x){var pp=P(x);return !(pp.pere&&dedans[pp.pere])&&!(pp.mere&&dedans[pp.mere]);});
+      aRelierBranches.push({ids:trees[i].slice(),racines:racines,label:compLabel(trees[i])});
+      bands.push({y:y,label:"🔗 Branche à rattacher · "+compLabel(trees[i])+" ("+trees[i].length+")"});
+    }else bands.push({y:y,label:compLabel(trees[i])});
     y+=BANDH;
     t.nodes.forEach(function(n){nodes.push({id:n.id,x:n.x+offx,y:n.y+y,root:n.root});});
     t.links.forEach(function(l){links.push(l.couple?{couple:1,st:l.st,x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y}:{x1:l.x1+offx,y1:l.y1+y,x2:l.x2+offx,y2:l.y2+y,child:l.child});});
     y+=t.h+COMPGAP;
   });
   if(singleIds.length){
-    bands.push({y:y,label:nodes.length?"Autres membres · à relier":"Membres de la famille"});
-    y+=BANDH;
+    /* v3.19 (Kevin 10.09.2026 « organise au plus clair ») — AVANT : une seule grille
+       « Autres membres · à relier », dans l'ordre alphabétique, sans dire POURQUOI la
+       personne est détachée. On ne pouvait donc ni savoir combien il en restait, ni
+       par quoi commencer : un membre isolé sans explication ne se rattache jamais.
+       APRÈS : un bandeau par CAUSE puis par LIGNÉE, la cause la plus grave d'abord
+       (une fiche de parent qui manque est un défaut de données, pas un simple oubli
+       de saisie). Le comptage et l'ordre servent aussi le poster imprimé. */
+    var grp={},ordre={fantome:0,autrefam:1,couple:2,seul:3,inconnu:4};
+    singleIds.forEach(function(x){
+      var r=relierPourquoi(x,inSet),b=branchOf(P(x)).lab,k=r.code+"|"+b;
+      (grp[k]=grp[k]||{code:r.code,lab:r.lab,branche:b,ids:[]}).ids.push(x);
+    });
+    var groupes=Object.keys(grp).map(function(k){return grp[k];});
+    groupes.sort(function(a,b){
+      var oa=ordre[a.code]==null?9:ordre[a.code],ob=ordre[b.code]==null?9:ordre[b.code];
+      if(oa!==ob)return oa-ob;
+      if(a.ids.length!==b.ids.length)return b.ids.length-a.ids.length;
+      return a.branche.localeCompare(b.branche);
+    });
+    aRelierGroupes=groupes;   /* même source que l'affichage : le panneau ne recalcule rien (leçon #142) */
     var cols=Math.max(1,Math.min(singleIds.length,Math.floor((totalW-PAD*2)/BOXW)));
     var gx0=(totalW-cols*BOXW)/2 + BOXW/2;
-    singleIds.forEach(function(x,idx){var r=Math.floor(idx/cols),c=idx%cols;nodes.push({id:x,x:gx0+c*BOXW,y:y+r*ROWH,root:x===viewerId()});});
-    y+=Math.ceil(singleIds.length/cols)*ROWH;
+    groupes.forEach(function(g){
+      g.ids.sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});
+      bands.push({y:y,label:(nodes.length?"🔗 À relier · ":"Membres de la famille · ")+g.branche+" — "+g.lab+" ("+g.ids.length+")"});
+      y+=BANDH;
+      g.ids.forEach(function(x,idx){var r=Math.floor(idx/cols),c=idx%cols;nodes.push({id:x,x:gx0+c*BOXW,y:y+r*ROWH,root:x===viewerId()});});
+      y+=Math.ceil(g.ids.length/cols)*ROWH+COMPGAP;
+    });
   }
   return {nodes:nodes,links:links,bands:bands,w:totalW,h:y+PAD};
 }
@@ -900,11 +971,15 @@ function renderTree(){
     +'<div class="treemode"><button data-style="arbre"'+(VIEWSTYLE==="arbre"?' class="on"':'')+'>🌳 Arbre</button><button data-style="plan"'+(VIEWSTYLE==="plan"?' class="on"':'')+'>📋 Plan</button></div>'
     +'<div class="treemode fampick"><button data-fam="o"'+(FAMKEY==="o"?' class="on"':'')+'>🫒 Sauvaigo · Maiffret</button><button data-fam="c"'+(FAMKEY==="c"?' class="on"':'')+'>🌳 Desarzens</button></div>'
     +'<div class="zoomBtns"><button data-z="1" aria-label="Zoom +">＋</button><button data-z="-1" aria-label="Zoom −">−</button><button data-z="fit" aria-label="Tout voir">⤢</button><button data-z="leg" aria-label="Légende">❓</button><button data-z="print" aria-label="Imprimer en grand format">🖨</button></div>'
-    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 ":"")+famLabel(FAMKEY)+" · "+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length+' personnes · glisse · pince · touche une fiche</div></div>';
+    +'<div class="hintpan">'+(VIEWSTYLE==="plan"?"📋 ":"")+famLabel(FAMKEY)+" · "+Object.keys(DB.persons).filter(function(x){return famOf(DB.persons[x]).indexOf(FAMKEY)>=0;}).length+' personnes<span id="relierBadge"></span> · glisse · pince · touche une fiche</div></div>';
   var zb=document.querySelectorAll(".zoomBtns [data-z]");zb.forEach(function(b){b.onclick=function(){if(b.dataset.z==="leg")showLegend();else if(b.dataset.z==="print")openPoster();else if(b.dataset.z==="fit")fitStage(true);else zoomAt(0.5,0.5,b.dataset.z==="1"?1.25:1/1.25);};});
   document.querySelectorAll(".treemode [data-style]").forEach(function(b){b.onclick=function(){if(VIEWSTYLE===b.dataset.style)return;VIEWSTYLE=b.dataset.style;syncMode();try{localStorage.setItem("arbre_viewstyle",VIEWSTYLE);}catch(e){}renderTree();};});
   document.querySelectorAll(".fampick [data-fam]").forEach(function(b){b.onclick=function(){if(FAMKEY===b.dataset.fam)return;FAMKEY=b.dataset.fam;try{localStorage.setItem("arbre_fam",FAMKEY);}catch(e){}renderTree();};});
   setupPanZoom();drawStage(true);
+  /* APRÈS la mise en page seulement : le compte des personnes à relier est lu sur
+     l'agencement qui vient d'être calculé. Écrit avant, il afficherait celui du
+     rendu PRÉCÉDENT — un chiffre faux est pire que pas de chiffre. */
+  var _rb=$("#relierBadge");if(_rb)_rb.textContent=_relierBadge();
 }
 var _lay=null;
 /* Repli infaillible : si l'agencement fancy plante sur une donnée bizarre,
@@ -1327,7 +1402,37 @@ function openPoster(){
 }
 /* compat : l'ancien bouton « Imprimer / PDF » ouvre désormais le poster */
 function exportPrint(){openPoster();}
+/* Panneau « À relier » (v3.19, Kevin 10.09.2026 « as-tu attribué les orphelins ? tous,
+   chaque arbre ? ») — la réponse en chiffres, sur les VRAIES données de l'appareil, pour
+   les DEUX arbres à la fois : combien restent détachés, qui, et pourquoi. Chaque nom
+   ouvre sa fiche, où « ➕ Ajouter un proche » permet de le rattacher. */
+function relierHTML(){
+  var s='<div class="sec"><h3>🔗 À relier</h3>',total=0,corps="";
+  ["o","c"].forEach(function(k){
+    var r=aRelierDe(k),g=r.groupes,br=r.branches,n=0;g.forEach(function(x){n+=x.ids.length;});
+    total+=n+br.length;
+    var etat=[];if(br.length)etat.push(br.length+(br.length>1?" branches":" branche"));if(n)etat.push(n+" personne"+(n>1?"s":""));
+    corps+='<div class="kv"><span class="k">'+esc(famLabel(k))+'</span><span>'+(etat.length?etat.join(" · ")+" à rattacher":"✅ tout est relié")+'</span></div>';
+    /* Les BRANCHES d'abord : une petite famille reliée mais séparée du tronc est le cas
+       le plus fréquent, et le plus invisible — on nomme QUI rattacher (sa personne la
+       plus ancienne, celle dont les parents ne sont pas encore renseignés). */
+    br.forEach(function(b){
+      corps+='<div style="margin:6px 0 2px;font-size:12.5px;color:#8a7a55">🔗 '+esc(b.label)+' — séparée du tronc ('+b.ids.length+' personne'+(b.ids.length>1?"s":"")+') · à rattacher par :</div>';
+      corps+=(b.racines.length?b.racines:b.ids).map(function(id){return '<button class="btn sm" data-relier="'+esc(id)+'" style="margin:2px 4px 2px 0">'+esc(full(P(id)))+'</button>';}).join("");
+    });
+    g.forEach(function(x){
+      corps+='<div style="margin:6px 0 2px;font-size:12.5px;color:#8a7a55">'+esc(x.branche+" — "+x.lab)+' ('+x.ids.length+')</div>';
+      corps+=x.ids.map(function(id){return '<button class="btn sm" data-relier="'+esc(id)+'" style="margin:2px 4px 2px 0">'+esc(full(P(id)))+'</button>';}).join("");
+    });
+  });
+  s+='<p class="mut" style="font-size:12.5px;margin:0 0 8px">Ce qui ne touche pas encore le tronc, dans <b>chacun des deux arbres</b> : les <b>branches</b> (petites familles reliées entre elles mais séparées) puis les <b>personnes</b> seules. Touche un nom pour ouvrir sa fiche et le rattacher.</p>';
+  s+=corps;
+  if(!total)s+='<p class="mut" style="font-size:12.5px;margin:8px 0 0">✅ Personne ne flotte : tout le monde est rattaché dans les deux arbres.</p>';
+  else s+='<p class="mut" style="font-size:12.5px;margin:8px 0 0">« fiche du parent introuvable » = le père ou la mère est renseigné mais sa fiche n\'existe plus : le lien est perdu dans les <b>deux</b> arbres. C\'est le seul cas qui est un vrai défaut de données.</p>';
+  return s+'</div>';
+}
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
+  relierHTML()+
   '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+(viewerId()?esc(full(P(viewerId()))):"vue neutre")+'</span></div>'+(viewerId()?'<button class="btn ghost sm" id="btnNeutre" style="width:100%;margin-top:8px">↺ Revenir à la vue neutre (aucun « moi »)</button>':'<p class="mut" style="font-size:12.5px;margin:6px 0 0">Ouvre TA fiche → « 🙋 C\'est moi » pour voir l\'arbre de ton point de vue.</p>')+'<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
   mcToolsHTML()+
   '<div class="sec"><h3>🔐 Domaine (kd-mc.com)</h3><p class="mut" style="font-size:12.5px;margin:0 0 8px">Depuis la v3.16, l\'arbre n\'est plus écrit dans le fichier public : le code se vérifie sur le domaine, et une nouvelle personne reçoit l\'arbre après l\'avoir tapé.</p><div class="kv"><span class="k">Publié sur le domaine</span><span id="domStatus">…</span></div><button class="btn" id="btnPublish" style="width:100%;margin-top:8px">📤 Publier l\'arbre sur le domaine (admin)</button></div>'+
@@ -1338,6 +1443,7 @@ function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.i
   '<div class="sec"><h3>Sécurité</h3><button class="btn" id="btnCode" style="width:100%">🔑 Changer le code famille</button><button class="btn ghost" id="btnLock" style="width:100%;margin-top:8px">🔒 Verrouiller</button></div>'+
   '<div class="sec"><h3>🤖 Recherches automatiques</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Le robot cherche chaque mois : actes INSEE, registres de Monaco, presse ancienne, et vérifie le nuage familial.</p><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/REGISTRES.md">📜 Actes &amp; registres trouvés <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/INFOS.md">📚 Infos presse &amp; sources <span class="mut">↗</span></a><a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://github.com/9r4rxssx64-creator/cmcteams/blob/main/arbre/research/CLOUD.md">☁️ Vérification du nuage familial <span class="mut">↗</span></a></div>'+
   '<div class="sec"><h3>À propos</h3><p class="mut" style="font-size:13px;margin:0">Arbre familial '+APP_VER+'. Auto-save + synchro temps réel (code famille). Photos tous formats converties automatiquement. Ajoute/corrige/commente librement.</p></div>';
+  document.querySelectorAll("[data-relier]").forEach(function(b){b.onclick=function(){openPerson(b.dataset.relier);};});
   $("#btnSync").onclick=function(){toast("Synchronisation…");cloudPull(false);};
   $("#btnName").onclick=setMe;
   var bn=$("#btnNeutre");if(bn)bn.onclick=function(){setViewer("");toast("↺ Vue neutre — personne n'est « moi »");render();};

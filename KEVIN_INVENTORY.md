@@ -89,6 +89,14 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 🔗 Arbre v3.19 — « à relier » : les branches qui flottent enfin nommées — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.19) | Un bloc séparé du tronc s'appelle « 🔗 Branche à rattacher · Famille … (N) » et dit **qui** rattacher. Les personnes seules sont groupées **par cause** (fiche du parent introuvable · relié dans l'autre arbre · couple sans parents ni enfants · aucun lien renseigné) puis par lignée. Panneau « 🔗 À relier » dans Réglages : le compte des **deux** arbres, chaque nom ouvre sa fiche. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-relier.mjs` | Vérifie en **vrai navigateur**, sur les deux arbres : personne ne disparaît, chaque détaché est rangé sous sa cause, le panneau liste les mêmes personnes que l'arbre, un nom ouvre bien sa fiche. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-relier.mjs) |
+| `tests/arbre-relier.test.mjs` | La garde hors ligne (dans `test:ci`) : le classement existe, il est **câblé**, les 4 causes sont distinctes, le compteur est écrit après la mise en page. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-relier.test.mjs) |
+
 ## 📣 Prévenir ne suffit pas : faire rectifier, puis vérifier — session 2026-09-10 (branche `claude/sarzance-family-tree-3jxi7i`)
 
 | Fichier | À quoi ça sert | Liens |
