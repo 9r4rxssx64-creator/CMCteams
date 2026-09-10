@@ -1,0 +1,104 @@
+name: Voir comme Kevin (vraies pages kd-mc.com, iPhone, connecté)
+
+# Kevin 2026-09-10 : « trouve des solutions pour voir comme moi partout, kd-mc.com aussi et surtout ».
+# Depuis l'agent Claude Code, kd-mc.com est injoignable (4 canaux mesurés : proxy 403, WebFetch
+# bloqué, Firecrawl 403, bac à sable Hugging Face payant). Ce workflow ouvre les pages demandées dans
+# un VRAI navigateur (format iPhone, connecté en tant que Kevin), photographie chaque page, relève
+# la version servie, les erreurs JS et les requêtes en échec, puis DÉPOSE le tout sur une branche
+# de relecture `claude/voir-<run_id>` — que l'agent peut `git fetch` et ouvrir (les images
+# s'affichent dans son outil Read). Voir tools/voir/voir.mjs et tools/voir/rapatrier.sh.
+#
+# Destination (règle « chaque automatisation a une destination écrite ») : GitHub, À LA MAIN
+# uniquement (workflow_dispatch) — il produit un artefact DE ce dépôt (captures + rapport
+# committés). Jamais de cron ici.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Pages à voir (séparées par des virgules, domaine kd-mc.com uniquement)"
+        default: "https://cmcteams.kd-mc.com/,https://cmcteams-light.kd-mc.com/,https://departs.kd-mc.com/,https://kd-mc.com/"
+      connecte:
+        description: "Connecté en tant que Kevin ? (non = visite anonyme)"
+        type: boolean
+        default: true
+      vues:
+        description: "Vues CMCteams à enchaîner (ex. accueil,monplanning,departs,plan) — vide = page d'arrivée seule"
+        default: "accueil,monplanning,departs"
+      largeur:
+        description: "Largeur d'écran (390 = iPhone, 375 = iPhone SE, 1200 = ordinateur)"
+        default: "390"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: voir-comme-kevin
+  cancel-in-progress: false
+
+jobs:
+  voir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Installer Chromium (le package.json racine casse npm sans --legacy-peer-deps, mesuré 05/09)
+        run: |
+          npm i --no-save --no-audit --no-fund --legacy-peer-deps playwright@1.56.0
+          npx playwright install --with-deps chromium
+
+      - name: Ouvrir les vraies pages et photographier
+        id: voir
+        env:
+          KDMC_ADMIN_PIN_SHA256: ${{ inputs.connecte && secrets.APEX_ADMIN_PIN_SHA256 || '' }}
+        shell: bash -uo pipefail {0}
+        run: |
+          set +e
+          FLAGS=""
+          if [ "${{ inputs.connecte }}" = "true" ]; then FLAGS="--connecte"; fi
+          node tools/voir/voir.mjs "${{ inputs.urls }}" $FLAGS --vues "${{ inputs.vues }}" --largeur "${{ inputs.largeur }}" --sortie "voir/out" 2>&1 | tee /tmp/voir.log
+          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Déposer captures + rapport sur une branche de relecture
+        if: always()
+        run: |
+          git config user.name "kdmc-bot"
+          git config user.email "bot@kdmc.local"
+          # branche-de-relecture : les captures sont déposées pour être REGARDÉES (par l'agent via
+          # git fetch, par Kevin via GitHub), pas fusionnées (garde tests/verify-branches-robot.mjs).
+          BR="claude/voir-${{ github.run_id }}"
+          DEST="voir/${{ github.run_id }}"
+          mkdir -p "$DEST" && cp -r voir/out/. "$DEST"/ 2>/dev/null || true
+          cp /tmp/voir.log "$DEST/journal.txt" 2>/dev/null || true
+          git checkout -b "$BR"
+          git add "$DEST"
+          if git diff --cached --quiet; then echo "Rien à déposer."; exit 0; fi
+          git commit -m "voir comme Kevin — captures run ${{ github.run_id }} (${{ inputs.urls }}) [skip ci]"
+          git push -u origin "$BR"
+          echo "Déposé sur $BR → https://github.com/${{ github.repository }}/tree/$BR/$DEST"
+
+      - name: Captures aussi en artefact (pour Kevin, depuis GitHub)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: voir-comme-kevin-${{ github.run_id }}
+          path: voir/out/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Résumé lisible
+        if: always()
+        run: |
+          {
+            echo "## Voir comme Kevin — ${{ inputs.urls }}"
+            echo "Connecté : **${{ inputs.connecte }}** · largeur ${{ inputs.largeur }} px · vues : ${{ inputs.vues }}"
+            echo ""
+            echo "Branche de relecture : \`claude/voir-${{ github.run_id }}\` (dossier \`voir/${{ github.run_id }}\`)"
+            echo ""
+            cat voir/out/RAPPORT.md 2>/dev/null || echo "(pas de rapport)"
+          } >> "$GITHUB_STEP_SUMMARY"
+          test "${{ steps.voir.outputs.rc }}" = "0"
