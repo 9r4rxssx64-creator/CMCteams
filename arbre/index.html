@@ -1616,7 +1616,17 @@ function openEdit(id,link){_editLink=null;var p;
   else{p={prenom:"",nom:"",sexe:"",naissance:{},deces:{},conjoints:[],photos:[],sources:[],vivant:false};
     if(link){
       if(link.conj&&P(link.conj)){var sp=P(link.conj);p.conjoints=[link.conj];p.sexe=sp.sexe==="M"?"F":(sp.sexe==="F"?"M":"");p.nom=sp.nom||"";}
-      else if(link.childOf&&P(link.childOf)){var par=P(link.childOf);if(par.sexe==="F")p.mere=link.childOf;else p.pere=link.childOf;var s2=(par.conjoints||[])[0];if(s2&&P(s2)){if(P(s2).sexe==="F")p.mere=s2;else p.pere=s2;}p.nom=par.nom||"";}
+      /* v3.19 — l'autre parent n'est pré-rempli QUE s'il n'y a AUCUN doute, c.-à-d. si la
+         personne n'a qu'UN conjoint. AVANT : on prenait `conjoints[0]`, donc pour quelqu'un
+         qui a eu DEUX unions (cas réel dans cet arbre), l'enfant était rattaché d'office au
+         PREMIER conjoint de la liste — une fois sur deux le mauvais, sans que rien ne le
+         signale. Un lien de famille faux et silencieux est pire qu'un champ vide : le champ
+         vide se voit et se remplit, le lien faux se recopie et se transmet. Avec 2 unions ou
+         plus, on laisse donc le sélecteur « Père/Mère » vide, à choisir. */
+      else if(link.childOf&&P(link.childOf)){var par=P(link.childOf);if(par.sexe==="F")p.mere=link.childOf;else p.pere=link.childOf;
+        var cj=(par.conjoints||[]).filter(function(c){return P(c);});
+        if(cj.length===1){var s2=cj[0];if(P(s2).sexe==="F")p.mere=s2;else p.pere=s2;}
+        p.nom=par.nom||"";}
       else if(link.parentType&&link.childId){_editLink={parentType:link.parentType,childId:link.childId};p.sexe=link.parentType==="pere"?"M":"F";var ch=P(link.childId);p.nom=(ch&&ch.nom)||"";}
     }
   }

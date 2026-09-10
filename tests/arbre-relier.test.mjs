@@ -77,6 +77,13 @@ ok(/aRelierBranches\.push\(\{ids:trees\[i\]\.slice\(\),racines:racines/.test(htm
   'la branche séparée retient QUI rattacher (sa personne la plus ancienne)');
 ok(/b\.racines\.length\?b\.racines:b\.ids/.test(html), 'le panneau propose d\'abord la personne à rattacher');
 
+/* 8 ter. AJOUT D'UN ENFANT — l'autre parent n'est pré-rempli que s'il n'y a aucun doute.
+   Avant, on prenait `conjoints[0]` : pour quelqu'un ayant eu DEUX unions, l'enfant était
+   rattaché d'office au premier de la liste, une fois sur deux au mauvais parent, en
+   silence. Un lien de famille faux se recopie et se transmet ; un champ vide se voit. */
+ok(/var cj=\(par\.conjoints\|\|\[\]\)\.filter/.test(html) && /if\(cj\.length===1\)\{var s2=cj\[0\];/.test(html),
+  'ajout d\'un enfant : l\'autre parent n\'est deviné que si la personne n\'a QU\'UN conjoint');
+
 /* 9. l'outil de vérification réelle et la fixture qui l'exerce existent */
 ok(fs.existsSync(path.join(ROOT, 'tools', 'arbre', 'verify-relier.mjs')), 'tools/arbre/verify-relier.mjs présent (vrai navigateur)');
 const fixture = fs.readFileSync(path.join(ROOT, 'tools', 'arbre', 'fixture-famille.mjs'), 'utf8');
