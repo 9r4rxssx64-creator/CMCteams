@@ -10,6 +10,8 @@ import { chromium } from 'playwright';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { readFileSync, writeFileSync } from 'fs';
+import { signatureImport } from './_gen-stabilite.mjs';
+import { jsonStable } from './_json-stable.mjs';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..', '..');
 const PDFJS = readFileSync(resolve(root, 'node_modules/pdfjs-dist/build/pdf.min.js'));
@@ -20,6 +22,7 @@ const TARGETS = [
   // Règle Kevin 2026-09-02 : « fais CMCteams ET light aussi, toujours ». Un mois
   // importé d'un seul côté = l'app principale et la page Départs désaccordées.
   // Un test de parité le vérifie (tests/verify-parite-cmcteams-light.mjs).
+  { pdf: 'tests/fixtures/octobre-2026.pdf', year: 2026, monthIdx: 9 },
   { pdf: 'tests/fixtures/septembre-2026-v2.pdf', year: 2026, monthIdx: 8 },
   { pdf: 'tests/fixtures/aout-2026-v2.pdf', year: 2026, monthIdx: 7 },
   { pdf: 'tests/fixtures/juillet-2026-v2.pdf', year: 2026, monthIdx: 6 },
@@ -47,13 +50,15 @@ async function extract(browser, pdfRel, year, monthIdx) {
   // DÉTERMINISME (lesson #88) : FORCE la passe géométrique différée + POLL jusqu'à
   // couverture STABLE (2 lectures identiques), indépendant de la contention CPU.
   {
-    const cov = (key) => { const ov = (window.A && A.overrides && A.overrides[key]) || {}; return Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length; };
-    let prev = -1, stable = 0, key = year + '-' + monthIdx;
+    // v9.896 : la sonde couvre personnes + cellules + ÉQUIPES + familles (module partagé).
+    // Passée TELLE QUELLE à page.evaluate : elle ne dépend que de window.A, aucune fermeture.
+    const sonde = signatureImport;
+    let prev = '', stable = 0, key = year + '-' + monthIdx;
     for (let i = 0; i < 30 && stable < 2; i++) {
       await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
       await page.waitForTimeout(500);
-      const c = await page.evaluate(cov, key);
-      stable = (c === prev && c > 50) ? stable + 1 : 0; prev = c;
+      const c = await page.evaluate(sonde, key);
+      stable = (c.sig === prev && c.n > 50) ? stable + 1 : 0; prev = c.sig;
     }
   }
   const out = await page.evaluate((key) => {
@@ -83,6 +88,12 @@ async function extract(browser, pdfRel, year, monthIdx) {
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const months = {};
+  // v9.898 : la version du PARSEUR qui a produit ce seed (APP_VER lu dans la vraie page).
+  // L'app compare cette valeur à cmc_ref_<mois>.parserVersion : un import fait par un
+  // parseur plus ancien est remplacé par le seed (archivé, restaurable) ; un import au moins
+  // aussi récent garde la priorité.
+  let parser = '';
+  { const ctx = await browser.newContext(); const pg = await ctx.newPage(); await pg.addInitScript(() => { window.__CMC_NO_SEED = true; }); await pg.goto('file://' + resolve(root, 'index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 }); parser = await pg.evaluate(() => String(window.APP_VER || '')); await ctx.close(); if (!/^v\d+\.\d+$/.test(parser)) throw new Error('APP_VER illisible dans index.html : ' + parser); }
   for (const tg of TARGETS) {
     const key = tg.year + '-' + tg.monthIdx;
     const r = await extract(browser, tg.pdf, tg.year, tg.monthIdx);
@@ -90,11 +101,11 @@ async function main() {
     console.log(key + ' : ' + r.emps.length + ' emps · ' + r.nCells + ' cellules · ' + Object.keys(r.team).length + ' avec équipe · ' + (Object.keys(r.mirror).length / 2) + ' miroirs · ' + r.ecole.length + ' école→roulettes');
   }
   await browser.close();
-  const payload = { version: '2026-06-28', months };
+  const payload = { version: '2026-06-28', parser, months };
   const js = '/* SEED planning CMCteams — GÉNÉRÉ par tools/shared/_gen-seed.mjs depuis les vrais PDF\n'
     + '   (même source que la page Départs). NE PAS éditer à la main. Appliqué en affichage\n'
     + '   par l\'app pour les mois sans données live (jamais d\'écrasement). */\n'
-    + 'window.CMC_PLANNING_SEED=' + JSON.stringify(payload) + ';\n';
+    + 'window.CMC_PLANNING_SEED=' + jsonStable(payload) + ';\n';
   writeFileSync(resolve(__dirname, 'planning-seed.js'), js);
   console.log('→ tools/shared/planning-seed.js écrit (' + js.length + ' octets, ' + Object.keys(months).length + ' mois)');
 }

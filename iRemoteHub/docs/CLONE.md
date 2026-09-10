@@ -84,7 +84,7 @@
 | Hardware | Couvre | Prix | Connexion | Fonction iRemoteHub |
 |----------|--------|------|-----------|---------------------|
 | **Flipper Zero** | NFC + RFID 125k + IR + Sub-GHz + iButton + RFID HF + Bad USB | ~100 € | BLE / USB | **Pivot central** — app pilote via sa Mobile API |
-| **BroadLink RM4 Pro** | IR + RF 433 MHz fixe | ~45 € | WiFi local | Déjà intégré dans `adapters/broadlink.js` |
+| **BroadLink RM4 Pro** | IR + RF 433 MHz fixe | ~45 € | WiFi local | Déjà intégré dans `bridge/adapters/broadlink.js` |
 | **PN532 module USB/I2C** | NFC 13.56 MHz | ~8 € | USB serial | Lecture/écriture NFC fast |
 | **Chameleon Mini / Ultra** | NFC + RFID 125k | ~50-80 € | USB / BLE | Emulation multi-ID |
 | **Proxmark3 Easy / RDV4** | NFC + 125 kHz pro | ~70-450 € | USB | Analyse avancée (keys, etc.) |

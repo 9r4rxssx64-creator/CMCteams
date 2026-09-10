@@ -53,6 +53,12 @@ const REGISTRE = [
   // de 2 jours doit porter un suivi daté (réveil, relance, prise en charge, vérification).
   [/PRÉVENIR NE SUFFIT PAS/i, ['npm:test:messages-suivis', 'npm:test:pipeline-sessions']],
   [/TOUT LE MONDE A UN PLANNING/i, ['npm:test:everyone-has-planning']],
+  // Règle « J'ai internet et des outils » (CLAUDE.md, Kevin 14.08.2026) : sa garde EXISTE
+  // depuis le 6.09 (tools/audit/liens-check.mjs, joué par le job GitLab « liens-reels » —
+  // pinguer des sites tiers n'a pas sa place sur GitHub, cf. règle des destinations), mais
+  // l'entrée manquait ICI. Le ratchet la comptait donc « sans automatisme » (19 → 20) et
+  // rougissait test:ci pour TOUTES les sessions — exactement la même cause que Qwen ci-dessus.
+  [/J'AI INTERNET ET DES OUTILS/i, ['file:tools/audit/liens-check.mjs']],
   [/LISTE DE COMMANDES COMPLÈTE/i, ['file:apex-ai/v13/tests/unit/v13_4_317-commands-completeness.test.ts']],
   [/SÉCURITÉ MAXIMALE PARTOUT/i, ['wf:security-suite.yml', 'npm:test:xss-guard', 'npm:test:ia-key-privacy']],
   [/ARCHITECTURE AUDITÉE EN PREMIER/i, ['npm:test:render-views', 'npm:audit:improvements']],

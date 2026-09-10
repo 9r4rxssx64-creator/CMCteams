@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "STDIN=$(cat); CMD=$(echo \"$STDIN\" | jq -r '.tool_input.command // \"\"'); if echo \"$CMD\" | grep -q 'git commit'; then DATE=$(date \"+%Y-%m-%d %H:%M\"); cd /home/user/CMCteams; HASH=$(git log -1 --format=\"%h\" 2>/dev/null); MSG=$(git log -1 --format=\"%s\" 2>/dev/null); ENTRY=\"- **[$DATE]** \\`$HASH\\` — $MSG\"; echo \"$ENTRY\" >> /home/user/CMCteams/.claude_journal.md; fi",
+            "command": "STDIN=$(cat); CMD=$(echo \"$STDIN\" | jq -r '.tool_input.command // \"\"'); if echo \"$CMD\" | grep -q 'git commit'; then DATE=$(date \"+%Y-%m-%d %H:%M\"); cd \"$CLAUDE_PROJECT_DIR\"; HASH=$(git log -1 --format=\"%h\" 2>/dev/null); MSG=$(git log -1 --format=\"%s\" 2>/dev/null); ENTRY=\"- **[$DATE]** \\`$HASH\\` — $MSG\"; echo \"$ENTRY\" >> \"$CLAUDE_PROJECT_DIR/.claude_journal.md\"; fi",
             "timeout": 15
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "STDIN=$(cat); FILE=$(echo \"$STDIN\" | jq -r '.tool_input.file_path // .tool_response.filePath // \"\"'); if echo \"$FILE\" | grep -qE 'index\\.html$'; then node --input-type=module <<'JSEOF' 2>&1 | grep -E '(SyntaxError|Error|error)' | head -5 || true\nimport { readFileSync } from 'fs';\nconst src = readFileSync('/home/user/CMCteams/index.html','utf8');\nconst m = src.match(/<script[^>]*>([\\s\\S]*?)<\\/script>/g);\nif(m){const js=m.map(s=>s.replace(/<script[^>]*>/,'').replace(/<\\/script>/,'')).join('\\n'); new Function(js);}\nconsole.log('JS OK');\nJSEOF\nfi",
+            "command": "STDIN=$(cat); FILE=$(echo \"$STDIN\" | jq -r '.tool_input.file_path // .tool_response.filePath // \"\"'); if echo \"$FILE\" | grep -qE 'index\\.html$'; then node --input-type=module <<'JSEOF' 2>&1 | grep -E '(SyntaxError|Error|error)' | head -5 || true\nimport { readFileSync } from 'fs';\nconst src = readFileSync(process.env.CLAUDE_PROJECT_DIR + '/index.html','utf8');\nconst m = src.match(/<script>([\\s\\S]*?)<\\/script>/g);\nif(m){const js=m.map(s=>s.replace(/<script>/,'').replace(/<\\/script>/,'')).join(''); new Function(js);}\nconsole.log('JS OK');\nJSEOF\nfi",
             "timeout": 20,
             "statusMessage": "Validation JS index.html..."
           }

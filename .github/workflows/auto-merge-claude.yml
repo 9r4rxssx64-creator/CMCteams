@@ -149,8 +149,24 @@ jobs:
               echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."
             fi
           else
-            echo "::warning::Conflit sur du CODE, pas seulement le journal : $(git diff --name-only --diff-filter=U | tr '\n' ' ')— à résoudre par la session ; la PR restera ouverte."
-            git merge --abort
+            # 2026-09-10 : le rapport du ménage (.github/CLEANUP-REPORT.md) est RÉGÉNÉRÉ à chaque
+            # exécution, sur la branche ET sur main → deux versions différentes du même fichier
+            # neuf = conflit « add/add » que le pilote « union » ne couvre pas (ce n'est pas un
+            # journal, c'est un instantané). Vécu : 35 PR sur claude/apex-ultra-review-crew-MZ8nS,
+            # fusionnées à la main par la session à chaque fois. Ici on garde la version de main
+            # (la plus récente) : elle sera de toute façon réécrite au prochain ménage.
+            U=$(git diff --name-only --diff-filter=U)
+            if [ "$U" = ".github/CLEANUP-REPORT.md" ]; then
+              git checkout --theirs .github/CLEANUP-REPORT.md
+              git add .github/CLEANUP-REPORT.md
+              git -c user.name="github-actions[bot]" -c user.email="github-actions[bot]@users.noreply.github.com" commit -q --no-edit
+              echo "OK: seul le rapport de ménage était en conflit → version de main gardée ($(git rev-parse --short HEAD))"
+              git push origin "HEAD:refs/heads/$BRANCH" \
+                || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."
+            else
+              echo "::warning::Conflit sur du CODE, pas seulement le journal : $(echo "$U" | tr '\n' ' ')— à résoudre par la session ; la PR restera ouverte."
+              git merge --abort
+            fi
           fi
 
       - name: Create & merge PR into main
@@ -227,8 +243,18 @@ jobs:
             echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."
             cat "$MERGE_LOG" || true
             # État de fusion vu par GitHub + règles qui bloquent (lisible par GITHUB_TOKEN)
-            DIAG=".github/AUTOMERGE-DIAGNOSTIC.md"
-            mkdir -p .github
+            #
+            # v2026-09-10 : UN FICHIER PAR BRANCHE, plus un chemin partagé.
+            # Avant, TOUTES les branches écrivaient dans `.github/AUTOMERGE-DIAGNOSTIC.md`
+            # avec un contenu différent → dès que deux branches en retard se
+            # rencontraient sur main, CONFLIT GARANTI au même chemin. Mesuré le
+            # 6.09 : 8 écritures en une journée sur 4 branches ; c'est ce qui a
+            # bloqué la PR #3679 (mergeable_state "dirty") et une autre session
+            # avait déjà tenté de supprimer le fichier — il revenait au run suivant.
+            # Chaque branche a maintenant son propre fichier : deux branches ne
+            # touchent plus jamais le même chemin, donc plus de conflit possible.
+            DIAG=".github/automerge-diag/$(echo "$BRANCH" | tr '/' '-').md"
+            mkdir -p .github/automerge-diag
             {
               echo "# Diagnostic auto-merge — PR #$PR ($BRANCH)"
               echo

@@ -343,7 +343,7 @@ grep -E 'schema_migrated|migration_completed' /tmp/audit-export.json
 grep -c 'migrationWatch' apex-ai/index.html  # > 0
 
 # 6. Schema version increment
-grep 'CURRENT_VERSION\s*=' apex-ai/v13/src/utils/migrations.ts
+grep 'CURRENT_VERSION\s*=' apex-ai/v13/migrations/
 ```
 
 ## Exemples concrets

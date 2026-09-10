@@ -50,5 +50,5 @@ MP4 ou WebM rendered via Puppeteer Worker offscreen (ou MediaRecorder API client
 ## References
 
 - Hyperframes : https://hyperframes.dev (open-source MIT)
-- Pattern Apex : `apex-ai/v13/services/skills/hyperframes.ts`
+- Pattern Apex : `apex-ai/v13/services/core-svc/hyperframes.ts`
 - Complementaire : `apex-video-use.md` (ffmpeg.wasm)

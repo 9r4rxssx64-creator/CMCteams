@@ -75,6 +75,34 @@ jobs:
             echo "⚠️  index.html > 2 MB, surveiller la dérive"
           fi
 
+  # GARDES DU DÉPÔT PUBLIC — mesuré le 7.09 par cmcteams-pdf (m049) : `npm run test:ci` ne
+  # tourne dans AUCUN workflow GitHub, seulement dans le job « tests » de GitLab, qui ne voit
+  # les branches qu'à une remise à niveau occasionnelle. Donc les gardes écrites le 5.09
+  # (code admin en clair, pull_request_target, action tierce sur @main, secret persisté,
+  # documents de travail publiés, destination des automatisations, assets wrangler à fabriquer,
+  # registre des sessions) étaient « câblées » sans jamais tourner sur une PR. Elles tournent
+  # ici : 0 dépendance npm (node seul), ~20 s, à chaque PR vers main et sur main.
+  gardes-depot-public:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Gardes (node seul, sans npm install)
+        shell: bash -eo pipefail {0}
+        run: |
+          for g in test:no-pin-leak test:depot-public-sain test:secret-jamais-persiste \
+                   test:documents-travail test:destinations-workflows test:wrangler-assets \
+                   test:pipeline-sessions; do
+            echo "::group::$g"
+            if npm run -s "$g"; then echo "::endgroup::"; else
+              echo "::endgroup::"; echo "::error title=$g::garde en échec — voir le groupe $g ci-dessus"; exit 1
+            fi
+          done
+          echo "✅ 7 gardes du dépôt public vertes"
+
   e2e-tests:
     runs-on: ubuntu-latest
     needs: syntax-check

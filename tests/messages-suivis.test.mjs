@@ -60,8 +60,13 @@ let base = { _note: '', figes: [] };
 try { base = JSON.parse(readFileSync(CHEMIN_BASE, 'utf8')); } catch { /* première fois */ }
 const figes = new Set(base.figes || []);
 
+/* On ne fige QUE la dette réelle (messages effectivement sans suivi), jamais tous les
+   messages ouverts. Figer un identifiant qui n'en avait pas besoin le rend muet pour
+   toujours — et si cet identifiant est un jour réattribué (doublon entre deux sessions,
+   vécu le 10.09 avec m039 puis m055), c'est un AUTRE message qui se retrouve excusé
+   sans que personne ne le voie. Un cliquet doit geler ce qui est cassé, pas tout. */
 if (process.argv.includes('--update-baseline')) {
-  const out = { _note: "Signalements déposés AVANT la règle « prévenir ne suffit pas » (10.09.2026) : dette figée. Un NOUVEAU message ouvert sans suivi fait échouer le gate. Ne pas re-figer pour se débarrasser d'un rouge — traiter le message.", figes: ouverts.map((m) => m.id).sort() };
+  const out = { _note: "Signalements déposés AVANT la règle « prévenir ne suffit pas » (10.09.2026) : dette figée. Un NOUVEAU message ouvert sans suivi fait échouer le gate. Ne pas re-figer pour se débarrasser d'un rouge — traiter le message.", figes: sansSuivi.map((l) => l.split(' ')[0]).sort() };
   writeFileSync(CHEMIN_BASE, JSON.stringify(out, null, 2) + '\n');
   console.log('baseline re-figée : ' + out.figes.length + ' message(s)');
   process.exit(0);

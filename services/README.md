@@ -2,7 +2,7 @@
 
 > **Architecture** : Cloudflare Workers découpés par domaine fonctionnel.
 > **Mission** : sortir progressivement les modules critiques du monolith
-> `apex-ai/index.html` (30K LOC) vers des services indépendants.
+> `apex-ai/index.html` (ex-monolithe 30K LOC, **aujourd'hui archivé — le fichier fait 80 octets**) vers des services indépendants.
 > **Action #3 sur 3** dans le plan 100/100 réel.
 
 ---

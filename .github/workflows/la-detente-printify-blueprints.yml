@@ -16,6 +16,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write   # publier-config : PR vers main
+  actions: write         # publier-config : relance deploy.yml après fusion
 
 jobs:
   blueprints:
@@ -29,13 +31,13 @@ jobs:
         env:
           PRINTIFY_API_KEY: ${{ secrets.PRINTIFY_API_KEY }}
         run: node shops/la-detente/scripts/ld-printify-blueprints.mjs
-      - name: Commit printify-blueprints.json
-        run: |
-          git config user.name "kdmc-bot"; git config user.email "bot@kdmc.local"
-          BR="claude/printify-blueprints-${{ github.run_id }}"
-          git checkout -b "$BR"
-          git add shops/la-detente/printify-blueprints.json || true
-          if git diff --cached --quiet; then echo "rien"; else
-            git commit -m "La Détente — catalogue Printify complet par catégorie [skip ci]"
-            git push -u origin "$BR"; echo "Poussé $BR (auto-merge)."
-          fi
+      - name: Publier printify-blueprints.json dans main (PR fusionnée par le robot)
+        # Jusqu'au 10.09.2026 : 5 branches claude/printify-blueprints-<run_id> poussées « pour
+        # auto-merge » — jamais fusionnées ; la boutique lit ce fichier (index.html l.1003) et
+        # main gardait la version du 4 juin. Leçon #243.
+        if: hashFiles('shops/la-detente/printify-blueprints.json') != ''
+        uses: ./.github/actions/publier-config
+        with:
+          fichiers: shops/la-detente/printify-blueprints.json
+          message: "La Détente — catalogue Printify complet par catégorie"
+          prefixe: printify-blueprints

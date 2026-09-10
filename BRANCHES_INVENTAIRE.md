@@ -63,7 +63,7 @@
 | 2026-06-15 | 🔶 non-anc. | 1159 | `auto-deploy/apex-v13-build-27582233358` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
 | 2026-06-15 | 🔶 non-anc. | 1156 | `auto-deploy/apex-v13-build-27575880279` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
 | 2026-06-15 | 🔶 non-anc. | 1148 | `auto-deploy/apex-v13-build-27564298985` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |
-| 2026-06-15 | 🔶 non-anc. | 1142 | `claude/kdmc-replay-csp` | Domaine kd-mc.com : anti-rejeu WebAuthn one-time + en-têtes sécurit� |
+| 2026-06-15 | 🔶 non-anc. | 1142 | `claude/kdmc-replay-csp` | Domaine kd-mc.com : anti-rejeu WebAuthn one-time + en-têtes sécurité |
 | 2026-06-15 | 🔶 non-anc. | 1139 | `claude/kdmc-deepen-hardening` | Domaine kd-mc.com : passe approfondie post-audit (rate-limit code admi |
 | 2026-06-15 | 🔶 non-anc. | 1121 | `claude/cmcteams-detection-errors-48gbod` | v9.806: diagnostic équipes affiche la VRAIE famille (familyForMonth), |
 | 2026-06-14 | 🔶 non-anc. | 1156 | `auto-deploy/apex-v13-build-27514357777` | Auto-deploy Apex v13.4.332 build → apex-ai-v13/ [skip ci] |

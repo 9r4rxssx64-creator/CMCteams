@@ -48,6 +48,8 @@ jobs:
         run: |
           git config user.name "kdmc-bot"
           git config user.email "bot@kdmc.local"
+          # branche-de-relecture : les images générées sont déposées pour être REGARDÉES et choisies,
+          # pas fusionnées automatiquement (garde : tests/verify-branches-robot.mjs, leçon #243).
           BR="claude/ai-realguns-${{ github.run_id }}"
           git checkout -b "$BR"
           git add shops/la-detente/img/designs

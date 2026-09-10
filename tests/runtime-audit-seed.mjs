@@ -64,11 +64,25 @@ async function main() {
     const { page } = await boot(browser, { noSeed: false });
     const r = await page.evaluate(() => {
       A.overrides['2026-7'] = { U_LIVE: { 1: 'XX' } }; // donnée live sentinelle
+      // v9.898 : un import fait par un parseur AU MOINS AUSSI RÉCENT que le seed garde la priorité
+      // (real import wins). Un import sans version / plus ancien est remplacé — prouvé à part par
+      // tests/verify-seed-remplace-import-perime.mjs (leçon #247).
+      ls('cmc_ref_2026-7', { year: 2026, month: 7, rows: {}, importedAt: Date.now(), parserVersion: window.APP_VER });
       const applied = _cmcApplyPlanningSeed();
       const o = A.overrides['2026-7'] || {};
       return { applied, kept: !!(o.U_LIVE && o.U_LIVE[1] === 'XX'), nIds: Object.keys(o).length };
     });
-    ok(r.kept && r.nIds === 1, 'données live préservées, seed ne ré-écrit pas (ids=' + r.nIds + ')');
+    ok(r.kept && r.nIds === 1, 'données live d\'un import récent préservées, seed ne ré-écrit pas (ids=' + r.nIds + ')');
+    const r2 = await page.evaluate(() => {
+      // import SANS version (ancien parseur) → remplacé par le seed vérifié, ancien archivé
+      A.overrides['2026-7'] = { U_LIVE: { 1: 'XX' } };
+      ls('cmc_ref_2026-7', { year: 2026, month: 7, rows: {}, importedAt: Date.now() });
+      localStorage.removeItem('cmc_history_2026-7_versioned');
+      const applied = _cmcApplyPlanningSeed();
+      const o = A.overrides['2026-7'] || {};
+      return { applied, kept: !!(o.U_LIVE && o.U_LIVE[1] === 'XX'), nIds: Object.keys(o).length, hist: lg('cmc_history_2026-7_versioned', []).length, marker: (lg('cmc_ref_2026-7', null) || {}).seedApplied };
+    });
+    ok(!r2.kept && r2.nIds > 50 && r2.hist === 1 && !!r2.marker, 'import SANS version remplacé par le seed vérifié (ids=' + r2.nIds + ', archivé V' + r2.hist + ', marqueur ' + r2.marker + ')');
     await page.context().close();
   }
 

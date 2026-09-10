@@ -117,5 +117,5 @@ Apex scanne SA propre base de code (et celle de CMCteams) pour identifier vulner
 - OWASP ASVS L2 2024
 - CWE Top 25 2024
 - NIST CSF 2.0
-- Pattern : `apex-ai/v13/services/skills/security-review.ts`
+- Pattern : `apex-ai/v13/services/admin/security-review.ts`
 - Sentinelle : `security-watch` (quotidienne)

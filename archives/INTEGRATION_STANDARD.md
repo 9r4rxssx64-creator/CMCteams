@@ -185,7 +185,7 @@ Utiliser pour toute question sur frameworks récents (anti-hallucination).
 
 ### 4. ⏰ Cron > 1×/jour — GitHub Actions (gratuit, illimité)
 
-Pattern : `.github/workflows/agent-cron.yml`
+Pattern : `.github/workflows-desactives/agent-cron.yml (**rangé** — plus actif)`
 
 ```yaml
 name: Agent Cron 24/7

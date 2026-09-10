@@ -79,5 +79,5 @@ Apex refuse de generer du copy :
 
 - Robert Cialdini : "Influence" (1984 + 2021 ed.)
 - "Marketing Psy" skill (Shubham Sharma TikTok)
-- Pattern Apex : `apex-ai/v13/services/skills/marketing-psy.ts`
+- Pattern Apex : `apex-ai/v13/services/integrations/marketing-psy.ts`
 - Vue : `?view=studio-marketing`
