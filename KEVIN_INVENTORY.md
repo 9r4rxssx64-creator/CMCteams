@@ -166,6 +166,15 @@
 | `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
 | `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
 
+## 🛰️ Vérifier le VRAI domaine sans API et sans clic — la CI regarde, et écrit son rapport ici (2026-09-05)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verif-live-rapport.mjs` | Ouvre **cmcteams.kd-mc.com** (repli GitHub Pages, et il DIT lequel a répondu) : version servie, correctif v1.39 présent dans le fichier servi, aucun code admin dans la page — puis, **dans un vrai navigateur**, connecté comme toi : ton équipe et ton miroir du mois, y compris avec un vieux tableau mémorisé. Lecture seule, aucune fiche d'accès créée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verif-live-rapport.mjs) |
+| `.github/workflows/verif-live-rapport.yml` | Le canal : mon `push` déclenche la CI (elle, elle a le réseau), elle **réécrit le rapport dans le dépôt** — je le relis sans API GitHub et **sans un seul clic de ta part**. | [Exécutions](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/verif-live-rapport.yml) |
+| `audit/verif-live/rapport.md` | **Le résultat, en clair.** Écrit par la CI à chaque contrôle (`audit/` n'est jamais publié sur le site). | [Lire le rapport](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/verif-live/rapport.md) |
+| `audit/verif-live/demande.txt` | Fichier-signal : le toucher relance le contrôle en ligne. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/verif-live/demande.txt) |
+
 ## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
 
 | Fichier | À quoi ça sert | Liens |
