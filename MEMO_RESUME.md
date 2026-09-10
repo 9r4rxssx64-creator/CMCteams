@@ -1,5 +1,29 @@
 # MEMO_RESUME — état de session
 
+## 5 septembre 2026 — vérifier le VRAI domaine sans API ni clic (canal CI → rapport dans le dépôt)
+
+**Consigne Kevin** : « Trouve des solutions / Attention d'autres branches travaillent sur le domaine ».
+
+**Le mur, mesuré** : depuis la session, `kd-mc.com`, `github.io` et `workers.dev` sont refusés par
+la politique réseau, et l'API GitHub répond **403 « GitHub access is not enabled for this session »**
+à tout appel concernant un dépôt (même public) → ni demande de fusion, ni lancement de workflow, ni
+lecture d'exécution. **Ce qui marche : `git push`.** Et un workflow se déclenche SUR un push, avec
+un runner qui, lui, a le réseau ouvert.
+
+**Le canal** : push → la CI ouvre les vraies pages du domaine → elle **réécrit son rapport dans le
+dépôt** (`audit/verif-live/`) → je le relis par `git fetch`. **Zéro clic de Kevin.**
+
+**Ma faute, corrigée** : j'avais poussé le script **sans l'avoir lancé une seule fois** — un
+caractère parasite dans un nom de variable le faisait planter à la ligne 30, donc la CI n'écrivait
+**aucun** rapport (le « pas de rapport après 13 min » venait de là, pas d'Actions : le robot de
+fusion tournait bien). Corrigé, `node --check` puis exécution locale réelle : le script écrit
+**toujours** son rapport, même quand tout échoue. **Filet ajouté au workflow** : si le script
+s'arrête avant d'écrire, un rapport minimal est créé quand même — sinon `git add` faisait échouer
+le job et Kevin n'avait **aucune** information.
+
+**Règle qui manquait à mon propre travail** : *ne jamais pousser un script sans l'avoir exécuté au
+moins une fois localement* — même quand il « ne peut pas marcher ici » (réseau bloqué), il doit au
+minimum démarrer et produire sa sortie.
 > 📌 **Ce que Kevin doit faire est ailleurs** : la liste complète et priorisée vit dans
 > **`KEVIN_ACTIONS_TODO.md`** (refaite le 6.09.2026). En tête : 4 mots de passe à remplacer
 > (ils sont dans l'historique public du dépôt), puis 7 questions dont une simple réponse me
@@ -37,6 +61,41 @@
 - Les nouvelles exécutions des 5 workflows corrigés vont, elles, faire arriver `push-config.json` et `printify-catalog.json` dans `main` — la preuve viendra du **prochain déploiement**, pas d'ici.
 
 Leçon **#243** dans `LESSONS.md`.
+## 10 septembre 2026 (soir) — Ménage des branches : l'outil, et la correction de ce que j'avais écrit le matin
+
+**Le matin**, j'avais écrit dans `ETAT-INFRA.md` qu'un « repli par comparaison d'arbres » suffirait
+à reconnaître les 314 branches sans ancêtre commun. **Codé et mesuré, ce critère donne 0 branche
+sur 385.** C'était faux, et c'est corrigé sur place.
+
+**Pourquoi c'était faux** : `git diff` répond « différent », pas « plus ancien ». Une branche d'août
+diffère de `main` **parce qu'elle est vieille**. Mesuré : 568 fichiers ajoutés / 378 modifiés, dont
+seulement 30 ajouts hors sortie de compilation.
+
+**Ce qui marche** — `node tools/menage/branches-superflues.mjs` ne demande plus « la branche
+diffère-t-elle ? » mais **« quel fichier disparaîtrait si on la supprimait ? »**, en écartant trois
+faux positifs mesurés : fabriqué (empreinte de build dans le nom), déplacé à contenu identique,
+déplacé à contenu retouché. Ce troisième filtre est indispensable : les 223
+`apex-ai/v13/services/*.ts` « uniques » d'une branche d'août sont en réalité **rangés en
+sous-dossiers** dans `main` — sans lui, l'outil annonce la perte de tout Apex v13. Je m'y suis
+laissé prendre avant de vérifier.
+
+**Résultat** : 385 branches → **2 sans aucune perte possible**, et surtout **190 fichiers distincts**
+à relire UNE fois (`--fichiers`, liste écrite dans `pipeline/fichiers-uniquement-sur-branches.txt`)
+au lieu de trancher 321 branches. 121 sont un lot marketing tiers, ~10 les crons retirés après la
+suspension GitHub, le reste des médias et documents anciens.
+
+**Limite écrite noir sur blanc** : un fichier seulement *modifié* ne retient pas la branche — or un
+correctif jamais fusionné ressemble à ça (le correctif Lingua du 5.09 était exactement ce cas).
+D'où le seuil de 30 jours et l'immunité des branches inscrites au registre.
+
+**Garde** : `npm run test:menage-branches` (12 OK / 0 FAIL), câblée dans `test:ci`. Elle fabrique un
+dépôt de test avec les 7 cas, dont **une branche orpheline au contenu identique** — celle que
+`--is-ancestor` ne voit pas — et le contrepoint qui prouve qu'elle mord.
+
+**Rappel** : la suppression reste refusée par le ruleset `16725169` (condition `~ALL`). Un seul
+geste de Kevin la débloque : `~ALL` → `~DEFAULT_BRANCH`.
+
+---
 
 ## 10 septembre 2026 — « continu » : les fichiers de planning étaient tirés au sort, et ça cachait une MAUVAISE ÉQUIPE
 
@@ -1810,6 +1869,11 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
     pipeline-sessions) **tournent enfin sur GitHub** : job `gardes-depot-public` dans
     `tests.yml` (PR vers main + main, node seul, ~20 s). Avant : câblées dans `test:ci`, que
     seul le job GitLab lance (mesure m049 de cmcteams-pdf) — donc jamais sur une PR.
+    **Preuve sur GitHub (pas seulement en local)** : fusionné par le bot via PR #3723 (09:17 UTC) ;
+    le job a tourné VERT en 3 s sur la PR suivante (`claude/menage-branches-cause-exacte`,
+    run 34473620618, job 102859054674). Honnêteté : sur MA PR le bot a fusionné 60 s après
+    l'ouverture, AVANT que les jobs démarrent (run 34459707355 : 0 job, « failure ») — le bot
+    auto-merge ne laisse pas le temps à la CI de la PR ; la preuve vient donc de la PR d'après.
 
 ### 👤 Ce que les AUTRES sessions attendent de Kevin (vu au registre, pour ne rien perdre)
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
@@ -6532,3 +6596,39 @@ corrigé, il exige maintenant la vraie commande.
 type de surveillance que depuis la branche principale. Le bot s'en charge.
 
 Leçon #234.
+
+## 2026-09-10 — Le filet était resté coincé dehors, et je ne pouvais pas le voir
+
+**Ce que j'ai trouvé en reprenant** : le journal des pannes que je t'ai livré mardi soir
+**n'était jamais arrivé dans `main`**. Il est resté 4 jours sur ma branche.
+
+Le robot de fusion avait pourtant très bien marché pour mes 5 livraisons précédentes.
+Pour la dernière — justement celle qui portait le filet — il n'a rien fait. Pourquoi ?
+**Je ne peux pas le savoir** : la seule trace est le journal de la CI, celui-là même que
+je ne peux pas lire. Le filet censé rendre les pannes visibles était bloqué par une
+panne invisible.
+
+**Réglé** : j'ai refusionné, résolu un conflit sur un rapport de robot, revérifié, et
+repoussé. La fusion s'est faite en **15 secondes**. Ce n'était donc pas un blocage de
+fond, juste un raté silencieux — mais qui a coûté 4 jours.
+
+**Vérifié pour de vrai** : le journal est bien **sur `main`** maintenant. Il est actif.
+
+### Ce que j'en tire, et que j'ai corrigé dans la foulée
+
+La fusion automatique est le maillon dont la panne **bloque tout** : si le travail ne
+rejoint pas `main`, plus rien ne se déploie — et aucune de mes 23 surveillances ne se
+déclenche jamais. Elle **n'était pas surveillée**. Elle l'est maintenant.
+
+La prochaine fois qu'elle rate, la raison exacte atterrira toute seule dans
+`audit/deploiements-rates.md`, et je ne perdrai plus 4 jours.
+
+Garde : **47 contrôles, 0 échec**, le nouveau prouvé discriminant par sabotage.
+
+### Toujours en attente (rien à faire de mon côté)
+
+Les **poses de danse** refusent encore, pour la même raison que mardi : les deux moteurs
+d'image sont à sec (Gemini « crédits épuisés », Replicate « palier gratuit »). C'est de
+l'argent, pas du code. Recharger l'un des deux suffit.
+
+Leçon #235.

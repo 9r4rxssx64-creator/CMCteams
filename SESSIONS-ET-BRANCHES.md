@@ -64,6 +64,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Garde anti-fuite de secrets (annexe) | `claude/secrets-guard-main` | ✅ **fusionnée** (0 commit hors de main, mesuré le 10.09) — l'alerte ci-dessous est conservée pour l'historique : — partie de `main` le 6.09. 4 secrets encore en clair sur `main` (dépôt PUBLIC) + la garde qui les attrape. Voir message m036. |
 | Lingua — connexion prénom + nom | `claude/lingua-connexion-honnete` | ✅ fusionnée (0 commit hors de main, mesuré le 10.09) |
 | Ménage des branches — pourquoi 0 supprimée sur 379 | `claude/menage-branches-cause-exacte` | 🟢 diagnostic mesuré le 10.09 : ruleset `16725169` en `~ALL` (bloque toute suppression) + historique de `main` reconstruit le 09.08 (314 branches sur 361 sans ancêtre commun). PR #3725 |
+| Ménage des branches — l'outil | `claude/menage-repli-arbres` | 🟢 `tools/menage/branches-superflues.mjs` + garde `test:menage-branches` (12/12). 385 branches → 2 sûres et **190 fichiers** à relire une fois. Corrige la promesse fausse du matin |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
 | CMCteams — fidélité au PDF (planning/équipes/départs) | `claude/verify-cmcteams-light-data-rzlvau` | 🟢 septembre 2026 : 248/248 personnes et 7 440/7 440 cellules identiques au PDF, des deux côtés (6.09) |
 
