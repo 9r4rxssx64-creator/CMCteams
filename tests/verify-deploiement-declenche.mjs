@@ -186,6 +186,15 @@ console.log('— 5. Une mise en ligne qui rate laisse-t-elle sa cause exacte dan
   }
   chk(oublies.length === 0,
     `chaque mise en ligne autonome est surveillée${oublies.length ? ' — OUBLIÉES : ' + oublies.join(', ') : ` (${surveilles.size} au journal)`}`);
+
+  /* La fusion automatique n'est PAS un déploiement — et c'est pourtant le maillon
+     dont la panne bloque tout : si elle rate, le travail ne rejoint jamais `main`,
+     donc rien ne se déploie. Vécu du 2026-09-06 au 09-10 : 4 jours dehors, cause
+     invisible. Elle reste au journal, quoi qu'il arrive. */
+  const AM = ((lire('.github/workflows/auto-merge-claude.yml')
+    .match(/^name:\s*(.+)$/m) || [])[1] || '').trim();
+  chk(AM.length > 0 && surveilles.has(AM),
+    `la fusion automatique est surveillée aussi (sa panne bloque TOUT : « ${AM} »)`);
 }
 
 R.ko.forEach((m) => console.log('  FAIL ' + m));
