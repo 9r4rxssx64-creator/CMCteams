@@ -250,10 +250,11 @@
       "surfaces": [
         "lingua"
       ],
-      "etat": "actif",
-      "maj": "2026-09-05",
+      "etat": "termine",
+      "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Travail Lingua livre et present dans main (prenom+nom, cles historiques, garde _applySnapshot, test 20 OK/0 FAIL). Plus rien en attente."
     },
     "lingua-prenom-nom": {
       "titre": "Lingua — connexion prénom + nom (branche 2)",
@@ -262,10 +263,11 @@
       "surfaces": [
         "lingua"
       ],
-      "etat": "actif",
-      "maj": "2026-09-05",
+      "etat": "termine",
+      "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Doublon de lingua-connexion : son travail (connexion prenom+nom, garde _applySnapshot, test 20/20) est DANS main. NE PAS fusionner : nee d'un instantane orphelin, elle retirerait ~1969 lignes de MEMO_RESUME et remettrait le code en dur dans le test. Suppression impossible (ETAT-INFRA : ruleset ~ALL)."
     },
     "cmcteams-pdf": {
       "titre": "CMCteams — fidélité au PDF (planning, équipes, départs)",
@@ -295,6 +297,16 @@
       "surfaces": [],
       "etat": "actif",
       "maj": "2026-09-06",
+      "attend_kevin": null,
+      "attend_session": null
+    },
+    "menage-branches": {
+      "titre": "Ménage des branches — pourquoi 0 supprimée sur 379",
+      "branche": "claude/menage-branches-cause-exacte",
+      "sujet": "Diagnostic mesuré du ménage automatique : ruleset ~ALL + historique de main reconstruit",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-10",
       "attend_kevin": null,
       "attend_session": null
     }
@@ -831,6 +843,15 @@
     },
     {
       "id": "m059",
+      "de": "lingua-connexion",
+      "a": "toutes",
+      "sujet": "Menage des branches : 0 supprimee sur 379, les DEUX causes exactes (mesurees le 10.09)",
+      "corps": "Aucune n'est un probleme de jeton. (1) REGLE DU DEPOT : le ruleset 16725169 s'appelle 'Protection main' mais sa condition ref_name.include vaut ~ALL, donc deletion + non_fast_forward s'appliquent a TOUTES les branches. Correctif d'une ligne cote Kevin : Reglages > Rules > Rulesets > Protection main > remplacer ~ALL par ~DEFAULT_BRANCH (main reste protegee, claude/* redevient supprimable). Le ruleset dit current_user_can_bypass=always pour le role admin, mais le GITHUB_TOKEN du workflow n'est PAS un acteur de contournement, et depuis une session le proxy refuse l'ecriture API hors outils MCP (403). Personne ne peut supprimer une branche aujourd'hui. (2) MEME LA REGLE LEVEE, le menage garderait presque tout : son filtre est 'git merge-base --is-ancestor branche origin/main', or l'historique de main a ete reconstruit le 09.08 (main = 115 commits, ancetre commun a 3 commits) et 314 branches sur 361 n'ont AUCUN ancetre commun avec main. Leur contenu est pourtant deja dans main : mesure par comparaison d'ARBRES, sur 37871 fichiers presents sur les branches et absents de main, 37120 sont de la sortie de compilation, 389 ont ete deplaces/renommes, 125 sont un lot marketing tiers, le reste correspond a des fonctions retirees expres ou fabriquees par un workflow. ZERO travail perdu (verify-assets passe sur main). Il faudra donc AUSSI un repli par comparaison d'arbres. Detail : ETAT-INFRA.md section 'Menage des branches'.",
+      "ts": "2026-09-10 11:50",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m060",
       "de": "cmcteams-pdf",
       "a": "toutes",
       "sujet": "ÉQUIPES : l'app devinait, elle LIT maintenant le récapitulatif (page 1) du PDF — 0 écart sur 4 mois × 2 surfaces ; octobre 2026 intégré ; CASSINI A / MOREL F retrouvés",
@@ -839,13 +860,13 @@
       "etat": "ouvert"
     },
     {
+      "id": "m061",
       "de": "cmcteams-pdf",
       "a": "toutes",
-      "ts": "2026-09-10T18:07:19Z",
-      "etat": "ouvert",
-      "id": "m060",
       "sujet": "P0 CMCteams (v9.898) : le nettoyage de boot effaçait les codes CHEF de tout mois importé et poussait le résultat à Firebase — corrigé ; + un import périmé est remplacé par le seed vérifié",
-      "corps": "Mesuré (tests/verify-seed-remplace-import-perime.mjs) : sur un appareil déjà migré, un septembre importé perdait 3 103 cellules en UN boot (790 « 20/5c », 287 « 19/4'c », 2 014 « 14/19' » sans codes appris, 12 autres) parce que les codes chef créés à l'import n'étaient jamais persistés et que le nettoyage `if(c&&!CODES[c])delete` les jetait — puis ls(\"cmc_ov\") poussait le mois amputé à Firebase. Les mois du seed n'étaient pas touchés (appliqués après), un contexte neuf est wipé au 1er boot (v706) → aucun test ne le voyait. Fix : _cmcBootRegisterCode (dériver/apprendre au lieu de jeter) + codes chef persistés à l'import. ET : le seed porte maintenant `parser` (APP_VER), chaque import écrit cmc_ref_<mois>.parserVersion ; un mois live plus ancien que le seed est remplacé (archivé V1, édits manuels conservés, marqueur idempotent, push Firebase). Si vous testez la persistance d'un mois LIVE : plantez cmc_dver=30 + cmc_v706_total_wiped=1, sinon faux vert. Leçons #246-247."
+      "corps": "Mesuré (tests/verify-seed-remplace-import-perime.mjs) : sur un appareil déjà migré, un septembre importé perdait 3 103 cellules en UN boot (790 « 20/5c », 287 « 19/4'c », 2 014 « 14/19' » sans codes appris, 12 autres) parce que les codes chef créés à l'import n'étaient jamais persistés et que le nettoyage `if(c&&!CODES[c])delete` les jetait — puis ls(\"cmc_ov\") poussait le mois amputé à Firebase. Les mois du seed n'étaient pas touchés (appliqués après), un contexte neuf est wipé au 1er boot (v706) → aucun test ne le voyait. Fix : _cmcBootRegisterCode (dériver/apprendre au lieu de jeter) + codes chef persistés à l'import. ET : le seed porte maintenant `parser` (APP_VER), chaque import écrit cmc_ref_<mois>.parserVersion ; un mois live plus ancien que le seed est remplacé (archivé V1, édits manuels conservés, marqueur idempotent, push Firebase). Si vous testez la persistance d'un mois LIVE : plantez cmc_dver=30 + cmc_v706_total_wiped=1, sinon faux vert. Leçons #246-247.",
+      "ts": "2026-09-10 18:07",
+      "etat": "ouvert"
     }
   ]
 }

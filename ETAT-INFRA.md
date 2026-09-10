@@ -723,3 +723,40 @@ faites l'appel : le fait n°16 dit lui-même « refais-les chez toi, ne généra
 ### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
 
 Le registre disait `cmcteams → claude/cmcteams-clicking-issue-rmli6m` ; le travail CMCteams réel est sur `claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE), inscrit ce jour comme `cmcteams-departs`. Deux branches Lingua (`lingua-connexion-honnete`, `lingua-prenom-nom`) font **le même travail**, dont une avec `node_modules` commité (m030). Ma session est inscrite comme `domaine-audit`. Avant de commencer : `git fetch --prune` + `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/` — les branches du jour, pas celles du registre.
+
+### Ménage des branches : pourquoi il supprime 0 sur 379 — deux causes, mesurées le 10.09
+
+`auto-merge-claude.yml` publie `menage: 0 branche(s)` livraison après livraison. Ce n'est **ni**
+un problème de jeton **ni** un bug du script. Deux causes **indépendantes** :
+
+**1. Une règle du dépôt interdit toute suppression.** Le ruleset **`16725169`** s'appelle
+« Protection main », mais sa condition est `ref_name.include = ["~ALL"]` : ses règles `deletion`
+et `non_fast_forward` s'appliquent donc à **toutes** les branches, pas seulement `main`. D'où le
+`GH013 — Cannot delete this branch` que le compte-rendu affiche déjà.
+→ **Correctif d'une ligne, côté Kevin** : Réglages → Rules → Rulesets → « Protection main » →
+remplacer `~ALL` par `~DEFAULT_BRANCH`. `main` reste protégée (ni suppression ni force-push),
+`claude/*` redevient supprimable.
+Le ruleset annonce `current_user_can_bypass: always` pour le rôle admin, mais **le
+`GITHUB_TOKEN` du workflow n'est pas un acteur de contournement**, et depuis une session l'appel
+direct est refusé en amont : `403 — Write access to this GitHub API path is not permitted through
+this proxy`. **Personne ne peut supprimer une branche aujourd'hui**, ni la CI, ni une session.
+
+**2. Même la règle levée, le ménage garderait presque tout.** Son filtre de sûreté est
+`git merge-base --is-ancestor "$b" origin/main`. Or **l'historique de `main` a été reconstruit le
+09.08** : `main` ne compte que **115 commits** et l'ancêtre commun avec les branches d'août tient
+en **3 commits**. Mesuré le 10.09 : **314 branches sur 361 n'ont AUCUN ancêtre commun avec `main`**
+→ `--is-ancestor` est faux pour elles, elles sont gardées **pour toujours**, alors que leur
+contenu est déjà dans `main`.
+
+**Rien n'est perdu — vérifié par comparaison d'ARBRES** (la seule méthode valable quand
+l'historique est reconstruit). Sur 37 871 fichiers présents sur les branches et absents de `main` :
+37 120 = sortie de compilation (`apex-ai-v13/chunks`) · 389 = déplacés/renommés · 125 = un lot
+marketing tiers · le reste ≈ 76 = fonctions **retirées exprès** (décès INSEE, robot crypto,
+générateurs vidéo) ou fichiers fabriqués par un workflow. Le seul doute, `arm.webp` cité dans
+`lingua/app.js`, est une ligne de **commentaire** : `node tools/lingua/verify-assets.mjs` passe sur
+`main` (« aucun fichier demandé dans le vide »).
+
+**À faire quand la règle sera levée** : donner au ménage un **repli par comparaison d'arbres**
+(`git ls-tree` branche vs `main` + `git diff` sur les fichiers communs), sinon il continuera à
+garder 314 branches vides. Méthode reproductible : pour chaque branche, si `merge-base` est vide,
+comparer les arbres ; une branche dont aucun fichier ne diffère de `main` est supprimable.

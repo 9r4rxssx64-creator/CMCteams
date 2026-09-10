@@ -1873,6 +1873,11 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
     pipeline-sessions) **tournent enfin sur GitHub** : job `gardes-depot-public` dans
     `tests.yml` (PR vers main + main, node seul, ~20 s). Avant : câblées dans `test:ci`, que
     seul le job GitLab lance (mesure m049 de cmcteams-pdf) — donc jamais sur une PR.
+    **Preuve sur GitHub (pas seulement en local)** : fusionné par le bot via PR #3723 (09:17 UTC) ;
+    le job a tourné VERT en 3 s sur la PR suivante (`claude/menage-branches-cause-exacte`,
+    run 34473620618, job 102859054674). Honnêteté : sur MA PR le bot a fusionné 60 s après
+    l'ouverture, AVANT que les jobs démarrent (run 34459707355 : 0 job, « failure ») — le bot
+    auto-merge ne laisse pas le temps à la CI de la PR ; la preuve vient donc de la PR d'après.
 
 ### 👤 Ce que les AUTRES sessions attendent de Kevin (vu au registre, pour ne rien perdre)
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
