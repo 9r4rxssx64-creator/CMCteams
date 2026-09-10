@@ -11,7 +11,7 @@ concurrency:
 on:
   workflow_dispatch: {}
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'shops/la-detente/worker/**'
       - '.github/workflows/la-detente-worker-deploy.yml'
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with: { ref: main, fetch-depth: 0 }
+        with: { fetch-depth: 0 }
 
       - uses: actions/setup-node@v4
         with: { node-version: 22 }

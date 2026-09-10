@@ -17,6 +17,10 @@ const FIXTURE_PATH = resolve(__dirname, 'fixtures/mai-2026-v1-real.txt');
 
 const browser = await chromium.launch({ headless: true });
 const ctx = await browser.newContext();
+// Hors ligne : la page (file://) ne parle ni à Firebase ni à quiconque — sinon, sur un runner
+// avec réseau (GitLab), la synchro peut arriver au milieu de l'import et fausser la mesure.
+// Le sandbox Claude Code n'a pas de réseau et passait 280/0 ; le runner GitLab, 255/27.
+await ctx.route(/^https?:\/\//, (r) => r.abort());
 const page = await ctx.newPage();
 await page.goto('file://' + INDEX_PATH, { waitUntil: 'domcontentloaded', timeout: 30000 });
 await page.waitForFunction(() => typeof window.A === 'object' && Array.isArray(window.A.employees) && typeof window.doImport === 'function');
@@ -49,7 +53,16 @@ const result = await page.evaluate(async (txt) => {
 
   window._lastImportText = txt;
   try { window.doImport(); } catch (e) { return { error: 'doImport: ' + e.message }; }
-  await new Promise(r => setTimeout(r, 3000));
+  // Attente STABLE, pas 3 s fixes : l'import est asynchrone et un runner lent (GitLab, job
+  // 16332450700 : 27 noms à 0 cellule) n'a pas fini en 3 s. On attend que le nombre de
+  // cellules importées cesse de bouger pendant 2 s (plafond 60 s).
+  await new Promise((done) => {
+    const count = () => { const o = (window.A.overrides && window.A.overrides['2026-4']) || {}; let n = 0; for (const id in o) n += Object.keys(o[id] || {}).length; return n; };
+    let last = -1, stableSince = Date.now(); const t0 = Date.now();
+    const tick = () => { const n = count(); if (n !== last) { last = n; stableSince = Date.now(); }
+      if ((n > 0 && Date.now() - stableSince >= 2000) || Date.now() - t0 > 60000) return done(); setTimeout(tick, 250); };
+    setTimeout(tick, 1000);
+  });
 
   const key = '2026-4';
   const ov = window.A.overrides[key] || {};

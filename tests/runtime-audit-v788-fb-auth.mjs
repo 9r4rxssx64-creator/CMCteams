@@ -10,6 +10,10 @@ const INDEX_PATH = resolve(__dirname, '../index.html');
 async function main(){
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+  // Hors ligne : sur un runner AVEC réseau (GitLab, job 16332513144), le t3 « sans clé »
+  // partait vraiment vers identitytoolkit avec la clé Web embarquée et obtenait un token
+  // → 6/2. Le sandbox, sans réseau, passait 8/0 par accident. Déterministe des deux côtés.
+  await ctx.route(/^https?:\/\//, (r) => r.abort());
   const page = await ctx.newPage();
   await page.goto('file://' + INDEX_PATH, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.cmcFbAnonAuth === 'function' && typeof window._fbAuthQS === 'function', { timeout: 20000 });
@@ -29,9 +33,13 @@ async function main(){
 
     // t3 — cmcFbAnonAuth SANS clé → no-op, token reste null (fail-open)
     try { localStorage.removeItem('cmc_fb_apikey'); } catch(e){}
+    // « sans clé » veut dire AUCUNE : ni collée, ni la clé Web embarquée (FB_WEB_APIKEY,
+    // publique par conception) — sinon ce test ne teste pas le chemin no-op.
+    const savedKey = window.FB_WEB_APIKEY; window.FB_WEB_APIKEY = '';
     const r3 = await new Promise(res => { try { window.cmcFbAnonAuth(function(ok){ res(ok); }); } catch(e){ res('throw:'+e.message); } });
     test('cmcFbAnonAuth sans clé → cb(false)', r3 === false);
     test('token reste null sans clé', window._fbAuthToken === null);
+    window.FB_WEB_APIKEY = savedKey;
 
     // t4 — avec clé + fetch mocké OK → token attaché
     const origFetch = window.fetch;

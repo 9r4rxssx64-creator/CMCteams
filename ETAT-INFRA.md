@@ -1,10 +1,15 @@
 # 🚨 ETAT-INFRA.md — la vérité infra pour TOUTE session Claude, ancienne ou nouvelle (MAJ 4.09.2026)
 
-> ✅ **LIS D'ABORD LE FAIT N°10 (tout en bas)** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
+> ✅ **LIS D'ABORD LE FAIT N°10** : le 4.09 à 16h34 UTC, **GitHub a LEVÉ la
 > restriction**. Le compte n'est plus suspendu, les Actions tournent, la publication du
-> site est relancée. Les faits **1, 2 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
-> plus à Kevin que GitHub est fermé, et ne lui redemande plus d'envoyer la réponse au
-> support : c'est fait, et ça a marché.
+> site est relancée. Les faits **1, 2, 3 et 8 sont donc PÉRIMÉS sur ce point** — ne redis
+> plus à Kevin que GitHub est fermé, ne redis plus que `kdmc-site.pages.dev` est le seul
+> site vivant (fait n°3 → voir fait n°11 : **le site vient de GitHub**, Pages n'est qu'un
+> filet), et ne lui redemande plus d'envoyer la réponse au support : c'est fait, et ça a marché.
+>
+> 📍 **Ce document compte 16 faits**, pas 6 : le titre « Les 6 faits » ci-dessous ne couvre que
+> les six premiers (état au 1.09). Les faits 7 à 16 suivent et sont plus récents — donc
+> prioritaires en cas de désaccord entre deux faits.
 >
 > ⚠️ **Mais la règle « zéro exécution programmée sur GitHub » reste ABSOLUE** — le compte
 > a rouvert dans l'état qui l'avait fait fermer (55 crons encore armés sur `main`),
@@ -23,7 +28,7 @@
    mergent des PR (ex : PR #3621 le 1.09) ; d'autres reçoivent 403 — souvent le **proxy du conteneur**
    (message « sessions are bound to their configured repositories »), pas GitHub. → Teste TON accès
    (`git ls-remote origin`) et ne généralise ni ton 403 ni ton succès.
-3. **Le seul site vivant = `kdmc-site.pages.dev`** (Cloudflare Pages). Il est alimenté par
+3. ~~**Le seul site vivant = `kdmc-site.pages.dev`**~~ **(PÉRIMÉ — voir fait n°11 : le site vivant vient de GitHub depuis le 4.09 ; Pages est le filet de secours.)** (Cloudflare Pages). Il est alimenté par
    **GitLab `kdmc-group/Kdmc-project`** (id 85753352, compte `desarzens.kevin`) : chaque commit sur
    `main` y publie tout le dépôt (job CI `publier-site`). Cette infra a été montée le **27/08 À LA
    DEMANDE DE KEVIN** (« Remet tout en ligne comme avant par GitLab ») pendant le blocage GitHub —
@@ -465,6 +470,43 @@ domaine : sans empreinte publiée, personne n'entre. Gardes : `npm run test:arbr
 (21 contrôles, famille **synthétique**). **Ce qui a été public une fois le reste** (historique
 Git) : Kevin doit **publier une fois** depuis son iPhone puis **changer le code famille**.
 
+### Suite (5.09 nuit) — amorce D1 : le domaine sert l'arbre v3.14 sans publication préalable
+
+L'arbre v3.7→v3.14 (8 versions, 119 personnes, seedVersion 63) ne vivait que sur GitLab (`kdmc-group/Kdmc-project`,
+main). Récupéré avec le jeton de Kevin (lecture seule, jamais écrit sur disque), le **code** est porté dans v3.17 et
+les **données** sont déposées dans une base **Cloudflare D1** dédiée, `kdmc-arbre`
+(id `a10e750d-de49-47b5-b1d8-0e937eccbec8`, table `kv(k, v, saved_at)` : `codehash` = empreinte 64-hex du code
+famille actuel, `seed` = les 119 fiches en JSON, 96 443 caractères, `json_valid`). Le routeur lit **KV d'abord, D1 en
+repli** (`arbreD1` / `arbreCodehash` / `arbreSeedOut`, champ `source:'kv'|'d1'` dans `/__arbre/status`, fail-open si
+la liaison manque) ; liaison `[[d1_databases]] binding = "ARBRE_DB"` dans `services/kdmc-router/wrangler.toml`.
+Conséquence : **dès le déploiement du routeur, un nouvel appareil reçoit l'arbre complet en tapant le code** — plus
+d'étape « Publier » obligatoire ; Kevin peut toujours publier depuis Outils (le KV prend alors le dessus). Les
+appareils existants (seedVersion 56) se mettent à niveau seuls au démarrage (`refreshFromDomain`, 1 GET, photos
+locales gardées, fantômes purgés). Intégrité du dépôt D1 prouvée par **somme de contrôle par morceau** (8 × 12 055
+caractères, 8/8 identiques au fichier source ; 6 morceaux corrigés avant assemblage). Tests : `arbre.test.mjs`
+42/42 (mock D1, précédence KV, D1 en panne), navigateur `verify-domaine.mjs` 23/23. Reste pour Kevin : **changer le
+code famille** (l'ancienne empreinte est dans l'historique public).
+
+**Déployé (5.09, 17h19)** : PR #3670 fusionnée par le robot (`main` 899e09b9) → `deploy-kdmc-router.yml` run
+33980608977 **vert** (1 min 03) : le routeur en production porte la liaison `ARBRE_DB`. Miroir GitLab : branche
+et `main` alignés (e9e52b1b, sans force). **Piège GitLab mesuré le même jour** : le premier push d'une branche fait
+valoir « oui » à toutes les règles `changes:` (publier-site, recherches-patrimoine, liens-reels sont partis pour un
+simple miroir, ~7 min) — corrigé dans `.gitlab-ci.yml` (`*pas-sur-nouvelle-branche`, `compare_to: main`, repli
+`npm install` car le dépôt n'a pas de `package-lock.json`). Leçon #218. **Vérifié en production** (17h40, sonde GitLab `sonder-url`) :
+`GET https://arbre.kd-mc.com/__arbre/status` → `count:119, seedVersion:63, source:"d1"`.
+
+**6.09 (après-midi)** : PR #3674 et #3681 fusionnées par le robot (arbre v3.18 « Munegu », Vercel qui ne bloque plus,
+audit live de l'arbre refait sans code). Le job `tests` GitLab tourne désormais **pour de vrai** (image Playwright
+1.56.0, `npm install --legacy-peer-deps`) : il a révélé que `test:ci` rougissait sans que personne le voie —
+`cmc-runtime-audit.yml` (GitHub) échouait en 17 s depuis longtemps (`cache: npm` sans lockfile, réparé). Rendus
+déterministes : `everyone-has-planning`, `v788`, `garro-cp`, `code-legends` (attente stable + hors ligne).
+`test:improvements-guard` **réglé** (la règle « Qwen gratuit » avait ses 5 gardes mais pas son entrée au registre).
+`test:departs-sync` : **pas un écart de données** — le contrôle croisé passe (couverture 273/291, horaires
+identiques) ; la page ne se régénère jamais à l'identique parce que l'identifiant des employés créés à l'import
+vient de l'horloge (64 tableaux « différents », 0 horaire) → générateur rendu hors ligne + échec explicite,
+`boards-gen.js` laissé intact, identifiant à dériver du nom (session Départs). **Reste rouge** :
+`test:router-secours` (kdmc-home/*, shops absents de la copie de secours → domain-kdmc). Leçons #220 et #221.
+
 ---
 
 ## 🔀 Fait n°13 — CHAQUE AUTOMATISATION A UNE DESTINATION, ET ELLE Y EST (5.09.2026)
@@ -489,11 +531,11 @@ remettre.
 | Destination | Combien | Exemples |
 |---|---|---|
 | **GitHub** (rapatriées) | **14** | smoke post-déploiement, vérifs Lingua/Décès en direct, MAJ forcée d'Apex Chat, pentest Strix, audit SEO, déploiement Vercel |
-| **GitLab CI** | 24 | liens réels, sources des langues, génération d'images, sauvegardes KV |
-| **Cloudflare Worker** | 5 | alertes World Monitor, agent 24/7, sentinelles |
+| **GitLab CI** | 22 | liens réels, sources des langues, génération d'images, sauvegardes KV |
+| **Cloudflare Worker** | 7 | alertes World Monitor, agent 24/7, sentinelles |
 | **nulle part** | 6 | crypto (nommé mot pour mot dans les conditions GitHub) |
 
-`.github/workflows` : **134 → 143**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
+`.github/workflows` : **134 → 145**. Rangés : **49 → 35**. Toujours **0 cron, 0 crypto**.
 
 **Le bouton, c'est moi qui l'appuie** : une automatisation rapatriée est manuelle, donc zéro
 volume automatique — et je la lance via l'API, Kevin ne clique rien.
@@ -583,6 +625,26 @@ dossiers **servis** : ni l'empreinte, ni la doc.
 | 14 scripts e2e qui **tapent** le code sur une vraie surface lisent `KDMC_ADMIN_CODE` (repli : l'ancien code de test, sans valeur après rotation). | `node --check` × 14 |
 | Page **`tools/empreinte/`** : calcule l'empreinte du nouveau code **sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub. | 0 requête réseau (CSP `connect-src 'none'`) |
 
+**Suite du 5.09, 16h — le code a été CHANGÉ par Kevin, et la rotation a révélé un 2ᵉ trou** :
+en relançant les 6 déploiements qui lisent le secret, **celui du routeur a échoué** — et
+l'historique montre qu'il échouait **depuis le 13/08** (dernier vert), 4 rouges d'affilée
+(04/09, 05/09 ×3) sur la même ligne : `assets.directory … public does not exist`. Le
+`wrangler.toml` exige `./public` depuis le 14/08 (bouée de secours de la suspension), dossier
+gitignoré fabriqué par `prepare-secours.mjs`, **que le workflow ne lançait jamais**. Conséquence
+réelle : **aucun secret poussé au routeur pendant 3 semaines** — l'étape « hash du PIN admin »
+vient APRÈS le deploy, donc sautée : sans ce correctif, l'ancien code (public) serait resté
+valable sur kd-mc.com malgré la rotation. Corrigé (PR #3661 : étape `prepare-secours --leger`
+avant `wrangler deploy`) → run `33978224559` **vert**, `✨ Uploaded secret KDMC_ADMIN_PIN_SHA256`,
+26 sous-domaines en 200, `/__admin/accounts` → 403 `need_admin_code`. Les 4 autres workers
+(access, monaco, outlook, proxy Apex) ont reçu le secret du premier coup ; **RAG** l'a reçu aussi
+(`✨ Uploaded secret`) mais son deploy échoue pour une autre raison : le jeton Cloudflare n'a pas
+la permission **Vectorize** (`Authentication error 10000` sur `vectorize create`) — à ajouter
+côté Cloudflare quand la mémoire RAG servira. **Prévention** : `npm run test:wrangler-assets`
+(dans `test:ci`, prouvé discriminant) — tout worker avec `[assets]` non versionné doit avoir une
+étape qui le fabrique avant `wrangler deploy` ; et `live-verify-departs` sonde désormais
+`POST /__admin/login` avec un code bidon (attendu `code_invalide`, jamais
+`admin_pin_not_configured`). Leçon #214.
+
 **Où vit le code, réellement** : UN secret GitHub, `APEX_ADMIN_PIN_SHA256`, poussé par les
 workflows vers **6 workers** (routeur `KDMC_ADMIN_PIN_SHA256`, admin.kd-mc.com, monaco, outlook,
 rag, proxy Apex). Les pages Départs / Messages suivent désormais le routeur → **changer le
@@ -602,3 +664,62 @@ message laissé (`pipeline/sessions.json`, m021).
 propre fichier d'allowlist · zizmor `dangerous-triggers: 2` = deux `workflow_run` légitimes
 (`cleanup-stale-branches`, `poolpilot-tuya-diag`) déclenchés par nos propres workflows, pas par
 un inconnu · aucun `${{ github.event.* }}` interpolé dans un `run:` (0 injection de modèle).
+
+---
+
+## 📡 Fait n°16 — CE QU'UNE SESSION PEUT ATTEINDRE, et le plan Cloudflare gratuit est PLEIN (5.09.2026, session « Audit du domaine »)
+
+*Kevin : « Tu as tout. Vérifie » puis « elles ne sont pas toutes au courant de tous les accès, outils, liens ».*
+Tout ce qui suit est **mesuré** depuis une session le 5.09 (les commandes sont données : refais-les chez toi, ne généralise pas).
+
+### Les 4 canaux, et ce qu'ils donnent vraiment
+
+| Canal | Depuis l'agent | Ce que ça permet |
+|---|---|---|
+| **API GitHub** `api.github.com/repos/…` | ❌ 403 « GitHub access is not enabled for this session » (`/user` répond, `/repos` non) — même constat sessions arbre et Départs | rien : ni PR, ni dispatch, ni lecture de run par l'API. `gh` n'est pas installé. |
+| **`git push` / `git fetch`** | ✅ | pousser sa branche ; **déclencher un workflow par `push`** (`branches: ['claude/**']` + `paths`) — pour des workflows de **lecture** (vérif live, audit) ; **pas pour un déploiement** : la prod ne se déploie que depuis `main`, et le bot auto-merge dispatche lui-même les `deploy-*.yml` après fusion (relecture sécu 05/09) ; relire ce qu'un workflow a **écrit dans le dépôt** (schéma `verif-live-rapport.yml`, session Départs). |
+| **WebFetch sur `github.com`** (pages HTML) | ✅ | page d'une PR (état, checks, commentaires du bot), liste des runs d'un workflow, **page d'un run avec ses ANNOTATIONS** (`::error::`, `::warning::`, `::notice::`). ❌ **pas** les logs bruts, ❌ **pas** le résumé du run (`$GITHUB_STEP_SUMMARY`) — vérifié sur le run 33978145725 : résumé invisible, annotation lue. Cache 15 min : ajouter `?x=N` pour relire. |
+| **Connecteur Cloudflare** (`workers_list`, `workers_get_worker_code`, docs) | ✅ | **`modified_on` de chaque worker = la preuve qu'un déploiement a eu lieu** ; lire le code réellement en ligne ; chercher la doc. ❌ pas de déploiement, pas de liste des crons/Vectorize. |
+| **kd-mc.com, `*.workers.dev`, `github.io`, `raw`…** | ❌ 403 CONNECT (sauf `raw.githubusercontent.com`, m006) | → la CI, elle, a le réseau ouvert. |
+
+**Règle qui en découle** : ce qu'un workflow doit dire à une session s'écrit **en annotations** (10 par type et par étape) ou **dans un fichier du dépôt** — jamais seulement dans le résumé ou les logs. `deploy-kdmc-uptime.yml` et `deploy-kdmc-rag.yml` remontent les lignes d'erreur de `wrangler` en `::error::` depuis le commit dc12933 ; c'est ainsi que les deux causes ci-dessous ont été lues.
+
+### Un run vert ne prouve rien, `modified_on` si
+
+`Deploy KDMC RAG` a un run **manuel vert** sur `main` le 5.09 ; le connecteur Cloudflare donne `kdmc-rag` **modifié le 08/07**. Le déploiement n'a pas eu lieu (leçon #95, encore). Avant d'écrire « déployé », lire `modified_on`.
+
+### Le compte Cloudflare gratuit : 5 cron triggers, TOUS pris
+
+`wrangler deploy` de `kdmc-uptime` : le code est **téléversé** (modified_on 16:32) puis
+`✘ [ERROR] Trigger configuration was only partially updated: This account has reached the Workers Free limit of 5 cron triggers per account` → code 1, run rouge, **worker en ligne sans cron**.
+Qui tient les 5 : **apex-chat-api : 4** (`0 */1`, `*/5`, `0 9`, `0 3` — `messaging-app/workers/wrangler.toml`) + **kdmc-outlook : 1** (`0 */2`). `kdmc-monaco` l'avait déjà constaté (« code 10072 ») et se faisait réveiller par un cron **GitHub** — rangé le 15/08, donc sa synchro est morte aussi.
+
+**Ce qui est fait** : `kdmc-uptime` n'a plus de `[triggers]` (`crons = []`, ce qui *retire* explicitement) ; c'est le cron de **kdmc-outlook** qui appelle son `/run` toutes les 2 h (6 lignes fail-open). **Ce qui rendrait 3 places** : Apex Chat garde un seul cron `*/5` et aiguille ses 4 jobs sur l'heure (message m027). **Ce qui rendrait 250 places** : Workers Paid (5 $/mois) — décision Kevin, pas nécessaire aujourd'hui.
+
+**Règle** : plus aucun `[triggers] crons` dans un nouveau `wrangler.toml` sans avoir compté les places ; un worker périodique se fait appeler par un cron existant.
+
+### RAG : l'index Vectorize `apex-memory` n'existe pas
+
+`wrangler deploy` de `kdmc-rag` : `Vectorize binding 'VEC' references index 'apex-memory' which was not found [code: 10159]`. Le workflow tentait de le créer **en silence** (`|| true`, journal jamais montré). Depuis ce commit la création dit pourquoi elle échoue (droit Vectorize absent du jeton `CLOUDFLARE_API_TOKEN`, probable — Vectorize est bien disponible sur le plan gratuit) et le run s'arrête **avant** le déploiement, avec la raison en annotation.
+
+### Le robot auto-merge, mesuré le 5.09
+
+- Il fusionne **dès que « Auto PR Review » (tsc + tests changés) est vert**. SonarQube « Quality Gate C » et Semgrep sont **consultatifs** : PR #3652 fusionnée avec eux rouges.
+- Une PR « BLOCKED » peut l'être **par `main`** : la fusion #3647 avait cassé `apex-plugins-catalog.ts` (7 × TS1117) et bloquait *toutes* les PR suivantes. Reproduire `npx tsc --noEmit` sur `main` en local avant d'accuser sa branche ; réparer main **dans la PR**.
+- Après fusion, le bot **dispatche lui-même** chaque `deploy-*.yml` dont un `services/<x>` a changé (vu : `Deploy KDMC Uptime #3` sur main) — la fusion par `GITHUB_TOKEN` ne déclenchant pas les `push`.
+
+### ⚠️ MESURE CONTRAIRE le 6.09 : l'API GitHub RÉPOND depuis certaines sessions — remesurez chez vous
+
+Le tableau ci-dessus dit « API GitHub : ❌ 403 » (mesuré le 5.09 depuis trois sessions). **Depuis la
+session « cmcteams-pdf » le 6.09, elle RÉPOND** : `get_me` renvoie le compte `9r4rxssx64-creator`,
+et les outils MCP GitHub (créer une PR, la fusionner, lire un run) sont disponibles. Ce n'est donc
+pas une propriété du dépôt ni du compte : **c'est une propriété de VOTRE session**.
+
+Conséquence pratique, et elle compte : quand l'API répond, **on ne laisse pas une PR ouverte en
+attendant le robot** (refusé par la protection de branche, m019 point 4) — on la crée et on la
+fusionne soi-même par l'API, zéro clic pour Kevin. Avant d'écrire « je ne peux pas ouvrir de PR »,
+faites l'appel : le fait n°16 dit lui-même « refais-les chez toi, ne généralise pas ».
+
+### Les branches réellement actives ce jour (12 du 5.09), et le registre qui ne les connaissait pas
+
+Le registre disait `cmcteams → claude/cmcteams-clicking-issue-rmli6m` ; le travail CMCteams réel est sur `claude/miroir-pour-chaque` (Départs v1.39 + vérif LIVE), inscrit ce jour comme `cmcteams-departs`. Deux branches Lingua (`lingua-connexion-honnete`, `lingua-prenom-nom`) font **le même travail**, dont une avec `node_modules` commité (m030). Ma session est inscrite comme `domaine-audit`. Avant de commencer : `git fetch --prune` + `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/` — les branches du jour, pas celles du registre.

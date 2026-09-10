@@ -134,3 +134,23 @@ export function makeRequest({ method = 'GET', path = '/', body, token, extraHead
     body: body !== undefined && method !== 'GET' && method !== 'OPTIONS' ? JSON.stringify(body) : undefined,
   });
 }
+
+/**
+ * `happy-dom` retire l'en-tête `Origin` d'une Request — exactement comme un
+ * vrai navigateur, où `Origin` est posé par le navigateur lui-même et non par
+ * le code. Pour tester le CORS **côté serveur** (audit P2b, v1.1.287) on le
+ * réinjecte avec un proxy qui ne change QUE la lecture de cet en-tête ; tout le
+ * reste de la Request (méthode, URL, corps) est intact.
+ */
+export function withOrigin(request, origin) {
+  const headers = {
+    get: (name) => (String(name).toLowerCase() === 'origin' ? origin : request.headers.get(name)),
+  };
+  return new Proxy(request, {
+    get(target, prop) {
+      if (prop === 'headers') return headers;
+      const v = Reflect.get(target, prop);
+      return typeof v === 'function' ? v.bind(target) : v;
+    },
+  });
+}

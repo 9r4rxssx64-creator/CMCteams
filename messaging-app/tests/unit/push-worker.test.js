@@ -2,6 +2,7 @@
  * Tests workers/push-worker.js — VAPID Web Push + APNs + FCM + broadcast
  * 100% coverage v8 via mocks crypto.subtle + fetch.
  */
+import { withOrigin } from './api-worker-helpers.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import worker, {
   importVapidPrivateKey,
@@ -67,9 +68,12 @@ async function makeSubscription(endpoint = 'https://fcm.googleapis.com/wp/abc') 
 // ----------------------------------------------------------------------------
 describe('push-worker — routing & CORS', () => {
   it('OPTIONS → CORS', async () => {
-    const r = await worker.fetch(makeRequest({ method: 'OPTIONS', path: '/web-push' }), ENV());
-    expect(r.status).toBe(200);
-    expect(r.headers.get('Access-Control-Allow-Origin')).toBe('*');
+    // v1.1.287 (audit P2b) : origine autorisée renvoyée, inconnue refusée.
+    const ok = await worker.fetch(withOrigin(makeRequest({ method: 'OPTIONS', path: '/web-push' }), 'https://apex-chat.kd-mc.com'), ENV());
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get('Access-Control-Allow-Origin')).toBe('https://apex-chat.kd-mc.com');
+    const ko = await worker.fetch(withOrigin(makeRequest({ method: 'OPTIONS', path: '/web-push' }), 'https://evil.example'), ENV());
+    expect(ko.headers.get('Access-Control-Allow-Origin')).toBeNull();
   });
 
   it('GET /health → ok', async () => {

@@ -1,5 +1,13 @@
 # APEX CONTINUATOR — Setup MCP servers
 
+> ⚠️ **JAMAIS IMPLÉMENTÉ — vérifié le 6.09.2026.** Tout ce dossier décrit un « agent externe »
+> (`ax_external_agent_enabled`, file Firebase `/apex/external_agent_queue/`, commande `/agent`,
+> kill-switch) annoncé « sera codé en v13.4.6 ». Apex est aujourd'hui en **v13.4.355** et
+> `grep -rl external_agent` sur le code source ne renvoie **rien**. Ne pas suivre ces pages
+> comme un mode d'emploi : elles décrivent du vide.
+
+
+
 ## 3e copier-coller : Liste MCP servers à activer dans Claude Console
 
 Dans Claude Console, onglet "MCP servers" ou "Tools" de l'agent, attache ces serveurs :
@@ -13,7 +21,7 @@ Dans Claude Console, onglet "MCP servers" ou "Tools" de l'agent, attache ces ser
 - **URL** : `https://github.com/anthropics/mcp-server-github`
 
 ### 2. Filesystem MCP (essentiel)
-- **Path** : `/home/user/CMCteams` (clone local du repo)
+- **Path** : `/home/user/cmcteams` (clone local du repo)
 - **Permissions** : read/write
 - **URL** : `https://github.com/anthropics/mcp-server-filesystem`
 

@@ -121,6 +121,38 @@ jobs:
           done
           echo "OK: no merge markers"
 
+      - name: Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+        # 2026-09-05 (leçon #216) : deux sessions écrivent en tête de MEMO_RESUME.md en même
+        # temps → GitHub ne sait pas fusionner → `gh pr merge` échoue → la branche reste dehors,
+        # et chaque nouvelle fusion sur main recrée le conflit (course perdue d'avance, vécue 2×
+        # de suite sur claude/lingua-connexion-honnete). Sur le runner, git SAIT le faire :
+        # le pilote « union » (.gitattributes + .git/info/attributes en ceinture-bretelles pour
+        # les branches nées avant le réglage) garde les deux côtés du journal. On fusionne main
+        # dans la branche ICI, on pousse le résultat SANS forcer, puis la PR se fusionne proprement.
+        # Un conflit sur du VRAI code n'est jamais résolu à l'aveugle : on annule et on prévient.
+        # Le push par GITHUB_TOKEN ne redéclenche pas ce workflow (pas de boucle).
+        run: |
+          set -e
+          BRANCH="${{ steps.src.outputs.branch }}"
+          git fetch origin main "$BRANCH"
+          git checkout -q -B "$BRANCH" "origin/$BRANCH"
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "OK: $BRANCH contient déjà main, rien à rattraper"
+            exit 0
+          fi
+          mkdir -p .git/info
+          printf 'MEMO_RESUME.md merge=union\nKEVIN_INVENTORY.md merge=union\nLESSONS.md merge=union\n' > .git/info/attributes
+          if git merge --no-ff --no-edit -m "Fusion de main dans $BRANCH (journaux : les deux côtés gardés) [skip ci]" origin/main; then
+            if git push origin "HEAD:refs/heads/$BRANCH"; then
+              echo "OK: main rattrapé et poussé sur $BRANCH ($(git rev-parse --short HEAD))"
+            else
+              echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."
+            fi
+          else
+            echo "::warning::Conflit sur du CODE, pas seulement le journal : $(git diff --name-only --diff-filter=U | tr '\n' ' ')— à résoudre par la session ; la PR restera ouverte."
+            git merge --abort
+          fi
+
       - name: Create & merge PR into main
         id: mergepr
         # FIX (GH013 2026-06) : la protection de branche main exige désormais que
@@ -177,12 +209,60 @@ jobs:
           done
           # Merge via PR (admin override si dispo, sinon merge normal). Si la règle
           # exige une review → laisse la PR ouverte + warning pour merge manuel.
-          if gh pr merge "$PR" --merge --admin --delete-branch=false 2>/dev/null \
-             || gh pr merge "$PR" --merge --delete-branch=false 2>/dev/null; then
+          #
+          # v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux
+          # tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus
+          # était donc JETÉE. Résultat vécu : la PR #3671 restait ouverte pendant des
+          # heures sans que personne (ni Kevin ni moi) puisse savoir pourquoi.
+          # On CAPTURE désormais la cause exacte, et on l'écrit dans un fichier
+          # committé sur la branche claude/* — seul canal lisible depuis une session
+          # d'agent qui n'a PAS accès à l'API GitHub (403 « GitHub access is not
+          # enabled for this session »). Aucune protection n'est contournée.
+          MERGE_LOG=$(mktemp)
+          if gh pr merge "$PR" --merge --admin --delete-branch=false >"$MERGE_LOG" 2>&1 \
+             || gh pr merge "$PR" --merge --delete-branch=false >>"$MERGE_LOG" 2>&1; then
             echo "PR #$PR mergée → déclenchement du déploiement Pages"
             echo "merged=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::PR #$PR créée mais merge auto refusé (protection) — merger manuellement dans l'UI."
+            echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."
+            cat "$MERGE_LOG" || true
+            # État de fusion vu par GitHub + règles qui bloquent (lisible par GITHUB_TOKEN)
+            DIAG=".github/AUTOMERGE-DIAGNOSTIC.md"
+            mkdir -p .github
+            {
+              echo "# Diagnostic auto-merge — PR #$PR ($BRANCH)"
+              echo
+              echo "Généré le $(date -u '+%Y-%m-%d %H:%M UTC') par auto-merge-claude.yml."
+              echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."
+              echo
+              echo '## Cause exacte renvoyée par GitHub'
+              echo '```'
+              cat "$MERGE_LOG" 2>/dev/null || echo "(vide)"
+              echo '```'
+              echo
+              echo '## État de la PR vu par GitHub'
+              echo '```json'
+              gh api "repos/${{ github.repository }}/pulls/$PR" \
+                --jq '{mergeable, mergeable_state, draft, rebaseable}' 2>&1 || echo "(api indisponible)"
+              echo '```'
+              echo
+              echo '## Revues exigées / reçues'
+              echo '```json'
+              gh api "repos/${{ github.repository }}/pulls/$PR/reviews" \
+                --jq '[.[] | {user: .user.login, state}]' 2>&1 || echo "(api indisponible)"
+              echo '```'
+              echo
+              echo '## Protection de la branche main'
+              echo '```json'
+              gh api "repos/${{ github.repository }}/branches/main/protection" 2>&1 \
+                | head -c 3000 || echo "(api indisponible)"
+              echo '```'
+            } > "$DIAG"
+            git add "$DIAG"
+            git -c user.name="github-actions[bot]" \
+                -c user.email="github-actions[bot]@users.noreply.github.com" \
+                commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true
+            git push origin "HEAD:$BRANCH" || echo "::warning::push du diagnostic impossible"
             exit 1
           fi
 
@@ -224,6 +304,146 @@ jobs:
             fi
           done
           echo "done"
+
+      # ------------------------------------------------------------------
+      #  MENAGE AUTOMATIQUE — greffe ici expres (2026-09-06)
+      #
+      #  Pourquoi dans CE workflow et pas ailleurs :
+      #   - cleanup-stale-branches.yml existe mais n'a JAMAIS demarre : son
+      #     declencheur `push` est mort (un push par GITHUB_TOKEN ne declenche
+      #     rien) et son `workflow_run` aussi (il exige que le workflow
+      #     declencheur ait tourne sur la branche PAR DEFAUT ; l'auto-merge
+      #     tourne sur claude/**). Lecons #227 et #228.
+      #   - depuis une session agent, le connecteur GitHub LIT mais n'ECRIT pas
+      #     (403 « Resource not accessible by integration ») et la suppression
+      #     d'une reference est refusee par le relais git. Lecons #229/#230.
+      #  Ici on a `contents: write` ET `pull-requests: write`, et ce workflow
+      #  tourne pour de vrai a chaque livraison.
+      #
+      #  Le compte-rendu est ECRIT DANS LE DEPOT : sans lui, « rien a faire »
+      #  et « je n'ai rien vu » produisent la meme ligne verte (lecon #103).
+      # ------------------------------------------------------------------
+      - name: Menage (branches fusionnees + annulations dormantes)
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REP=".github/CLEANUP-REPORT.md"
+          mkdir -p .github
+          echo "# Compte-rendu du menage automatique" > "$REP"
+          echo "" >> "$REP"
+          echo "Genere le $(date -u '+%Y-%m-%d %H:%M UTC') par auto-merge-claude.yml." >> "$REP"
+          echo "" >> "$REP"
+
+          # ---------- 1) Branches deja entierement dans main ----------
+          git remote set-branches origin '*' || true
+          git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet || true
+          TOTAL=$(git branch -r 2>/dev/null | grep -c 'origin/claude/' || echo 0)
+          DEL=0; GARDE=0; ECH=0; RESTE_A_FAIRE=0; BLOQUE_PAR_REGLE=0
+          echo "## Branches" >> "$REP"
+          echo "" >> "$REP"
+          if [ "$TOTAL" = "0" ]; then
+            echo "**0 branche visible apres le fetch** — le fetch a echoue, on ne conclut PAS \"rien a faire\"." >> "$REP"
+          else
+            CUT=$(date -u -d '7 days ago' +%s)
+            COURANTE="${{ steps.src.outputs.branch }}"
+            for b in $(git branch -r | sed 's|^ *||' | grep '^origin/claude/'); do
+              NAME="${b#origin/}"
+              case "$NAME" in main|master|develop|production|claude/test-699LQ) GARDE=$((GARDE+1)); continue ;; esac
+              [ "$NAME" = "$COURANTE" ] && { GARDE=$((GARDE+1)); continue; }
+              git merge-base --is-ancestor "$b" origin/main 2>/dev/null || { GARDE=$((GARDE+1)); continue; }
+              TS=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
+              [ "$TS" -ge "$CUT" ] && { GARDE=$((GARDE+1)); continue; }
+              # Plafond par execution : une suppression est un aller-retour reseau.
+              # 231 d'un coup risquent le delai maximum du job (et alors RIEN
+              # n'est publie). On draine par paquets, a chaque livraison.
+              [ "$((DEL+ECH))" -ge 60 ] && { RESTE_A_FAIRE=$((RESTE_A_FAIRE+1)); continue; }
+              # Une REGLE DU DEPOT interdit la suppression (GH013 « Cannot delete
+              # this branch ») : aucun jeton ne passe outre. Inutile de tenter les
+              # 231 a chaque livraison — on SONDE une fois, et si c'est ce refus-la
+              # on saute le reste. Le jour ou la regle change, ca repart tout seul.
+              [ "$BLOQUE_PAR_REGLE" = "1" ] && { RESTE_A_FAIRE=$((RESTE_A_FAIRE+1)); continue; }
+              # `if ERR=$(...)` et NON `ERR=$(...)` seul : les runners tournent en
+              # `bash -e`, ou une AFFECTATION qui echoue TUE l'etape sur place —
+              # c'est ce qui a fait disparaitre le compte-rendu (lecon #237).
+              # Place en condition de `if`, l'echec est un resultat, pas une mort.
+              if ERR=$(git push origin --delete "$NAME" 2>&1); then
+                DEL=$((DEL+1)); echo "- supprimee \`$NAME\` (\`$(git rev-parse --short "$b")\`)" >> "$REP"
+              else
+                ECH=$((ECH+1))
+                # Le message EXACT, une seule fois : c'est lui qui nomme le
+                # verrou. L'avaler (>/dev/null 2>&1) etait mon erreur — on
+                # cherche ensuite la cause pendant une heure. Lecon #214.
+                if [ "$ECH" = "1" ]; then
+                  echo "" >> "$REP"
+                  echo "**Cause exacte du refus de suppression** (premiere occurrence, \`$NAME\`) :" >> "$REP"
+                  echo '```' >> "$REP"
+                  echo "$ERR" | head -12 >> "$REP"
+                  echo '```' >> "$REP"
+                  echo "" >> "$REP"
+                  if echo "$ERR" | grep -q 'Cannot delete this branch\|GH013'; then
+                    BLOQUE_PAR_REGLE=1
+                    REGLE=$(gh api "repos/${GITHUB_REPOSITORY}/rules/branches/$(printf '%s' "$NAME" | sed 's|/|%2F|g')" \
+                              --jq '[.[] | select(.type=="deletion")] | map(.ruleset_id|tostring) | unique | join(", ")' 2>/dev/null || true)
+                    echo "> **Ce n'est pas un probleme de jeton** : une **regle du depot** interdit la suppression." >> "$REP"
+                    echo "> Aucun acces (session, connecteur, CI) ne passe outre. Reglages -> Rules -> Rulesets." >> "$REP"
+                    [ -n "$REGLE" ] && echo "> Ruleset(s) concerne(s) : \`$REGLE\`" >> "$REP"
+                    echo "> On arrete de tenter les autres a chaque livraison ; ca repartira seul si la regle change." >> "$REP"
+                    echo "" >> "$REP"
+                  fi
+                fi
+              fi
+            done
+            echo "" >> "$REP"
+            echo "| vues | supprimees | gardees |" >> "$REP"
+            echo "|---:|---:|---:|" >> "$REP"
+            echo "| $TOTAL | $DEL | $GARDE |" >> "$REP"
+            echo "" >> "$REP"
+            echo "Echecs de suppression : **$ECH**" >> "$REP"
+            echo "" >> "$REP"
+            echo "Non tentees (plafond, ou regle du depot) : **$RESTE_A_FAIRE**" >> "$REP"
+          fi
+
+          # ---------- 2) Annulations automatiques dormantes ----------
+          # Ces PR ont ete ouvertes pour ANNULER une livraison. Aucune n'a jamais
+          # ete appliquee (verifie : leurs commits ne sont pas dans main), et la
+          # fonctionnalite visee est toujours vivante. Les FERMER ne retire donc
+          # rien du produit ; les laisser ouvertes, c'est garder des mines qu'un
+          # merge accidentel ferait exploser. Fermer est reversible.
+          echo "" >> "$REP"
+          echo "## Annulations automatiques dormantes" >> "$REP"
+          echo "" >> "$REP"
+          CLOSED=0; RESTE=0
+          for pr in $(gh pr list --state open --limit 200 --json number,headRefName \
+                        --jq '.[] | select(.headRefName | startswith("revert/auto-rollback-")) | .number' 2>/dev/null); do
+            if gh pr close "$pr" --comment "Fermee automatiquement : annulation jamais appliquee (ses commits ne sont pas dans main) et la fonctionnalite visee est toujours en place. La fusionner aujourd'hui RETIRERAIT du code livre depuis. Reouvrable en un clic. Voir PULL_REQUESTS_OUVERTES.md." >/dev/null 2>&1; then
+              CLOSED=$((CLOSED+1)); echo "- fermee #$pr" >> "$REP"
+            else
+              RESTE=$((RESTE+1)); echo "- ECHEC fermeture #$pr" >> "$REP"
+            fi
+          done
+          echo "" >> "$REP"
+          echo "**$CLOSED fermee(s), $RESTE en echec.**" >> "$REP"
+
+          echo "::notice::Menage : $DEL branche(s) supprimee(s)/$TOTAL vues, $CLOSED annulation(s) fermee(s)."
+
+          # ---------- 3) Publier le compte-rendu SANS passer par un push ----------
+          # Un `git push HEAD:<branche>` echoue des que la branche a bouge
+          # pendant le job (c'est exactement ce qui s'est passe le 6.09 : le
+          # compte-rendu etait ecrit, jamais publie, et l'echec etait avale par
+          # `>/dev/null 2>&1` — le meme defaut que la lecon #232, une couche
+          # au-dessus). L'API de contenu ecrit le fichier directement sur main,
+          # sans rebase possible, et on RAPPORTE son erreur au lieu de l'avaler.
+          B64=$(base64 -w0 "$REP" 2>/dev/null || base64 "$REP" | tr -d '\n')
+          SHA=$(gh api "repos/${GITHUB_REPOSITORY}/contents/.github/CLEANUP-REPORT.md?ref=main" \
+                  --jq .sha 2>/dev/null || true)
+          if [ -n "$SHA" ]; then SHA_ARG=(-f "sha=$SHA"); else SHA_ARG=(); fi
+          PUB=$(gh api -X PUT "repos/${GITHUB_REPOSITORY}/contents/.github/CLEANUP-REPORT.md" \
+                  -f "message=menage: $DEL branche(s), $CLOSED annulation(s) fermee(s) [skip ci]" \
+                  -f "content=$B64" -f "branch=main" "${SHA_ARG[@]}" 2>&1) \
+            && echo "::notice::Compte-rendu publie sur main." \
+            || echo "::error::Publication du compte-rendu ECHOUEE : $(echo "$PUB" | head -3)"
 
       - name: Notify on failure
         if: failure()

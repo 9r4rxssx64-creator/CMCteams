@@ -54,7 +54,7 @@ describe('v13.4.337 — premium/forced ignore le prefix smart-router', () => {
     /* v13.4.362 : défaut admin = free-smart. « Bonjour » = domaine general (simple)
      * → provider gratuit en tête. Le smart-router (pro-openai) reste SKIP → 0 drift. */
     expect(chain[0]).not.toBe('openai');
-    expect(['gemini', 'groq', 'openrouter']).toContain(chain[0]);
+    expect(['qwen', 'gemini', 'groq', 'openrouter']).toContain(chain[0]); /* v13.4.366 : qwen = gratuit en tête */
     /* Anthropic toujours joignable en secours */
     expect(chain).toContain('anthropic');
   });
@@ -77,7 +77,7 @@ describe('v13.4.337 — premium/forced ignore le prefix smart-router', () => {
     /* Le mode auto-fix non-explicite est ignoré → défaut admin free-smart. Question
      * simple → gratuit en tête, openai jamais préfixé (le drift que v337/362 corrigent). */
     expect(chain[0]).not.toBe('openai');
-    expect(['gemini', 'groq', 'openrouter']).toContain(chain[0]);
+    expect(['qwen', 'gemini', 'groq', 'openrouter']).toContain(chain[0]); /* v13.4.366 : qwen = gratuit en tête */
     expect(chain).toContain('anthropic');
   });
 

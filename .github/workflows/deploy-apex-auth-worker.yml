@@ -25,7 +25,7 @@ name: Deploy apex-auth-worker
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, 'claude/**']
     paths:
       - 'services/apex-auth-worker/**'
       - '.github/workflows/deploy-apex-auth-worker.yml'

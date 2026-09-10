@@ -3,21 +3,26 @@
 > Écrit le 2.09.2026 depuis la session « Studio créa ». Kevin : *« pointe toutes tes branches pour
 > que je puisse continuer à travailler sur chacune d'entre elles, comme avant »* et *« tout par
 > GitLab maintenant jusqu'à nouvel ordre »*.
-> À lire au démarrage, avec `ETAT-INFRA.md` (les 7 faits).
+> À lire au démarrage, avec `ETAT-INFRA.md` (les 16 faits).
 
-## ⚡ La cause unique — et la seule action qui débloque TOUT
+## ⚡ PÉRIMÉ — ne redemandez PLUS le clic du connecteur GitHub (mis à jour le 6.09)
 
-Plusieurs sessions rapportent **exactement la même erreur** :
+> Cette section demandait à Kevin de retaper l'autorisation du connecteur GitHub. **C'est faux
+> depuis le 2.09 et inutile depuis le 4.09** — on le laisse écrit ici pour que personne ne le
+> ressorte des archives.
 
-> *« Authentication failed while accessing the repository "9r4rxssx64-creator/CMCteams". …
-> verify the integration is **authorized** for it. »*
+Ce que l'erreur *« Authentication failed … verify the integration is authorized »* voulait
+vraiment dire : le **compte GitHub était SUSPENDU** (2.09), pas l'autorisation de l'application.
+Le tap du connecteur ne débloquait rien (message m005). **Le support a levé la restriction le
+4.09 à 16h34 UTC** (message m016) : `git fetch`/`push` marchent depuis un conteneur avec les
+identifiants du harnais, **rien à coller**, et les Actions tournent de nouveau.
 
-Ce n'est pas « le dépôt a disparu » : c'est **l'autorisation de l'application Claude sur le dépôt**
-qui est tombée. Un seul geste la rétablit, pour **toutes** les sessions à la fois :
+**Aujourd'hui : on publie par GitHub.** `git push -u origin claude/…` → PR → **fusion par l'API**
+(le bot auto-merge est refusé par la protection de branche, message m019 point 4 — essayez la
+fusion par l'API depuis votre session, ne demandez pas un clic à Kevin). GitLab ne sert plus
+qu'à une remise à niveau occasionnelle (`ETAT-INFRA.md` fait n°13).
 
-**https://claude.ai/customize/connectors?auth_start=github&auth_start_force=1**
-
-**Aucune session ne doit le redemander à Kevin une nouvelle fois.** C'est écrit ici, une fois.
+**Aucune session ne doit redemander ce clic à Kevin.** C'est écrit ici, une fois.
 
 ## 🔗 Le pipeline entre sessions — lis-le avant de commencer
 
@@ -54,13 +59,66 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Crypto trading bot | `claude/crypto-trading-bot-irrfu6` | 🟢 travail prêt |
 | Free APIs | `claude/free-apis-analysis-c4sy5d` | 🟢 travail prêt |
 | Reverse-engineering / consolidation | `claude/reverse-engineer-app-consolidation-t0y4u5` | 🟢 travail prêt |
+| Audit du domaine + surveillance | `claude/surveillance-domaine-26-adresses` | ✅ fusionnée dans main le 5.09 (PR #3652) — suite en cours sur la même branche |
+| Correctif Vercel (annexe de la précédente) | `claude/vercel-config-main` | 🔴 **urgent, à fusionner** — partie de `main` le 6.09, 4 fichiers. Répare les 2 `vercel.json` refusés par le schéma Vercel : tant qu'elle n'est pas dans `main`, **chaque push de chaque branche envoie un mail d'échec à Kevin**. Voir message m036. |
+| Garde anti-fuite de secrets (annexe) | `claude/secrets-guard-main` | 🔴 **urgent, à fusionner** — partie de `main` le 6.09. 4 secrets encore en clair sur `main` (dépôt PUBLIC) + la garde qui les attrape. Voir message m036. |
+| CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
+| CMCteams — fidélité au PDF (planning/équipes/départs) | `claude/verify-cmcteams-light-data-rzlvau` | 🟢 septembre 2026 : 248/248 personnes et 7 440/7 440 cellules identiques au PDF, des deux côtés (6.09) |
+
+## 📅 État RÉEL mesuré le 5.09 (16h40) — `git fetch --prune` puis `git for-each-ref --sort=-committerdate refs/remotes/origin/claude/`
+
+Le registre ci-dessus date du 2.09 : les branches ont bougé. **367 branches `claude/*`** sur origin, **12 touchées le 5.09**, dont **8 déjà fusionnées** dans `main` par le robot (capcut-mini-versions, fix-mois-ouverture, apex-chat-mfa-faceid, sarzance-family-tree, apex-chat-secu-numero-public, apex-ultra-review-crew, cuisine-6-recettes, fix-messages-photo — leur travail est en prod, sauf déploiement worker en échec, voir `ETAT-INFRA.md` fait n°16) et **4 encore devant main** :
+
+| Branche | Avance | Ce qu'elle fait | Territoire |
+|---|---|---|---|
+| `claude/surveillance-domaine-26-adresses` | +1 | déploiements uptime/rag qui disent la vérité (annotations), cron d'Outlook → uptime | `services/kdmc-uptime`, `services/kdmc-outlook` (6 lignes), 2 `deploy-*.yml` |
+| `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
+| `claude/lingua-connexion-honnete` | +3 | connexion PRÉNOM + NOM sans perdre les anciens comptes | `lingua/app.js` |
+| `claude/lingua-prenom-nom` | +1 | **le même travail** que la précédente (+ un lien `node_modules` commité par erreur) — message m030 | `lingua/app.js` |
+| `claude/verify-cmcteams-light-data-rzlvau` | +2 | le PDF relu **sans le parser de l'app** : 3 défauts que « app == light » ne pouvait pas voir (v9.894 / light v1.40) — messages m039 à m043 | parser d'import d'`index.html`, `tools/shared/planning-seed.js`, `tools/departs/boards-gen.js`, `tests/verify-pdf-vs-surfaces.mjs` |
+
+Avant de commencer une session : **regarde les branches du jour, pas celles du tableau** — et inscris la tienne (`node tools/pipeline/pipeline.mjs enregistrer …`), sinon les autres ne te voient pas.
+
+## 🔎 Mesure du 6.09.2026 — le registre ne voit qu'une partie de ce qui bouge
+
+`git for-each-ref refs/remotes/origin/claude/` + `pipeline/sessions.json`, comptés le jour même :
+
+| | |
+|---|---|
+| branches `claude/*` sur origin | **370** |
+| inscrites au registre | **22** |
+| **actives** (commit dans les 7 derniers jours) | **15** |
+| actives **que personne ne suit** | **7** |
+
+Les 370 ne sont pas un problème : la plupart sont finies et fusionnées. Les **7 actives
+orphelines** en sont un — dont `claude/verify-cmcteams-light-data-rzlvau`, la session qui
+réparait le rouge `e2e-tests` bloquant les fusions de **tout le monde**, sans que personne
+ne puisse le savoir.
+
+**Pourquoi le garde ne le voyait pas** : `test:pipeline-sessions` comparait le registre à
+cette carte — deux **documents** — et **jamais aux vraies branches git**. Il était donc vert
+alors que sept sessions travaillaient dans leur coin : c'est exactement le risque écrit en
+tête de `tests/verify-pipeline-sessions.mjs`, et la même classe d'erreur que la leçon #103
+(une vérification qui passe parce qu'elle ne vérifie rien de réel).
+
+**Corrigé le 6.09** : le garde lit désormais les branches git. Cliquet sur
+`pipeline/branches-orphelines-baseline.json` : les 7 connues sont figées, **une NOUVELLE
+orpheline fait échouer le gate**. Repli ouvert si git ou les refs distantes manquent (clone
+superficiel de CI) — jamais de faux rouge. Prouvé discriminant par 2 sabotages.
+
+> Si ta branche est dans la liste des 7 : inscris-toi, c'est une commande —
+> `node tools/pipeline/pipeline.mjs enregistrer --id <slug> --titre "…" --branche "<la tienne>" --sujet "…"`
+> puis retire-toi de la base de référence dans le même commit.
 
 ## 🚦 Ce que chaque session fait, dans cet ordre
 
 1. **Teste ton propre accès** — ne généralise ni un succès ni un 403 :
    `git ls-remote origin`
-2. **Ça répond** → travaille sur GitHub comme avant. Mais sache que **rien n'y est publié en ligne**
-   (GitHub Pages est mort, fait n°1) : pour mettre en ligne, passe par GitLab ou par une archive.
+2. **Ça répond** → travaille sur GitHub comme avant, **et publie depuis GitHub** : depuis le
+   4.09.2026 le site vivant vient de GitHub (fait n°11 d'`ETAT-INFRA.md`). Le fait n°1
+   (« GitHub Pages est mort ») date de la suspension et ne s'applique plus.
+   **GitLab = miroir de secours + ce que GitHub interdit** (jobs à la demande qui appellent
+   l'extérieur), pas le chemin de publication — l'y envoyer consomme ses 400 min/mois pour rien.
 3. **403** → **GitLab**, dépôt `kdmc-group/Kdmc-project` :
    ```bash
    git push "https://oauth2:<JETON>@gitlab.com/kdmc-group/Kdmc-project.git" HEAD:<ta-branche>

@@ -16,6 +16,7 @@ on:
       - 'claude/**'  # v1.1.125 : tout push claude/* avec workers/** déclenche deploy
     paths:
       - 'messaging-app/workers/**'
+      - 'services/_shared/ia-route.js'   # routage IA commun : le worker l'importe → doit redéployer
       - 'messaging-app/d1-migrations/**'
       - 'messaging-app/deploy.sh'
       - '.github/workflows/deploy-apex-chat.yml'

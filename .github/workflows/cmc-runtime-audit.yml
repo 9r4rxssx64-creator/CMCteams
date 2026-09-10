@@ -46,10 +46,14 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '22'
-          cache: 'npm'
+          # Pas de `cache: npm` : le dépôt n'a PAS de package-lock.json → setup-node
+          # échouait en 17 s (« Dependencies lock file is not found ») et ces tests ne
+          # tournaient plus du tout (mesuré 6.09, run 34040946171).
 
       - name: Install npm dependencies (including playwright)
-        run: npm install --no-audit --no-fund
+        # node 22 : `npm install` nu plante sur les peer deps de la racine (edgesOut) —
+        # même repli que audit-live.yml et que le job tests GitLab.
+        run: npm install --no-audit --no-fund --legacy-peer-deps
 
       - name: Install Playwright Chromium
         run: npm run playwright:install

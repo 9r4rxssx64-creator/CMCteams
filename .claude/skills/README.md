@@ -1,6 +1,6 @@
 # Skills experts CMCteams + Apex
 
-Index des 15 skills experts utilisables par Claude Code pour les projets Kevin (CMCteams + Apex).
+Index **partiel** : ce fichier détaille une quinzaine de skills, mais `.claude/skills/` en contient **97** (fiches plates + dossiers) au 6.09.2026. Le vrai inventaire, c'est le dossier lui-même.
 
 Niveau cible : **expert pro freelance senior 200 EUR/h**. Aucun raccourci. Application stricte des regles permanentes Kevin (CLAUDE.md).
 
@@ -17,7 +17,7 @@ Pour invoquer manuellement :
 
 Ou via le tool `Skill` :
 ```
-Skill({ skill: "security-audit-owasp", args: "apex-ai/v13/src/auth/" })
+Skill({ skill: "security-audit-owasp", args: "apex-ai/v13/services/auth/" })
 ```
 
 ---

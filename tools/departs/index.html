@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.39</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.40</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.39";
+var APP_VER="v1.40";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -888,6 +888,11 @@ try{ var _mq=new URLSearchParams(location.search).get("me");
    On mémorise donc l'ÉQUIPE (repère stable, lu dans le libellé) et on la retrouve dans le mois le
    plus récent. Si l'équipe n'existe plus ce mois-ci → tableau par défaut.
 
+   v1.40 — septembre 2026 vérifié contre le PDF, sans passer par le parser de l'app
+   (Kevin 2026-09-06 « vérifie en réel… tout à l'identique »). Boards régénérés : MATTERA M
+   réapparaît (sa période « 1 30 » était 0,2 pt à côté de son nom → ligne perdue), BLANCHY F
+   et DEGIOVANNI R retrouvent leur équipe (c7 / c11) par la rotation d'horaires. Septembre :
+   248/248 personnes et 7 440/7 440 cellules identiques au PDF, ici comme dans CMCteams.
    v1.39 — « miroir aussi pour chaque » (Kevin 2026-09-05). Le repère « nom d'équipe » ne suffit
    PAS : chacun CHANGE D'ÉQUIPE CHAQUE MOIS (règle métier absolue). Reporter « BJ Éq.7 » d'août sur
    septembre posait Kevin sur une équipe où il n'est même pas — et donc sur le MAUVAIS MIROIR

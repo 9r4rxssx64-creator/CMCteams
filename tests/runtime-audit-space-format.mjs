@@ -16,7 +16,11 @@ const TABLINE = "Chefs black Jack\tColonne2\tColonne3";
 
 async function main() {
   const browser = await chromium.launch({ headless: true });
-  const page = await (await browser.newContext({ viewport: { width: 1024, height: 768 } })).newPage();
+  const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+  // Hors ligne : la page en file:// ne parle à personne (sinon, sur un runner AVEC réseau,
+  // la synchro Firebase peut remplacer A.overrides en pleine mesure — leçon #220).
+  await ctx.route(/^https?:\/\//, (r) => r.abort());
+  const page = await ctx.newPage();
   await page.goto('file://' + resolve(ROOT, 'index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.A === 'object' && Array.isArray(window.A.employees) && typeof window.doImport === 'function', { timeout: 20000 });
 

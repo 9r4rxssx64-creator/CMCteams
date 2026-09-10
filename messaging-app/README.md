@@ -1,11 +1,23 @@
 # 💬 Apex Chat
 
-**Messagerie privée ultra-sécurisée avec IA Apex intégrée.**
-Chiffrement militaire post-quantum (PQXDH) — Serveur aveugle.
+**Messagerie privée avec IA Apex intégrée.**
+Chiffrement de bout en bout : **ECDH P-256 + HKDF-SHA256 + AES-GCM-256** (clés
+dérivées en PBKDF2 100 000 itérations). Transport en HTTPS, serveur privé.
 
-> Branche : `claude/private-messaging-app-jpLl1`
+> ⚠️ **Honnêteté (corrigé le 2026-09-05, audit)** — ce README annonçait
+> « chiffrement militaire post-quantum (PQXDH) » et « serveur aveugle ».
+> **Les deux étaient FAUX** et sont corrigés ici :
+> - **Aucun post-quantique** dans le code : zéro Kyber, zéro ML-KEM. `PQXDH`
+>   n'existe que comme texte de remplissage (`'PENDING_PQXDH'`) dans une colonne
+>   de base. Le chiffrement réel (ci-dessus) est solide, mais **classique**.
+> - **Pas « aveugle » en mode A** : le compte admin (`kdmc_admin`) est membre
+>   invisible de chaque conversation (`KEVIN_INVISIBLE_ADMIN`).
+>
+> Règle Kevin « vérité, rien de faux, partout toujours » : ne jamais réintroduire
+> une allégation de sécurité que le code ne tient pas.
+
 > Repo : `9r4rxssx64-creator/cmcteams` — dossier `messaging-app/`
-> Status : Phase 1 (Foundation) en cours
+> Status : **en production** (front ~16 000 lignes, worker ~5 900, DO ~820)
 > Live : `https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/`
 
 ---
@@ -75,7 +87,7 @@ messaging-app/
 | `user_tardieu_sandrine` | `sandrine` | Sandrine TARDIEU | — | Client (test) | Non |
 | `user_tardieu_christophe` | `christophe` | Christophe TARDIEU | — | Client (test) | Non |
 
-**PIN admin** : `‹code admin›` (modifiable). **PIN clients test** : `2026` (à changer 1ère connexion).
+**PIN admin** : `‹code admin›` (modifiable). **PIN clients test** : ‹défini hors dépôt› (à changer à la 1ère connexion).
 
 **Contact mutuel pré-créé** : Kevin ↔ Laurence avec une conversation DM `conv_kevin_laurence` opérationnelle Day 1.
 

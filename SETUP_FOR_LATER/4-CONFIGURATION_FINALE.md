@@ -93,7 +93,7 @@ Notes : ouvrir Notes "KDMC Tokens Master" + cocher rotation Azure si > 18 mois
 ```bash
 # Tester l'endpoint
 curl -H "Authorization: Bearer $AGENT_SECRET" \
-  "https://kdmc-agent.vercel.app/api/cron?trigger=manual" | jq
+  "https://kdmc-agent-monaco.vercel.app/api/cron?trigger=manual" | jq
 
 # Voir les logs Vercel
 # Dashboard Vercel > Functions > api/cron > Logs
@@ -139,7 +139,7 @@ git commit -m "agent: amélioration health-check"
 git push origin main
 
 # Vérifier le déploiement (1 min après push)
-# https://vercel.com/<user>/kdmc-agent/deployments
+# https://vercel.com/<user>/kdmc-agent-monaco/deployments
 ```
 
 ---
@@ -197,7 +197,7 @@ Faire un audit doc tous les 3 mois (skill `kdmc-status` aide).
 
 ### Vercel
 - Free tier : 100 GB bandwidth, 6000 cron invocations/mois
-- L'agent fait ~5000 appels/mois (15 min cron) → OK free
+- L'agent fait **~65 exécutions/mois** (3 crons : quotidien 3 h, quotidien 8 h, hebdo lundi 9 h) → très largement dans le gratuit
 
 ### Firebase
 - Free tier : 1 GB storage, 10 GB bandwidth/mois

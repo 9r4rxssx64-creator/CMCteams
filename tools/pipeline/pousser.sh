@@ -3,7 +3,10 @@
 # ---------------------------------------------------------------------------
 # Pourquoi ce script existe (vécu le 2-3.09.2026) :
 #
-#  1. GitHub est suspendu. Toutes les sessions poussent sur GitLab.
+#  1. (2-3.09) GitHub était suspendu : toutes les sessions poussaient sur GitLab.
+#     DEPUIS LE 4.09 GitHub est rouvert et redevenu la voie normale (git push origin +
+#     PR) ; ce script ne sert plus qu'à la remise à niveau OCCASIONNELLE de GitLab
+#     (miroir kdmc-site.pages.dev + jobs de veille), cf. ETAT-INFRA fait n°13.
 #  2. Le jeton NE DOIT JAMAIS être enregistré (pas de `git remote add` avec le
 #     jeton dedans, pas de credential helper) — règle de sécurité de Kevin,
 #     ETAT-INFRA.md fait n°7. On l'écrit donc dans l'URL, au moment du push.
@@ -46,11 +49,15 @@ if ! git push "https://oauth2:${GITLAB_TOKEN}@${DEPOT}" \
   exit 1
 fi
 
-# Push accepté : GitLab a bien ce commit, on peut le dire au repère local.
-if [[ "$CIBLE" == "$BRANCHE_LOCALE" ]]; then
+# Push accepté : GitLab a bien ce commit. Le repère local `origin/<cible>` ne se touche
+# QUE si `origin` EST GitLab — depuis le 4.09 (GitHub rouvert), `origin` est GitHub :
+# y écrire un commit que GitHub n'a pas rendrait le dépôt MENTEUR (« tout est publié »
+# alors que rien n'est parti sur GitHub). Vécu le 5.09 : c'est pour ça que la remise à
+# niveau de GitLab s'est faite à la main, sans ce script.
+ORIGINE="$(git remote get-url origin 2>/dev/null || true)"
+if [[ "$ORIGINE" == *gitlab.com* ]]; then
   git update-ref "refs/remotes/origin/${CIBLE}" HEAD
-  echo "✓ poussé, et repère local origin/${CIBLE} remis à $(git rev-parse --short HEAD)"
+  echo "✓ poussé sur GitLab ${CIBLE} · repère origin/${CIBLE} remis à $(git rev-parse --short HEAD)"
 else
-  git update-ref "refs/remotes/origin/${CIBLE}" HEAD
-  echo "✓ poussé sur ${CIBLE} (repère origin/${CIBLE} mis à jour)"
+  echo "✓ poussé sur GitLab ${CIBLE} · repère origin/* NON touché (origin = GitHub : GitLab n'est qu'une remise à niveau occasionnelle, cf. ETAT-INFRA fait n°13)"
 fi

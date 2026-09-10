@@ -41,6 +41,11 @@ const browser = await chromium.launch({
   args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', '--autoplay-policy=no-user-gesture-required'],
 });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+// Ce test vérifie ce que fait l'app QUAND L'IA N'EST PAS JOIGNABLE (« elle le DIT au lieu de
+// faire semblant »). Il ne tenait que parce que le sandbox n'a pas de réseau : sur un runner
+// qui en a, l'IA répond, des sous-titres sortent, et le test rougit. On coupe donc l'extérieur
+// pour de bon (le serveur local qui sert la page reste joignable). Leçon #220.
+await ctx.route(/^https?:\/\//, (r) => (/^https?:\/\/(127\.0\.0\.1|localhost)[:\/]/.test(r.request().url()) ? r.continue() : r.abort()));
 const page = await ctx.newPage(); const errs = [];
 page.on('pageerror', e => errs.push('PAGEERROR: ' + e.message));
 page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|ERR_TUNNEL|ERR_NAME|ERR_CONNECTION|ERR_PROXY/.test(m.text())) errs.push('CONSOLE: ' + m.text()); });

@@ -20,8 +20,9 @@ export function fixture() {
   const NOMS_C = ['DESARZENS', 'DESARZENS', 'DESARZENS'];
   /* Une lignée : racine + conjoint, puis `larg` enfants par couple sur `gens` générations. */
   function lignee(key, noms, gens, larg, annee0) {
-    const root = add({ id: key + '_g0_1', prenom: key === 'o' ? 'Olivier-A1' : 'Chêne-A1', nom: noms[0], sexe: 'M', naissance: { date: '1.01.' + annee0, lieu: 'Ville-Test' }, deces: { date: '1.01.' + (annee0 + 80), lieu: 'Ville-Test' } });
-    const rootC = add({ id: key + '_g0_2', prenom: key === 'o' ? 'Olivia-A2' : 'Chênette-A2', nom: noms[1], sexe: 'F', naissance: { date: '1.01.' + (annee0 + 2), lieu: 'Ville-Test' }, deces: { date: '1.01.' + (annee0 + 85), lieu: 'Ville-Test' } });
+    /* Lignée olivier : les racines naissent en Principauté (lieu fictif « Monaco ») → badge ◆ + règne vérifiables (v3.18) */
+    const root = add({ id: key + '_g0_1', prenom: key === 'o' ? 'Olivier-A1' : 'Chêne-A1', nom: noms[0], sexe: 'M', naissance: { date: '1.01.' + annee0, lieu: key === 'o' ? 'Monaco' : 'Ville-Test' }, deces: { date: '1.01.' + (annee0 + 80), lieu: 'Ville-Test' } });
+    const rootC = add({ id: key + '_g0_2', prenom: key === 'o' ? 'Olivia-A2' : 'Chênette-A2', nom: noms[1], sexe: 'F', naissance: { date: '1.01.' + (annee0 + 2), lieu: key === 'o' ? 'Monte-Carlo' : 'Ville-Test' }, deces: { date: '1.01.' + (annee0 + 85), lieu: key === 'o' ? 'Monaco' : 'Ville-Test' } });
     couple(root, rootC);
     let parents = [[root, rootC]];
     for (let g = 1; g < gens; g++) {

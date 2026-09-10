@@ -1,48 +1,151 @@
 # 🖱️ TES ACTIONS EN ATTENTE — le plus urgent en premier
 
+> **Refait le 6.09.2026** (Kevin : « Note tout dans les actions à faire par prio »).
+> Tout ce qui dépend de toi est ci-dessous, dans l'ordre. Le reste de ce fichier est
+> l'historique, tu n'as pas besoin de le lire.
+>
+> **Beaucoup de lignes ne demandent qu'une RÉPONSE** — tu dis oui, je fais le travail
+> (section 🟠). Les seules où tu dois vraiment cliquer sont marquées 👆.
+
+---
+
+## 🔴 URGENT — 4 mots de passe sont connus de tout le monde
+
+Ils étaient écrits en clair dans le dépôt, qui est **public**. Je les ai masqués, mais
+**masquer ne les efface pas** : l'historique du dépôt garde tout. Tant qu'ils ne sont pas
+**remplacés**, il faut les considérer comme connus.
+
+| # | Quoi | Pourquoi ça presse | Toi |
+|---|---|---|---|
+| 1 | **Régénérer `AGENT_SECRET`** | C'est la **seule** protection de ton agent en ligne. Qui l'a peut lancer ses cycles — et chaque cycle appelle l'IA, donc **c'est ton argent** | 👆 |
+| 2 | **Changer le code famille de l'arbre** | Ce code **est** l'adresse des données. Qui l'a peut **lire et modifier tout l'arbre** — donc les infos de personnes vivantes | 👆 |
+| 3 | **Révoquer le jeton GitLab** `glpat-wD6Q…` | Demandé par la session « arbre ». Un jeton qui traîne = un accès en écriture au dépôt | 👆 |
+| 4 | **Changer ton mot de passe Sentry** — *seulement si tu avais copié celui que le guide proposait* | Un document public **suggérait un mot de passe précis**. S'il est le tien, il est publié | 👆 |
+
+**Comment faire, une par une :**
+
+1. **Agent** → [Vercel, projet `kdmc-agent-monaco`](https://vercel.com/g7vrdynktn-5574s-projects/kdmc-agent-monaco/settings/environment-variables) → la variable `AGENT_SECRET` → **Edit** → mets une nouvelle valeur longue → **Save**. Puis dis-moi « agent fait », je vérifie que l'agent répond toujours.
+2. **Arbre** → ouvre [arbre.kd-mc.com](https://arbre.kd-mc.com) → **Outils** → **Changer le code**. L'app s'occupe de tout, tes données ne bougent pas.
+3. **GitLab** → [gitlab.com, jetons d'accès](https://gitlab.com/-/user_settings/personal_access_tokens) → celui qui commence par `glpat-wD6Q` → **Révoquer**.
+4. **Sentry** → [sentry.io, sécurité du compte](https://sentry.io/settings/account/security/) → change le mot de passe.
+
+---
+
+## 🟠 UNE RÉPONSE SUFFIT — je fais le travail derrière
+
+Rien à installer, rien à configurer. Tu réponds, je m'occupe du reste.
+
+| # | Ma question | Ce que je fais avec ta réponse |
+|---|---|---|
+| 5 | **Le dépôt est public et contient les noms de tes collègues et de tes proches** (261 noms d'effectif, les 6 Pit Boss, le nom de Laurence). Trois choix : **(a)** on assume, **(b)** je remplace les noms par des matricules dans l'app et la correspondance part dans Firebase (chantier, mais c'est le vrai correctif), **(c)** on passe le dépôt en privé (le plus rapide, mais ça casse la publication du site — je mesure d'abord). | J'exécute l'option choisie |
+| 6 | **Les boutiques peuvent être modifiées par n'importe qui.** Deux règles Firebase autorisent l'écriture **sans aucune condition**. Je les ferme ? | Je durcis les règles et je vérifie que les boutiques marchent toujours |
+| 7 | **N'importe quelle branche de travail peut déployer la production d'Apex Chat.** Je restreins à `main` seulement ? | Je corrige le déploiement |
+| 8 | **`arbre/research/ACTES-VERIF.md`** contient les dates et lieux de naissance d'environ **18 personnes vivantes** + une adresse — dans un dépôt public. Je le retire du dépôt ? | Je le sors et je le remplace par une note |
+| 9 | **Compte développeur Apple à 99 $/an** : oui ou non ? *(demandé par la session « meta »)* | Sans lui, aucune app ne peut aller sur l'App Store |
+| 10 | **Gilets** : combien, et broderie logo seul ou logo + prénoms ? *(session « la détente »)* | La commande part |
+| 11 | **Accès au compte Cloudflare « 9r4 »** *(session « domain kdmc »)* | Elle débloque son travail |
+
+---
+
+## 👆 UN SEUL CLIC TECHNIQUE
+
+| # | Quoi | Pourquoi |
+|---|---|---|
+| 12 | Sur [tes jetons Cloudflare](https://dash.cloudflare.com/profile/api-tokens) → le jeton qui a « Workers Scripts : Edit » → **Modifier** → ajouter **Compte › Vectorize › Edit** → **Enregistrer**. Puis écris-moi **« vectorize fait »**. | Sans ce droit, la **mémoire longue d'Apex** ne se déploie jamais. Apex marche, mais il oublie. Le jeton garde la même valeur : rien à changer ailleurs. |
+
+---
+
+## ⚪ QUAND TU VEUX — rien ne casse en attendant
+
+| # | Quoi | Détail |
+|---|---|---|
+| 13 | **Vérifier où sont stockées tes données Firebase** | Ouvre [la console](https://console.firebase.google.com/project/kdmc-clients/database/kdmc-clients-default-rtdb/data) : la région est écrite à côté du nom. Ton document RGPD affirme « Europe » alors que l'adresse réellement appelée par l'app est la forme **américaine**. Je ne peux pas trancher d'ici. **Tant que ce n'est pas vérifié, ce document ne doit servir d'argument devant personne.** Dis-moi ce que tu vois, je réécris le document. |
+| 14 | **Secrets App Store mal nommés** | Le déploiement cherche `ASC_KEY_ID` / `ASC_ISSUER_ID` / `ASC_PRIVATE_KEY`, tes vrais secrets s'appellent `APPSTORE_API_ISSUER` / `APPSTORE_API_KEY` / `APPLE_TEAM_ID`. Il tournerait donc **à vide, sans rien dire**. Je n'ai pas renommé : la correspondance est incertaine et il en manque un troisième. À reprendre ensemble. |
+| 15 | **`CLAUDE.md` pèse 533 Ko** | Il porte sa propre règle « garder CLAUDE.md sous 45 Ko », et il est rechargé en entier à chaque message. Découpage à faire — je peux m'en charger, dis-moi juste quand. |
+
+---
+
+## ✅ CE QUE TU N'AS PLUS À FAIRE (ne reviens pas dessus)
+
+- ~~**Envoyer la réponse au support GitHub**~~ — **PÉRIMÉ** : GitHub a rouvert le compte le
+  **4.09 à 16h34** (fait n°10 d'`ETAT-INFRA.md`). Il n'y a plus rien à envoyer.
+- ~~**Changer le code admin**~~ — fait le 5.09, et les 6 déploiements ont le nouveau secret.
+- ~~**Cliquer le connecteur GitHub**~~ — périmé depuis la réouverture.
+
+---
+
+# 📜 Historique (ancien contenu de ce fichier)
+
 > **5.09.2026 12:50 — « Note toutes les tâches pour plus tard »** : la liste COMPLÈTE (les tiennes,
 > les miennes, celles des autres sessions) est en tête de `MEMO_RESUME.md`, section
 > « 📌 À REPRENDRE PLUS TARD ». Ici : seulement ce qui dépend de toi.
 >
-> Tes 4 gestes, dans l'ordre : ① changer le code admin (ci-dessous) · ② révoquer le jeton GitLab
-> `glpat-wD6Q…` · ③ dire aux autres sessions : accès Cloudflare « 9r4 », nombre de gilets +
-> broderie, compte développeur Apple oui/non · ④ envoyer la réponse prête au support GitHub (m003).
+> Tes gestes, dans l'ordre : ① ~~changer le code admin~~ ✅ fait 16h18 → **vérifie-le une fois sur
+> departs.kd-mc.com** (ci-dessous) · ② révoquer le jeton GitLab `glpat-wD6Q…` · ③ dire aux autres
+> sessions : accès Cloudflare « 9r4 », nombre de gilets + broderie, compte développeur Apple oui/non
+> · ④ envoyer la réponse prête au support GitHub (m003).
 
 ---
 
+## ☁️ 1 clic (5.09 17h) — donner le droit « Vectorize » au jeton Cloudflare, sinon la mémoire d'Apex (RAG) ne se déploie jamais
+
+Le déploiement de `kdmc-rag` échoue avec la vraie raison, enfin lisible :
+`Authentication error [code: 10000] … Please ensure it has the correct permissions` sur
+`/vectorize/v2/indexes`. Le jeton `CLOUDFLARE_API_TOKEN` (celui des secrets GitHub) sait
+déployer des workers, mais **n'a pas le droit Vectorize**. Je ne peux pas modifier un jeton
+Cloudflare à ta place.
+
+### ▶️ 2 gestes, 1 minute
+1. Ouvre **[dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)**
+   → le jeton utilisé par GitHub (celui qui a « Workers Scripts : Edit ») → **Modifier**
+   → ajoute la permission **Compte › Vectorize › Edit** → **Continuer** → **Enregistrer**.
+   (Le jeton garde la même valeur : rien à changer dans GitHub.)
+2. Écris-moi « vectorize fait » : je relance le déploiement, l'index `apex-memory` se crée
+   tout seul et `/health` d'Apex passe à `hasVec:true`.
+
+*Sans ça : Apex fonctionne (mémoire fail-open), mais sans souvenirs longs.*
+
+---
+
+## ✅ FAIT (5.09.2026, 16h35) — ton nouveau code admin est en place sur le domaine
+
 ## 🚨 D'ABORD (5.09.2026) — change ton code admin : il est public
 
-Ton code admin (celui à 6 chiffres) était écrit **en clair dans 68 fichiers** de ton dépôt
-GitHub — qui est **public** — et son empreinte était dans la page Départs. Tout ça est
-retiré, et plus aucune page ne garde le code ; mais **ce qui a été public une fois le reste**
-(l'historique Git le garde). Le seul vrai correctif : **un nouveau code**. Je ne peux pas le
-faire à ta place : le nouveau code ne doit passer **ni par moi, ni par un message, ni par un
-journal public**.
 
-### ▶️ 3 gestes, 2 minutes
-1. **Choisis** un nouveau code — **8 chiffres**, pas 6 (dix fois plus long à forcer par mille).
-2. Ouvre **[kd-mc.com/CMCteams/tools/empreinte/](https://kd-mc.com/CMCteams/tools/empreinte/)**,
-   tape le code, **« Copier l'empreinte »**. Le calcul se fait sur ton iPhone, rien n'est envoyé.
-3. Ouvre **[le secret APEX_ADMIN_PIN_SHA256](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/APEX_ADMIN_PIN_SHA256)**
-   → **Update** → colle l'empreinte → **Save**.
+Tu as changé le code (« fait » à 16h18). J'ai relancé les 6 déploiements : **le routeur
+kd-mc.com, admin.kd-mc.com, Monaco, Outlook et le proxy Apex ont le nouveau secret**. En route,
+j'ai trouvé que le déploiement du routeur **échouait depuis le 13 août** sans que personne ne le
+voie — sans ce correctif, l'ancien code (public) serait resté valable sur ton domaine. C'est
+corrigé, prouvé (déploiement vert, 26 adresses répondent, un mauvais code est refusé), et un
+garde empêche que ça revienne.
 
-Puis écris-moi juste **« fait »** : je relance les 6 déploiements (routeur, admin.kd-mc.com,
-Monaco, Outlook, RAG, proxy Apex) — c'est le même secret pour tous, et les pages **Départs** et
-**Messages** suivent le routeur toutes seules.
+### ▶️ 1 geste, 20 secondes — vérifie toi-même
+Ouvre **[departs.kd-mc.com](https://departs.kd-mc.com)** → 🔒 → tape ton **nouveau** code →
+« Mode admin activé ». Moi je prouve qu'un mauvais code est refusé ; **toi seul** peux prouver
+que le bon est accepté (je ne le connais pas, c'est voulu). Si ça refuse : dis-moi « refusé ».
 
-### 🌳 Puis l'arbre (5.09 soir) — 2 gestes, 1 minute, dès que la branche est en ligne
-L'arbre (arbre.kd-mc.com) ne contient **plus aucune personne** dans son fichier public (v3.16) :
-les données sont servies par le domaine à qui tape le code. Il faut les y **mettre une fois**,
-depuis ton iPhone (le seul endroit où elles sont complètes) :
-1. Ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet **Outils** → **📤 Publier
-   l'arbre sur le domaine (admin)** → tape ton code admin (il part au domaine, rien n'est gardé).
-   Tu dois voir « 📤 Arbre publié : N personnes ».
-2. Toujours dans **Outils** → **Changer le code** de la famille : l'ancienne empreinte a été
-   publique (elle était dans le fichier), donc l'ancien code ne vaut plus rien. Repartage le
-   nouveau aux cousins. L'ancien chemin en ligne est effacé automatiquement.
+### 🔸 Un jour, quand la mémoire RAG d'Apex servira (pas urgent)
+Le déploiement du worker RAG échoue parce que ton jeton Cloudflare n'a pas la permission
+**Vectorize**. Cloudflare → Profil → **Jetons d'API** → le jeton utilisé par GitHub → Modifier →
+ajouter **Vectorize : Edit**. Ensuite je relance le déploiement.
 
-Tant que le geste 1 n'est pas fait : **tes appareils marchent** (ils ont tout en mémoire),
-mais un **nouvel** appareil verrait « Arbre pas encore publié sur le domaine ».
+### 🌳 Puis l'arbre (5.09 nuit) — 1 geste, 30 secondes, dès que la branche est en ligne
+L'arbre (arbre.kd-mc.com, v3.17) ne contient **plus aucune personne** dans son fichier public :
+les données sont servies par le domaine à qui tape le code. **Bonne nouvelle : tu n'as plus à
+les publier toi-même.** J'ai retrouvé sur GitLab la version complète (v3.14, **119 personnes**,
+avec les corrections d'août : fiches fantômes retirées, familles BRICCO / MAGNANI / BEAUMELLE)
+et je l'ai **déposée dans la base du domaine** (Cloudflare D1, vérifiée fiche par fiche). Donc :
+- un **nouvel** appareil reçoit l'arbre complet dès qu'il tape le code ;
+- **tes appareils** se mettent à jour tout seuls à l'ouverture (ils récupèrent les fiches
+  corrigées, gardent tes photos et commentaires).
+
+Il reste **un seul geste** : ouvre **[arbre.kd-mc.com](https://arbre.kd-mc.com/)** → onglet
+**Outils** → **Changer le code** de la famille. L'ancienne empreinte a été publique (elle était
+dans le fichier sur GitHub), donc l'ancien code ne vaut plus rien. Repartage le nouveau aux
+cousins. L'ancien chemin en ligne est effacé automatiquement.
+
+*(Le bouton **📤 Publier** dans Outils reste là : si un jour tu veux remplacer l'arbre du domaine
+par celui de ton iPhone, il écrase ce que j'ai déposé.)*
 
 ### 🔸 Et, dans les apps qui ont LEUR propre code (quand tu y passes)
 - **CMCteams** (l'app principale) : `Réglages → Sécurité → Changer le PIN admin`.
@@ -53,10 +156,11 @@ connaître (les tests envoient l'empreinte, jamais le code).*
 
 ---
 
-## ✅ FAIT (5.09.2026, 14h) — GitLab est aligné, le jeton a servi une fois
+## ✅ FAIT (5.09.2026, 14h — et refait à 17h20) — GitLab est aligné, le jeton a servi
 
-Tu m'as donné un jeton GitLab : il a servi **une seule fois** (un push, puis lecture du
-pipeline), il n'est écrit **nulle part** (vérifié : 0 trace dans `.git/config`, 0 fichier).
+Tu m'as donné un jeton GitLab : il a servi en session seulement (pousser, lire le pipeline,
+et à 17h20 réaligner GitLab `main` sur GitHub après la fusion de l'arbre v3.17), il n'est écrit
+**nulle part** (vérifié : 0 trace dans `.git/config`, 0 fichier).
 **GitLab → Préférences → Jetons d'accès → `glpat-wD6Q…` → Révoquer** — un clic, quand tu veux.
 
 Ce que ça a permis : le dépôt GitLab est maintenant **au même niveau que GitHub** (mêmes
@@ -2382,16 +2486,6 @@ Si non aux 3 → reprendre.
 - **59/100** = audit externe pro teste TOUT (XSS, perf, RGPD, tests E2E, complexity, supply chain)
 
 **Solution** : créer un audit unifié `axAuditUnifie()` qui teste les MÊMES axes que l'audit externe pour avoir un score reproductible. À faire en session dédiée.
-
-## 💰 Audit pentest tier-3 $30-80k expliqué
-
-| Tier | Type | Coût | Pour qui |
-|---|---|---|---|
-| **Tier 1** | Audit interne automatique (axRunAllTests, agents internes) | Gratuit | Tous |
-| **Tier 2** | Code review pro freelance (10-15j) | $5-10k | Pro/SaaS |
-| **Tier 3** | Pentest externe firme cybersécurité (Bishop Fox, NCC Group, Trail of Bits) avec bug bounty + cert ISO 27001/SOC 2 | $30-80k | Commercialisé public avec données sensibles |
-
-**Pour Kevin** : pas besoin de tier-3 (usage interne CMC + Laurence + soi-même). Tier-1 + tier-2 occasionnel suffisent.
 
 ## ✅ FIX RÉCENTS (cette session)
 

@@ -51,6 +51,10 @@ export const PROXY_PROVIDERS = [
   /* v13.4.345 (Kevin « intègre les IA gratuites ») : Cerebras (~1M tok/jour gratuit,
    * le plus rapide). Route via le proxy dès que le secret CEREBRAS_API_KEY est ajouté. */
   'cerebras',
+  /* v13.4.366 (Kevin 2026-09-05 « Fait tourner Apex sur Qwen l'IA gratuite ») : Qwen servi
+   * par Cloudflare Workers AI DANS le worker (binding AI, 0 clé, 0 compte tiers). Route
+   * /qwen/v1/chat/completions, format OpenAI. Annoncé par /health dès que le binding existe. */
+  'qwen',
 ] as const;
 
 export type ProxyProvider = (typeof PROXY_PROVIDERS)[number];

@@ -1,5 +1,12 @@
 # Mentions Légales — Apex AI
 
+> ⚠️ **TEMPLATE OBSOLÈTE — NE PAS CITER, NE PAS PUBLIER.** La version **en vigueur** est
+> `apex-ai/v13/docs/legal/mentions-legales.md` (remplie, v13.0.82 du 2026-05-04). Ce fichier est un brouillon
+> laissé avec ses `[DATE]` / `[ADRESSE LÉGALE]` non renseignés : le citer par erreur ferait
+> passer un document juridique à trous pour le document officiel. *(Signalé le 6.09.2026.)*
+
+
+
 > **TEMPLATE LEGAL — À COMPLÉTER AVEC AVOCAT KEVIN**
 > Dernière mise à jour : [DATE]
 

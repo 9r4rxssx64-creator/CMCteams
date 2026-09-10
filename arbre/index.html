@@ -15,6 +15,7 @@
   --glass:rgba(249,242,225,.85); --glass2:rgba(243,233,208,.92);
   --gold:#b0842c; --gold2:#e2bd5c; --cyan:#3c8a80; --violet:#7a6ad6; --pink:#c96f9e; --ok:#3f9d6a; --danger:#c8506a;
   --male:#3f6bb0; --female:#c96f9e;
+  --mc:#c8102e; /* gueules de Munegu (rouge du drapeau) — thème monégasque v3.18 */
   --r:18px; --sh:0 10px 30px rgba(92,70,28,.22);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -40,6 +41,18 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--gold)}
 .btn.dng{color:var(--danger);border-color:#5a2733}
 .hidden{display:none!important}.mut{color:var(--mut)}.gold{color:var(--gold)}
 /* topbar */
+/* ===== MUNEGU — thème monégasque (Kevin 2026-09-05 « Accentue le thème spécialité monégasque, Monaco ») =====
+   Ruban fuselé de gueules et d'argent (les losanges des armes de Monaco) sous l'en-tête, badge ◆ sur les
+   personnes nées en Principauté, section Munegu dans les Réglages. Les couleurs restent celles de l'app. */
+#mcRibbon{height:8px;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' viewBox='0 0 16 8'%3E%3Cpath d='M8 0 L16 4 L8 8 L0 4 Z' fill='%23c8102e'/%3E%3C/svg%3E");background-size:16px 8px;background-repeat:repeat-x;box-shadow:0 1px 3px rgba(92,70,28,.25)}
+.mcb{display:inline-block;margin-left:6px;color:var(--mc);font-size:12px;vertical-align:1px}
+.mcsec{border:1px solid rgba(200,16,46,.28);background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,236,238,.5))}
+.mcsec h3{color:var(--mc)}
+.mcgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
+.mcst{background:rgba(255,255,255,.65);border-radius:12px;padding:8px 4px;text-align:center;border:1px solid rgba(200,16,46,.2)}
+.mcst b{display:block;font-size:20px;color:var(--mc);line-height:1.1}.mcst span{font-size:11px;color:var(--mut)}
+.mcreign{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;padding:4px 0;border-bottom:1px dashed rgba(200,16,46,.2)}.mcreign:last-child{border-bottom:0}
+.mcreign small{color:var(--mut)}
 #top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;background:linear-gradient(180deg,rgba(239,227,198,.96),rgba(239,227,198,.55));backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 #top .logo{font-size:22px;filter:drop-shadow(0 2px 6px rgba(240,200,116,.5))}
 #top h1{font-size:19px;margin:0;font-weight:700;font-family:Georgia,"Times New Roman",serif;font-style:italic;letter-spacing:.2px;flex:1;background:linear-gradient(90deg,var(--gold2),#7fc98a);-webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -150,6 +163,7 @@ label.fl{display:block;font-size:12px;color:var(--mut);margin:11px 0 5px}
 .legico{font-size:20px;flex:0 0 28px;text-align:center}
 .genlab.soft{color:rgba(243,230,194,.5);text-shadow:0 1px 6px rgba(0,0,0,.5)}
 .genlab{position:absolute;left:10px;font-size:30px;font-weight:800;color:rgba(122,84,39,.55);letter-spacing:.4px;pointer-events:none}
+.genlab small{display:block;font-size:11px;font-weight:700;letter-spacing:.2px;line-height:1;margin-top:-4px;opacity:.95}
 
 .addrel{display:flex;gap:8px;flex-wrap:wrap}.addrel .btn{flex:1;min-width:calc(50% - 4px)}
 .tnode .rt{position:absolute;top:-8px;left:9px;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#04222a;background:var(--cyan);padding:1px 6px;border-radius:999px}
@@ -251,6 +265,7 @@ a{color:var(--cyan);text-decoration:none}
     <h1 id="ttl">Arbre familial</h1>
     <span id="syncPill"><i></i><span id="syncTxt">…</span></span>
   </div>
+  <div id="mcRibbon" aria-hidden="true" title="Munegu"></div>
   <div id="tabs">
     <button class="tab act" data-view="tree">🌳 Arbre</button>
     <button class="tab" data-view="list">👥 Personnes</button>
@@ -266,7 +281,43 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.16";
+var APP_VER="v3.18";
+/* ===== MUNEGU — thème monégasque (v3.18, Kevin 2026-09-05 « Accentue le thème spécialité monégasque, Monaco. Va plus loin ») =====
+   Vocabulaire vérifié (Comité National des Traditions Monégasques / chroniques « A lenga munegasca ») :
+   Munegu = Monaco · àrburu = arbre · famiya = famille · munegascu = la langue. Devise de la Principauté : Deo Juvante.
+   Règnes des Princes (dates officielles) pour situer chaque génération. Aucune donnée personnelle ici. */
+var MC_RED="#c8102e",MC_WHITE="#ffffff";
+var MC_PLACES=/(^|[^a-zà-ü])(monaco|monte[- ]?carlo|la condamine|condamine|fontvieille|monaco[- ]ville|moneghetti|larvotto|munegu|principaut[eé]( de monaco)?)([^a-zà-ü]|$)/i;
+function isMonacoPlace(v){return !!(v&&MC_PLACES.test(String(v)));}
+function bornInMonaco(p){return !!(p&&p.naissance&&isMonacoPlace(p.naissance.lieu));}
+function diedInMonaco(p){return !!(p&&!p.vivant&&p.deces&&isMonacoPlace(p.deces.lieu));}
+var MC_REIGNS=[["Honoré V",1819,1841],["Florestan Ier",1841,1856],["Charles III",1856,1889],["Albert Ier",1889,1922],["Louis II",1922,1949],["Rainier III",1949,2005],["Albert II",2005,9999]];
+function reignOf(y){y=+y||0;if(!y||y<1819)return null;for(var i=0;i<MC_REIGNS.length;i++){var r=MC_REIGNS[i];if(y>=r[1]&&(y<r[2]||(i===MC_REIGNS.length-1)))return {name:r[0],from:r[1],to:r[2]===9999?null:r[2]};}return null;}
+function reignLabel(r){return r?r.name+" ("+r.from+(r.to?"-"+r.to:"-…")+")":"";}
+function mcBadge(p){return bornInMonaco(p)?'<span class="mcb" title="Né(e) en Principauté de Monaco">◆</span>':'';}
+function mcFicheRows(p,irow){var out="";if(bornInMonaco(p)||diedInMonaco(p)){var w=[];if(bornInMonaco(p))w.push("né(e)");if(diedInMonaco(p))w.push("décédé(e)");out+=irow("🇲🇨","Munegu",w.join(" et ")+" en Principauté de Monaco");}
+  var by=yr(p.naissance&&p.naissance.date),r=reignOf(by);if(r&&bornInMonaco(p))out+=irow("👑","Règne","né(e) sous "+esc(reignLabel(r)));return out;}
+function mcStats(ids){var st={born:0,died:0,reigns:{},places:{}};(ids||Object.keys(DB.persons)).forEach(function(id){var p=P(id);if(!p)return;if(bornInMonaco(p)){st.born++;var l=String(p.naissance.lieu||"").trim();st.places[l]=(st.places[l]||0)+1;var r=reignOf(yr(p.naissance.date));if(r)st.reigns[r.name]=(st.reigns[r.name]||0)+1;}if(diedInMonaco(p))st.died++;});return st;}
+function mcToolsHTML(){var st=mcStats(),n=Object.keys(DB.persons).length,pct=n?Math.round(st.born*100/n):0;
+  var reigns=MC_REIGNS.filter(function(r){return st.reigns[r[0]];}).map(function(r){return '<div class="mcreign"><span>👑 '+esc(r[0])+' <small>'+r[1]+'-'+(r[2]===9999?"…":r[2])+'</small></span><b>'+st.reigns[r[0]]+' naissance'+(st.reigns[r[0]]>1?"s":"")+'</b></div>';}).join("");
+  var places=Object.keys(st.places).sort(function(a,b){return st.places[b]-st.places[a];}).slice(0,6).map(function(l){return esc(l)+' ('+st.places[l]+')';}).join(" · ");
+  return '<div class="sec mcsec"><h3>🇲🇨 Munegu — la famille et la Principauté</h3>'
+   +'<p class="mut" style="font-size:12.5px;margin:0 0 6px"><i>Àrburu de famiya</i> : les personnes nées à Monaco portent un <span class="mcb" style="margin:0">◆</span> (fuselé de gueules et d\'argent), et chaque génération est située sous le règne du Prince de l\'époque — dans les fiches comme sur le poster.</p>'
+   +'<div class="mcgrid"><div class="mcst"><b>'+st.born+'</b><span>né'+(st.born>1?"s":"")+' en Principauté</span></div><div class="mcst"><b>'+pct+' %</b><span>de la famille</span></div><div class="mcst"><b>'+st.died+'</b><span>décédé'+(st.died>1?"s":"")+' à Monaco</span></div></div>'
+   +(reigns?'<div style="margin:4px 0 6px">'+reigns+'</div>':'<p class="mut" style="font-size:12px;margin:4px 0">Aucune naissance à Monaco enregistrée pour l\'instant : renseigne le lieu « Monaco » (ou Monte-Carlo, La Condamine, Fontvieille, Monaco-Ville) dans les fiches.</p>')
+   +(places?'<p class="mut" style="font-size:12px;margin:0 0 6px">Lieux : '+places+'</p>':'')
+   +'<a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://archives.mairie.mc/s/3/base-de-registres-a-partir-de-1900/">📜 Registres de la Mairie de Monaco (≥ 1900) <span class="mut">↗</span></a>'
+   +'<a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://journaldemonaco.gouv.mc/">📖 Journal de Monaco (officiel, depuis 1858) <span class="mut">↗</span></a>'
+   +'<a class="btn" style="width:100%;margin:4px 0;justify-content:space-between" target="_blank" rel="noopener" href="https://www.traditions-monaco.com/">🎓 Comité National des Traditions Monégasques <span class="mut">↗</span></a>'
+   +'</div>';}
+/* Losange (fusée) de gueules bordé d'argent, en SVG, pour le poster. */
+function mcLozengeSVG(x,y,r){return '<path d="M'+_r1(x)+' '+_r1(y-r)+' L'+_r1(x+r*0.7)+' '+_r1(y)+' L'+_r1(x)+' '+_r1(y+r)+' L'+_r1(x-r*0.7)+' '+_r1(y)+' Z" fill="'+MC_RED+'" stroke="'+MC_WHITE+'" stroke-width="'+_r1(r*0.22)+'"/>';}
+/* Cadre fuselé du poster : bande de losanges rouge/blanc sur tout le pourtour de la feuille + filet doré intérieur. */
+function mcPosterFrame(pp,base){var fw=Math.round(15*base),vx=pp.vx,vy=pp.vy,vw=pp.vw,vh=pp.vh;
+  return '<rect x="'+_r1(vx+fw/2)+'" y="'+_r1(vy+fw/2)+'" width="'+_r1(vw-fw)+'" height="'+_r1(vh-fw)+'" fill="none" stroke="url(#pfus)" stroke-width="'+fw+'"/>'
+   +'<rect x="'+_r1(vx+fw+3*base)+'" y="'+_r1(vy+fw+3*base)+'" width="'+_r1(vw-2*fw-6*base)+'" height="'+_r1(vh-2*fw-6*base)+'" fill="none" stroke="#b0842c" stroke-width="'+_r1(1.2*base)+'" opacity=".8"/>';}
+function mcPosterDefs(base){var w=_r1(26*base),h=_r1(13*base);return '<pattern id="pfus" width="'+w+'" height="'+h+'" patternUnits="userSpaceOnUse"><rect width="'+w+'" height="'+h+'" fill="'+MC_WHITE+'"/><path d="M'+_r1(13*base)+' 0 L'+w+' '+_r1(6.5*base)+' L'+_r1(13*base)+' '+h+' L0 '+_r1(6.5*base)+' Z" fill="'+MC_RED+'"/></pattern>';}
+
 /* v3.16 (fait n°12) : PLUS AUCUNE empreinte du code famille ici — ce fichier est PUBLIC (dépôt GitHub public).
    Le code se vérifie sur le domaine (POST /__arbre/unlock) ; l'appareil ne mémorise que l'empreinte du code qu'il a tapé. */
 /* ---------- utils ---------- */
@@ -305,7 +356,7 @@ function _fail(){_cloudOK=false;setPill();return false;}
 async function cloudPushAll(){var t=await anonAuth();if(!t)return _fail();try{var r=await fetch(cloudBase()+".json?auth="+t,{method:"PUT",body:JSON.stringify({persons:DB.persons,meta:DB.meta})});if(!r.ok)throw 0;_cloudOK=true;setPill();return true;}catch(e){return _fail();}}
 async function cloudPull(silent){var t=await anonAuth();if(!t)return _fail();try{var r=await fetch(cloudBase()+".json?auth="+t);if(!r.ok)throw 0;var rem=await r.json();_cloudOK=true;setPill();if(!rem||!rem.persons){if(Object.keys(DB.persons).length)await cloudPushAll();return;}var changed=false;for(var id in rem.persons){var rp=rem.persons[id];if(!rp)continue;var lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;changed=true;}}
   // deletions: remote tombstone
-  if(changed){var sh=purgeSeedShadows();if(sh.length)cloudPushAll().catch(function(){});}
+  if(changed){var sh=purgeSeedShadows();var ob=purgeObsoleteSeeds();if(sh.length||ob.length)cloudPushAll().catch(function(){});}
   if(changed){await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}if(!silent)toast("🔄 Mis à jour depuis la famille");if(!$(".ov"))render();}
 }catch(e){return _fail();}}
 async function persist(id){await saveLocal();setPill("sav");setTimeout(setPill,1100);if(id)cloudPush(id);else cloudPushAll();}
@@ -314,7 +365,7 @@ async function persist(id){await saveLocal();setPill("sav");setTimeout(setPill,1
 function P(id){return DB.persons[id]||null;}
 function full(p){if(!p)return "?";return ((p.prenom||"")+" "+(p.nom||"")).trim()||"(sans nom)";}
 function yr(d){if(!d)return "";var m=String(d).match(/\d{4}/);return m?m[0]:"";}
-function lifespan(p){var a=yr(p.naissance&&p.naissance.date),b=yr(p.deces&&p.deces.date);if(p.vivant)return a?a+" · vivant":"vivant";if(!a&&!b)return "";return (a||"?")+(b?"–"+b:"");}
+function lifespan(p){var a=yr(p.naissance&&p.naissance.date),b=yr(p.deces&&p.deces.date);if(p.vivant)return a||"";/* règle Kevin 1.09.2026 : jamais afficher « vivant » — seulement la date de naissance si en vie */if(!a&&!b)return "";return (a||"?")+(b?"–"+b:"");}
 function childrenOf(id){var r=[];for(var k in DB.persons){var p=DB.persons[k];if(p.pere===id||p.mere===id)r.push(k);}return r;}
 var DIVORCED=[["seed_stephan_bruno","seed_sabrina"],["seed_emile","seed_mariefrance"],["seed_gerard","seed_marienoel"]];
 function isDivorced(a,b){return DIVORCED.some(function(d){return (d[0]===a&&d[1]===b)||(d[0]===b&&d[1]===a);});}
@@ -323,7 +374,7 @@ function isSeparated(a,b){return SEPARATED.some(function(d){return (d[0]===a&&d[
 function spouseNames(p){return (p.conjoints||[]).map(function(id){return full(P(id));}).filter(Boolean);}
 function initials(p){return ((p.prenom||"?")[0]||"?").toUpperCase();}
 function avatarHTML(p,sz){var cls=p.sexe==="F"?"F":p.sexe==="M"?"M":"";var ph=(p.photos&&p.photos[0]);var st=sz?'style="width:'+sz+'px;height:'+sz+'px;font-size:'+(sz*0.42|0)+'px"':"";return '<div class="av '+cls+'" '+st+'>'+(ph?'<img src="'+ph+'" alt="">':esc(initials(p)))+'</div>';}
-function personCardHTML(id){var p=P(id);if(!p)return "";var ls=lifespan(p);if(p.vivant&&ls==="vivant")ls="";var sub=[ls,(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");var cc=(p.comments||[]).length;var b=p.vivant?'<span class="badge alive">vivant</span>':'';return '<div class="pc" data-open="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+b+'</div><div class="sub">'+esc(sub)+(cc?' · 💬 '+cc:"")+'</div></div><span class="mut">›</span></div>';}
+function personCardHTML(id){var p=P(id);if(!p)return "";var ls=lifespan(p);var sub=[ls,(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");var cc=(p.comments||[]).length;var b='';/* badge « vivant » retiré (règle Kevin 1.09.2026) */return '<div class="pc" data-open="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+b+mcBadge(p)+'</div><div class="sub">'+esc(sub)+(cc?' · 💬 '+cc:"")+'</div></div><span class="mut">›</span></div>';}
 
 /* ---------- graphical tree ---------- */
 var VIEWST={tx:40,ty:40,sc:1};
@@ -335,18 +386,18 @@ var TREE={ROWH:158,BOXW:198,COUPLEGAP:24,UNITGAP:64,PAD:34,COMPGAP:64,CARD:184};
    🫒 "o" = famille SAUVAIGO · MAIFFRET (côté maman — olivier, Nice/Monaco)
    🌳 "c" = famille DESARZENS (côté papa — chêne, racines suisses/Vaud)
    "oc" = dans les DEUX arbres (Gérard, Kevin, Sabrina, Ronan, Théo = sang des deux). */
-var FAM_OVERRIDE={seed_gerard:"oc",seed_kevin:"oc",seed_laurence:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",seed_marielle:"o",seed_yvonne_ch:"o",seed_monique_jaillet:"o",seed_jean_besqueut:"o",seed_brigitte_besqueut:"o",seed_olivier_besqueut:"o",seed_christophe_besqueut:"o",seed_michele_patrice:"c",seed_herve_ep_sylvie:"c",seed_virgile_dsz:"c",
+var FAM_OVERRIDE={seed_judith_bricco:"o",seed_attilio_bricco:"o",seed_eleonore_bricco:"o",seed_francesca_leo:"o",seed_baronne_brancalasso:"o",seed_jean_hosmann:"o",seed_ladj_pere:"o",seed_lea_ladj:"o",seed_jeanmarie_bauwmann:"o",seed_odile_pinson:"o",seed_david_bauwmann:"o",seed_marie_france_b:"o",seed_nicolas_bauwmann:"o",seed_lea_bauwmann:"o",seed_nadine_bauwmann:"o",seed_gerard:"oc",seed_kevin:"oc",seed_laurence:"oc",seed_sabrina:"oc",seed_ronan:"oc",seed_theo:"oc",seed_marielle:"o",seed_yvonne_ch:"o",seed_monique_jaillet:"o",seed_jean_besqueut:"o",seed_brigitte_besqueut:"o",seed_olivier_besqueut:"o",seed_christophe_besqueut:"o",seed_michele_patrice:"c",seed_herve_ep_sylvie:"c",seed_virgile_dsz:"c",
   seed_christian:"o",seed_cecile:"o",seed_marienoel:"oc",seed_christine_vdb:"o",seed_philippe_vdb:"o",seed_laura_vdb:"o",
   seed_guy:"c",seed_emile:"c",seed_loic:"c",seed_yann:"c",seed_claude_desarzens:"c"};
 function famOf(p){if(!p)return "oc";var ov=FAM_OVERRIDE[p.id];if(ov)return ov;var n=(p.nom||"").toUpperCase();
   if(/SARZENS|SARZANCE/.test(n))return "c";
-  if(/SAUVAIGO|MAIFFRET|BOSCH|MOLINARIO|DENTAU|VIRGILI/.test(n))return "o";
+  if(/SAUVAIGO|MAIFFRET|BRICCO|BOSCH|MOLINARIO|DENTAU|VIRGILI/.test(n))return "o";
   return "oc";}
 var FAMKEY="o";try{var _fk=localStorage.getItem("arbre_fam");if(_fk==="o"||_fk==="c")FAMKEY=_fk;}catch(e){}
 function famLabel(k){return k==="c"?"🌳 Desarzens":"🫒 Sauvaigo · Maiffret";}
 function famPhoto(k){return k==="c"?"tree-oak.jpg":"tree.jpg";}
 function compLabel(ids){/* Kevin 8.08.2026 « ce n'est pas la famille Bruno » : le bandeau ne porte QUE les noms de la lignée de la famille affichée (Desarzens côté chêne ; Sauvaigo/Maiffret… côté olivier) — jamais un nom entré par mariage (Bruno, Vervloet…). */
-  var re=FAMKEY==="c"?/SARZENS|SARZANCE/:/SAUVAIGO|MAIFFRET|BOSCH|MOLINARIO|DENTAU|VIRGILI|CRESTO/;
+  var re=FAMKEY==="c"?/SARZENS|SARZANCE/:/SAUVAIGO|MAIFFRET|BRICCO|BOSCH|MOLINARIO|DENTAU|VIRGILI|CRESTO/;
   var cnt={},cntAll={};ids.forEach(function(x){var nm=(P(x).nom||"").trim().toUpperCase();if(!nm)return;cntAll[nm]=(cntAll[nm]||0)+1;if(re.test(nm))cnt[nm]=(cnt[nm]||0)+1;});
   var src=Object.keys(cnt).length?cnt:cntAll;
   var top=Object.keys(src).sort(function(a,b){return src[b]-src[a];}).slice(0,2);
@@ -802,7 +853,7 @@ function renderBlasons(){var w=$("#wrap");var fams=_blasonFamilies(),reals=fams.
   w.querySelectorAll("[data-bl]").forEach(function(b){b.onclick=function(){openBlason(b.dataset.bl);};});
 }
 var _RENDERSTYLE="card";
-function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||(p.vivant?"vivant":"");
+function tnodeHTML(n){var p=P(n.id);if(!p)return "";var sub=lifespan(p)||"";/* plus de mention « vivant » (règle Kevin 1.09.2026) */
   var blood=(window._LSET&&_LSET[n.id]&&!n.root);var bc=branchOf(p).c;
   if(_RENDERSTYLE==="med"){
     return '<div class="tmed'+(n.root?" root":"")+(blood?" blood":"")+'" style="left:'+n.x+'px;top:'+n.y+'px" data-open="'+n.id+'">'
@@ -919,7 +970,9 @@ function drawStage(fit){
     var _b2=(_lay.bands&&_lay.bands.length>1)?_lay.bands[1].y:Infinity;
     var ys=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;});
     if(plan)ys.forEach(function(y,i){if(i%2===1)zebra+='<rect x="0" y="'+(rowsY[y]-79)+'" width="'+W+'" height="158" fill="rgba(122,84,39,.07)"/>';});
-    ys.forEach(function(y,i){genLabels+='<div class="genlab'+(plan?'':' soft')+'" style="top:'+Math.max(4,rowsY[y]-70)+'px">Gén. '+(i+1)+'</div>';});}
+    /* Munegu (v3.18) : sous « Gén. N », le règne du Prince de l'époque (année médiane des naissances de la rangée) — comme sur le poster */
+    var rowYears={};_lay.nodes.forEach(function(nd){var k=Math.round(nd.y/10)*10,p=P(nd.id),by=p&&yr(p.naissance&&p.naissance.date);if(by)(rowYears[k]=rowYears[k]||[]).push(by);});
+    ys.forEach(function(y,i){var yrs=(rowYears[y]||[]).sort(function(a,b){return a-b;}),r=yrs.length?reignOf(yrs[Math.floor(yrs.length/2)]):null;genLabels+='<div class="genlab'+(plan?'':' soft')+'" style="top:'+Math.max(4,rowsY[y]-70)+'px">Gén. '+(i+1)+(r?'<small><span class="mcb" style="margin:0 3px 0 0;font-size:9px">◆</span>sous '+esc(reignLabel(r))+'</small>':'')+'</div>';});}
   var couples=[];
   function elbow(l){var r=12,my=(l.y1+l.y2)/2;if(Math.abs(l.x2-l.x1)<3)return 'M'+l.x1+' '+l.y1+' L '+l.x2+' '+l.y2;var sg=l.x2>l.x1?1:-1;
     return 'M'+l.x1+' '+l.y1+' L '+l.x1+' '+(my-r)+' Q '+l.x1+' '+my+' '+(l.x1+sg*r)+' '+my+' L '+(l.x2-sg*r)+' '+my+' Q '+l.x2+' '+my+' '+l.x2+' '+(my+r)+' L '+l.x2+' '+l.y2;}
@@ -978,8 +1031,19 @@ function famChipsHTML(cur){function c(k,lab){return '<button class="famchip'+(cu
   return '<div class="famchips">'+c("tous","👨‍👩‍👧‍👦 Tous")+c("o","🫒 Sauvaigo·Maiffret")+c("c","🌳 Desarzens")+'</div>';}
 function bindFamChips(){document.querySelectorAll("[data-listfam]").forEach(function(b){b.onclick=function(){LISTFAM=b.dataset.listfam;try{localStorage.setItem("arbre_listfam",LISTFAM);}catch(e){}render();};});}
 function inListFam(p){return LISTFAM==="tous"||famOf(p).indexOf(LISTFAM)>=0;}
-function renderList(){var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var w=$("#wrap");if(!ids.length){w.innerHTML='<div class="empty">Aucune personne.</div>';return;}var q=(renderList._q||"").toLowerCase();var html=famChipsHTML(LISTFAM)+'<div style="margin:6px 0 10px"><input id="qbox" placeholder="🔎 Filtrer..." value="'+esc(renderList._q||"")+'"></div><div class="grid">';var n=0;ids.forEach(function(id){var p=P(id);if(!inListFam(p))return;if(q&&full(p).toLowerCase().indexOf(q)<0&&String(p.notes||"").toLowerCase().indexOf(q)<0)return;html+=personCardHTML(id);n++;});html+='</div>';if(!n)html+='<div class="empty">Aucun résultat.</div>';w.innerHTML=html;bindFamChips();var qb=$("#qbox");if(qb)qb.oninput=function(){renderList._q=qb.value;var s=qb.selectionStart;renderList();var nn=$("#qbox");if(nn){nn.focus();try{nn.setSelectionRange(s,s);}catch(e){}}};}
-function searchLinks(p){var nom=encodeURIComponent(p.nom||""),pre=encodeURIComponent(p.prenom||""),lieu=encodeURIComponent((p.naissance&&p.naissance.lieu)||(p.deces&&p.deces.lieu)||"");var g=full(p);return [{t:"🏛️ Archives Monaco",u:"https://archives.mairie.mc/"},{t:"🌿 Archives 06 (Beaulieu/Nice)",u:"https://archives06.fr/"},{t:"☀️ Archives 13 (Salon-de-Provence)",u:"https://www.archives13.fr/"},{t:"🌳 Geneanet",u:"https://www.geneanet.org/fonds/individus/?go=1&nom="+nom+"&prenom="+pre+(lieu?"&place__0__="+lieu:"")},{t:"📇 Filae",u:"https://www.filae.com/search/results/?lastname="+nom+"&firstname="+pre},{t:"🔵 FamilySearch",u:"https://www.familysearch.org/search/record/results?q.surname="+nom+"&q.givenName="+pre},{t:"⚰️ Fichier décès INSEE (1970→auj.)",u:"https://deces.matchid.io/search?q="+pre+"+"+nom},{t:"🪦 Décès par famille (acte-deces.fr)",u:"https://www.acte-deces.fr/recherche-deces-famille-"+encodeURIComponent(String(p.nom||"").toLowerCase().replace(/\s+/g,"-"))},{t:"🔎 Google",u:"https://www.google.com/search?q="+encodeURIComponent('"'+g+'" généalogie '+((p.naissance&&p.naissance.lieu)||""))}];}
+function renderList(){var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var w=$("#wrap");if(!ids.length){w.innerHTML='<div class="empty">Aucune personne.</div>';return;}var q=(renderList._q||"").toLowerCase();var mcTot=0;ids.forEach(function(id){if(bornInMonaco(P(id)))mcTot++;});var html=famChipsHTML(LISTFAM)+'<div style="margin:6px 0 10px;display:flex;gap:8px;align-items:center"><input id="qbox" style="flex:1;min-width:0" placeholder="🔎 Filtrer..." value="'+esc(renderList._q||"")+'">'+(mcTot?'<button class="btn sm'+(renderList._mc?' gold':' ghost')+'" id="mcOnly" title="Ne montrer que les personnes nées en Principauté de Monaco" style="white-space:nowrap"><span class="mcb" style="margin:0 4px 0 0">◆</span>Monaco ('+mcTot+')</button>':'')+'</div><div class="grid">';var n=0;ids.forEach(function(id){var p=P(id);if(!inListFam(p))return;if(renderList._mc&&!bornInMonaco(p))return;if(q&&full(p).toLowerCase().indexOf(q)<0&&String(p.notes||"").toLowerCase().indexOf(q)<0)return;html+=personCardHTML(id);n++;});html+='</div>';if(!n)html+='<div class="empty">Aucun résultat.</div>';w.innerHTML=html;bindFamChips();var mo=$("#mcOnly");if(mo)mo.onclick=function(){renderList._mc=!renderList._mc;renderList();};var qb=$("#qbox");if(qb)qb.oninput=function(){renderList._q=qb.value;var s=qb.selectionStart;renderList();var nn=$("#qbox");if(nn){nn.focus();try{nn.setSelectionRange(s,s);}catch(e){}}};}
+function searchLinks(p){var nom=encodeURIComponent(p.nom||""),pre=encodeURIComponent(p.prenom||""),lieu=encodeURIComponent((p.naissance&&p.naissance.lieu)||(p.deces&&p.deces.lieu)||"");var g=full(p);
+  var N=(p.nom||"").toUpperCase();
+  /* Noms venus du Piémont / de la Ligurie : les actes sont aux Archives d'État italiennes (Antenati, gratuit et numérisé) */
+  var ital=/BRICCO|LEO|BRANCALASSO|MOLINARIO|PIZZIO|CRESTO|ORSELLI|VIRGILI|FRACCHIA|SAUVAIGO/.test(N);
+  var L=[{t:"🏛️ Archives Monaco",u:"https://archives.mairie.mc/"},{t:"🌿 Archives 06 (Beaulieu/Nice)",u:"https://archives06.fr/"},{t:"☀️ Archives 13 (Salon-de-Provence)",u:"https://www.archives13.fr/"}];
+  if(ital)L.push({t:"🇮🇹 Antenati — actes italiens (Piémont/Ligurie)",u:"https://antenati.cultura.gov.it/search-nominative/?cognome="+nom+"&nome="+pre});
+  L=L.concat([{t:"🌳 Geneanet",u:"https://www.geneanet.org/fonds/individus/?go=1&nom="+nom+"&prenom="+pre+(lieu?"&place__0__="+lieu:"")},{t:"📇 Filae",u:"https://www.filae.com/search/results/?lastname="+nom+"&firstname="+pre},{t:"🔵 FamilySearch",u:"https://www.familysearch.org/search/record/results?q.surname="+nom+"&q.givenName="+pre},{t:"⚰️ Fichier décès INSEE (1970→auj.)",u:"https://deces.matchid.io/search?q="+pre+"+"+nom},{t:"🪦 Décès par famille (acte-deces.fr)",u:"https://www.acte-deces.fr/recherche-deces-famille-"+encodeURIComponent(String(p.nom||"").toLowerCase().replace(/\s+/g,"-"))},
+  {t:"📚 FranceArchives — toutes les archives de France",u:"https://francearchives.gouv.fr/fr/search?q="+encodeURIComponent(((p.nom||"")+" "+(p.prenom||"")).trim())},
+  {t:"📖 Journal de Monaco (officiel, depuis 1858)",u:"https://journaldemonaco.gouv.mc/content/search?SearchText="+encodeURIComponent(((p.prenom||"")+" "+(p.nom||"")).trim())},
+  {t:"🗞 Gallica — presse et livres numérisés",u:"https://gallica.bnf.fr/services/engine/search/sru?operation=searchRetrieve&version=1.2&query="+encodeURIComponent('gallica all "'+g+'"')},
+  {t:"🔎 Google",u:"https://www.google.com/search?q="+encodeURIComponent('"'+g+'" généalogie '+((p.naissance&&p.naissance.lieu)||""))}]);
+  return L;}
 function acteCount(p){return (p.sources||[]).filter(function(x){return /matchid\.io\/id\/|n°\d+\/\d{4}|Acte de/i.test((x.url||"")+(x.label||""));}).length;}
 // ---- Recherche décès INSEE intégrée à l'arbre (API matchID — marche sur iPhone, sans moteur lourd)
 function _decesFmtDate(s){s=String(s||"").replace(/[^0-9-]/g,"");var m=s.match(/^(\d{4})-?(\d{2})-?(\d{2})$/);if(m)return (m[3]==="00"?"":m[3]+".")+(m[2]==="00"?"":m[2]+".")+m[1];var y=s.match(/^(\d{4})/);return y?y[1]:(s||"?");}
@@ -1024,7 +1088,7 @@ function decesSearch(){
 function renderSearch(){var w=$("#wrap");var ids=Object.keys(DB.persons).sort(function(a,b){return full(P(a)).localeCompare(full(P(b)));});var withA=0,tot=0;
   var body=ids.map(function(id){var p=P(id);if(!inListFam(p))return "";tot++;var n=acteCount(p);if(n)withA++;
     var st=n?'<span class="okb">📜 '+n+' acte'+(n>1?"s":"")+' officiel'+(n>1?"s":"")+' ✓</span>':'<span class="mut">à rechercher</span>';
-    return '<div class="pc" data-search="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+'</div><div class="sub">'+esc(lifespan(p)||(p.vivant?"vivant":""))+' · '+st+'</div></div><span>🔎</span></div>';}).join("");
+    return '<div class="pc" data-search="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+'</div><div class="sub">'+esc(lifespan(p)||"")+' · '+st+'</div></div><span>🔎</span></div>';}).join("");
   var searchUI='<div class="sec"><h3>🔎 Rechercher un décès (fichier INSEE, 1970 → aujourd\'hui)</h3>'
     +'<p class="mut" style="font-size:13px;margin:0 0 8px">Tape un nom, vois le décès officiel, et demande l\'acte (naissance / mariage / décès) en 1 clic.</p>'
     +'<div class="row2"><input id="decesNom" placeholder="Nom (ex : MAIFFRET)" autocomplete="off" autocapitalize="characters"><input id="decesPre" placeholder="Prénom (optionnel)" autocomplete="off"></div>'
@@ -1093,6 +1157,7 @@ function posterCompose(lay,fam,style,paper,thumbs){
    +'<clipPath id="pclip"><rect width="186" height="72" rx="16"/></clipPath>'
    +'<clipPath id="pavc"><circle cx="38" cy="36" r="24"/></clipPath>'
    +'<clipPath id="pmed"><circle cx="0" cy="0" r="30"/></clipPath>'
+   +mcPosterDefs(base)
    +'</defs>';
   /* ---- fond de feuille + en-tête ---- */
   var dateStr=new Date().toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
@@ -1101,9 +1166,12 @@ function posterCompose(lay,fam,style,paper,thumbs){
   var ys=Object.keys(rowsY).map(Number).sort(function(a,b){return a-b;}).filter(function(y){return rowsY[y]<_b2;});
   var gens=ys.length,n=lay.nodes.length,title=_posterTitle(fam);
   var s='<rect x="'+_r1(pp.vx)+'" y="'+_r1(pp.vy)+'" width="'+_r1(pp.vw)+'" height="'+_r1(pp.vh)+'" fill="#ffffff"/>';
+  /* Munegu : cadre fuselé de gueules et d'argent sur tout le pourtour (v3.18) */
+  s+=mcPosterFrame(pp,base);
+  var mcN=0;lay.nodes.forEach(function(nd){if(bornInMonaco(P(nd.id)))mcN++;});
   var ty=M+Math.round(70*base);
   s+='<text x="'+M+'" y="'+ty+'" font-family="'+SERIF+'" font-style="italic" font-weight="700" font-size="'+_r1(58*base)+'" fill="url(#ptitle)">'+esc(title)+'</text>';
-  s+='<text x="'+M+'" y="'+_r1(ty+42*base)+'" font-size="'+_r1(22*base)+'" fill="#6b5430">Arbre généalogique · '+n+' personne'+(n>1?"s":"")+' · '+gens+' génération'+(gens>1?"s":"")+'</text>';
+  s+='<text x="'+M+'" y="'+_r1(ty+42*base)+'" font-size="'+_r1(22*base)+'" fill="#6b5430">'+(mcN?'Àrburu de famiya · Principauté de Monaco · ':'')+'Arbre généalogique · '+n+' personne'+(n>1?"s":"")+' · '+gens+' génération'+(gens>1?"s":"")+'</text>';
   s+='<text x="'+M+'" y="'+_r1(ty+74*base)+'" font-size="'+_r1(17*base)+'" fill="#8a7a55">'+esc(dateStr)+' · arbre.kd-mc.com</text>';
   s+='<line x1="'+M+'" y1="'+(M+HH-Math.round(22*base))+'" x2="'+(W-M)+'" y2="'+(M+HH-Math.round(22*base))+'" stroke="#c9b27a" stroke-width="'+_r1(1.5*base)+'"/>';
   /* blasons de la famille, à droite de l'en-tête (réels ou créés — ceux de l'onglet 🛡 Blasons) */
@@ -1132,7 +1200,7 @@ function posterCompose(lay,fam,style,paper,thumbs){
   couples.forEach(function(c){var tx='translate('+_r1(c.x)+','+_r1(c.y)+')';
     if(c.st==="d"||c.st==="s"){g+='<g transform="'+tx+'"><rect x="-40" y="-12" width="80" height="24" rx="12" fill="#fff1ee" stroke="#c46a6a" stroke-width="1.2"/><text x="-31" y="5" font-size="13">💔</text><text x="7" y="4" text-anchor="middle" font-size="9.5" font-weight="700" letter-spacing=".3" fill="#a03d3d">'+(c.st==="d"?"DIVORCÉS":"SÉPARÉS")+'</text></g>';}
     else g+='<g transform="'+tx+'"><circle r="13" fill="#fff8e6" stroke="#c9992f" stroke-width="1.2"/><text y="5" text-anchor="middle" font-size="14">💍</text></g>';});
-  function cardSVG(nd){var p=P(nd.id);if(!p)return "";var bc=branchOf(p).c,sub=lifespan(p)||(p.vivant?"vivant":""),blood=!!(LSET[nd.id]&&!nd.root),th=thumbs[nd.id];
+  function cardSVG(nd){var p=P(nd.id);if(!p)return "";var bc=branchOf(p).c,sub=lifespan(p)||"",blood=!!(LSET[nd.id]&&!nd.root),th=thumbs[nd.id];
     var c='<g transform="translate('+_r1(nd.x-93)+','+_r1(nd.y-36)+')">';
     if(blood||nd.root)c+='<rect x="-3" y="-3" width="192" height="78" rx="19" fill="none" stroke="#e9b94a" stroke-width="'+(nd.root?4:2.5)+'" opacity=".9"/>';
     c+='<rect width="186" height="72" rx="16" fill="url(#pcard)" stroke="'+(nd.root?'#c9992f':'#b59a63')+'" stroke-width="'+(nd.root?2.2:1.2)+'"/>';
@@ -1144,8 +1212,9 @@ function posterCompose(lay,fam,style,paper,thumbs){
     c+=_fitText(p.prenom||full(p),68,(p.nom?27:33),15,112,'font-family="'+SERIF+'" font-weight="700" fill="#2c2010"');
     if(p.nom)c+=_fitText(p.nom,68,43,12.5,112,'font-weight="800" letter-spacing=".4" fill="'+bc+'"');
     if(sub)c+='<text x="68" y="'+(p.nom?60:52)+'" font-size="11.5" fill="#856a3a">'+esc(sub)+'</text>';
+    if(bornInMonaco(p))c+='<title>Né(e) en Principauté de Monaco</title>'+mcLozengeSVG(172,13,8);
     return c+'</g>';}
-  function medSVG(nd){var p=P(nd.id);if(!p)return "";var bc=branchOf(p).c,sub=lifespan(p)||(p.vivant?"vivant":""),blood=!!(LSET[nd.id]&&!nd.root),th=thumbs[nd.id],R=nd.root?34:28;
+  function medSVG(nd){var p=P(nd.id);if(!p)return "";var bc=branchOf(p).c,sub=lifespan(p)||"",blood=!!(LSET[nd.id]&&!nd.root),th=thumbs[nd.id],R=nd.root?34:28;
     var c='<g transform="translate('+_r1(nd.x)+','+_r1(nd.y)+')">';
     if(blood||nd.root)c+='<circle cx="0" cy="-22" r="'+(R+9)+'" fill="none" stroke="#e9b94a" stroke-width="5" opacity=".85"/>';
     c+='<circle cx="0" cy="-22" r="'+(R+4)+'" fill="'+bc+'"/><circle cx="0" cy="-22" r="'+R+'" fill="url(#pav)"/>';
@@ -1155,18 +1224,24 @@ function posterCompose(lay,fam,style,paper,thumbs){
     var pw=Math.min(158,Math.max(72,Math.max.apply(null,lines.map(function(l){return l[0].length*l[1]*0.58;}))+24)),ph=10+lines.length*14;
     c+='<rect x="'+_r1(-pw/2)+'" y="'+(R-14)+'" width="'+_r1(pw)+'" height="'+ph+'" rx="11" fill="rgba(52,36,12,.86)" stroke="'+bc+'" stroke-width="2"/>';
     lines.forEach(function(l,i){c+=_fitText(l[0],0,R-14+16+i*14,l[1],pw-14,'text-anchor="middle" font-weight="'+l[2]+'" fill="'+l[3]+'"');});
+    if(bornInMonaco(p))c+='<title>Né(e) en Principauté de Monaco</title>'+mcLozengeSVG(R*0.78,-22+R*0.78,8);
     return c+'</g>';}
   lay.nodes.forEach(function(nd){g+=plan?cardSVG(nd):medSVG(nd);});
-  ys.forEach(function(y,i){g+='<text x="10" y="'+_r1(Math.max(4,rowsY[y]-70)+30)+'" font-size="30" font-weight="800" fill="'+(plan?'rgba(122,84,39,.55)':'rgba(70,46,14,.62)')+'">Gén. '+(i+1)+'</text>';});
+  /* Munegu : chaque génération est située sous le règne du Prince de l'époque (année médiane des naissances de la rangée) */
+  var rowYears={};lay.nodes.forEach(function(nd){var k=Math.round(nd.y/10)*10,p=P(nd.id),by=p&&yr(p.naissance&&p.naissance.date);if(by)(rowYears[k]=rowYears[k]||[]).push(by);});
+  ys.forEach(function(y,i){var ly0=_r1(Math.max(4,rowsY[y]-70)+30),col=plan?'rgba(122,84,39,.55)':'rgba(70,46,14,.62)';g+='<text x="10" y="'+ly0+'" font-size="30" font-weight="800" fill="'+col+'">Gén. '+(i+1)+'</text>';
+    var yrs=(rowYears[y]||[]).sort(function(a,b){return a-b;}),r=yrs.length?reignOf(yrs[Math.floor(yrs.length/2)]):null;
+    if(r)g+='<g transform="translate(10,'+_r1(ly0+8)+')">'+mcLozengeSVG(5,7,6)+'<text x="14" y="12" font-size="15" font-weight="700" letter-spacing=".3" fill="'+col+'">sous '+esc(reignLabel(r))+'</text></g>';});
   (lay.bands||[]).forEach(function(b){var lab=String(b.label||"").toUpperCase(),tw=lab.length*11*0.66+40;g+='<g transform="translate('+_r1(lay.w/2)+','+_r1(b.y)+')"><rect x="'+_r1(-tw/2)+'" y="-14" width="'+_r1(tw)+'" height="28" rx="14" fill="rgba(74,54,26,.92)" stroke="#c9b27a"/><text y="4.5" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1.1" fill="#f3e6c2">'+esc(lab)+'</text></g>';});
   g+='</g>';s+=g;
   /* ---- légende + pied ---- */
   var ly=oy+lay.h+Math.round(34*base),present={},order=[],F=function(v){return _r1(v*base);};lay.nodes.forEach(function(nd){var b=branchOf(P(nd.id));if(!present[b.lab]){present[b.lab]=b.c;order.push(b.lab);}});
   s+='<text x="'+M+'" y="'+ly+'" font-size="'+F(13)+'" font-weight="800" letter-spacing="1.2" fill="#7a5427">LÉGENDE</text>';
   var lx=M,cy=ly+F(30);order.forEach(function(lab){var w=(lab.length*13*0.6+40)*base;if(lx+w>W-M){lx=M;cy+=F(28);}s+='<rect x="'+_r1(lx)+'" y="'+_r1(cy-13*base)+'" width="'+F(14)+'" height="'+F(14)+'" rx="'+F(4)+'" fill="'+present[lab]+'"/><text x="'+_r1(lx+20*base)+'" y="'+_r1(cy-1*base)+'" font-size="'+F(13)+'" fill="#3a2c16">'+esc(lab)+'</text>';lx+=w;});
+  if(mcN){var w2=(("◆ né(e) en Principauté de Monaco ("+mcN+")").length*13*0.6+40)*base;if(lx+w2>W-M){lx=M;cy+=F(28);}s+=mcLozengeSVG(lx+7*base,cy-6*base,7.5*base)+'<text x="'+_r1(lx+20*base)+'" y="'+_r1(cy-1*base)+'" font-size="'+F(13)+'" fill="#3a2c16">né(e) en Principauté de Monaco ('+mcN+')</text>';lx+=w2;}
   cy+=F(32);var me=viewerId();
   s+='<text x="'+M+'" y="'+_r1(cy)+'" font-size="'+F(12.5)+'" fill="#6b5430">💍 mariage · 💔 divorcés ou séparés · trait pointillé = union passée · '+(plan?'liseré bleu = homme, rose = femme':'anneau de couleur = branche')+' · cadre doré = lignée directe'+(me?' de '+esc(full(P(me))):'')+' · Gén. = génération</text>';
-  s+='<text x="'+_r1(W/2)+'" y="'+_r1(H-M+10*base)+'" text-anchor="middle" font-size="'+F(11)+'" fill="#8a7a55">arbre.kd-mc.com · Arbre familial '+esc(APP_VER)+' · '+esc(_posterPaperLabel(pp))+' ('+(pp.wmm/10)+' × '+(pp.hmm/10)+' cm) · généré le '+esc(dateStr)+'</text>';
+  s+='<text x="'+_r1(W/2)+'" y="'+_r1(H-M+10*base)+'" text-anchor="middle" font-size="'+F(11)+'" fill="#8a7a55">Munegu · Deo Juvante · arbre.kd-mc.com · Arbre familial '+esc(APP_VER)+' · '+esc(_posterPaperLabel(pp))+' ('+(pp.wmm/10)+' × '+(pp.hmm/10)+' cm) · généré le '+esc(dateStr)+'</text>';
   var vb=[pp.vx,pp.vy,pp.vw,pp.vh].map(_r1).join(" ");
   var svg='<svg class="poster" xmlns="http://www.w3.org/2000/svg" width="'+pp.wmm+'mm" height="'+pp.hmm+'mm" viewBox="'+vb+'" font-family="-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,Helvetica,Arial,sans-serif">'+defs+s+'</svg>';
   return {svg:svg,defs:defs,body:s,W:W,H:H,pp:pp,n:n,gens:gens,fam:fam,style:style,title:title,dateStr:dateStr};
@@ -1254,6 +1329,7 @@ function openPoster(){
 function exportPrint(){openPoster();}
 function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.innerHTML=
   '<div class="sec"><h3>Temps réel</h3><div class="kv"><span class="k">Synchro famille</span><span>'+(_cloudOK?'🟢 Active':'🟠 Local (hors-ligne)')+'</span></div><div class="kv"><span class="k">Ton nom (auteur des ajouts)</span><span>'+esc(ME||"—")+'</span></div><div class="kv"><span class="k">🙋 « Moi » dans l\'arbre</span><span>'+(viewerId()?esc(full(P(viewerId()))):"vue neutre")+'</span></div>'+(viewerId()?'<button class="btn ghost sm" id="btnNeutre" style="width:100%;margin-top:8px">↺ Revenir à la vue neutre (aucun « moi »)</button>':'<p class="mut" style="font-size:12.5px;margin:6px 0 0">Ouvre TA fiche → « 🙋 C\'est moi » pour voir l\'arbre de ton point de vue.</p>')+'<div class="kv"><span class="k">Personnes</span><span>'+n+'</span></div><div class="row2" style="margin-top:11px"><button class="btn" id="btnSync">🔄 Synchroniser</button><button class="btn" id="btnName">✏️ Mon nom</button></div></div>'+
+  mcToolsHTML()+
   '<div class="sec"><h3>🔐 Domaine (kd-mc.com)</h3><p class="mut" style="font-size:12.5px;margin:0 0 8px">Depuis la v3.16, l\'arbre n\'est plus écrit dans le fichier public : le code se vérifie sur le domaine, et une nouvelle personne reçoit l\'arbre après l\'avoir tapé.</p><div class="kv"><span class="k">Publié sur le domaine</span><span id="domStatus">…</span></div><button class="btn" id="btnPublish" style="width:100%;margin-top:8px">📤 Publier l\'arbre sur le domaine (admin)</button></div>'+
   '<div class="sec"><h3>Sauvegarde & Import</h3><p class="mut" style="font-size:13px;margin:0 0 8px">Auto-sauvegardé en continu. Tu peux aussi exporter/importer un fichier.</p><div class="row2"><button class="btn" id="btnExport">⬇️ Exporter</button><button class="btn" id="btnImport">⬆️ Importer</button></div>'+
   '<button class="btn gold" id="btnGedcom" style="width:100%;margin-top:8px">🌳 Importer un GEDCOM (Geneanet, FamilySearch…)</button>'+
@@ -1366,7 +1442,8 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var caro='<div class="caro" id="caroBox">'+(photos.length?photos.map(function(src,i){return '<div class="slide'+(i===0?" on":"")+'"><img src="'+src+'" alt=""></div>';}).join("")+'<button class="nav l" data-caro="-1"></button><button class="nav r" data-caro="1"></button>'+(photos.length>8?'<div class="carocnt" id="caroCnt">1 / '+photos.length+'</div>':'<div class="dots">'+photos.map(function(_,i){return '<i class="'+(i===0?"on":"")+'"></i>';}).join("")+'</div>'):'<div class="ph-empty">Aucune photo — touche ✏️ Modifier pour en ajouter (tous formats, sans limite).</div>')+'</div>';
   function irow(ic,lab,val){return val?'<div class="irow"><span class="ic">'+ic+'</span><div style="min-width:0"><div class="lab">'+lab+'</div><div class="val">'+esc(val)+'</div></div></div>':"";}
   var nb=(p.naissance&&p.naissance.date)||"",nl=(p.naissance&&p.naissance.lieu)||"",db=(p.deces&&p.deces.date)||"",dl=(p.deces&&p.deces.lieu)||"";
-  var info=irow("🎂","Naissance",[nb,nl?"à "+nl:""].filter(Boolean).join(" "))+(p.vivant?'<div class="irow"><span class="ic">🟢</span><div><div class="lab">Statut</div><div class="val gold">Vivant</div></div></div>':irow("🕊️","Décès",[db,dl?"à "+dl:""].filter(Boolean).join(" ")));
+  var info=irow("🎂","Naissance",[nb,nl?"à "+nl:""].filter(Boolean).join(" "))+(p.vivant?'':irow("🕊️","Décès",[db,dl?"à "+dl:""].filter(Boolean).join(" ")));/* ligne « Statut : Vivant » retirée (règle Kevin 1.09.2026) */
+  info+=mcFicheRows(p,irow);
   var relItems=[];if(p.pere&&P(p.pere))relItems.push([p.pere,"père"]);if(p.mere&&P(p.mere))relItems.push([p.mere,"mère"]);(p.conjoints||[]).forEach(function(c){if(P(c))relItems.push([c,isDivorced(id,c)?"ex-conjoint (divorcés)":isSeparated(id,c)?"ex-conjoint (séparés)":"conjoint"]);});childrenOf(id).forEach(function(c){relItems.push([c,"enfant"]);});
   var relHtml=relItems.map(function(it){var q=P(it[0]);return '<button class="relchip" data-open="'+it[0]+'">'+avatarHTML(q)+'<span>'+esc(full(q))+' <small>'+it[1]+'</small></span></button>';}).join("");
   var sources=(p.sources||[]).map(function(s){return '<a class="srcbtn" target="_blank" rel="noopener" href="'+esc(s.url)+'">'+esc(s.label||"acte")+' ↗</a>';}).join(" ")
@@ -1374,7 +1451,7 @@ function openPerson(id,isBack){var p=P(id);if(!p)return;
   var comments=(p.comments||[]).slice().sort(function(a,b){return a.ts-b.ts;}).map(function(c){return '<div class="cmt"><div class="h"><span>'+esc(c.by||"famille")+' · '+relTime(c.ts)+'</span><button class="x" data-delc="'+c.id+'">✕</button></div><div style="white-space:pre-wrap">'+esc(c.text)+'</div></div>';}).join("");
   var canBack=_pStack.length>0;
   var back='<button class="bkbtn" id="pBack" aria-label="'+(canBack?"Retour":"Fermer")+'">'+(canBack?"‹":"✕")+'</button>';
-  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||(p.vivant?"vivant":""))+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+(_isFamilyNom(p.nom)?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="'+(_blasonReal(p.nom)?"Blason officiel ":"Blason créé ")+esc(_famName(p.nom))+'">'+anyBlasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
+  var h='<div class="sheet" data-pid="'+id+'">'+back+'<div class="grab"></div><div style="display:flex;gap:12px;align-items:center;padding-left:48px">'+avatarHTML(p,64)+'<div style="flex:1;min-width:0"><h2 style="margin:0">'+esc(full(p))+'</h2><div class="mut">'+esc(lifespan(p)||"")+'</div>'+(function(){var r=relationToKevin(id);return r?'<div class="relkev">'+esc(r)+'</div>':'';})()+'</div>'+(_isFamilyNom(p.nom)?'<button class="blemb" data-bl="'+esc(_famName(p.nom))+'" title="'+(_blasonReal(p.nom)?"Blason officiel ":"Blason créé ")+esc(_famName(p.nom))+'">'+anyBlasonSVG(p.nom,_famMembers(p.nom))+'</button>':'')+'</div>'+caro+
     '<div class="sec">'+info+(relHtml?'<div style="padding-top:12px"><div style="color:var(--gold);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Famille</div><div class="chips">'+relHtml+'</div></div>':"")+(p.notes?'<div style="padding:12px 0 2px;color:var(--mut);font-size:13.5px;white-space:pre-wrap">'+esc(p.notes)+'</div>':"")+'</div>'+
     (function(){var acts=(p.actes||[]);return '<div class="sec"><h3>📜 Actes officiels — registres scannés</h3>'+(acts.length?'<div class="acterow">'+acts.map(function(a,i){return '<div class="actecard" data-acte="'+i+'">'+(a.by?'<b class="actedel" data-rmacte="'+i+'" title="Supprimer">×</b>':'')+'<img loading="lazy" src="'+esc(a.img)+'" alt=""><div class="alab">'+esc(a.label||"acte")+'</div></div>';}).join('')+'</div>':'<p class="mut" style="font-size:13px;margin:0 0 8px">Aucun acte pour l\'instant.</p>')+'<button class="btn sm" id="addActe">➕ Ajouter un acte (photo / scan)</button><input type="file" id="acteIn" accept="image/*" hidden></div>';})()+
     (function(){var docs=(p.docs||[]);function ico(ty,nm){nm=(nm||"").toLowerCase();if(/pdf/.test(ty)||/\.pdf$/.test(nm))return "📕";if(/image/.test(ty))return "🖼";if(/\.(doc|docx|odt|rtf)$/.test(nm))return "📘";if(/\.(xls|xlsx|csv|numbers)$/.test(nm))return "📗";if(/\.(zip|rar|7z)$/.test(nm))return "🗂";if(/audio|\.(mp3|m4a|wav)$/.test(ty+nm))return "🎙";if(/video|\.(mp4|mov)$/.test(ty+nm))return "🎞";return "📄";}
@@ -1599,9 +1676,20 @@ function domainFetch(path,opt){opt=opt||{};opt.headers=Object.assign({"content-t
 function domainUnlock(h){return domainFetch("/__arbre/unlock",{method:"POST",body:JSON.stringify({hash:h})});}
 function domainStatus(){return domainFetch("/__arbre/status");}
 /* Fusionne l'arbre reçu du domaine : ajoute les inconnus, remplace les plus anciens, GARDE photos/documents locaux. */
-function applyDomainSeed(sd){if(!sd||!sd.persons)return 0;var n=0;for(var id in sd.persons){var rp=sd.persons[id];if(!rp||typeof rp!=="object")continue;var lp=DB.persons[id];
-  if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){var q=Object.assign({},rp,{photos:(lp&&lp.photos)||[],docs:(lp&&lp.docs)||[]});delete q.photoCount;delete q.docCount;q.conjoints=q.conjoints||[];q.sources=q.sources||[];q.comments=(lp&&lp.comments&&lp.comments.length)?lp.comments:(q.comments||[]);DB.persons[id]=q;n++;}}
-  DB.meta=DB.meta||{updatedAt:0};if(sd.meta&&sd.meta.updatedAt>(DB.meta.updatedAt||0))DB.meta.updatedAt=sd.meta.updatedAt;return n;}
+function applyDomainSeed(sd,force){if(!sd||!sd.persons)return 0;var n=0;for(var id in sd.persons){var rp=sd.persons[id];if(!rp||typeof rp!=="object")continue;var lp=DB.persons[id];
+  /* force = nouvelle version des fiches OFFICIELLES (seed_…) publiée sur le domaine : on la prend, comme l'ancien mergeSeed,
+     en gardant photos, documents, commentaires et actes ajoutés sur l'appareil. Sinon : le plus récent gagne. */
+  var officiel=force&&String(id).indexOf("seed_")===0;
+  if(!lp||officiel||(rp.updatedAt||0)>(lp.updatedAt||0)){var q=Object.assign({},rp,{photos:(lp&&lp.photos)||[],docs:(lp&&lp.docs)||[]});delete q.photoCount;delete q.docCount;q.conjoints=q.conjoints||[];q.sources=q.sources||[];q.comments=(lp&&lp.comments&&lp.comments.length)?lp.comments:(q.comments||[]);
+    if(lp&&lp.actes){var ua=lp.actes.filter(function(a){return a&&a.by;});if(ua.length)q.actes=(q.actes||[]).concat(ua);}
+    if(officiel&&lp&&(lp.updatedAt||0)>(rp.updatedAt||0))q.updatedAt=now();DB.persons[id]=q;n++;}}
+  DB.meta=DB.meta||{updatedAt:0};if(sd.meta&&sd.meta.updatedAt>(DB.meta.updatedAt||0))DB.meta.updatedAt=sd.meta.updatedAt;if(sd.meta&&sd.meta.seedVersion)DB.meta.seedVersion=sd.meta.seedVersion;return n;}
+/* Un appareil qui a DÉJÀ l'arbre : si le domaine publie une version plus récente des fiches officielles
+   (seedVersion), on la récupère et on la fusionne — c'est ce qui apporte les corrections faites ailleurs. */
+async function refreshFromDomain(){try{if(!CODEHASH)return;var st=await domainStatus();if(!st||!st.ok||!st.seedVersion)return;if((DB.meta&&DB.meta.seedVersion||0)>=st.seedVersion)return;
+  var r=await domainFetch("/__arbre/seed",{headers:{"x-arbre-code":CODEHASH}});if(!r||!r.ok||!r.seed)return;
+  var n=applyDomainSeed(r.seed,true);DB.meta.seedVersion=st.seedVersion;var ob=purgeObsoleteSeeds();var sh=purgeSeedShadows();await saveLocal();
+  if(n||ob.length||sh.length){cloudPushAll().catch(function(){});if(!$(".ov"))render();toast("🌳 Arbre mis à jour depuis le domaine ("+n+" fiche(s))");}}catch(e){}}
 /* Publication (admin) : le code admin est demandé, envoyé au domaine (/__admin/login) et JAMAIS mémorisé. */
 async function publishDomain(){var n=Object.keys(DB.persons).length;if(!n){toast("Rien à publier");return;}if(!CODEHASH){toast("Code famille inconnu");return;}
   var code=prompt("Code admin (vérifié sur le domaine, jamais enregistré) :");if(!code)return;
@@ -1676,10 +1764,27 @@ function purgeSeedShadows(){
   return rm;}
 async function startApp(){$("#gate").classList.add("hidden");$("#app").classList.remove("hidden");ME=localStorage.getItem("arbre_me")||"";var had=await loadLocal();var seedChanged=false;if(!had)DB={persons:{},meta:{updatedAt:0}};
   if(_domainSeed){var nd=applyDomainSeed(_domainSeed);_domainSeed=null;if(nd){await saveLocal();seedChanged=true;}}
-  var dups=dedupePersons();var legacy=purgeLegacy();var shadows=purgeSeedShadows();if(legacy.length||shadows.length)seedChanged=true;
+/* Fantômes semés par l'ancienne v3.7 (mauvaise lecture « Magnani/Bauman ») : restés dans les
+   téléphones et le nuage car mergeSeed n'efface jamais. On les retire PARTOUT en re-pointant
+   vers les bonnes fiches (mêmes personnes) et en récupérant photos/commentaires éventuels. */
+var SEED_OBSOLETE={seed_david_bauman:"seed_david_bauwmann",seed_jean_marie:"seed_jeanmarie_bauwmann",seed_nicolas:"seed_nicolas_bauwmann",seed_noemie_bauman:"seed_noemie",seed_lea_magnani:"seed_lea_ladj"};
+function purgeObsoleteSeeds(){var rm=[];
+  for(var oid in SEED_OBSOLETE){var p=DB.persons[oid];if(!p)continue;var t=DB.persons[SEED_OBSOLETE[oid]];
+    if(t){if(p.photos&&p.photos.length)t.photos=(t.photos||[]).concat(p.photos);if(p.comments&&p.comments.length)t.comments=(t.comments||[]).concat(p.comments);}
+    delete DB.persons[oid];rm.push(oid);}
+  if(!rm.length)return rm;
+  /* On SUPPRIME les références vers les fantômes (on ne re-pointe PAS : re-pointer un conjoint
+     recréerait un faux mariage — les vrais liens sont déjà définis dans les fiches officielles). */
+  for(var id in DB.persons){var q=DB.persons[id],ch=false;
+    if(q.pere&&SEED_OBSOLETE[q.pere]){delete q.pere;ch=true;}
+    if(q.mere&&SEED_OBSOLETE[q.mere]){delete q.mere;ch=true;}
+    if(q.conjoints&&q.conjoints.length){var nc=q.conjoints.filter(function(c,i,a){return c&&!SEED_OBSOLETE[c]&&c!==id&&a.indexOf(c)===i;});if(nc.join(",")!==q.conjoints.join(",")){q.conjoints=nc;ch=true;}}
+    if(ch)q.updatedAt=now();}
+  return rm;}
+  var dups=dedupePersons();var legacy=purgeLegacy();var shadows=purgeSeedShadows();var obsolete=purgeObsoleteSeeds();if(legacy.length||shadows.length||obsolete.length)seedChanged=true;
   render();setPill();                 /* AFFICHE L'ARBRE TOUT DE SUITE — jamais bloqué par le réseau */
   if(seedChanged||dups.length){saveLocal();cloudPushAll().catch(function(){});if(dups.length)toast("🧹 "+dups.length+" doublon(s) nettoyé(s)");}
-  cloudPull(false);}
+  refreshFromDomain().then(function(){cloudPull(false);});}
 async function boot(){await idbOpen();var stored=localStorage.getItem("arbre_codehash")||"";$("#gateHint").textContent="Astuce : le code de ta famille a été défini. Reconnu automatiquement ensuite.";bindApp();
   /* Reconnaissance auto après 1ʳᵉ connexion (règle Kevin) : le trust persistant suffit —
      l'app rouvre directement, le code n'est redemandé qu'après déconnexion explicite (🔒) */

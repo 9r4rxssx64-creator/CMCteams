@@ -17,6 +17,13 @@ const MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août'
 async function importMonth(browser, pdfRel, year, monthIdx) {
   const pdfBytes = readFileSync(resolve(root, pdfRel));
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  // HORS LIGNE d'abord (les routes pdfjs ci-dessous sont enregistrées APRÈS, donc elles
+  // gagnent : Playwright évalue les routes de la plus récente à la plus ancienne).
+  // Sur un runner AVEC réseau (GitLab), la page joignait Firebase et `fbApplyData` pouvait
+  // remplacer `A.overrides` en plein import → le contrôle croisé comparait des données du
+  // cloud, pas le PDF (mesuré 6.09 : « LAVAGNA J dans la page mais PLUS produit par le
+  // parser », 07/08 compositions ≠, alors qu'ici, sans réseau, tout est identique).
+  await ctx.route(/^https?:\/\//, (r) => r.abort());
   await ctx.route(/cdnjs\.cloudflare\.com\/.*pdf\.min\.js/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PDFJS }));
   await ctx.route(/cdnjs\.cloudflare\.com\/.*pdf\.worker\.min\.js/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PDFW }));
   const page = await ctx.newPage();
@@ -39,12 +46,16 @@ async function importMonth(browser, pdfRel, year, monthIdx) {
   // timing/charge machine. Sinon la couverture varie (247 vs 285) selon la charge.
   const cov = (key) => { const ov = (window.A && A.overrides && A.overrides[key]) || {}; return Object.keys(ov).filter(id => ov[id] && Object.keys(ov[id]).length > 0).length; };
   let prev = -1, stable = 0, key = year + '-' + monthIdx;
-  for (let i = 0; i < 30 && stable < 2; i++) {
+  // 60 tours (~30 s) au lieu de 30 : un runner partagé est plus lent que le sandbox.
+  for (let i = 0; i < 60 && stable < 2; i++) {
     await page.evaluate(({ y, m }) => { try { if (typeof _cmcFinalGeometricFill === 'function') _cmcFinalGeometricFill(y, m); } catch (_) {} }, { y: year, m: monthIdx });
     await page.waitForTimeout(500);
     const c = await page.evaluate(cov, key);
     stable = (c === prev && c > 50) ? stable + 1 : 0; prev = c;
   }
+  // Abandonner en SILENCE est ce qui rendait ce contrôle faux sur un runner lent : on
+  // lisait un import à moitié fini et on criait « la page ≠ le parser ». Ici on le DIT.
+  if (stable < 2) throw new Error('import ' + key + ' non stabilisé après ~30 s (couverture ' + prev + ') — mesure non fiable, ne rien régénérer avec ça');
   const out = await page.evaluate(({ key, year, monthIdx, MOIS }) => {
     const ov = A.overrides[key] || {};
     const days = new Date(year, monthIdx + 1, 0).getDate();

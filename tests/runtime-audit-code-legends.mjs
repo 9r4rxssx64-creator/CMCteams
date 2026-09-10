@@ -37,6 +37,7 @@ async function main() {
   const geo = JSON.parse(readFileSync(resolve(__dirname, 'fixtures/juillet-2026-v1.geo.json'), 'utf8'));
   const browser = await chromium.launch({ headless: true });
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.route(/^https?:\/\//, (r) => r.abort()); // hors ligne : Firebase ne vient pas se mêler de l'import (runner GitLab avec réseau)
   const tests = []; const t = (l, ok) => tests.push({ l, ok: ok === true });
 
   // ── APP : couleurs + CODES + légende ──
@@ -47,7 +48,12 @@ async function main() {
   await pa.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = 2026; A.month = 6; A.overrides = A.overrides || {}; delete A.overrides['2026-6']; });
   const app = await pa.evaluate(async ({ text, geo, codes }) => {
     window._cmcPdfGeometry = geo; window._lastImportText = text;
-    window.doImport(); await new Promise(r => setTimeout(r, 2200));
+    window.doImport(); await new Promise((done) => { // attente STABLE de l'import (runner lent GitLab ≠ 2 s fixes) — plafond 60 s
+      const count = () => { const o = window.A.overrides || {}; let n = 0; for (const k in o) for (const id in (o[k] || {})) n += Object.keys(o[k][id] || {}).length; return n; };
+      let last = -1, stableSince = Date.now(); const t0 = Date.now();
+      const tick = () => { const n = count(); if (n !== last) { last = n; stableSince = Date.now(); }
+        if ((n > 0 && Date.now() - stableSince >= 2000) || Date.now() - t0 > 60000) return done(); setTimeout(tick, 250); };
+      setTimeout(tick, 800); });
     const status = {}, inCODES = {};
     codes.forEach(c => { status[c] = cmcCodeStatusBg(c); inCODES[c] = !!(CODES[c] && CODES[c].l); });
     A.showLeg = true; const html = vPlan();

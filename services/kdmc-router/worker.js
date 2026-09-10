@@ -10,6 +10,9 @@
 
 import { makeChallenge, parseRegistration, verifyAssertion, b64uEnc, b64uDec } from './webauthn.js';
 import { mintShopsAdminIdToken } from './fb-token.js';
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+   UN routage IA commun au domaine (Qwen Workers AI d'abord, bascule par type de question). */
+import { routeText } from '../_shared/ia-route.js';
 
 /* D'où viennent les pages. Historiquement GitHub Pages — mais le compte GitHub
    a été suspendu le 15/08/2026 et le support a refusé de lever la restriction,
@@ -98,21 +101,39 @@ function hexEq(a, b) {
   let d = 0; for (let i = 0; i < 64; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
 }
+/* Amorce D1 (base `kdmc-arbre`, binding ARBRE_DB, table kv(k,v,saved_at)) : déposée par une session
+   Claude (données récupérées de l'historique GitLab v3.14) pour que le domaine serve l'arbre AVANT toute
+   publication depuis l'iPhone. KV (publication admin depuis l'app) a TOUJOURS priorité sur D1. Fail-open. */
+async function arbreD1(env, k) {
+  if (!env || !env.ARBRE_DB || !env.ARBRE_DB.prepare) return null;
+  try { const row = await env.ARBRE_DB.prepare('SELECT v, saved_at FROM kv WHERE k = ?1').bind(k).first(); return row && row.v != null ? row : null; } catch { return null; }
+}
+async function arbreCodehash(env) {
+  const kv = await env.ACCOUNTS.get('arbre:codehash');
+  if (kv) return kv;
+  const row = await arbreD1(env, 'codehash');
+  return row ? String(row.v).trim().toLowerCase() : null;
+}
 async function arbreSeedOut(env) {
   let seed = null, meta = null;
   try { const raw = await env.ACCOUNTS.get('arbre:seed'); if (raw) seed = JSON.parse(raw); } catch { seed = null; }
   try { meta = JSON.parse((await env.ACCOUNTS.get('arbre:meta')) || 'null'); } catch { meta = null; }
-  return { seed, savedAt: meta && meta.savedAt || 0, count: meta && meta.count || 0 };
+  if (!seed) {
+    const row = await arbreD1(env, 'seed');
+    if (row) { try { seed = JSON.parse(row.v); meta = { savedAt: row.saved_at || 0, count: Object.keys(seed.persons || {}).length, seedVersion: seed.meta && seed.meta.seedVersion || 0, source: 'd1' }; } catch { seed = null; } }
+  }
+  const seedVersion = (meta && meta.seedVersion) || (seed && seed.meta && seed.meta.seedVersion) || 0;
+  return { seed, savedAt: meta && meta.savedAt || 0, count: meta && meta.count || 0, seedVersion, source: meta && meta.source || (seed ? 'kv' : null) };
 }
 async function handleArbre(request, url, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204 });
   const path = url.pathname;
   if (!env || !env.ACCOUNTS) return J({ ok: false, reason: 'kv_absent' });
-  const stored = await env.ACCOUNTS.get('arbre:codehash');
+  const stored = await arbreCodehash(env);
 
   if (path === '/__arbre/status' && request.method === 'GET') {
     const m = await arbreSeedOut(env);
-    return J({ ok: true, code: !!stored, seed: !!m.seed, count: m.count, savedAt: m.savedAt });
+    return J({ ok: true, code: !!stored, seed: !!m.seed, count: m.count, savedAt: m.savedAt, seedVersion: m.seedVersion, source: m.source });
   }
 
   /* Publication (admin seulement) : l'app envoie SES données (texte, sans photos) + l'empreinte
@@ -133,7 +154,7 @@ async function handleArbre(request, url, env) {
     } else if (!stored) return J({ ok: false, reason: 'codehash_requis' });
     const savedAt = Date.now();
     await env.ACCOUNTS.put('arbre:seed', s);
-    await env.ACCOUNTS.put('arbre:meta', JSON.stringify({ savedAt, count, size: s.length }));
+    await env.ACCOUNTS.put('arbre:meta', JSON.stringify({ savedAt, count, size: s.length, seedVersion: +(b.meta && b.meta.seedVersion) || 0, source: 'kv' }));
     await audLog(env, { ev: 'arbre_seed_publish', count, size: s.length });
     return J({ ok: true, savedAt, count });
   }
@@ -150,7 +171,7 @@ async function handleArbre(request, url, env) {
     await rlReset(env, ipHash);
     await audLog(env, { ev: 'arbre_unlock_ok', ip: ipHash.slice(0, 12) });
     const m = await arbreSeedOut(env);
-    return J({ ok: true, seed: m.seed, savedAt: m.savedAt });
+    return J({ ok: true, seed: m.seed, savedAt: m.savedAt, seedVersion: m.seedVersion });
   }
 
   if (path === '/__arbre/seed' && request.method === 'GET') {
@@ -158,7 +179,7 @@ async function handleArbre(request, url, env) {
     if (!stored) return J({ ok: false, reason: 'code_non_publie' });
     if (!hexEq(hash, stored)) return J({ ok: false, reason: 'code_invalide' }, null, 403);
     const m = await arbreSeedOut(env);
-    return J({ ok: true, seed: m.seed, savedAt: m.savedAt });
+    return J({ ok: true, seed: m.seed, savedAt: m.savedAt, seedVersion: m.seedVersion });
   }
 
   /* Rotation du code famille : prouver l'ANCIEN (ou être admin). Le nouveau n'est jamais
@@ -619,35 +640,12 @@ async function handleLingua(request, url, env) {
         + "N'utilise ni listes à puces ni titres : reste dans le style d'un vrai échange, avec une orthographe et une ponctuation irréprochables dans les deux langues.";
       const chat = [{ role: 'system', content: sys }].concat(msgs.map((m) => ({ role: (m && m.role === 'user') ? 'user' : 'assistant', content: String((m && m.text) || '').slice(0, 500) })));
       if (!chat.some((m) => m.role === 'user')) chat.push({ role: 'user', content: 'Bonjour !' });
-      if (env.GROQ_API_KEY) {
-        try {
-          const rr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST', headers: { 'authorization': 'Bearer ' + env.GROQ_API_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: chat, max_tokens: 300, temperature: 0.75 }),
-          });
-          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'groq' }); }
-        } catch (_) { /* repli */ }
-      }
-      if (env.MISTRAL_API_KEY) {
-        try {
-          const rr = await fetch('https://api.mistral.ai/v1/chat/completions', {
-            method: 'POST', headers: { 'authorization': 'Bearer ' + env.MISTRAL_API_KEY, 'content-type': 'application/json' },
-            body: JSON.stringify({ model: 'mistral-small-latest', messages: chat, max_tokens: 300, temperature: 0.75 }),
-          });
-          if (rr.ok) { const j = await rr.json(); const reply = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'mistral' }); }
-        } catch (_) { /* repli */ }
-      }
-      if (env.GEMINI_API_KEY) {
-        try {
-          const contents = chat.filter((m) => m.role !== 'system').map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
-          const rr = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + env.GEMINI_API_KEY, {
-            method: 'POST', headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ system_instruction: { parts: [{ text: sys }] }, contents: contents, generationConfig: { maxOutputTokens: 300, temperature: 0.75 } }),
-          });
-          if (rr.ok) { const j = await rr.json(); const reply = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text; if (reply) return JL({ ok: true, reply: String(reply).trim(), by: 'gemini' }); }
-        } catch (_) { /* repli */ }
-      }
-      return JL({ ok: false, reason: 'ai_absent' }); // aucune clé/erreur → message hors-ligne côté client (fail-open)
+      /* Kevin 2026-09-05 : le coach = TRADUCTION/conversation multilingue → routage commun,
+         QWEN (Workers AI, 0 clé, multilingue) en premier, puis Gemini / Groq / Mistral gratuits,
+         Anthropic en secours s'il existe. On sait toujours qui a répondu (`by`). */
+      const ai = await routeText(env, { messages: chat, domain: 'translation', maxTokens: 300, temperature: 0.75, timeoutMs: 15000 });
+      if (ai.ok) return JL({ ok: true, reply: ai.text, by: ai.provider, model: ai.model });
+      return JL({ ok: false, reason: 'ai_absent', tried: ai.tried }); // aucune IA/erreur → message hors-ligne côté client (fail-open)
     }
     return JL({ ok: false, reason: 'bad_route' }, 404);
   } catch (e) {

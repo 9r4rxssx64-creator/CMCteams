@@ -37,10 +37,15 @@ const SEQS = { 1: [1], 2: [1, 2], 3: [1, 3, 2], 4: [1, 4, 2, 3], 5: [1, 4, 2, 3,
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const PORT = server.address().port;
 const browser = await chromium.launch();
-const page = await browser.newPage();
+const ctx = await browser.newContext();
+  // Hors ligne SAUF le serveur local qui sert la page : sur un runner AVEC réseau,
+  // `networkidle` n'arrive JAMAIS (la page rappelle Firebase en boucle) → timeout 30 s
+  // et un rouge qui n'a rien à voir avec le rendu (leçon #220).
+  await ctx.route(/^https?:\/\//, (r) => (/^https?:\/\/(127\.0\.0\.1|localhost)[:\/]/.test(r.request().url()) ? r.continue() : r.abort()));
+const page = await ctx.newPage();
 const jsErrors = [];
 page.on('pageerror', e => jsErrors.push(String(e)));
-await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'networkidle' });
+await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
 
 // Liste des boards de TRAVAIL (kind != abs) réellement chargés par la page.
 const boards = await page.evaluate(() => Object.keys(window.BOARDS)

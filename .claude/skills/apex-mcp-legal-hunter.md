@@ -90,5 +90,5 @@ Format : `<Cour> <date>, <numero>, [ECLI/CELEX]`.
 
 - Legal Data Hunter MCP : provider `mcp.openlegi.fr/legal` (probablement)
 - Methodology : Free-form output, inline citations obligatoires
-- Pattern Apex : `apex-ai/v13/services/mcp-client.ts`
+- Pattern Apex : `apex-ai/v13/services/ai/mcp-client.ts`
 - Skill complementaire : `apex-mcp-bofip.md` (fiscal FR specialise)

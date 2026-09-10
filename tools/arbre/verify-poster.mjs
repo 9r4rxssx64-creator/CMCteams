@@ -93,6 +93,12 @@ try {
         persons: pr.n, gens: pr.gens, orient: pr.pp.orient, mmPerPx: pr.pp.mmPerPx,
         tiles: t.cols * t.rows, cols: t.cols, rows: t.rows, tileParse: !!tileDoc.querySelector('parsererror'), asmParse: !!asm.querySelector('parsererror'),
         bytes: pr.svg.length, hasTitle: pr.svg.indexOf(pr.title) >= 0, hasLegend: pr.svg.indexOf('LÉGENDE') >= 0,
+        /* Munegu (v3.18) : cadre fuselé, losanges des nés en Principauté, règne par génération, devise */
+        mcFrame: /stroke="url\(#pfus\)"/.test(pr.svg) && /<pattern id="pfus"/.test(pr.svg),
+        mcBadges: (pr.svg.match(/<title>Né\(e\) en Principauté de Monaco<\/title>/g) || []).length,
+        mcExpected: lay.nodes.filter((nd) => bornInMonaco(P(nd.id))).length,
+        mcReigns: (pr.svg.match(/>sous (Honoré V|Florestan Ier|Charles III|Albert Ier|Louis II|Rainier III|Albert II) \(/g) || []).length,
+        mcMotto: pr.svg.indexOf('Munegu · Deo Juvante') >= 0, mcSub: pr.svg.indexOf('Àrburu de famiya') >= 0,
       };
     }, c);
     const tag = `${c.fam === 'c' ? 'Desarzens' : 'Sauvaigo·Maiffret'} · ${c.style} · ${c.paper}`;
@@ -103,6 +109,10 @@ try {
     check(r.nodesSvg === expected, `${tag} : ${r.nodesLayout} personnes → ${r.nodesSvg} dans le SVG`, r.nodesSvg === expected ? `0 oubli · ${r.gens} générations` : 'ÉCART');
     check(!r.tileParse && !r.asmParse && r.tiles >= 1, `${tag} : mosaïque A4 = ${r.tiles} feuilles (${r.cols} × ${r.rows}) + plan de montage`);
     check(r.hasTitle && r.hasLegend, `${tag} : titre + légende présents`);
+    check(r.mcFrame && r.mcMotto, `${tag} : Munegu — cadre fuselé rouge/blanc + devise Deo Juvante`);
+    check(r.mcBadges === r.mcExpected && (c.fam !== 'o' || r.mcExpected >= 2), `${tag} : ${r.mcExpected} né(e)s en Principauté → ${r.mcBadges} losange(s) ◆ dans le SVG`, c.fam === 'o' ? (r.mcSub ? '« Àrburu de famiya » en sous-titre' : 'sous-titre monégasque ABSENT') : 'lignée sans naissance à Monaco → 0 badge, pas de sous-titre');
+    check(r.mcSub === (r.mcExpected > 0), `${tag} : sous-titre « Àrburu de famiya » ${r.mcExpected > 0 ? 'présent' : 'absent'} (cohérent avec ${r.mcExpected} naissance(s) à Monaco)`);
+    check(r.mcReigns >= 1 && r.mcReigns <= r.gens, `${tag} : ${r.mcReigns} génération(s) située(s) sous un règne princier`);
     if (c.style === 'plan' && c.paper === 'A1') pdfSample.push({ ...c, orient: r.orient, tiles: r.tiles });
   }
 

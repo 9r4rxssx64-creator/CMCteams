@@ -10,7 +10,11 @@ async function main() {
   const text = readFileSync(resolve(__dirname, 'fixtures/juillet-2026-v1.txt'), 'utf8');
   const geo = JSON.parse(readFileSync(resolve(__dirname, 'fixtures/juillet-2026-v1.geo.json'), 'utf8'));
   const browser = await chromium.launch({ headless: true });
-  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  // Hors ligne : la page en file:// ne parle à personne (sinon, sur un runner AVEC réseau,
+  // la synchro Firebase peut remplacer A.overrides en pleine mesure — leçon #220).
+  await ctx.route(/^https?:\/\//, (r) => r.abort());
+  const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.addInitScript(() => { window.__CMC_NO_SEED = true; });
   await page.goto('file://' + resolve(__dirname, '../index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -18,7 +22,12 @@ async function main() {
   await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = 2026; A.month = 6; A.overrides = A.overrides || {}; delete A.overrides['2026-6']; });
   const out = await page.evaluate(async ({ text, geo }) => {
     window._cmcPdfGeometry = geo; window._lastImportText = text;
-    window.doImport(); await new Promise(r => setTimeout(r, 2000));
+    window.doImport(); await new Promise((done) => { // attente STABLE (runner lent ≠ 2 s fixes)
+      const count = () => { const o = window.A.overrides || {}; let n = 0; for (const k in o) for (const id in (o[k] || {})) n += Object.keys(o[k][id] || {}).length; return n; };
+      let last = -1, since = Date.now(); const t0 = Date.now();
+      const tick = () => { const n = count(); if (n !== last) { last = n; since = Date.now(); }
+        if ((n > 0 && Date.now() - since >= 2000) || Date.now() - t0 > 60000) return done(); setTimeout(tick, 250); };
+      setTimeout(tick, 800); });
     const key = '2026-6';
     // ouvrir tous les groupes d'absence pour que la vue rende leurs tableaux
     window._planAbsOpen = { conges: true, maladie: true, formation: true, deplacement: true, amenage: true };

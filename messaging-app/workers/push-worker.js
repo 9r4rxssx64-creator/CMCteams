@@ -15,7 +15,7 @@
 
 const VAPID_PUBLIC = 'BJ5XN-ZzchRPPDVO4aEkFkhUOQC8E0tScaTKFXFBDq3o8MATBdRW879hSTLCTfH5mo3S_i5JOf1E4pTDALETBsY';
 
-import { corsHeaders, makeJson } from './lib/cors.js';
+import { corsHeaders, makeJson, applyCors } from './lib/cors.js';
 
 const CORS_HEADERS = corsHeaders('GET, POST, OPTIONS', 'Content-Type, Authorization, X-Apex-Push-Token');
 
@@ -316,7 +316,7 @@ async function handleRegister(request, env) {
 //  Main fetch
 // ============================================================================
 
-export default {
+const _workerHandler = {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: CORS_HEADERS });
 
@@ -335,4 +335,17 @@ export default {
       return err(e.message, 500);
     }
   }
+};
+
+// ============================================================================
+//  CORS par ORIGINE (audit P2b, v1.1.287)
+//  Le worker répondait `Access-Control-Allow-Origin: *` à tout le monde. On
+//  applique la liste d'origines réelles en UN SEUL point — le `fetch` de tête —
+//  au lieu de toucher chaque site d'appel : zéro risque de rater une réponse.
+// ============================================================================
+export default {
+  ..._workerHandler,
+  async fetch(request, env, ctx) {
+    return applyCors(request, await _workerHandler.fetch(request, env, ctx));
+  },
 };

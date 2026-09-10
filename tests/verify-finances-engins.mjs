@@ -42,6 +42,11 @@ const FACTURE = JSON.stringify({ meta:{ kind:'facture', vendor:'EASYFLEX', invoi
 
 const browser = await chromium.launch({ args: ['--no-sandbox'] });
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  // Hors ligne SAUF le serveur local qui sert la page : sur un runner AVEC réseau,
+  // `networkidle` n'arrive JAMAIS (la page rappelle Firebase en boucle) → timeout 30 s
+  // et un rouge qui n'a rien à voir avec le rendu (leçon #220).
+  await ctx.route(/^https?:\/\//, (r) => (/^https?:\/\/(127\.0\.0\.1|localhost)[:\/]/.test(r.request().url()) ? r.continue() : r.abort()));
+
 const page = await ctx.newPage();
 const errs = [];
 page.on('pageerror', e => errs.push(String(e.message || e).slice(0, 200)));
@@ -75,7 +80,7 @@ const clickBtnWithText = (txt, root) => page.evaluate(([t,r]) => {
 }, [txt, root||null]);
 
 try {
-  await page.goto(URL, { waitUntil: 'networkidle' });
+  await page.goto(URL, { waitUntil: 'load' });
   await page.fill('#g-pass', '123456'); await page.fill('#g-pass2', '123456'); await page.click('#g-go');
   await page.waitForSelector('#tabs', { timeout: 5000 });
   await page.waitForSelector('#ai-pin', { timeout: 3000 });

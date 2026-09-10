@@ -15,14 +15,21 @@ async function main() {
   const text = readFileSync(resolve(__dirname, 'fixtures/juillet-2026-v1.txt'), 'utf8');
   const geo = JSON.parse(readFileSync(resolve(__dirname, 'fixtures/juillet-2026-v1.geo.json'), 'utf8'));
   const browser = await chromium.launch({ headless: true });
-  const page = await (await browser.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.route(/^https?:\/\//, (r) => r.abort()); // hors ligne : Firebase ne vient pas se mêler de l'import (runner GitLab, job 16332535635 : 5/3)
+  const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(String(e)));
   await page.goto('file://' + resolve(__dirname, '../index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForFunction(() => typeof window.doImport === 'function' && window.A && Array.isArray(A.employees), { timeout: 20000 });
   await page.evaluate(() => { A.user = A.employees.find(e => e.id === 'U11804'); A.year = 2026; A.month = 6; A.overrides = A.overrides || {}; delete A.overrides['2026-6']; });
   const out = await page.evaluate(async ({ text, geo }) => {
     window._cmcPdfGeometry = geo; window._lastImportText = text;
-    window.doImport(); await new Promise(r => setTimeout(r, 1800));
+    window.doImport(); await new Promise((done) => { // attente STABLE de l'import (runner lent GitLab ≠ 2 s fixes) — plafond 60 s
+      const count = () => { const o = window.A.overrides || {}; let n = 0; for (const k in o) for (const id in (o[k] || {})) n += Object.keys(o[k][id] || {}).length; return n; };
+      let last = -1, stableSince = Date.now(); const t0 = Date.now();
+      const tick = () => { const n = count(); if (n !== last) { last = n; stableSince = Date.now(); }
+        if ((n > 0 && Date.now() - stableSince >= 2000) || Date.now() - t0 > 60000) return done(); setTimeout(tick, 250); };
+      setTimeout(tick, 800); });
     const key = '2026-6', ov = A.overrides[key] || {};
     const cells = nm => { const e = A.employees.find(x => x.name && x.name.toUpperCase().indexOf(nm) >= 0); if (!e) return null; const c = ov[e.id] || {}; const ks = Object.keys(c); const cnt = {}; ks.forEach(d => { cnt[c[d]] = (cnt[c[d]] || 0) + 1; }); return { id: e.id, n: ks.length, cnt, team: (e.teamHistory || {})[key] }; };
     const me = A.employees.find(x => x.id === 'U11804'); const myTeam = me && (me.teamHistory || {})[key];

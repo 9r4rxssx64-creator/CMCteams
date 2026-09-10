@@ -1,7 +1,156 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-05** (Départs light v1.39 : MON équipe et MON miroir à l'ouverture · poster grand format de l'arbre v3.15 · rapatriement des automatisations · dépôt public sécurisé)
+> Dernière mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
+
+### 6 septembre 2026 — garde « aucun secret écrit dans un document »
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/no-secret-in-docs.test.mjs` | **Nouveau.** Cherche « une étiquette de secret suivie d'une valeur » dans les 822 `.md` du dépôt — donc il attrape aussi les secrets qu'on ne connaît pas encore, contrairement à gitleaks (préfixes connus) et à `no-admin-pin-leak` (code admin seulement). Il ne cite jamais la valeur trouvée, seulement l'endroit. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/no-secret-in-docs.test.mjs) |
+| `audit/03-FINDINGS.md` | Les 2 points que je n'ai **pas** corrigés exprès et qui demandent ta décision : les noms de tiers dans le dépôt public (F-P1) et le DPA Firebase dont la région n'est pas prouvée (F-P2) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/03-FINDINGS.md) |
+| `docs/DPA-Firebase.md` | Le document RGPD dont j'ai retiré la fausse certitude « données en Europe » + la vérification en 1 clic | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/docs/DPA-Firebase.md) |
+
+> ⚠️ **À faire par toi, les deux :** régénérer `AGENT_SECRET` sur Vercel (projet `kdmc-agent-monaco`)
+> et changer le code famille de l'arbre via `changeCode()` dans l'app. Les avoir masqués ne les
+> efface **pas** de l'historique git.
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-05 nuit** (fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+
+### 5 septembre 2026 — garde Vercel (mails d'échec)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/vercel-config.test.mjs` | Empêche les deux erreurs qui t'envoyaient un mail « Preview deployment failed » à chaque push (clé interdite dans `vercel.json`, `ignoreCommand` > 256 caractères) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/vercel-config.test.mjs) |
+| `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
+> Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/pipeline/retard-branches.mjs` | Dit si une branche est dangereusement en retard sur un fichier **partagé** — et surtout si un **mois de planning entier** y a disparu sans faire le moindre bruit. `npm run retard-branches` (ou `--toutes`, `--tout`). Non bloquant. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pipeline/retard-branches.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pipeline/retard-branches.mjs) |
+| `tests/verify-pdf-vs-surfaces.mjs` | Relit les **vrais PDF** sans le parser de l'app et exige chaque personne / chaque cellule des deux côtés. `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-pdf-vs-surfaces.mjs) |
+| `tests/journal-erreurs-lisible.test.mjs` | Empêche le journal d'erreurs de redevenir illisible (3 formes, 3 lecteurs). `npm run test:journal-erreurs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/journal-erreurs-lisible.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/journal-erreurs-lisible.test.mjs) |
+
+
+## 🇲🇨 L'arbre aux couleurs de Monaco — session 2026-09-06 matin (arbre v3.18 « Munegu », branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.18) | Ruban fuselé rouge/blanc, badge ◆ sur les nés en Principauté (liste, fiche, poster), règne du Prince sous chaque génération (arbre + poster), section **🇲🇨 Munegu** dans Réglages (compteurs, naissances par règne, lieux, registres de la Mairie, Journal de Monaco, Traditions monégasques), poster à cadre fuselé + *Àrburu de famiya* + *Deo Juvante*. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| `tools/arbre/fixture-famille.mjs` | La famille synthétique a maintenant 2 racines nées « Monaco » / « Monte-Carlo » (fictif) pour vérifier badges et règnes sans donnée réelle. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/fixture-famille.mjs) |
+| `tools/arbre/verify-poster.mjs` · `tests/arbre-poster.test.mjs` | 154 contrôles en vrai navigateur (cadre, badges = nés à Monaco, règnes, devise) + 8 contrôles hors ligne dans le gate. | [Navigateur](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-poster.mjs) · [Gate](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tests/arbre-poster.test.mjs) |
+| `tools/audit/rules-compliance.cjs` | La règle « Qwen gratuit » y est enfin déclarée : ses 5 tests tournaient déjà, mais le registre l'ignorait et faisait rougir la chaîne de tests de **toutes** les sessions. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/rules-compliance.cjs) |
+| `tools/departs/_gen-boards.mjs` | Le générateur de la page Départs travaille hors ligne et **s'arrête net** si l'import n'a pas fini, au lieu de rendre un résultat à moitié fait. La page elle-même n'a pas été touchée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/departs/_gen-boards.mjs) |
+| 20 tests navigateur (import, serveur local, montage vidéo) | Ils ne dépendent plus de l'état du réseau : même résultat sur ton iPhone, ici, et sur un serveur partagé. La chaîne de tests est passée de 65 s d'échec immédiat à 877 s. | [Dossier](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests) |
+| `tools/smoke/audit-live.mjs` | Le balayage live contrôle l'arbre **sans code** : le domaine sert les fiches (`/__arbre/status`), un mauvais code est refusé ; secret optionnel `ARBRE_CODE_SHA256` pour compter aussi les cartes. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/smoke/audit-live.mjs) · [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/audit-live.yml) |
+| `.gitlab-ci.yml` (job `tests`) · `.github/workflows/cmc-runtime-audit.yml` | Les tests navigateur tournent enfin quelque part : GitLab (image Playwright) et GitHub (le cache npm sans lockfile les faisait échouer en 17 s). | [GitLab CI](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitlab-ci.yml) · [Pipelines](https://gitlab.com/kdmc-group/Kdmc-project/-/pipelines) · [GitHub](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/cmc-runtime-audit.yml) |
+| `tests/runtime-audit-everyone-has-planning.mjs` · `…-v788-fb-auth.mjs` · `…-garro-cp.mjs` · `…-code-legends.mjs` | Attendent la fin réelle de l'import et coupent le réseau : mêmes résultats sur ton iPhone, ici, et sur un runner lent. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/runtime-audit-everyone-has-planning.mjs) |
+| `vercel.json` | Vercel ne se déploie plus pour l'arbre, les workers, les tests, le pipeline ou la CI GitLab : c'est ce qui épuisait le quota gratuit (100/jour) et **bloquait toutes les fusions** (contrôle rouge sur chaque PR). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/vercel.json) |
+> Dernière mise à jour : **2026-09-05 nuit** (IA gratuite en principal dans TOUS les projets · Qwen gratuit en IA principale d'Apex v13.4.366 · fusions auto : journaux en « union », plus de blocage entre sessions ·  (arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🚀 Déblocage des déploiements + preuve live des IA (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verify-deploiement-declenche.mjs` | **NOUVEAU** — la garde : chaque atelier de déploiement part sur un push `claude/**`, surveille son propre fichier ET le routage IA commun. 28 contrôles. `npm run test:deploiement-declenche` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-deploiement-declenche.mjs) |
+| `.github/workflows/deploy-kdmc-apis.yml` | Déploie sur push `claude/**` + **pose 4 vraies questions aux IA** après chaque mise en ligne (qui répond, quel modèle, le vote) | [Runs — la preuve live](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | Le relais d'Apex se déploie enfin sans clic (push `claude/**`) et teste Qwen en vrai | [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `.github/workflows/deploy-wm-brief.yml` | World Monitor : déclencheur réparé (il ne surveillait même pas son propre fichier) | [Runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-wm-brief.yml) |
+
+## 🗳️ Concertation d'IA gratuites — vote sur le type de question + conseil avec juge (2026-09-06)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | `analyseQuestion` (3 voix gratuites votent le type), `councilText` (voix + juge gratuit), `routeSmart` (les deux puis le routage) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | 14 tests dont 5 sur la concertation (vote, désaccord → repli, action → Anthropic, conseil, juge mort) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais vote puis conseille par défaut ; `POST /ai/analyse` = le vote seul | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.285) | Chat admin : vote + conseil quand Workers AI est là | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse actu = conseil de 3 voix + juge (moins d'inventions) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) |
+| `index.html` (CMCteams v9.893) | Badge « Concertation gratuite · N avis » quand un conseil a répondu | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `apex-ai/v13/services/ai/crew-experts.ts` (Apex v13.4.367) | Les voix de l'équipe d'experts = gratuites d'abord, Anthropic membre + chef d'orchestre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+
+## 🆓 « Pareil dans mes autres projets » — IA gratuite en principal partout (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `services/_shared/ia-route.js` | **NOUVEAU — LE routage IA commun** : qui répond en premier selon la question (Qwen gratuit, Anthropic, Gemini, Perplexity…), secours en chaîne, réponse qui nomme toujours le moteur. Importé par chaque worker | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.js) |
+| `services/_shared/ia-route.test.mjs` | **NOUVEAU** — la garde du module (9 tests, hors ligne). `npm run test:ia-route` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/_shared/ia-route.test.mjs) |
+| `services/kdmc-apis/worker.js` | Le relais **apis.kd-mc.com/ai** devient le hub commun (Qwen d'abord, bascule par question, ancienne chaîne en secours). Bug corrigé : le vrai hôte GitHub Pages passe enfin | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-apis/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-apis.yml) |
+| `index.html` (CMCteams v9.892) | Le chat IA envoie les questions courantes au relais gratuit ; planning/outils/actions restent à Anthropic ; **marche sans clé pour les employés** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `tests/verify-cmc-ia-gratuite.mjs` | **NOUVEAU** — la garde CMCteams (26 contrôles : la fonction de décision est extraite du vrai fichier et exécutée). `npm run test:cmc-ia-gratuite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cmc-ia-gratuite.mjs) |
+| `messaging-app/workers/api-worker.js` (Apex Chat v1.1.284) | Qwen pour le chat, résumés, traductions, reformulations ; Anthropic pour agir et chercher | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) |
+| `messaging-app/tests/unit/api-worker-ia-qwen.test.js` | **NOUVEAU** — 8 tests Apex Chat (Qwen répond, action → Anthropic, secours, cause exacte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-ia-qwen.test.js) |
+| `services/kdmc-router/worker.js` + `wrangler.toml` | Coach Lingua sur Qwen (multilingue) d'abord ; binding Workers AI ajouté au routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) |
+| `services/kdmc-router/lingua-ia.test.mjs` | **NOUVEAU** — la garde du coach (Qwen nommé, secours, fail-open). `npm run test:lingua-ia` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/lingua-ia.test.mjs) |
+| `tools/cloudflare/wm-brief/worker.js` | Synthèse World Monitor par Qwen, Anthropic en secours (clé devenue optionnelle) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-wm-brief.yml) |
+| `services/kdmc-crea-ai/worker.js` | Paroles / compositions : Qwen Workers AI en tête (Qwen3 récents), les 18 moteurs à clé en secours, toutes les causes de bascule visibles | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
+| `tools/finances/index.html` (v0.15.0) | Qwen en tête du « gratuit d'abord » | [ouvrir](https://finances.kd-mc.com) · [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/finances/index.html) |
+
+## 🆓 Qwen gratuit en IA principale + bascule auto par question — Apex v13.4.366 (2026-09-05, nuit)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.github/workflows/sync-apex-secrets-to-cf-worker.yml` | **Le relais Apex** (sa source est dans ce fichier) : sert maintenant **Qwen sans clé** via Workers AI, route `/qwen/…`, PIN obligatoire, 4 modèles essayés dans l'ordre, réponse au format OpenAI, raisonnement `<think>` filtré. L'étape « Verify deploy » fait un **vrai appel Qwen** et écrit `qwen HTTP <code>` dans le journal | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/sync-apex-secrets-to-cf-worker.yml) · [Runs (la preuve live)](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/sync-apex-secrets-to-cf-worker.yml) |
+| `apex-ai/v13/services/ai/ai-routing-policy.ts` | **Qui répond à quoi** : Qwen en tête pour général/résumé/traduction, Anthropic pour code/raisonnement/créatif et **toute action**, Gemini pour les images, Perplexity pour la recherche, Groq pour la vitesse. Les gratuits passent devant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-routing-policy.ts) |
+| `apex-ai/v13/services/ai/ai-router.ts` | Qwen déclaré comme fournisseur (adresse = le relais lui-même, 0 clé) et inséré dans la chaîne de secours juste après Anthropic | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-router.ts) |
+| `apex-ai/v13/services/ai/crew-experts.ts` | Qwen dans l'équipe d'experts (spécialité multilingue) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/crew-experts.ts) |
+| `apex-ai/v13/features/chat/chat-misc-wiring.ts` | Le libellé du mode ⚡ « Gratuit malin » explique la bascule en clair | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/features/chat/chat-misc-wiring.ts) |
+| `tests/verify-apex-proxy-qwen.mjs` | **NOUVEAU** — la preuve sans réseau : extrait le relais du workflow, le fait tourner avec un Workers AI simulé, 17 contrôles (PIN, formats, filtre `<think>`, modèle mort → suivant, cause exacte). `npm run test:apex-proxy-qwen` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-apex-proxy-qwen.mjs) |
+| `apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts` | **NOUVEAU** — la garde : Qwen reste principal, la bascule par question tient, et un fournisseur ne peut plus être oublié dans une liste (13 tests, 3 sabotages prouvés) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/v13_4_366-qwen-gratuit-principal.test.ts) |
+| `LESSONS.md` · `CLAUDE.md` | Leçon **#217** + règle « Qwen gratuit en IA principale + bascule auto » | [LESSONS](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/LESSONS.md) · [CLAUDE.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE.md) |
+
+
+## 📄 Septembre 2026 vérifié EN RÉEL contre le PDF — session 2026-09-06 (branche `claude/verify-cmcteams-light-data-rzlvau`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verify-pdf-vs-surfaces.mjs` **(nouveau)** | **Le garde qui manquait.** Relit les VRAIS PDF avec pdfjs **sans passer par le parser de l'app**, reconstruit la grille par géométrie, et exige que CHAQUE personne et CHAQUE cellule se retrouvent à l'identique dans CMCteams **et** dans la page Départs. C'est ce qui a trouvé MATTERA M (disparu), NICASTRO M (planning inventé) et BLANCHY F / DEGIOVANNI R (sans équipe). `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) |
+| `tests/fixtures/pdf-fidelite-baseline.json` **(nouveau)** | Le **cliquet** : la liste des manques CONNUS d'août (MOREL F + 10 sans équipe). Le test échoue si un manque NOUVEAU apparaît — jamais de faux rouge sur l'existant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/pdf-fidelite-baseline.json) |
+| `index.html` (v9.894) | 3 correctifs : lignes du PDF regroupées par **proximité** (1,8 pt) et non par arrondi · les passes de réparation **n'inventent plus** de planning pour qui n'est pas dans le PDF · rattachement d'équipe par la **rotation d'horaires** quand les jours de repos ne suffisent pas (cadres exclus). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
+| `tests/compare-app-vs-light-teams.mjs` | Sa liste de mois était **figée sur juillet/août** → septembre n'était jamais comparé. Elle est désormais **déduite des boards générés** : tout nouveau mois est couvert automatiquement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/compare-app-vs-light-teams.mjs) |
+| `tools/shared/planning-seed.js` · `tools/departs/boards-gen.js` | Régénérés depuis les vrais PDF. Septembre : **248/248 personnes, 7 440/7 440 cellules identiques au PDF des deux côtés**. | [seed](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/shared/planning-seed.js) · [boards](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/departs/boards-gen.js) |
+| `tools/vercel/ignore-racine.sh` **(nouveau)** · `vercel.json` · `tools/agent/vercel.json` · `tests/vercel-conforme.test.mjs` **(nouveau)** | **Tu recevais un mail « Deployment failed » à chaque push de chaque session.** Les deux `vercel.json` étaient REFUSÉS par Vercel (une note interdite, et une commande de 406 et 647 caractères pour une limite de 256) : leurs protections ne s'appliquaient donc jamais. Corrigés, et un contrôle automatique empêche que ça revienne. | [racine](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/vercel.json) · [script](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tools/vercel/ignore-racine.sh) · [contrôle](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/vercel-conforme.test.mjs) |
+| `tests/journal-erreurs-lisible.test.mjs` **(nouveau)** · `index.html` · `tools/tests/e2e.test.js` | **Le journal d'erreurs de l'app était à moitié illisible.** Il est rempli par trois endroits différents, chacun à sa façon, et les pages qui l'affichent n'en comprenaient qu'une : la page Debug admin et l'IA montraient « [undefined] undefined », et l'agent censé repérer une erreur qui se répète ne voyait rien. En prime, l'app inscrivait une **fausse erreur à chaque démarrage**. Corrigé, avec un contrôle automatique. `npm run test:journal-erreurs` | [contrôle](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/journal-erreurs-lisible.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/journal-erreurs-lisible.test.mjs) |
+| `LESSONS.md` (leçon #221) | 0,2 pt d'écart dans un PDF = une personne qui disparaît ; et pourquoi un test « app == light » ne peut jamais le voir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/LESSONS.md) |
+
+## 🔀 Les fusions automatiques ne se bloquent plus sur le journal — session 2026-09-05 (nuit, branche `claude/journal-fusion-union`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `.gitattributes` | Dit à git que `MEMO_RESUME.md`, `KEVIN_INVENTORY.md` et `LESSONS.md` se fusionnent en **gardant les deux côtés** (« union »). Plus jamais de conflit sur le journal entre deux sessions. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.gitattributes) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/.gitattributes) |
+| `.github/workflows/auto-merge-claude.yml` (étape « Rattraper main avant la PR ») | L'automate fusionne d'abord `main` dans ta branche (journaux en union), pousse, puis fusionne la PR. Un conflit sur du **code** l'arrête proprement avec un avertissement. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) · [runs](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/auto-merge-claude.yml) |
+| Branche `claude/lingua-connexion-honnete` | Réparée à la main 2 fois (main fusionné, journaux gardés, test Lingua branché sur `KDMC_ADMIN_CODE`). Avec ce réglage, la prochaine fois se fera toute seule. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-connexion-honnete) |
+| Branche `claude/lingua-prenom-nom` | **Doublon** de la précédente (même code, 0 différence) + un lien `node_modules` vers un chemin de machine : à laisser au nettoyage, ne pas fusionner. | [voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/lingua-prenom-nom) |
+
+## 🌳 L'arbre v3.14 retrouvé et servi par le domaine — session 2026-09-05 nuit (arbre v3.17, branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.17) | Le code v3.14 est de retour (fiches fantômes purgées, plus de « vivant », familles BRICCO/MAGNANI/BEAUMELLE, liens Antenati/FranceArchives/Journal de Monaco/Gallica) **+** mise à niveau automatique depuis le domaine (`refreshFromDomain` : un appareil qui a l'ancien arbre récupère les fiches corrigées, garde ses photos). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/index.html) |
+| Base Cloudflare **D1 `kdmc-arbre`** (hors dépôt) | **Les 119 personnes** (v3.14) + l'empreinte du code, déposées et vérifiées fiche par fiche. Le domaine les sert à qui tape le code, sans que tu publies. | [Base D1 dans Cloudflare](https://dash.cloudflare.com/?to=/:account/workers/d1/databases/a10e750d-de49-47b5-b1d8-0e937eccbec8) |
+| `services/kdmc-router/worker.js` (repli D1) + `wrangler.toml` (liaison `ARBRE_DB`) | Le routeur lit le KV d'abord, la base D1 en repli (`source` visible dans `/__arbre/status`). Test 42/42 avec base simulée. | [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/worker.js) · [wrangler.toml](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/services/kdmc-router/wrangler.toml) |
+| `arbre/PASSATION-ARBRE.md` · `arbre/RECHERCHES-EN-COURS.md` | Tes documents de passation et de recherches en cours, retrouvés sur GitLab et remis sur GitHub comme avant. | [Passation](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/PASSATION-ARBRE.md) · [Recherches](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/arbre/RECHERCHES-EN-COURS.md) |
+| `arbre/research/BRICCO-LEO-BRANCALASSO-2026-09-01.md` · `INSEE-DECES-21-NOMS-2026-09-01.md` · `VICTOR-SAUVAIGO-CITATIONS-2026-09-01.md` | Les 3 dossiers de recherche du 1.09 (branche BRICCO/LEO/Brancalasso, décès INSEE sur 21 noms, citations de Victor Sauvaigo), retrouvés sur GitLab. | [Dossier research](https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/sarzance-family-tree-3jxi7i/arbre/research) |
+| Branche `publie-septembre` | Branche qui n'existait que sur GitLab (55 commits), maintenant aussi sur GitHub. | [Voir la branche](https://github.com/9r4rxssx64-creator/CMCteams/tree/publie-septembre) |
+| `tools/arbre/verify-domaine.mjs` (scénario 8) | Vérifie en vrai navigateur qu'un appareil existant récupère bien la version plus récente du domaine (23 contrôles). | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/sarzance-family-tree-3jxi7i/tools/arbre/verify-domaine.mjs) |
+## 🛰️ Surveillance du domaine remise en route — session 2026-09-05 (soir)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `ETAT-INFRA.md` — **fait n°16** | Pour TOUTES les sessions : ce qu'une session peut atteindre (4 canaux mesurés), **le compte Cloudflare gratuit n'a que 5 crons et ils sont pris**, comment prouver un déploiement (`modified_on`), ce que fait vraiment le robot auto-merge | [lire](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/ETAT-INFRA.md) |
+| `services/kdmc-outlook/worker.js` (6 lignes) | Son cron (toutes les 2 h) **réveille la surveillance** du domaine, faute de place pour un cron à elle | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-outlook/worker.js) |
+| `pipeline/sessions.json` (m026→m030) | Le courrier aux autres branches : les 4 canaux, les 5 crons, Vectorize, les 2 branches Lingua en double | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/pipeline/sessions.json) · [carte des branches](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/SESSIONS-ET-BRANCHES.md) |
+| `audit/2026-09-05/` (00→06) | **L'audit du domaine, écrit** : inventaire, 32 fonctions et leur couverture, résultats mesurés, findings (2 P0 + 4 P1 corrigés, ce qui reste), journal + auto-critique, **secrets & connecteurs** (47 noms à confirmer, 3 jeux de noms App Store) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/audit/2026-09-05) |
+| `.github/workflows/audit-live.yml` | **Le balayage LIVE** (28 surfaces, vrai navigateur) part maintenant **tout seul** au push, écarts en annotations | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/audit-live.yml) |
+| `.github/workflows/deploy-kdmc-rag.yml` | Si l'index Vectorize manque, le run **le dit** (annotation) et s'arrête avant de déployer | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-rag.yml) |
+| `services/kdmc-uptime/worker.js` | **La sonde** : toutes les heures, les **26 sous-domaines + 6 workers**. Alerte l'iPhone quand une adresse tombe et quand elle revient. L'ancienne n'en voyait que 13, et elle est éteinte depuis le 14/08 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/worker.js) |
+| `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
+| `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
+| `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
 
 ## 🛰️ Vérifier le VRAI domaine sans API et sans clic — la CI regarde, et écrit son rapport ici (2026-09-05)
 
@@ -70,6 +219,7 @@ Les 6 dernières recettes incomplètes sur 128 ont été écrites. **128/128 com
 | `tools/empreinte/index.html` | **Calcule l'empreinte d'un nouveau code admin sur l'iPhone** (rien n'est envoyé) → à coller dans le secret GitHub `APEX_ADMIN_PIN_SHA256` | [ouvrir](https://kd-mc.com/CMCteams/tools/empreinte/) · [code](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/empreinte/index.html) |
 | `tests/runtime-audit-departs-pin.mjs` | Verrou admin de la page Départs : plus d'empreinte dans la page, le code **part au domaine** (`/__admin/login`) et la page obéit au verdict (9 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/runtime-audit-departs-pin.mjs) |
 | `tests/no-admin-pin-leak.test.mjs` | Garde renforcé : code en clair **et** empreinte **et** forme `PIN…SHA… = "64-hex"`, dans le code servi **et** les `.md` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-admin-pin-leak.test.mjs) |
+| `tests/wrangler-assets-buildable.test.mjs` | Garde (5.09) : un worker qui exige un dossier `[assets]` non versionné doit avoir une étape qui le fabrique **avant** `wrangler deploy` — le routeur a été rouge 3 semaines pour ça, secret du code admin jamais poussé | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/wrangler-assets-buildable.test.mjs) |
 | `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
 | `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
 
@@ -111,7 +261,7 @@ Kevin : « *Tu as internet et les outils qu'il te faut. Arrête de me dire que t
 | Fichier | À quoi ça sert | Liens |
 |---|---|---|
 | `tools/audit/liens-check.mjs` | Ping RÉEL des 198 liens (OSINT + World Monitor). Classement honnête **vivant / protégé (401-403 = anti-robot) / MORT**. `--lister` = test hors ligne. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/liens-check.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/audit/liens-check.mjs) |
-| `.github/workflows/liens-check.yml` | Lance la vérification (**bouton** + 1×/mois), rapport téléchargeable | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/liens-check.yml) · [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/liens-check.yml) |
+| `.github/workflows/liens-check.yml` | Lance la vérification (**bouton** + 1×/mois), rapport téléchargeable | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/liens-check.yml) · [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows-desactives/liens-check.yml) |
 
 ## 🔎 OSINT v2.6 — vérifier un numéro de téléphone (session 2026-08-14)
 
@@ -243,7 +393,7 @@ Reconnu admin **partout** sans code par app ; admin exige `verified` (Face ID), 
 
 **🔧 Fichiers**
 - `index.html` — détente `detectRepoConflicts` ; routes vivantes (`vCrossTeamActivity`/`vParserIntelligence`/`vParserCompare`/`pitmap`→`vMapEditor`) ; sécu (noopener, stack admin-only) ; **fix fuite clé IA** (`_adminCfgBackup`)
-- [`PLAN_EXECUTION_SECU_ARCHI.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/PLAN_EXECUTION_SECU_ARCHI.md) — plan 3 chantiers
+- [`PLAN_EXECUTION_SECU_ARCHI.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/archives/PLAN_EXECUTION_SECU_ARCHI.md) — plan 3 chantiers
 - `tests/runtime-audit-v784-routes.mjs` (5/5) · `v785-routes.mjs` (7/7) · `v787-secret-leak.mjs` (4/4) — câblés `test:ci` (28/0)
 
 **📜 PR mergées (vrai GitHub)** : #856 routes · #866 sécu · #872/#876/#877 plan+docs · #874 fuite secret
@@ -321,26 +471,26 @@ apex-ai.kd-mc.com · apex-chat.kd-mc.com · la-detente.kd-mc.com · chez-lolo.kd
 ## 📋 SESSION 2026-05-28 — Parser-Tester T1 v0.6.0 → v0.7.1 (branche claude/schedule-import-integration-szasM)
 
 ### Nouveaux fichiers à la racine
-- [`CHECKLIST_EXPERT.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/CHECKLIST_EXPERT.md) (163 lignes) : inventaire complet outils/agents/MCP/skills/secrets/garde-fous/méthodologie pour travail expert sur ce repo.
-- [`IMPORT_RECONNAISSANCE.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/IMPORT_RECONNAISSANCE.md) (943 lignes) : spec exhaustive « tout ce qu'un import SBM doit reconnaître ». Sections : ⓪ méta-import · A-K par personne · 13 Convention SBM (38 articles + 43 codes Bulletin + calendrier affluence + règles validation).
+- [`CHECKLIST_EXPERT.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/archives/CHECKLIST_EXPERT.md) (163 lignes) : inventaire complet outils/agents/MCP/skills/secrets/garde-fous/méthodologie pour travail expert sur ce repo.
+- [`IMPORT_RECONNAISSANCE.md`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/IMPORT_RECONNAISSANCE.md) (943 lignes) : spec exhaustive « tout ce qu'un import SBM doit reconnaître ». Sections : ⓪ méta-import · A-K par personne · 13 Convention SBM (38 articles + 43 codes Bulletin + calendrier affluence + règles validation).
 
 ### Nouveaux modules dans `tools/planning-parser-tester/lib/`
-- [`encadres-parser.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/encadres-parser.js) v0.1.0 (237 lignes) : parse encadrés « N CODE du J1 au J2 ». Source de vérité = codes courts officiels (jamais mots français — anti-erreur #49).
-- [`team-detector.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/team-detector.js) v0.2.0 (320 lignes) : détection équipes par pattern RH/R. Règle miroir corrigée Kevin 2026-05-28 : MÊMES RH/R + horaires base ≠ (`20/5` ⇆ `22/6` secteur cartes).
-- [`validate-post-import.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/validate-post-import.js) v0.1.0 : 7 validations Convention (Art. 17.5 min 10j/6sem · Art. 35 ratio chefs 25-30% · sanctions CRITICAL · everyone-has-planning Kevin 2026-05-26 · affluence Art. 17.6).
-- [`homonyms-guard.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/homonyms-guard.js) v0.1.0 : `KNOWN_HOMONYMS` 20 surnames (LANDAU B/J, ENZA B/C, CAMPI H/PH…), `canMatch()` bloque le merge cross-initiale (anti-erreurs #38/#44).
-- [`code-colors.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/code-colors.js) v0.1.0 : `getCellColor()` mappe les 43 codes → `{bg, fg, label}` (Convention rouge/jaune, CCDP orange, sanctions rouge alerte). `getCellStyle()` anti-XSS.
+- [`encadres-parser.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/lib/encadres-parser.js) v0.1.0 (237 lignes) : parse encadrés « N CODE du J1 au J2 ». Source de vérité = codes courts officiels (jamais mots français — anti-erreur #49).
+- [`team-detector.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/lib/team-detector.js) v0.2.0 (320 lignes) : détection équipes par pattern RH/R. Règle miroir corrigée Kevin 2026-05-28 : MÊMES RH/R + horaires base ≠ (`20/5` ⇆ `22/6` secteur cartes).
+- [`validate-post-import.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/lib/validate-post-import.js) v0.1.0 : 7 validations Convention (Art. 17.5 min 10j/6sem · Art. 35 ratio chefs 25-30% · sanctions CRITICAL · everyone-has-planning Kevin 2026-05-26 · affluence Art. 17.6).
+- [`homonyms-guard.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/lib/homonyms-guard.js) v0.1.0 : `KNOWN_HOMONYMS` 20 surnames (LANDAU B/J, ENZA B/C, CAMPI H/PH…), `canMatch()` bloque le merge cross-initiale (anti-erreurs #38/#44).
+- [`code-colors.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/lib/code-colors.js) v0.1.0 : `getCellColor()` mappe les 43 codes → `{bg, fg, label}` (Convention rouge/jaune, CCDP orange, sanctions rouge alerte). `getCellStyle()` anti-XSS.
 
 ### Fichiers enrichis dans `tools/planning-parser-tester/`
-- [`helpers-reuse.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/helpers-reuse.js) : `codeToLieu(code, role)` + `BULLETIN_CODES_FULL` (43 codes officiels Note 6 janv 1993) + `bulletinCategory()` + mapping `CODE_TO_LIEU_CADRE` vs `EMPLOYEE`.
-- [`lib/text-parser.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/lib/text-parser.js) v0.3.1 : `CODE_RE` accepte les 43 codes Bulletin + H majuscule (`12H30/19`) + `BRTPECK_RE` + `TEAM_NUM_AFTER_POST_RE` (V1 juin `BRTP+K 5 NAME`).
-- [`parser-multi-ocr.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/parser-multi-ocr.js) v0.7.1 : Phase 3.H encadres-parser, 3.I team-detector, 3.J projection `lieux_per_emp`.
-- [`index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/index.html) : labels UI passes B-F-G honnêtes (« ⏳ en attente » / « 🚧 non implémentée »), légende mise à jour.
-- [`test-pipeline.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/test-pipeline.js) : **17 sections, 140 checks ✅** (vs 12/85 avant). Couvre 43 codes officiels présents dans `BULLETIN_CODES_FULL` ET acceptés par `CODE_RE`.
+- [`helpers-reuse.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/helpers-reuse.js) : `codeToLieu(code, role)` + `BULLETIN_CODES_FULL` (43 codes officiels Note 6 janv 1993) + `bulletinCategory()` + mapping `CODE_TO_LIEU_CADRE` vs `EMPLOYEE`.
+- [`lib/text-parser.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/lib/text-parser.js) v0.3.1 : `CODE_RE` accepte les 43 codes Bulletin + H majuscule (`12H30/19`) + `BRTPECK_RE` + `TEAM_NUM_AFTER_POST_RE` (V1 juin `BRTP+K 5 NAME`).
+- [`parser-multi-ocr.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/parser-multi-ocr.js) v0.7.1 : Phase 3.H encadres-parser, 3.I team-detector, 3.J projection `lieux_per_emp`.
+- [`index.html`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/_PROJECTS_KDMC/e-KDMC/dashboard/index.html) : labels UI passes B-F-G honnêtes (« ⏳ en attente » / « 🚧 non implémentée »), légende mise à jour.
+- [`test-pipeline.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/test-pipeline.js) : **17 sections, 140 checks ✅** (vs 12/85 avant). Couvre 43 codes officiels présents dans `BULLETIN_CODES_FULL` ET acceptés par `CODE_RE`.
 
 ### Test de fidélité (v0.8.1)
-- [`test-fidelity.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/test-fidelity.js) : prouve la reproduction à l'identique sur 8 axes. Câblé dans `pre-commit-hook.sh` [5/5].
-- [`fixtures/synthetic-mai-2026-v1.txt`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/schedule-import-integration-szasM/tools/planning-parser-tester/fixtures/synthetic-mai-2026-v1.txt) : fixture format SBM (données FICTIVES, aucun vrai employé exposé).
+- [`test-fidelity.js`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/test-fidelity.js) : prouve la reproduction à l'identique sur 8 axes. Câblé dans `pre-commit-hook.sh` [5/5].
+- [`fixtures/synthetic-mai-2026-v1.txt`](https://github.com/9r4rxssx64-creator/cmcteams/blob/claude/tools/planning-parser-tester/fixtures/synthetic-mai-2026-v1.txt) : fixture format SBM (données FICTIVES, aucun vrai employé exposé).
 
 ### Versions (à v0.8.1)
 - T1 pipeline : `v0.6.0` → `v0.8.1-fidelity-line-parser`
@@ -490,11 +640,11 @@ Premium = illimité partout. Fail-open si KV indispo (pas de blocage user).
 ### Liens GitHub directs session 2026-05-18
 - PR : https://github.com/9r4rxssx64-creator/CMCteams/pull/268
 - branche : https://github.com/9r4rxssx64-creator/CMCteams/tree/claude/continue-perfection-work-5C2eH
-- index.html (Apex Chat) : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/index.html
-- api-worker : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/workers/api-worker.js
-- tests Premium AI : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/tests/unit/api-worker-premium-ai.test.js
-- D1 migration : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/d1-migrations/0004_premium_ai_cache.sql
-- sw-handlers : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/continue-perfection-work-5C2eH/messaging-app/lib/sw-handlers.js
+- index.html (Apex Chat) : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/_PROJECTS_KDMC/e-KDMC/dashboard/index.html
+- api-worker : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/messaging-app/workers/api-worker.js
+- tests Premium AI : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/messaging-app/tests/unit/api-worker-premium-ai.test.js
+- D1 migration : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/messaging-app/d1-migrations/0004_premium_ai_cache.sql
+- sw-handlers : https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/messaging-app/lib/sw-handlers.js
 
 ### ⏳ Action Kevin (déploiement Apex Chat backend Cloudflare Workers)
 - [ ] Configurer secrets Cloudflare Workers wrangler :
@@ -766,12 +916,12 @@ Kevin a partagé une avalanche de captures TikTok montrant skills Claude Code le
 
 | Fichier | Lignes | Description | Lien GitHub |
 |---|---|---|---|
-| `apex-ai/v13/services/apex-autonomous-mode.ts` | 582 | Core mode autonome (session, auto-décomp, quota, persistence triple, garde-fous) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/apex-autonomous-mode.ts) |
-| `apex-ai/v13/services/autonomous-watch.ts` | 82 | Sentinelle 30s dédiée tick mode autonome | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/autonomous-watch.ts) |
-| `apex-ai/v13/services/telegram-notifier.ts` | 221 | Bridge notif Kevin (browser push → Telegram worker → API direct → log local) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/telegram-notifier.ts) |
+| `apex-ai/v13/services/apex-autonomous-mode.ts` | 582 | Core mode autonome (session, auto-décomp, quota, persistence triple, garde-fous) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/admin/apex-autonomous-mode.ts) |
+| `apex-ai/v13/services/autonomous-watch.ts` | 82 | Sentinelle 30s dédiée tick mode autonome | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/sentinels/autonomous-watch.ts) |
+| `apex-ai/v13/services/telegram-notifier.ts` | 221 | Bridge notif Kevin (browser push → Telegram worker → API direct → log local) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/integrations/telegram-notifier.ts) |
 | `apex-ai/v13/features/admin/autonomous/index.ts` | 311 | Vue admin Mode Autonome (progress live, kill switch, history) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/features/admin/autonomous/index.ts) |
 | `apex-ai/v13/tests/unit/apex-autonomous-mode.test.ts` | 215 | 12 tests verts (start/stop/quota/persist/orphaned/subtasks) | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/apex-autonomous-mode.test.ts) |
-| `.github/workflows/apex-autonomous-watcher.yml` | 124 | Cron 5min poll Firebase autonomous_sessions stales | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/apex-autonomous-watcher.yml) |
+| `.github/workflows/apex-autonomous-watcher.yml` | 124 | Cron 5min poll Firebase autonomous_sessions stales | [View](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows-desactives/apex-autonomous-watcher.yml) |
 
 ### Fichiers modifiés v13.4.5
 
@@ -832,7 +982,7 @@ Détails par axe : voir MEMO_RESUME.md.
 - ADR-001 : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/docs/adr/ADR-001-csp-nonce-build-time.md
 - ADR-002 : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/docs/adr/ADR-002-multi-key-failover-chain.md
 - ADR-003 : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/docs/adr/ADR-003-autonomie-100-sans-claude-code.md
-- direct-connectors-registry.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/direct-connectors-registry.ts
+- direct-connectors-registry.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/integrations/direct-connectors-registry.ts
 
 ---
 
@@ -864,21 +1014,21 @@ Détails par axe : voir MEMO_RESUME.md.
 
 **Services TypeScript** (`apex-ai/v13/services/`)
 - `smart-router.ts` (639L) — auto-route 10 providers selon score multi-critères
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/smart-router.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/ai/smart-router.ts
 - `innovation-watch.ts` (760L) — scan hebdo npm/GitHub/HF/providers + auto-update gain ≥50%
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/innovation-watch.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/sentinels/innovation-watch.ts
 - `voice-print.ts` (1267L) — voix biométrie 4 phases progressive + admin override
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/voice-print.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/ai/voice-print.ts
 - `slash-commands.ts` (92L) — 10 commandes chat (`/help`, `/clear`, `/regen`, etc.)
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/slash-commands.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/admin/slash-commands.ts
 - `suggestions.ts` (206L) — 3 chips contextuelles 14 catégories
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/suggestions.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/ai/suggestions.ts
 - `broadlink-bridge.ts` (434L) — pilote IR/RF Broadlink RM Pro 4
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/broadlink-bridge.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/integrations/broadlink-bridge.ts
 - `vision-device-analyze.ts` (385L) — Vision IA détecte device sur photo (TV/clim/box…)
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/vision-device-analyze.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/ai/vision-device-analyze.ts
 - `commerce.ts` (204L) — plans Free / Basic / Pro tiers commerciaux
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/commerce.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/integrations/commerce.ts
 
 **UI** (`apex-ai/v13/ui/`)
 - `markdown.ts` (307L) — markdown enrichi (tables, code copy, footnotes, strikethrough)
@@ -905,7 +1055,7 @@ Détails par axe : voir MEMO_RESUME.md.
 
 **Docs nouveaux** (`docs/`)
 - `apex-features.md` — catalogue features commercialisables
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/docs/apex-features.md
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/docs/apex-features.md
 
 ### Stats v13.3.51 (mesures réelles)
 
@@ -934,7 +1084,7 @@ Détails par axe : voir MEMO_RESUME.md.
 ### Fichiers nouveaux v13.3.32
 
 - `apex-ai/v13/services/auto-test-runner.ts` (NEW, ~280 lignes) : runner smoke tests + scheduling daily + history log + record lessons si fails
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/auto-test-runner.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/admin/auto-test-runner.ts
 - `apex-ai/v13/ui/sos-rescue.ts` (NEW, ~210 lignes) : bouton SOS flottant + auto-heal + modal diagnostic
   - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/ui/sos-rescue.ts
 - `apex-ai/v13/ui/hud-debug.ts` (NEW, ~165 lignes) : overlay debug temps réel admin only
@@ -979,7 +1129,7 @@ Détails par axe : voir MEMO_RESUME.md.
 - `apex-ai/v13/core/memory.ts` (étendu +340 lignes) : 6 nouvelles méthodes mémoire long-terme
   - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/core/memory.ts
 - `apex-ai/v13/services/sentinels.ts` (étendu +95 lignes) : sentinelle `memory-watch`
-  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/sentinels.ts
+  - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/services/sentinels/sentinels.ts
 - `apex-ai/v13/features/knowledge/index.ts` (NEW, 320 lignes) : vue `?view=knowledge`
   - https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/test-699LQ/apex-ai/v13/features/knowledge/index.ts
 - `apex-ai/v13/tests/unit/memory-deep.test.ts` (NEW, 22 tests) : NLP extract + sync docs + system prompt deep
@@ -1401,7 +1551,7 @@ Watchdog 200s + badge "via Provider" topbar live.
 | `index.html` | L'app casino (2.3 MB) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) · [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/index.html) |
 | `sw.js` | Service Worker | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/sw.js) |
 | `manifest.json` | Métadonnées PWA | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/manifest.json) |
-| `firebase-rules.json` | Règles sécurité Firebase | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/firebase-rules.json) |
+| `firebase-rules.json` | Règles sécurité Firebase | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/firebase-rules-apex.json) |
 
 ### Modules pro CMCteams (intégrés)
 
@@ -1476,10 +1626,10 @@ Workflows automatiques qui surveillent et corrigent en arrière-plan :
 | `KEVIN_ACTIONS_TODO.md` | Tes tâches prioritaires | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/KEVIN_ACTIONS_TODO.md) |
 | `KEVIN_INVENTORY.md` | Ce fichier (auto-mis à jour) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/KEVIN_INVENTORY.md) |
 | `MEMO_RESUME.md` | Bilan de session (lu à chaque reprise) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/MEMO_RESUME.md) |
-| `MEMO_KEVIN_ACTIONS.md` | Actions Kevin restantes | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/MEMO_KEVIN_ACTIONS.md) |
+| `MEMO_KEVIN_ACTIONS.md` | Actions Kevin restantes | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/archives/MEMO_KEVIN_ACTIONS.md) |
 | `CHANGELOG.md` | Historique des versions | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CHANGELOG.md) |
 | `CLAUDE_ACTIVITY.json` | Mes commits récents (lus par Apex/CMC) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/CLAUDE_ACTIVITY.json) |
-| `BILAN_PRO.md` | Architecture vs template pro, scoring, roadmap | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/BILAN_PRO.md) |
+| `BILAN_PRO.md` | Architecture vs template pro, scoring, roadmap | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/archives/BILAN_PRO.md) |
 | `NOTES_USER.md` | Infos métier Kevin (couleurs, tables, salons, …) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/NOTES_USER.md) |
 | `SENTINELS.md` | Doc des sentinelles | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/SENTINELS.md) |
 
@@ -1646,7 +1796,7 @@ Workflows automatiques qui surveillent et corrigent en arrière-plan :
 
 ### Liens GitHub directs
 - capacitor.config.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/capacitor.config.ts
-- apex-ios-native.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/apex-ios-native.ts
+- apex-ios-native.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/integrations/apex-ios-native.ts
 - IOS_NATIVE_PORT.md : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/IOS_NATIVE_PORT.md
 - vault-export-import-roundtrip.test.ts : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/tests/unit/vault-export-import-roundtrip.test.ts
 
@@ -1761,9 +1911,9 @@ grep -rln "from.*services/X\.js'\|import('.*X\.js')" .
 
 ### Liens GitHub directs
 - workflow sync-secrets : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/sync-apex-secrets-to-cf-worker.yml
-- client proxy : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/apex-secrets-proxy-client.ts
-- auto-enable : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/proxy-auto-enable.ts
-- ai-router wire : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai-router.ts#L513
+- client proxy : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/integrations/apex-secrets-proxy-client.ts
+- auto-enable : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/integrations/proxy-auto-enable.ts
+- ai-router wire : https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/services/ai/ai-router.ts
 
 ### Sécurité auth Apex confirmée
 - Login prénom+nom obligatoire (8 tests régression `tests/unit/auth.test.ts`)
@@ -1820,10 +1970,10 @@ Source : **AgriciDaniel/claude-seo v2.0.0** (MIT, 7.3k⭐) — meilleure source 
 |---|---|---|
 | apex-ai-v13/index.html | Meta SEO+GEO (canonical, OG, Twitter, JSON-LD, noscript indexable) | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/index.html |
 | apex-ai/v13/index.html | Source (build-safe, nonce APEX_BOOT_NONCE) | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/v13/index.html |
-| apex-ai-v13/robots.txt | Crawlers IA whitelistés + sitemap | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/robots.txt |
-| apex-ai-v13/sitemap.xml | Sitemap | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/sitemap.xml |
-| apex-ai-v13/llms.txt | Description GEO pour IA | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/llms.txt |
-| apex-ai-v13/og-image.png | Aperçu social stable | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai-v13/og-image.png |
+| apex-ai-v13/robots.txt | Crawlers IA whitelistés + sitemap | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/robots.txt |
+| apex-ai-v13/sitemap.xml | Sitemap | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/sitemap.xml |
+| apex-ai-v13/llms.txt | Description GEO pour IA | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/llms.txt |
+| apex-ai-v13/og-image.png | Aperçu social stable | https://github.com/9r4rxssx64-creator/cmcteams/blob/main/apex-ai/og-image.svg |
 | .claude/legal/claude-for-legal/ | Suite Avocat/Droit (12 modules, 151 skills) | https://github.com/9r4rxssx64-creator/cmcteams/tree/main/.claude/legal/claude-for-legal |
 | .claude/skills/{seo,legal}/ | Skills SEO + orchestrateur /legal | https://github.com/9r4rxssx64-creator/cmcteams/tree/main/.claude/skills |
 
@@ -1976,7 +2126,7 @@ Tout est cliquable vers l'endroit où ça se vérifie.
 | `lingua/sources-langues.js` | Les 55 maisons de référence (académies, dictionnaires) — toutes ouvertes en vrai avant d'être affichées | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/lingua/sources-langues.js) |
 | `tools/lingua/verify-histoires.mjs` | La garde : rien sans source, planchers de contenu, sections vraiment affichées, + `--liens` qui vérifie les 153 sources, + `--semantic` le juge indépendant | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-histoires.mjs) |
 | `tools/lingua/verify-sources.mjs` | Ouvre chaque adresse officielle et écrit son état (répond / refuse les robots / morte) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/lingua/verify-sources.mjs) |
-| `.github/workflows/lingua-sources.yml` | L'ouvrage qui teste tout ça pour de vrai (1×/semaine + à la demande) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/lingua-sources.yml) |
+| `.github/workflows/lingua-sources.yml` | L'ouvrage qui teste tout ça pour de vrai (1×/semaine + à la demande) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows-desactives/lingua-sources.yml) |
 
 ## 🍎 App Store — outils installés le 2026-08-13 (Claude Code + Apex)
 

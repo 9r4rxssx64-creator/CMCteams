@@ -26,7 +26,9 @@ export function isTrustedOrigin(origin) {
     const u = new URL(origin);
     const h = u.hostname;
     if (h === 'kd-mc.com' || h.endsWith('.kd-mc.com')) return true;
-    if (h === '9r4rxssx64.github.io') return true; // GitHub Pages
+    /* GitHub Pages : le vrai hôte est 9r4rxssx64-creator.github.io (CMCteams y est servi) —
+       l'ancien nom sans « -creator » est gardé par sécurité, mais seul ne laissait RIEN passer. */
+    if (h === '9r4rxssx64.github.io' || h === '9r4rxssx64-creator.github.io') return true;
     if (h === 'localhost' || h === '127.0.0.1') return true; // dev local
     return false;
   } catch (_) {
@@ -68,6 +70,10 @@ function err(message, status, origin, detail) {
 // ---------- KEYLESS : APIs gratuites sans clé (relais CORS) ----------
 // Chaque entrée construit l'URL upstream depuis les query params. AUCUNE invention de
 // données : on relaie l'upstream tel quel. Gratuit + anonyme → accessible aux origines '*'.
+/* Kevin 2026-09-05 « Qwen l'IA gratuite en principal… pareil dans mes autres projets » :
+   le routage IA commun du domaine (Qwen Workers AI d'abord, bascule par type de question). */
+import { routeText, routeSmart, analyseQuestion, detectDomain, routingStatus, DOMAIN_PREFERENCES, QWEN_MODELS } from '../_shared/ia-route.js';
+
 export const KEYLESS = {
   // Météo (anticiper l'affluence casino — Convention SBM art.17.6).
   // /weather?lat=43.74&lon=7.42&daily=temperature_2m_max,precipitation_sum
@@ -236,6 +242,12 @@ async function handleReputation(request, env, origin) {
 // clé absente = moteur simplement sauté (voir handleAi : skipped 'no_key').
 // Mêmes adresses et mêmes modèles que le worker Créa Studio, pour n'avoir
 // qu'UNE seule vérité (un test de parité le vérifie).
+// Kevin 2026-09-05 « Qwen l'IA gratuite en principal… bascule automatiquement sur la plus
+// pertinente… pareil dans mes autres projets » : /ai passe d'abord par le ROUTAGE COMMUN
+// (services/_shared/ia-route.js : Qwen Workers AI 0 clé en tête des questions courantes,
+// Anthropic pour code/raisonnement/actions, Gemini vision, Perplexity recherche), puis par
+// cette chaîne historique en secours (paliers gratuits à clé, ordre INCHANGÉ — garde
+// test:apis-paliers), puis Workers AI llama en tout dernier.
 export const AI_CHAIN = [
   'gemini', 'groq', 'openrouter', 'mistral', 'cohere', 'deepseek', 'together', 'xai',
   'perplexity', 'cerebras', 'nvidia', 'sambanova', 'huggingface', 'scaleway', 'nebius', 'glm', 'qwen',
@@ -338,12 +350,49 @@ async function handleAi(request, env, origin) {
   } catch (_) {
     return err('body JSON invalide', 400, origin);
   }
+  // POST /ai/analyse { text } — la CONCERTATION D'ANALYSE seule (Kevin 2026-09-06) : plusieurs
+  // voix gratuites classent la question (vote), pour qu'une app décide AVANT d'appeler un moteur.
+  if (new URL(request.url).pathname.replace(/\/+$/, '') === '/ai/analyse') {
+    const text = String((opts && (opts.text || (Array.isArray(opts.messages) && opts.messages.length && opts.messages[opts.messages.length - 1].content))) || '');
+    if (!text.trim()) return err('text requis', 400, origin);
+    const a = await analyseQuestion(env, text);
+    return json(Object.assign({ ok: true }, a), 200, origin);
+  }
   if (!opts || !Array.isArray(opts.messages) || !opts.messages.length) {
     return err('messages[] requis', 400, origin);
   }
-  // Provider forcé, sinon chaîne de failover.
-  const chain = opts.provider ? [opts.provider] : AI_CHAIN;
   const tried = [];
+  // 1) Routage commun du domaine (sauf provider forcé « à l'ancienne ») : Qwen Workers AI
+  //    d'abord pour les questions courantes, bascule par TYPE de question sinon.
+  //    Kevin 2026-09-06 « concertation d'IA gratuites pour analyser les questions, va plus
+  //    loin » : le type est VOTÉ par plusieurs voix gratuites (analyse:'concert', défaut) et
+  //    une question difficile est répondue par un CONSEIL de voix + juge gratuit (council:'auto').
+  const forced = opts.provider && opts.provider !== 'workers-ai' && opts.provider !== 'qwen-cf';
+  if (!forced) {
+    const domain = (opts.domain && DOMAIN_PREFERENCES[opts.domain]) ? opts.domain : undefined;
+    const routed = await routeSmart(env, {
+      messages: opts.messages,
+      domain,
+      analyse: opts.analyse === 'regex' ? 'regex' : 'concert',
+      council: opts.council === false ? false : (opts.council === true ? true : 'auto'),
+      maxTokens: Math.min(4000, Math.max(50, parseInt(opts.max_tokens, 10) || 800)),
+      temperature: typeof opts.temperature === 'number' ? opts.temperature : 0.7,
+      premium: !!opts.premium,
+      timeoutMs: 20000,
+    });
+    if (routed.ok) {
+      return json({
+        ok: true, provider: routed.provider, model: routed.model, domain: routed.domain, text: routed.text,
+        analyse: routed.analyse ? { by: routed.analyse.by, votes: routed.analyse.votes, complexity: routed.analyse.complexity, needs_tools: routed.analyse.needs_tools } : null,
+        voices: routed.voices || null, judge: routed.judge || null, tried: routed.tried,
+      }, 200, origin);
+    }
+    tried.push(...(routed.tried || []));
+  }
+  // 2) Secours historique : chaîne des paliers gratuits à clé (ceux que le routage commun
+  //    ne connaît pas : cohere, together, nvidia…), sans re-tenter ce qui vient d'échouer.
+  const already = new Set(tried.map((t) => t.provider));
+  const chain = forced ? [opts.provider] : AI_CHAIN.filter((p) => !already.has(p));
   for (const provider of chain) {
     const key = env[secretName(provider)];
     if (!key) {
@@ -368,9 +417,9 @@ async function handleAi(request, env, origin) {
   }
   // Fallback ULTIME sans AUCUN compte provider externe ni KYC : Cloudflare Workers AI
   // (binding env.AI). Marche même si zéro clé externe n'est configurée.
-  if (env.AI && (!opts.provider || opts.provider === 'workers-ai')) {
+  if (env.AI && (!opts.provider || opts.provider === 'workers-ai' || opts.provider === 'qwen-cf')) {
     try {
-      const model = opts.model || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+      const model = (opts.provider === 'qwen-cf' ? QWEN_MODELS[0] : opts.model) || '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
       const out = await env.AI.run(model, { messages: opts.messages });
       const text = (out && (out.response || (out.result && out.result.response))) || '';
       if (text) return json({ ok: true, provider: 'workers-ai', model, text }, 200, origin);
@@ -385,6 +434,7 @@ async function handleAi(request, env, origin) {
 // Nom de secret EXACT (leçon "noms secrets matchent exactement").
 export function secretName(provider) {
   const map = {
+    anthropic: 'ANTHROPIC_API_KEY', // 2026-09-05 : secours « le plus pertinent » (code/raisonnement/actions)
     gemini: 'GEMINI_API_KEY',
     groq: 'GROQ_API_KEY',
     openrouter: 'OPENROUTER_API_KEY',
@@ -526,6 +576,9 @@ export default {
           keyless: Object.keys(KEYLESS).concat(['geoip', 'pwned', 'iban', 'vat', 'rss']),
           keyed: ['ai', 'search', 'finance', 'images', 'printify', 'reputation'],
           workers_ai: !!env.AI,
+          /* Kevin 2026-09-05 : qui répond en premier pour chaque type de question (Qwen gratuit
+             en principal, Anthropic code/raisonnement/actions, Gemini vision…) — honnête, mesuré. */
+          ia_routing: routingStatus(env),
           keys: keyStatus(env),
           ts: Date.now(),
         },

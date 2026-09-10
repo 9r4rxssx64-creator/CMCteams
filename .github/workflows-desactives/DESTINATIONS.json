@@ -100,10 +100,9 @@
     },
     {
       "f": "workers-health-check.yml",
-      "vers": "gitlab",
+      "vers": "worker",
       "quoi": "état de santé des Workers",
-      "raison": "surveillance périodique",
-      "job_gitlab": null
+      "raison": "repris par le même worker services/kdmc-uptime, qui sonde déjà le /health des workers critiques dans le même passage horaire — un second job n'apporterait rien et coûterait des minutes"
     },
     {
       "f": "external-apis-health.yml",
@@ -114,10 +113,9 @@
     },
     {
       "f": "uptime-monitor.yml",
-      "vers": "gitlab",
+      "vers": "worker",
       "quoi": "surveillance de disponibilité",
-      "raison": "surveillance périodique",
-      "job_gitlab": null
+      "raison": "une sonde horaire coûterait ~360 min/mois sur les 400 de GitLab (175 déjà prises en 4 jours) : impossible. Le cron Cloudflare est hors quota → services/kdmc-uptime, qui couvre les 26 sous-domaines (l'ancienne sonde n'en voyait que 13)"
     },
     {
       "f": "cdn-dependency-watch.yml",

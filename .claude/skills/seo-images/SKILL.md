@@ -106,7 +106,7 @@ In November 2025, Google's Chromium team reversed its 2022 decision and announce
 
 #### Detected lazy-loader methods (`lazy_method` field)
 
-`scripts/parse_html.py` classifies each image's lazy-loading mechanism via the
+`.claude/skills/seo/scripts/parse_html.py` classifies each image's lazy-loading mechanism via the
 `lazy_method` field on every image entry. Five values:
 
 | `lazy_method` | Signal detected | Common stack |
@@ -321,13 +321,13 @@ https://developers.google.com/search/docs/fundamentals/ai-optimization-guide
 
 ```bash
 # Audit a directory for the IPTC label (counts: missing, ai, captured, etc.)
-python scripts/iptc_ai_label.py audit ./images/ --json
+python .claude/skills/seo/scripts/iptc_ai_label.py audit ./images/ --json
 
 # Audit a single image
-python scripts/iptc_ai_label.py audit ./hero.webp --json
+python .claude/skills/seo/scripts/iptc_ai_label.py audit ./hero.webp --json
 
 # Inject the AI label into an image
-python scripts/iptc_ai_label.py inject ./ai-hero.webp \
+python .claude/skills/seo/scripts/iptc_ai_label.py inject ./ai-hero.webp \
     --source-type trainedAlgorithmicMedia
 
 # Other vocabulary values:

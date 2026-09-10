@@ -25,6 +25,12 @@ name = "apex-chat-api"
 main = "api-worker.js"
 compatibility_date = "2026-04-27"
 compatibility_flags = ["nodejs_compat"]
+
+# Kevin 2026-09-05 « Qwen l'IA gratuite en principal, pareil dans mes autres projets » :
+# Workers AI (binding AI, 0 clé, 0 €) répond aux questions courantes (chat, résumé,
+# traduction, réponses rapides) ; Anthropic/Groq/Gemini restent en bascule/secours.
+[ai]
+binding = "AI"
 # v1.1.122 fix Kevin "Load failed" : workers_dev=true active l'URL par défaut
 # https://apex-chat-api.<account-subdomain>.workers.dev (sinon Worker déployé
 # mais non joignable car [[routes]] cassé avec zone_name vide).
