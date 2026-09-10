@@ -1644,6 +1644,12 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
     `lingua-voix`, `lingua-connexion`, `router-secours`, `tools/departs/verify-xss-delegation.mjs`.
     Chacun : reproduire, cause racine, fix ou reclassement honnête avec preuve.
 
+18. ✅ **FAIT 10.09** — les 7 gardes du dépôt public (no-pin-leak, depot-public-sain,
+    secret-jamais-persiste, documents-travail, destinations-workflows, wrangler-assets,
+    pipeline-sessions) **tournent enfin sur GitHub** : job `gardes-depot-public` dans
+    `tests.yml` (PR vers main + main, node seul, ~20 s). Avant : câblées dans `test:ci`, que
+    seul le job GitLab lance (mesure m049 de cmcteams-pdf) — donc jamais sur une PR.
+
 ### 👤 Ce que les AUTRES sessions attendent de Kevin (vu au registre, pour ne rien perdre)
 14. 👤 **domain-kdmc** : accès au compte Cloudflare « 9r4 » (verrouillé derrière GitHub).
 15. 👤 **la-detente** : combien de gilets, et broderie logo seul ou logo + prénoms ?
