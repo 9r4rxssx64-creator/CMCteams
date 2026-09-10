@@ -341,7 +341,28 @@ var VIEWER="";try{var _vw=localStorage.getItem("arbre_viewer");if(_vw)VIEWER=_vw
 function viewerId(){return (VIEWER&&P(VIEWER))?VIEWER:null;}
 function setViewer(id){VIEWER=id;try{localStorage.setItem("arbre_viewer",id);}catch(e){}}
 function textOnly(db){var c={persons:{},meta:db.meta};for(var id in db.persons){var p=db.persons[id],q={};for(var k in p)if(k!=="photos"&&k!=="docs")q[k]=p[k];q.photoCount=(p.photos||[]).length;q.docCount=(p.docs||[]).length;if(p.actes)q.actes=p.actes.map(function(a){return {label:a.label,by:a.by,ts:a.ts,img:(a.img&&a.img.length<200000)?a.img:undefined};});c.persons[id]=q;}return c;}
-async function saveLocal(){DB.meta.updatedAt=now();await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}}
+/* v3.19 — UN COUPLE SE NOTE DES DEUX CÔTÉS, sinon il ne s'affiche pas.
+   Le lien de conjoint est stocké dans la fiche de CHACUN. S'il n'est écrit que d'un côté
+   (import d'un fichier, fiche saisie à la main, synchro partielle), l'agencement place la
+   personne SEULE : le couple existe dans les données mais pas à l'écran, et rien ne le
+   signale. On répare à chaque sauvegarde, dans un seul sens : on AJOUTE le lien manquant.
+   On ne RETIRE jamais un conjoint dont la fiche est absente — pendant une synchro elle
+   peut simplement ne pas être encore arrivée, et l'effacer perdrait le lien pour de bon. */
+function normaliserConjoints(){
+  var ps=DB.persons,n=0;
+  for(var id in ps){
+    var p=ps[id];if(!p)continue;
+    if(!p.conjoints){p.conjoints=[];continue;}
+    var vus={},propre=[];
+    p.conjoints.forEach(function(c){if(c&&c!==id&&!vus[c]){vus[c]=1;propre.push(c);}});   // doublons + auto-lien
+    if(propre.length!==p.conjoints.length){p.conjoints=propre;n++;}
+    propre.forEach(function(c){var q=ps[c];if(!q)return;                                  // fiche absente : on attend, on n'efface pas
+      q.conjoints=q.conjoints||[];
+      if(q.conjoints.indexOf(id)<0){q.conjoints.push(id);q.updatedAt=now();n++;}});
+  }
+  return n;
+}
+async function saveLocal(){normaliserConjoints();DB.meta.updatedAt=now();await idbSet("tree",DB);try{localStorage.setItem("arbre_v2_text",JSON.stringify(textOnly(DB)));}catch(e){}}
 async function loadLocal(){var d=await idbGet("tree");if(d&&d.persons){DB=d;return true;}try{var t=JSON.parse(localStorage.getItem("arbre_v2_text")||"null");if(t&&t.persons){DB=t;return true;}}catch(e){}return false;}
 
 /* ---------- cloud sync (anon Firebase, fail-open, temps réel) ---------- */

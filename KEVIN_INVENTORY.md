@@ -89,6 +89,15 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 👨‍👩‍👧 Arbre — ajouter la famille de Marie-France (Kim, Déborah, sa fille) — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-ajout-marie-france.json` *(envoyé dans la conversation, **hors dépôt** — aucun nom réel dans le code public)* | Le petit fichier à importer sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Il ajoute Kim LORENZI (époux), Déborah (leur fille) et la fille de Déborah. Il ne contient **que** ces trois personnes : la fiche de Marie-France n'est pas touchée, donc ses photos et ses actes sont conservés. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (`normaliserConjoints`) | Un couple noté d'un **seul** côté s'affichait comme deux personnes séparées. Réparé à chaque sauvegarde : le lien manquant est **ajouté** en miroir, jamais effacé (une fiche pas encore synchronisée n'est pas supprimée). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-ajout-famille.mjs` | Vérifie en **vrai navigateur** sur la famille synthétique (0 donnée réelle) que l'import ajoute sans rien écraser, que le couple s'affiche, que l'enfant est sous ses deux parents et la petite-fille sous sa mère. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-ajout-famille.mjs) |
+| `tools/arbre/mesure-couples.mjs` | Mesure (pas un avis) l'écart réel entre les cartes d'un foyer, y compris avec **deux** conjointes : 222 px de pas pour une carte de 158 px → **64 px de blanc**, aucun chevauchement. Vérifie aussi qu'un enfant ajouté n'est pas rattaché d'office au mauvais parent. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/mesure-couples.mjs) |
+
 ## 🔗 Arbre v3.19 — « à relier » : les branches qui flottent enfin nommées — session 2026-09-10
 
 | Fichier | À quoi ça sert | Liens |

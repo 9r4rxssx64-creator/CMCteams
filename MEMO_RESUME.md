@@ -1,5 +1,42 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 (nuit) — Ajouter la famille de Marie-France sans toucher à sa fiche
+
+Demande de Kevin (répétée deux fois, donc c'est sa décision) : *« Marie France est marié à kim
+Lorenzi et ont Déborah comme enfant qui a 1 fille. »*
+
+- **Le fichier est prêt** — je l'ai envoyé dans la conversation : `arbre-ajout-marie-france.json`
+  (1,4 Ko). Sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Ensuite, ouvrir la fiche
+  de Marie-France : Kim doit apparaître à côté d'elle, Déborah en dessous, sa fille encore en
+  dessous.
+- **Il ne contient QUE les trois personnes nouvelles** (Kim, Déborah, sa fille). Volontairement :
+  l'import **remplace la fiche entière** quand il reconnaît quelqu'un — renvoyer la fiche de
+  Marie-France « pour y ajouter son mari » lui aurait fait perdre ses photos, ses actes et ses
+  commentaires. Ce sont donc les nouveaux qui portent le lien vers elle.
+- **Un couple ne s'affichait pas s'il n'était noté que d'un côté.** Le lien de conjoint vit dans
+  la fiche de chacun des deux ; écrit d'un seul côté, le mariage existait dans les données mais
+  l'écran montrait deux personnes séparées, sans rien signaler. `normaliserConjoints()` répare
+  maintenant à chaque sauvegarde — il **ajoute** le lien manquant, il n'efface jamais un conjoint
+  dont la fiche n'est pas (encore) arrivée.
+- **Vérifié en vrai navigateur** sur la famille synthétique (`tools/arbre/verify-ajout-famille.mjs`,
+  0 donnée réelle) : 88 → 91 personnes, la fiche existante garde ses 11 champs, le lien d'un seul
+  côté est réparé dans les deux sens, l'ancien conjoint est conservé (remariage ≠ remplacement),
+  conjoint sur la même ligne, enfant sous ses deux parents, petite-fille sous sa mère, aucun des
+  trois ne tombe dans les « à relier », 0 erreur JS. Sabotage (retirer la réparation) → 2 échecs.
+- **Ce que je n'ai pas pu faire, et que je dis franchement** : je ne vois pas ses vraies données
+  (mesuré : `403 CONNECT` sur le domaine, aucun export privé dans le conteneur). Les identifiants
+  du fichier viennent de la dernière version que je peux lire. Le **nom de famille de Déborah** et
+  le **prénom de sa petite-fille** sont laissés **vides avec une note** : je ne les invente pas.
+- **Guy / Renée** : mesuré, ce n'est pas un problème d'espace — 222 px de pas pour une carte de
+  158 px, soit **64 px de blanc**, aucun chevauchement nulle part
+  (`tools/arbre/mesure-couples.mjs`). En revanche j'ai trouvé un vrai défaut à côté : un enfant
+  ajouté à quelqu'un ayant eu **deux unions** était rattaché d'office au premier conjoint de la
+  liste — une fois sur deux au mauvais parent, en silence. Corrigé : le second parent n'est
+  pré-rempli que s'il n'y a **aucun** doute.
+- Leçon **#255**.
+
+---
+
 ## 10 septembre 2026 (soir) — Arbre v3.19 : les « orphelins » n'étaient pas ceux qu'on croit
 
 Demande de Kevin : *« as-tu attribué les orphelins ? tous, chaque arbre ? organise au plus clair.
