@@ -6,6 +6,36 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 (soir) — « l'app a déjà septembre mais trop d'erreurs » : le téléphone de Kevin gardait l'ANCIEN import — remplacement automatique livré, et un P0 trouvé en passant (v9.898)
+
+### Le problème réel
+La correction du matin (v9.897, équipes lues dans le récapitulatif) vivait dans le dépôt, mais
+**pas sur le téléphone de Kevin** : septembre y avait été importé avec l'ancien parseur, et la
+règle « données live = priorité absolue » interdisait au seed vérifié de le remplacer. Mes docs
+disaient « plus rien à faire » (6.09) — faux, corrigé dans `KEVIN_ACTIONS_TODO.md` §3.
+
+### Ce qui est livré (v9.898)
+| Quoi | Où | Preuve |
+|---|---|---|
+| Le seed porte la version de son parseur (`parser: "v9.898"`) | `tools/shared/_gen-seed.mjs` → `planning-seed.js` | régénéré, mêmes 8 515 / 8 707 cellules |
+| Chaque import écrit `parserVersion` | `index.html` (refData) | — |
+| Un mois live importé par un parseur **plus ancien** est remplacé : ancien **archivé V1** (restaurable dans Import → versions), **édits manuels conservés**, identifiants temporaires retrouvés par le nom, `cmc_ov`/`cmc_e`/`cmc_ref_` **poussés à Firebase**, marqueur idempotent, toast explicite | `_cmcApplyPlanningSeed` + `_cmcSeedReplaceInfo` + `_cmcSeedMarkApplied` | `npm run test:seed-remplace` : **22/22**, A/B/C/D |
+| Import fait par un parseur au moins aussi récent → **conservé** (real import wins) | idem | scénario C |
+| **P0 leçon #246** : le nettoyage de boot supprimait les codes **chef** « 20/5c » (jamais persistés) à CHAQUE ouverture et poussait le mois amputé à Firebase — **3 103 cellules perdues en un boot** sur un septembre importé | `_cmcBootRegisterCode` + codes chef persistés à l'import | scénario B : 1 076/1 076 codes chef conservés ; sabotage → 0/1 076 |
+
+Le test simule **l'appareil de Kevin** (flags `cmc_dver=30`, `cmc_v706_total_wiped=1`) : un
+contexte neuf est wipé au 1er boot et donnait un faux vert. Deux sabotages prouvent que la garde
+est discriminante (ancien nettoyage → 4 échecs ; remplacement désactivé → 4 échecs).
+
+### Ce que Kevin verra
+À la prochaine ouverture après la mise à jour : un message « Planning Septembre 2026 remplacé par
+la version vérifiée (8 515 cellules, ancien … archivé en V1, restaurable) », puis les bonnes
+équipes et les bons horaires — chefs compris — qui **restent** après redémarrage.
+
+### Reste
+PR de la branche à fusionner par le robot (v9.897 était encore ouverte en #3731 à 17h48 UTC), puis
+déploiement GitHub Pages. Leçons #246-247 dans `LESSONS.md`.
+
 ## 10 septembre 2026 (suite) — « il y a des erreurs, personnes dans les mauvaises équipes » : VÉRIFIÉ EN RÉEL contre SEPTEMBRE et OCTOBRE, corrigé, 0 écart des deux côtés
 
 ### Ce que Kevin a signalé, et ce que j'ai mesuré

@@ -837,6 +837,15 @@
       "corps": "Mesuré avant (tests/verify-pdf-equipes.mjs, nouveau) : 41 (oct) · 56 (sept) · 81 (août) · 113 (juil) personnes dans une mauvaise équipe côté CMCteams, +5 côté light, miroirs faux, aucun test ne le voyait. Cause : les équipes étaient DEVINÉES (repos+codes) alors que la page 1 du PDF SBM les écrit bloc par bloc. v9.897 : _cmcDetectTeamsByRecap (autorité, verrouille, persiste cmc_recap_teams) — équipes 1-12 / r1-r12 / c1-c12 = (rangée-1)*6+colonne+1, miroir = rangée 1 <-> 2, encadrés M/CP/CSS/FORMATION -> boards d'absence, aménagement -> amenage. Les détecteurs d'horaire ne sont plus que des filets (numérotation après le plus grand numéro pris). AUSSI : fond de cellule lu par GÉOMÉTRIE (l'ancien « dernier rectangle dessiné » contaminait la 1re ligne de chaque section -> CASSINI A / MOREL F sans planning, leçon #242 close) ; échelle couleurs 0-255 corrigée ; les tags {{CP}}/{{RH}}/{{R}}/{{RRT}}/{{AF}}/{{CDP}} qui FORÇAIENT un code sont retirés (invention). Résultat : cellules 100 % identiques au PDF 4 mois × 2 surfaces (cliquet vidé), 36 blocs + 18 miroirs conformes, 100 % des personnes avec équipe. Si vous lisez teamHistory / cmc_team_mirror_ / DEPARTS_GEN.mirror : la NUMÉROTATION des équipes a changé (elle suit maintenant les colonnes du PDF). Leçons #243-#245.",
       "ts": "2026-09-10 17:14",
       "etat": "ouvert"
+    },
+    {
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "ts": "2026-09-10T18:07:19Z",
+      "etat": "ouvert",
+      "id": "m060",
+      "sujet": "P0 CMCteams (v9.898) : le nettoyage de boot effaçait les codes CHEF de tout mois importé et poussait le résultat à Firebase — corrigé ; + un import périmé est remplacé par le seed vérifié",
+      "corps": "Mesuré (tests/verify-seed-remplace-import-perime.mjs) : sur un appareil déjà migré, un septembre importé perdait 3 103 cellules en UN boot (790 « 20/5c », 287 « 19/4'c », 2 014 « 14/19' » sans codes appris, 12 autres) parce que les codes chef créés à l'import n'étaient jamais persistés et que le nettoyage `if(c&&!CODES[c])delete` les jetait — puis ls(\"cmc_ov\") poussait le mois amputé à Firebase. Les mois du seed n'étaient pas touchés (appliqués après), un contexte neuf est wipé au 1er boot (v706) → aucun test ne le voyait. Fix : _cmcBootRegisterCode (dériver/apprendre au lieu de jeter) + codes chef persistés à l'import. ET : le seed porte maintenant `parser` (APP_VER), chaque import écrit cmc_ref_<mois>.parserVersion ; un mois live plus ancien que le seed est remplacé (archivé V1, édits manuels conservés, marqueur idempotent, push Firebase). Si vous testez la persistance d'un mois LIVE : plantez cmc_dver=30 + cmc_v706_total_wiped=1, sinon faux vert. Leçons #246-247."
     }
   ]
 }

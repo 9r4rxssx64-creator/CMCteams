@@ -5739,6 +5739,47 @@ try{_rebuildIndexes();}catch(_){}
 // Firebase, aucune persistance ls() qui syncerait). La détection d'équipe re-tourne
 // ensuite sur ces cellules (comme un import). Désactivable via window.__CMC_NO_SEED
 // (harness de test : on teste l'import brut, pas le seed).
+// v9.898 — Décide si un mois LIVE doit être remplacé par le seed vérifié.
+//   • S.parser = version du parseur qui a produit le seed (écrite par _gen-seed.mjs).
+//   • cmc_ref_<key>.parserVersion = version du parseur de l'import live (écrite à l'import
+//     depuis v9.898 ; absente = import ancien). ref.seedApplied = marqueur d'idempotence.
+//   Remplace si : seed versionné ET (pas de marqueur pour cette version du seed) ET
+//   (import sans version OU version < seed). Jamais si l'import est au moins aussi récent.
+function _cmcSeedVerNum(v){ var mm=/(\d+)\.(\d+)/.exec(String(v||"")); return mm?parseFloat(mm[1]+"."+mm[2]):0; }
+function _cmcSeedReplaceInfo(key,S,cur){
+  try{
+    if(window.__CMC_NO_SEED_REPLACE)return null;
+    var sv=_cmcSeedVerNum(S&&S.parser); if(!sv)return null;
+    var ref=lg("cmc_ref_"+key,null)||null;
+    if(ref&&ref.seedApplied===S.parser)return null;
+    var rv=_cmcSeedVerNum(ref&&ref.parserVersion);
+    if(rv&&rv>=sv)return null;
+    var sig=function(r){ var o={}; Object.keys(r||{}).sort().forEach(function(id){ var d=r[id]||{}, ks=Object.keys(d).filter(function(k){return d[k];}).sort(); if(ks.length){ o[id]={}; ks.forEach(function(k){o[id][k]=d[k];}); } }); return JSON.stringify(o); };
+    var curSig=sig(cur), curCells=0; Object.keys(cur||{}).forEach(function(id){ curCells+=Object.keys(cur[id]||{}).filter(function(k){return cur[id][k];}).length; });
+    return { from:(ref&&ref.parserVersion)||"", to:S.parser, oldCells:curCells, created:0, manual:0, archived:null, identical:function(row){ return sig(row)===curSig; } };
+  }catch(_){ return null; }
+}
+// Persiste le remplacement (cellules, employés, meta) + marqueur idempotent + trace + toast.
+// row=null → les cellules live étaient DÉJÀ identiques au seed : marqueur seul, silencieux.
+function _cmcSeedMarkApplied(key,S,info,row){
+  try{
+    var ym=key.split("-"), iy=parseInt(ym[0],10), im=parseInt(ym[1],10);
+    var ref=lg("cmc_ref_"+key,null)||{year:iy,month:im,rows:{},importedAt:Date.now()};
+    ref.seedApplied=S.parser; ref.parserVersion=S.parser;
+    if(row){ ref.replacedAt=Date.now(); ref.replacedFrom=info.from||"import ancien (sans version)"; ref.archivedAs=info.archived||null; }
+    ls("cmc_ref_"+key,ref);
+    if(!row)return;
+    ls("cmc_ov",A.overrides); ls("cmc_e",A.employees);
+    try{if(typeof _cmcFlushOverridesMeta==="function")_cmcFlushOverridesMeta();}catch(_){}
+    var cells=0; Object.keys(row).forEach(function(id){cells+=Object.keys(row[id]).length;});
+    var label=((typeof MFR!=="undefined"&&MFR[im])||("mois "+(im+1)))+" "+iy;
+    var msg="Planning "+label+" remplacé par la version vérifiée ("+cells+" cellules, ancien "+(info.oldCells||0)+" cellules archivé"+(info.archived?" en "+info.archived:"")+", restaurable"+(info.manual?", "+info.manual+" modification(s) manuelle(s) conservée(s)":"")+")";
+    try{if(typeof _audit==="function")_audit("seed_replace_import_perime",AID,label,info.from||"sans version",S.parser+" · "+msg);}catch(_){}
+    try{console.info("[v9.898 seed] "+msg);}catch(_){}
+    window._cmcSeedReplaced=window._cmcSeedReplaced||[]; window._cmcSeedReplaced.push({key:key,cells:cells,oldCells:info.oldCells,archived:info.archived,manual:info.manual,created:info.created,from:info.from,to:S.parser});
+    setTimeout(function(){ try{if(typeof toast==="function")toast("✅ "+msg,"ok",9000);}catch(_){} },1500);
+  }catch(e){ try{console.warn("[v9.898 seed mark]",e&&e.message);}catch(_){} }
+}
 function _cmcApplyPlanningSeed(){
   try{
     if(window.__CMC_NO_SEED)return 0;
@@ -5748,19 +5789,44 @@ function _cmcApplyPlanningSeed(){
       var m=S.months[key]; if(!m||!m.ov)return;
       var cur=A.overrides[key]||{};
       var hasLive=Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
-      if(hasLive)return; // données live (import/Firebase) = priorité absolue → on ne touche pas
-      var byId={}; A.employees.forEach(function(e){if(e&&e.id)byId[e.id]=e;});
-      (m.emps||[]).forEach(function(se){ if(!se||!se.id)return; if(!byId[se.id]){ var ne={id:se.id,name:se.name,family:se.family||"bj",teamHistory:{},familyHistory:{}}; A.employees.push(ne); byId[se.id]=ne; } });
-      var row={}; Object.keys(m.ov).forEach(function(id){ row[id]={}; Object.keys(m.ov[id]).forEach(function(d){ row[id][d]=m.ov[id][d]; }); });
+      // v9.898 (Kevin 2026-09-10 « l'app a déjà septembre mais trop d'erreurs ») — un mois LIVE
+      // importé par un parseur PLUS ANCIEN que celui qui a produit le seed vérifié est REMPLACÉ
+      // (l'ancien est archivé V1/V2… restaurable, les édits manuels de Kevin sont ré-appliqués).
+      // Un import fait avec un parseur au moins aussi récent garde la priorité (real import wins).
+      var replaceInfo=hasLive?_cmcSeedReplaceInfo(key,S,cur):null;
+      if(hasLive&&!replaceInfo)return; // données live à jour = priorité absolue → on ne touche pas
+      var byId={}, byName={}; A.employees.forEach(function(e){if(e&&e.id){byId[e.id]=e; if(e.name&&!byName[e.name])byName[e.name]=e;}});
+      // Correspondance des identifiants : un employé créé par un ancien import (U_TMP_… daté) et
+      // présent dans le seed sous un autre identifiant temporaire est retrouvé PAR SON NOM.
+      var idMap={};
+      (m.emps||[]).forEach(function(se){ if(!se||!se.id)return; if(byId[se.id]){idMap[se.id]=se.id;return;} var ex=se.name&&byName[se.name]; if(ex&&!/^P\d/.test(ex.id)){idMap[se.id]=ex.id;return;} var ne={id:se.id,name:se.name,family:se.family||"bj",teamHistory:{},familyHistory:{}}; A.employees.push(ne); byId[se.id]=ne; byName[se.name]=ne; idMap[se.id]=se.id; if(replaceInfo)replaceInfo.created++; });
+      var mid=function(id){return idMap[id]||id;};
+      var row={}; Object.keys(m.ov).forEach(function(id){ var t=mid(id); row[t]=row[t]||{}; Object.keys(m.ov[id]).forEach(function(d){ row[t][d]=m.ov[id][d]; }); });
+      if(replaceInfo){
+        if(replaceInfo.identical(row)){ _cmcSeedMarkApplied(key,S,replaceInfo,null); return; }
+        var ym=key.split("-"), iyR=parseInt(ym[0],10), imR=parseInt(ym[1],10);
+        var arch=null; try{arch=_cmcSaveVersionedHistory(iyR,imR,{system:true});}catch(_){}
+        // Édits manuels de Kevin (cmc_manual_overrides_<key>) : priorité humaine, ré-appliqués.
+        var manual=0; try{ var mo=lg("cmc_manual_overrides_"+key,null)||{}; Object.keys(mo).forEach(function(eid){ Object.keys(mo[eid]||{}).forEach(function(d){ var c=mo[eid][d]&&mo[eid][d].code; if(c){ row[eid]=row[eid]||{}; row[eid][d]=c; manual++; } }); }); }catch(_){}
+        replaceInfo.manual=manual; replaceInfo.archived=arch?arch.version:null;
+      }
       A.overrides[key]=row;
       // v9.831 — couleurs PDF à l'identique : fond rouge (convention) / écriture rouge
       // (horaire modifié), portées par la meta (comme l'import).
-      if(m.meta){ A.overrides_meta=A.overrides_meta||{}; var mrow={}; Object.keys(m.meta).forEach(function(id){ mrow[id]={}; Object.keys(m.meta[id]).forEach(function(d){ mrow[id][d]=Object.assign({},m.meta[id][d]); }); }); A.overrides_meta[key]=mrow; }
+      if(m.meta){ A.overrides_meta=A.overrides_meta||{}; var mrow={}; Object.keys(m.meta).forEach(function(id){ var t=mid(id); mrow[t]=mrow[t]||{}; Object.keys(m.meta[id]).forEach(function(d){ mrow[t][d]=Object.assign({},m.meta[id][d]); }); }); A.overrides_meta[key]=mrow; }
+      else if(replaceInfo&&A.overrides_meta&&A.overrides_meta[key]){ delete A.overrides_meta[key]; }
       if(m.mirror&&Object.keys(m.mirror).length){ try{localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror));}catch(_){} }
-      if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[id]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
+      if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
       // v9.849 — marqueur STICKY école roulette Europe (KE) : survit au wipe familyHistory
       // one-shot + à la re-dérivation, sinon la détection différée les re-team en cartes.
-      if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[id]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
+      if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
+      if(replaceInfo){
+        // Mois REMPLACÉ : l'ancienne équipe du mois (import périmé) ne doit pas survivre —
+        // elle est re-dérivée des boards vérifiés (_cmcSyncChefsTFromBoards) et du seed.
+        A.employees.forEach(function(e){ if(e&&e.teamHistory&&e.teamHistory[key]&&!/^P\d/.test(e.id))delete e.teamHistory[key]; });
+        if(m.team){ Object.keys(m.team).forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=m.team[id]; } }); }
+        _cmcSeedMarkApplied(key,S,replaceInfo,row);
+      }
       applied++;
     });
     if(applied){ try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} try{if(typeof _rebuildIndexes==="function")_rebuildIndexes();}catch(_){} console.info("[v9.824 seed] "+applied+" mois intégrés (affichage, sans écrasement ni push)"); }
@@ -5821,7 +5887,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.897";
+var APP_VER="v9.898";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9506,18 +9572,51 @@ function hardReset(){
 }());
 /* v9.783 — _postMigrationFamilies no-op supprimé (code mort vérifié) */
 // Nettoyage codes invalides dans les overrides existants (ex : "19" généré par bug de parsing)
+// v9.898 (P0 mesuré le 2026-09-10, leçon #246) — ce nettoyage SUPPRIMAIT à CHAQUE boot tout code
+// absent de CODES : les codes CHEF « 20/5c » / « 19/4'c » (créés en mémoire à l'import, jamais
+// persistés) et, sur un appareil sans codes appris, les variantes « 14/19' » et CDP « 18/2* ».
+// Mesuré : 3 103 cellules de septembre effacées en un boot (790 chef, 287 chef+apostrophe,
+// 2 014 apostrophe, 12 autres) puis POUSSÉES à Firebase → « mauvais horaires » chez Kevin.
+// Désormais : un code inconnu mais DÉRIVABLE d'un code connu (chef c / apostrophes / CDP *)
+// ou de forme horaire/lettres est ENREGISTRÉ (comme l'import l'aurait fait) ; seul un vrai
+// déchet (« 19 », chiffres seuls) est encore supprimé. Reproduction à l'identique = on ne
+// jette JAMAIS une cellule qu'un humain lit sur le PDF.
+function _cmcBootRegisterCode(c){
+  try{
+    if(!c||CODES[c])return !!CODES[c];
+    var m=String(c).match(/^(.+?)(['"]*)(\*?)(c?)$/); if(!m)return false;
+    var base=m[1], quotes=m[2], star=m[3], chef=m[4];
+    if(!CODES[base]){
+      if(/^\d{1,2}[Hh]?\d{0,2}\/\d{1,2}$/.test(base)||/^[A-Z]{1,6}$/.test(base)){ try{learnNewCode(base);}catch(_){} }
+      if(!CODES[base])return false;
+    }
+    if(base===c)return true;
+    var ent=Object.assign({},CODES[base],{learned:true});
+    if(chef)ent.chef=true;
+    if(star)ent.cdp=true;
+    if(quotes)ent.conv=false;
+    CODES[c]=ent;
+    if(typeof _learnedCodes==="object"&&_learnedCodes){ _learnedCodes[c]=ent; try{ls("cmc_learned_codes",_learnedCodes);}catch(_){} }
+    if(typeof _rebuildCK==="function")_rebuildCK();
+    return true;
+  }catch(_){return false;}
+}
 (function(){
-  var _changed=false;
+  var _changed=false,_kept=0;
   Object.keys(A.overrides).forEach(function(k){
     var empOvs=A.overrides[k]||{};
     Object.keys(empOvs).forEach(function(eid){
       var dayMap=empOvs[eid]||{};
       Object.keys(dayMap).forEach(function(d){
         var c=dayMap[d];
-        if(c&&!CODES[c]){delete dayMap[d];_changed=true;console.warn("Code invalide supprimé:",eid,"j"+d,"=",c);}
+        if(c&&!CODES[c]){
+          if(_cmcBootRegisterCode(c)){_kept++;return;}
+          delete dayMap[d];_changed=true;console.warn("Code invalide supprimé:",eid,"j"+d,"=",c);
+        }
       });
     });
   });
+  if(_kept)console.info("[v9.898 boot codes] "+_kept+" cellule(s) au code dérivé/appris conservée(s) (chef c, apostrophes, CDP *)");
   if(_changed)ls("cmc_ov",A.overrides);
 }());
 // Restaurer la session depuis localStorage avec vérification d'expiration (8h d'inactivité)
@@ -26963,8 +27062,10 @@ function _cmcShowRetryDiag(){
 //
 // Stockage : cmc_history_<year>-<month>_versioned = [{version:"V1",importedAt,snapshot,refData,verifData,pdfText,parserVersion}, ...]
 // Cap 10 versions max FIFO. Local seulement (pas Firebase, gros volume PDF text).
-function _cmcSaveVersionedHistory(iy,im){
-  if(!A.user||A.user.id!==AID)return null;
+function _cmcSaveVersionedHistory(iy,im,opts){
+  // v9.898 : opts.system=true → archivage SYSTÈME (remplacement d'un import périmé par le
+  // seed vérifié), possible même sans session admin (l'archive est locale, jamais destructrice).
+  if(!(opts&&opts.system)&&(!A.user||A.user.id!==AID))return null;
   try{
     var key=iy+"-"+im;
     var historyArr=lg("cmc_history_"+key+"_versioned",[]);
@@ -42257,7 +42358,7 @@ function doImport(){
   }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
-  var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory};
+  var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory,parserVersion:APP_VER};
   var ok=0,err=0,errLines=[],_fuzzyMatches=[]; // _fuzzyMatches = correspondances incertaines (bigram)
   var _csvParsed=false,_csvCadreMode=false;
   var importFamily="bj"; // famille courante par defaut
@@ -42483,7 +42584,7 @@ function doImport(){
             if(_chefM&&CODES[_chefM[1]]){
               var _chefCode=_chefM[1]+_chefM[2]+"c";
               if(!CODES[_chefCode]){
-                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true,learned:true});if(typeof _learnedCodes==="object"&&_learnedCodes){_learnedCodes[_chefCode]=CODES[_chefCode];ls("cmc_learned_codes",_learnedCodes);}if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){} /* v9.898 : persisté, sinon supprimé au boot suivant (leçon #246) */
               }
               _ac=_chefCode;
             }
@@ -43431,7 +43532,7 @@ function doImport(){
             if(_chefM&&CODES[_chefM[1]]){
               var _chefCode=_chefM[1]+_chefM[2]+"c";
               if(!CODES[_chefCode]){
-                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true,learned:true});if(typeof _learnedCodes==="object"&&_learnedCodes){_learnedCodes[_chefCode]=CODES[_chefCode];ls("cmc_learned_codes",_learnedCodes);}if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){} /* v9.898 : persisté, sinon supprimé au boot suivant (leçon #246) */
               }
               code=_chefCode;
             }

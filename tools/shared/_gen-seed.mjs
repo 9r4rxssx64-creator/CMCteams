@@ -88,6 +88,12 @@ async function extract(browser, pdfRel, year, monthIdx) {
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const months = {};
+  // v9.898 : la version du PARSEUR qui a produit ce seed (APP_VER lu dans la vraie page).
+  // L'app compare cette valeur à cmc_ref_<mois>.parserVersion : un import fait par un
+  // parseur plus ancien est remplacé par le seed (archivé, restaurable) ; un import au moins
+  // aussi récent garde la priorité.
+  let parser = '';
+  { const ctx = await browser.newContext(); const pg = await ctx.newPage(); await pg.addInitScript(() => { window.__CMC_NO_SEED = true; }); await pg.goto('file://' + resolve(root, 'index.html'), { waitUntil: 'domcontentloaded', timeout: 30000 }); parser = await pg.evaluate(() => String(window.APP_VER || '')); await ctx.close(); if (!/^v\d+\.\d+$/.test(parser)) throw new Error('APP_VER illisible dans index.html : ' + parser); }
   for (const tg of TARGETS) {
     const key = tg.year + '-' + tg.monthIdx;
     const r = await extract(browser, tg.pdf, tg.year, tg.monthIdx);
@@ -95,7 +101,7 @@ async function main() {
     console.log(key + ' : ' + r.emps.length + ' emps · ' + r.nCells + ' cellules · ' + Object.keys(r.team).length + ' avec équipe · ' + (Object.keys(r.mirror).length / 2) + ' miroirs · ' + r.ecole.length + ' école→roulettes');
   }
   await browser.close();
-  const payload = { version: '2026-06-28', months };
+  const payload = { version: '2026-06-28', parser, months };
   const js = '/* SEED planning CMCteams — GÉNÉRÉ par tools/shared/_gen-seed.mjs depuis les vrais PDF\n'
     + '   (même source que la page Départs). NE PAS éditer à la main. Appliqué en affichage\n'
     + '   par l\'app pour les mois sans données live (jamais d\'écrasement). */\n'

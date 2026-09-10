@@ -1,7 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
+> Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
+
+### 10 septembre 2026 (soir) — ton ancien septembre est remplacé tout seul, et les horaires des chefs ne disparaissent plus au redémarrage
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/verify-seed-remplace-import-perime.mjs` | **Nouveau.** Simule ton téléphone (ancien septembre importé) et prouve dans un vrai navigateur que la version vérifiée le remplace (ancien archivé V1, tes modifications manuelles gardées), qu'un import récent est respecté, et que les codes chef survivent au redémarrage. 22 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-seed-remplace-import-perime.mjs) |
+| `index.html` (v9.898) | Modifié : remplacement automatique d'un mois importé par un parseur plus ancien que le seed vérifié + correction du nettoyage de boot qui effaçait les horaires des chefs (« 20/5c ») à chaque ouverture. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/index.html) |
+| `tools/shared/_gen-seed.mjs` + `planning-seed.js` | Modifié : le seed porte la version du parseur qui l'a produit (`parser`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/shared/_gen-seed.mjs) |
+| `LESSONS.md` #246-247 | Le P0 du nettoyage de boot et la règle « import périmé remplacé ». | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
 
 ### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
 
