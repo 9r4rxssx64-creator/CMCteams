@@ -6,6 +6,42 @@
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 (soir) — Ménage des branches : l'outil, et la correction de ce que j'avais écrit le matin
+
+**Le matin**, j'avais écrit dans `ETAT-INFRA.md` qu'un « repli par comparaison d'arbres » suffirait
+à reconnaître les 314 branches sans ancêtre commun. **Codé et mesuré, ce critère donne 0 branche
+sur 385.** C'était faux, et c'est corrigé sur place.
+
+**Pourquoi c'était faux** : `git diff` répond « différent », pas « plus ancien ». Une branche d'août
+diffère de `main` **parce qu'elle est vieille**. Mesuré : 568 fichiers ajoutés / 378 modifiés, dont
+seulement 30 ajouts hors sortie de compilation.
+
+**Ce qui marche** — `node tools/menage/branches-superflues.mjs` ne demande plus « la branche
+diffère-t-elle ? » mais **« quel fichier disparaîtrait si on la supprimait ? »**, en écartant trois
+faux positifs mesurés : fabriqué (empreinte de build dans le nom), déplacé à contenu identique,
+déplacé à contenu retouché. Ce troisième filtre est indispensable : les 223
+`apex-ai/v13/services/*.ts` « uniques » d'une branche d'août sont en réalité **rangés en
+sous-dossiers** dans `main` — sans lui, l'outil annonce la perte de tout Apex v13. Je m'y suis
+laissé prendre avant de vérifier.
+
+**Résultat** : 385 branches → **2 sans aucune perte possible**, et surtout **190 fichiers distincts**
+à relire UNE fois (`--fichiers`, liste écrite dans `pipeline/fichiers-uniquement-sur-branches.txt`)
+au lieu de trancher 321 branches. 121 sont un lot marketing tiers, ~10 les crons retirés après la
+suspension GitHub, le reste des médias et documents anciens.
+
+**Limite écrite noir sur blanc** : un fichier seulement *modifié* ne retient pas la branche — or un
+correctif jamais fusionné ressemble à ça (le correctif Lingua du 5.09 était exactement ce cas).
+D'où le seuil de 30 jours et l'immunité des branches inscrites au registre.
+
+**Garde** : `npm run test:menage-branches` (12 OK / 0 FAIL), câblée dans `test:ci`. Elle fabrique un
+dépôt de test avec les 7 cas, dont **une branche orpheline au contenu identique** — celle que
+`--is-ancestor` ne voit pas — et le contrepoint qui prouve qu'elle mord.
+
+**Rappel** : la suppression reste refusée par le ruleset `16725169` (condition `~ALL`). Un seul
+geste de Kevin la débloque : `~ALL` → `~DEFAULT_BRANCH`.
+
+---
+
 ## 10 septembre 2026 — « continu » : les fichiers de planning étaient tirés au sort, et ça cachait une MAUVAISE ÉQUIPE
 
 ### Ce qui a été trouvé (et pourquoi c'est important)

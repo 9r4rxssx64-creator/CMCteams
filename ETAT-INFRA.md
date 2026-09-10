@@ -756,7 +756,32 @@ générateurs vidéo) ou fichiers fabriqués par un workflow. Le seul doute, `ar
 `lingua/app.js`, est une ligne de **commentaire** : `node tools/lingua/verify-assets.mjs` passe sur
 `main` (« aucun fichier demandé dans le vide »).
 
-**À faire quand la règle sera levée** : donner au ménage un **repli par comparaison d'arbres**
-(`git ls-tree` branche vs `main` + `git diff` sur les fichiers communs), sinon il continuera à
-garder 314 branches vides. Méthode reproductible : pour chaque branche, si `merge-base` est vide,
-comparer les arbres ; une branche dont aucun fichier ne diffère de `main` est supprimable.
+**⚠️ CORRECTION du 10.09 (soir) — la phrase qui suivait ici était FAUSSE.** J'avais écrit
+qu'un « repli par comparaison d'arbres » suffirait : *une branche dont aucun fichier ne diffère de
+`main` est supprimable*. Codé et mesuré, ce critère donne **0 branche sur 385** — inutile. Raison :
+`git diff` répond « différent », pas « plus ancien ». Une branche d'août diffère de `main` **parce
+qu'elle est vieille**. Mesuré sur `claude/lingua-stories-langs-1` : 568 `A` / 378 `M`, dont
+seulement 30 `A` hors sortie de compilation.
+
+**Ce qui marche, et qui est livré** : `node tools/menage/branches-superflues.mjs`. Il ne demande
+pas « la branche diffère-t-elle ? » mais **« quel FICHIER disparaîtrait si on la supprimait ? »**,
+en écartant trois faux positifs mesurés ici :
+1. **fabriqué** — `apex-ai-v13/chunks|core|assets` : le nom porte une empreinte de build, « nouveau »
+   à chaque compilation (37 120 des 37 871 fichiers absents de `main`) ;
+2. **déplacé, même contenu** — l'empreinte du fichier existe ailleurs dans `main` ;
+3. **déplacé, contenu retouché** — le NOM existe ailleurs dans `main`. Indispensable : les 223
+   `apex-ai/v13/services/*.ts` « uniques » d'une branche d'août sont en réalité **rangés en
+   sous-dossiers** dans `main` (`services/vault.ts` → `services/vault/…`). Sans ce troisième
+   filtre, l'outil crie à la perte de tout Apex v13 — je m'y suis laissé prendre.
+
+**Résultat mesuré le 10.09** : 385 branches → **2 sans aucune perte possible**, 319 retenues par
+**190 fichiers distincts** qui n'existent nulle part ailleurs. C'est ça, le vrai travail restant :
+**relire UNE liste de 190 fichiers** (121 = un lot marketing tiers, ~10 = les crons retirés après
+la suspension GitHub, le reste = médias et documents anciens) au lieu de trancher 321 branches.
+`node tools/menage/branches-superflues.mjs --fichiers` imprime cette liste.
+
+**Limite assumée, écrite noir sur blanc** : un fichier seulement *modifié* (`M`) ne retient pas la
+branche. Un `M` peut pourtant être un correctif jamais fusionné — le correctif Lingua du 5.09 était
+exactement ça. Aucune comparaison de contenu ne sait distinguer « version périmée » de « correctif
+oublié » quand l'histoire commune a disparu : c'est pourquoi le seuil est de **30 jours** et que
+les branches inscrites au registre sont intouchables. Garde : `npm run test:menage-branches`.
