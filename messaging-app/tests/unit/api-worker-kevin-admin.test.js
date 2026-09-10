@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { consolidateKevinIntoAdmin } from '../../workers/api-worker.js';
 
-const PHONE = '+33672280277';
+const PHONE = '+33600000001';
 
 function makeEnv(state) {
   const DB = {
@@ -106,7 +106,7 @@ describe('consolidateKevinIntoAdmin (v1.1.194)', () => {
     const state = {
       users: [
         { id: 'kdmc_admin', phone: 'PLACEHOLDER_EVIN', is_admin: 1, status: 'active' },
-        { id: 'lolo', phone: '+33640616184', is_admin: 0, status: 'active' },
+        { id: 'lolo', phone: '+33600000010', is_admin: 0, status: 'active' },
       ],
       members: [
         { conv_id: 'c1', user_id: 'lolo', role: 'owner' },

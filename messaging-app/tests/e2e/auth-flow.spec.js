@@ -22,7 +22,7 @@ test.describe('Apex Chat — Auth flow OTP', () => {
     const phoneInput = page.locator('input[type="tel"]').first();
     if (await phoneInput.count() === 0) test.skip();
 
-    await phoneInput.fill('+33672280277');
+    await phoneInput.fill('+33600000001');
     await page.waitForTimeout(300);
     const cgu = await page.evaluate(() => {
       try { return JSON.parse(localStorage.getItem('apex_chat_cgu_v1') || 'null'); } catch { return null; }

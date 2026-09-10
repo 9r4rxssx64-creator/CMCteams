@@ -28,6 +28,10 @@
      suite de tests soit de nouveau déclarée « lancée » ou « dormante » sur un simple mot.
 - **J'ai créé l'outil** pour que ça ne se reperde jamais : `tools/ci/ci.mjs` — je lance,
   je suis, et je lis la cause exacte d'un échec, sans dépendre d'un logiciel absent.
+- **Ton numéro de téléphone ne figure plus nulle part dans le dépôt** (il y était 113 fois, dans
+  12 fichiers de test, et dans le garde censé l'empêcher d'apparaître). Remplacé partout par des
+  numéros inventés, sans que je l'affiche une seule fois ; le garde vérifie maintenant
+  « aucun numéro réel, quel qu'il soit », au lieu de connaître le tien. 1115 tests toujours verts.
 - **Deuxième mur, même soir** : le scan de sécurité « arsenal » a fini vert… mais son rapport
   est rangé à un endroit que je ne peux pas atteindre d'ici (refus 403, mesuré). Un rapport
   qu'on ne peut pas lire n'existe pas. Correctif : les deux scans de sécurité (arsenal +

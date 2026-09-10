@@ -403,7 +403,7 @@ changent pas) ; la seule chose qui change, c'est qu'un test rouge devient vert p
 
 - **Axe** : Vie privée (plus sécurité)
 - **Fichiers** : `messaging-app/tests/unit/*.js` (11) + `tests/e2e/auth-flow.spec.js`
-- **Statut** : ✅ VÉRIFIÉ (`grep -rln`) · **partiellement traité** le 10/09
+- **Statut** : ✅ VÉRIFIÉ (`grep -rln`) · ✅ **CORRIGÉ le 10/09 (soir)** — plus aucun numéro réel dans le dépôt
 
 **Ce que ce n'est PAS** : ce n'est plus une faille. Depuis v1.1.284, connaître ce numéro
 n'ouvre **aucune** porte — l'admin exige une preuve serveur (`X-Apex-Admin-Token` ou SSO
@@ -419,18 +419,25 @@ intrusion dans l'app.
 supprimé depuis, elle a été corrigée en même temps). ✅ Vérifié : **plus aucun `.md`** du
 dépôt ne contient le numéro.
 
-**Reste à faire — délibérément pas fait dans cette passe** : les 12 fichiers de test l'utilisent
-comme donnée de scénario (ils testent justement le chemin admin). Les modifier, c'est toucher
-**12 fichiers d'une suite verte à 1115/1115** pour un gain de confidentialité, pas de sécurité.
-Le faire à la fin d'une passe d'audit, sans nécessité, c'est prendre un risque de régression
-contre un bénéfice modeste — l'inverse de « jamais régresser ».
+**Fait le 10/09 au soir (à froid, suite verte avant et après)** :
+- **113 occurrences** du numéro, sous 4 formes, dans **12 fichiers** de test → remplacées par un
+  analogue **fictif de même forme** (`+33600000001`, `0600000001`…), de façon programmatique :
+  le vrai numéro n'a jamais été affiché ni écrit pendant l'opération. Les 1115 tests restent verts
+  (le format `0X → +33X` est conservé, donc les tests de normalisation aussi).
+- Deux autres numéros de fixture **ne ressemblaient pas** à des valeurs synthétiques (pas de
+  suite de zéros, pas de répétition). Impossible de savoir s'ils étaient réels ; traités comme
+  s'ils l'étaient → remplacés (`+33600000010`, `+33600000020`). Coût : nul. Bénéfice si c'était
+  vrai : une personne de moins publiée.
+- **Le garde lui-même publiait ce qu'il protégeait** : `no-admin-phone-in-page.test.js` portait le
+  vrai numéro sous 4 formes pour vérifier qu'il n'était pas dans la page. Réécrit : il refuse
+  **tout** numéro dans `index.html` hors 5 exemples pédagogiques faux, et **tout** numéro dans
+  `tests/` hors la liste des fixtures synthétiques — sans jamais connaître un vrai numéro. Prouvé
+  discriminant (un numéro inconnu → échec, masqué à 5 caractères dans le message).
+- Vérification finale : scan de tout `messaging-app/` (code, tests, docs, config) → **0 fichier**
+  contenant une forme du numéro. Les vrais numéros vivent en secrets Cloudflare
+  (`KEVIN_PHONE_E164`, `LAURENCE_PHONE_E164`), jamais dans le dépôt.
 
-**Correctif recommandé (étape séparée, à froid)** : extraire le numéro dans **une** constante
-de test partagée (`tests/unit/api-worker-helpers.js` porte déjà les fixtures communes), lue
-depuis `process.env.APEX_TEST_ADMIN_PHONE` avec un numéro fictif par défaut — même schéma que
-le code admin, qui ne s'écrit jamais et se lit dans l'environnement. Douze occurrences
-deviennent alors une, et la suite reste verte.
-**Effort** : S · **Régression possible** : faible mais réelle (12 fichiers, 1115 tests).
+**Effort réel** : S · **Régression** : aucune (1115/1115 avant, 1115/1115 après ; le garde passe de 2 à 4 contrôles).
 
 ---
 
