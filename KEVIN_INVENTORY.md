@@ -28,6 +28,13 @@
 > Précédente mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 > Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 🚀 Piloter les vérifications sans toi (2026-09-10)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/ci/ci.mjs` | **Je lance tes vérifications moi-même** — plus besoin que tu cliques. `node tools/ci/ci.mjs run <workflow>` pour lancer, `watch` pour attendre le résultat, `logs` pour la cause exacte d'un échec. C'est ce qui a permis de faire tourner les 4 contrôles restés bloqués depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ci/ci.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/ci/ci.mjs) |
+| `.github/workflows/ai-review-independent.yml` | **Le deuxième avis, réparé.** Il n'avait jamais rendu un seul avis (0 réussite sur 100). Maintenant lançable à la demande sur la demande de ton choix | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/ai-review-independent.yml) · [lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/ai-review-independent.yml) |
+
 ## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
 
 Les 6 fichiers que la méthode d'audit exige. À lire dans l'ordre : le **02** pour les chiffres,

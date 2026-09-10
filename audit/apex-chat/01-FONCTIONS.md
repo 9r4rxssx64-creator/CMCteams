@@ -7,6 +7,15 @@
 ✅ = un test nommé cible explicitement cette fonction · 🟡 = couverte indirectement (le fichier
 est mesuré par la couverture globale, mais aucun test ne porte son nom) · ❌ = aucun test.
 
+> ⚠️ **Correction du 2026-09-10.** Ce document attribuait une couverture « e2e » à de
+> nombreuses fonctions (F02, F29, F34, F43…). **Mesuré depuis** : la CI ne lance que
+> **3 fichiers** (`messaging-app/e2e/`) ; les **19** de `messaging-app/tests/e2e/` — dont
+> `crypto-e2e`, `faceid-app-lock`, `push-key-heal`, `media-gallery` — **ne sont branchés dans
+> aucun workflow** (finding **P2**). Partout où la couverture ci-dessous repose sur un `e2e`
+> de `tests/e2e/`, elle est donc **écrite mais non exécutée** : à lire comme 🔴, pas comme ✅.
+> Les seuls scénarios réellement joués contre la production sont `smoke`, `two-clients`
+> (deux vrais téléphones qui s'écrivent) et `push`.
+
 **Rappel de couverture mesurée** (`npx vitest run --coverage`, 10/09) : global **89,47 %** des
 lignes · `lib/` **100 %** · Durable Objects **100 %** · `ia`/`push`/`sms`-worker **100 %** ·
 `api-worker.js` **83,42 %**.

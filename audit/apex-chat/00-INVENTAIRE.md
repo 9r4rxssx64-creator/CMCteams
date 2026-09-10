@@ -31,7 +31,7 @@ pas d'étape de build, pas une seule dépendance en production.
 | Fichiers | **R2** | `wrangler.toml` |
 | Cache / éphémère | **KV** | `wrangler.toml` |
 | Tests unitaires | **Vitest** + happy-dom | `vitest.config.js` |
-| Tests navigateur | **Playwright**, 19 scénarios | `tests/e2e/*.spec.js` |
+| Tests navigateur | **Playwright** — ⚠️ **2 dossiers**, un seul est lancé | `e2e/` (**3** fichiers, **lancés en CI**) · `tests/e2e/` (**19** fichiers, **lancés nulle part** — finding P2) |
 | Hébergement du front | GitHub Pages | `.github/workflows/deploy-apex-chat.yml` |
 
 > ⚠️ Le `README.md` du projet décrit une « Phase 1 (Foundation) en cours » avec des fichiers
@@ -130,7 +130,7 @@ jamais des `[vars]` — donc absents du dépôt.
 | Workflow | Rôle |
 |---|---|
 | `messaging-app-tests.yml` | Suite de tests (le filet) |
-| `apex-chat-e2e.yml` | **Deux vrais téléphones qui s'écrivent**, contre le worker déployé |
+| `apex-chat-e2e.yml` | **Deux vrais téléphones qui s'écrivent**, contre le worker déployé. ✅ Exécuté le 10/09 : **prod HTTP 200**, 18/20 puis **20/20 après correction d'un test SEO périmé**. Ne lance que `messaging-app/e2e/` (3 fichiers) |
 | `deploy-apex-chat.yml` | Publication |
 | `apex-chat-d1-backup.yml` | Sauvegarde de la base |
 | `apex-chat-auto-force-update.yml` | Force la mise à jour des PWA en cache |
@@ -143,9 +143,10 @@ jamais des `[vars]` — donc absents du dépôt.
 - **La version réellement déployée.** `workers_get_worker` (MCP Cloudflare) ne renvoie ici que
   `name`/`id`, sans date de modification. Je ne peux donc pas affirmer que le worker en ligne
   porte la v1.1.288.
-- **Le comportement en production.** Toute requête sortante vers `workers.dev` est refusée par
-  la politique réseau de cette session (`CONNECT tunnel failed, response 403`). Le contournement
-  légitime est la CI (`apex-chat-e2e.yml`), qui a le réseau ouvert.
+- ~~**Le comportement en production.**~~ ✅ **RÉSOLU le 10/09.** `workers.dev` reste refusé
+  depuis la session, mais **`api.github.com` répond** (le proxy y injecte l'authentification) :
+  la CI a donc été **déclenchée depuis ici** (`tools/ci/ci.mjs`). Résultat : **prod HTTP 200,
+  20/20 des contrôles de bout en bout**. Ce n'était pas un mur, c'était un canal non testé.
 - **`e2e_strict`** (chiffrement de bout en bout imposé ou non côté serveur) : la valeur vit en
   base (`system_config`), pas dans le dépôt. Elle décide si les messages sont stockés chiffrés
   ou en clair — c'est une inconnue qui compte, elle est reportée au `05-JOURNAL.md`.

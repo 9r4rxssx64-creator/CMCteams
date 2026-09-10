@@ -321,6 +321,65 @@ Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 
 ---
 
+## [P2] 19 tests navigateur sur 22 ne sont lancés par **aucune** automatisation
+
+- **Axe** : Fiabilité / fausse assurance
+- **Fichiers** : `messaging-app/tests/e2e/*.spec.js` (19) vs `messaging-app/e2e/*.spec.js` (3)
+- **Statut** : ✅ **VÉRIFIÉ** (2026-09-10, mesuré sur les workflows réels)
+
+### Preuve (commandes exécutées)
+
+```
+$ ls messaging-app/e2e/*.spec.js       | wc -l   →  3   (smoke, two-clients, push)
+$ ls messaging-app/tests/e2e/*.spec.js | wc -l   →  19
+
+$ grep -n "working-directory" .github/workflows/apex-chat-e2e.yml
+  50:  working-directory: messaging-app/e2e      ← la CI ne lance QUE ce dossier
+
+$ grep -rln "test:e2e" .github/workflows/       →  (aucun résultat)
+```
+
+`messaging-app/package.json` déclare bien `"test:e2e": "playwright test"`, mais **aucun
+workflow ne l'appelle**. Le seul workflow e2e d'Apex Chat travaille dans `messaging-app/e2e/`,
+un dossier **différent** de `messaging-app/tests/e2e/`.
+
+### Ce qui dort
+
+Les 19 scénarios non exécutés couvrent exactement ce qui ne se teste pas autrement :
+`crypto-e2e` (chiffrement bout en bout entre deux clients), `faceid-app-lock` (le verrou
+biométrique), `push-key-heal` et `push-recreate-gesture` (auto-réparation des notifications),
+`media-gallery`, `media-bigger-heal`, `avatar-refresh`, `swipe-reply`, `find-in-chat`,
+`privacy-reciprocity`, `delete-message-persist`, `scroll-to-bottom`, `message-grouping`,
+`gif-picker`, `e2e-selfheal`, `e2e-send-freshkey`, `auth-flow`, `screenshots`, `smoke`.
+
+### Cause racine
+
+Ce n'est pas un oubli de configuration : c'est **deux dossiers e2e qui ont divergé**. L'un
+(`e2e/`) a sa propre `playwright.config.js` et son `package.json`, et c'est celui que la CI
+connaît ; l'autre (`tests/e2e/`) a grossi à 19 fichiers sans jamais être branché. Personne ne
+peut le voir : les deux ressemblent à des suites de tests légitimes, et la CI est **verte**.
+
+C'est l'erreur **#28 (Déclaration ≠ Déploiement)** appliquée aux tests — et sous cette forme
+elle est plus dangereuse qu'ailleurs : **du code de test jamais exécuté ne protège de rien,
+mais donne l'impression du contraire.** Mon propre `01-FONCTIONS.md` annonçait « 19 scénarios
+Playwright » comme une couverture acquise. C'était faux, et je l'ai corrigé.
+
+### Correctif recommandé
+
+1. **Décider** lequel des deux dossiers fait foi (probablement fusionner `tests/e2e/` dans
+   `e2e/`, qui porte déjà la config et les deux navigateurs chromium + webkit-iphone).
+2. **Brancher** le dossier retenu dans `apex-chat-e2e.yml`, en une seule invocation.
+3. **Garde permanente** : un test qui vérifie que **tout** fichier `*.spec.js` du dépôt
+   appartient à un dossier réellement lancé par un workflow — sinon on recrée le trou dans six
+   mois. Sans cette garde, le correctif ne tient pas.
+
+**Effort** : M (fusionner deux configs Playwright, vérifier que les 19 passent réellement
+contre la prod — certains peuvent être périmés, comme l'était le test SEO ci-dessous).
+**Régression possible** : faible sur l'app ; le risque est d'allonger la CI et de découvrir
+des tests rouges restés cachés. C'est le but.
+
+---
+
 ## [P3] Le numéro personnel de Kevin reste écrit dans 12 fichiers de test d'un dépôt **public**
 
 - **Axe** : Vie privée (plus sécurité)
