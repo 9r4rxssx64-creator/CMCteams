@@ -40,6 +40,7 @@ const BASELINE = resolve(__dirname, 'fixtures/pdf-fidelite-baseline.json');
 const UPDATE = process.argv.includes('--update-baseline');
 
 const MOIS = [
+  { pdf: 'tests/fixtures/octobre-2026.pdf', key: '2026-9', board: '2026-10-', label: 'Octobre 2026' },
   { pdf: 'tests/fixtures/septembre-2026-v2.pdf', key: '2026-8', board: '2026-09-', label: 'Septembre 2026' },
   { pdf: 'tests/fixtures/aout-2026-v2.pdf', key: '2026-7', board: '2026-08-', label: 'Août 2026' },
   { pdf: 'tests/fixtures/juillet-2026-v2.pdf', key: '2026-6', board: '2026-07-', label: 'Juillet 2026' },
@@ -122,7 +123,7 @@ const GEN = global.window.DEPARTS_GEN;
 const nrm = x => String(x).toUpperCase().replace(/\s+/g, ' ').trim();
 
 function compare(verite, index) {
-  const manquants = [], ecarts = [];
+  const manquants = [], ecarts = [], casse = [];
   let cellulesOK = 0, cellulesTotal = 0;
   for (const r of verite) {
     const k = nrm(r.nom);
@@ -139,10 +140,13 @@ function compare(verite, index) {
     for (const d of Object.keys(r.cellules)) {
       const attendu = String(r.cellules[d]), vu = String(best[d] || '');
       if (attendu === vu) cellulesOK++;
+      // « rrt » (FOREST M, oct. 2026 j11) : le PDF porte parfois un code en minuscules ; l'app
+      // normalise en MAJUSCULES (même code, même sens). Toléré, mais DIT — jamais en silence.
+      else if (attendu.toUpperCase() === vu.toUpperCase()) { cellulesOK++; casse.push(r.nom + ' jour ' + d + ' : PDF=' + attendu + ' vu=' + vu); }
       else ecarts.push(r.nom + ' jour ' + d + ' : PDF=' + attendu + ' vu=' + (vu || '(vide)'));
     }
   }
-  return { manquants, ecarts, cellulesOK, cellulesTotal };
+  return { manquants, ecarts, casse, cellulesOK, cellulesTotal };
 }
 
 const base = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : {};
@@ -171,6 +175,7 @@ for (const M of MOIS) {
       + (ok ? '  ✅' : '  ❌'));
     if (nouveaux.length) { console.log('      NOUVEAU MANQUANT : ' + nouveaux.join(', ')); FAIL++; }
     if (r.ecarts.length) { r.ecarts.slice(0, 12).forEach(e => console.log('      ÉCART ' + e)); FAIL++; }
+    if (r.casse.length) r.casse.forEach(e => console.log('      (casse tolérée : ' + e + ')'));
     const guerris = tol.filter(n => !r.manquants.includes(n));
     if (guerris.length) console.log('      (corrigés depuis le cliquet : ' + guerris.join(', ') + ' — pense à --update-baseline)');
   }

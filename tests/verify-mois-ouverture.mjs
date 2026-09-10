@@ -32,6 +32,9 @@ const BASE = process.env.CMC_BASE || `http://127.0.0.1:${server.address().port}/
 const APP = BASE + '/index.html';
 const LIGHT = BASE + '/tools/departs/index.html';
 
+// v1.42 (2026-09-10) : le mois de RÉFÉRENCE de la page n'est plus « le plus récent chargé » mais le
+// mois COURANT (octobre 2026 est chargé dès le 10 septembre) → on lit `_depLatestRank()`, la vraie
+// fonction de la page, au lieu de recalculer un max qui pointerait sur le mois futur.
 const today = new Date();
 const MFR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const MOIS_ATTENDU = MFR[today.getMonth()], AN_ATTENDU = today.getFullYear();
@@ -105,7 +108,7 @@ async function ouvrirLight(boardMemorise, moiMemorise) {
   const st = await page.evaluate((moi) => {
     const eq = (l) => { const p = String(l || '').split(' — '); return (p[1] || '').replace(/\s*\([^)]*\)\s*$/, '').trim(); };
     const rang = (id) => (BOARDS[id] ? BOARDS[id].year * 12 + BOARDS[id].monthIdx : -1);
-    const recent = Math.max(...Object.keys(BOARDS).filter((k) => BOARDS[k] && BOARDS[k].kind !== 'abs').map(rang));
+    const recent = _depLatestRank();   // v1.42 : le mois de référence de la page (courant), pas le max chargé
     const mid = (typeof mirrorBoardId === 'function') ? mirrorBoardId(BID) : null;   // vraie fonction de la page
     return {
       bid: typeof BID !== 'undefined' ? BID : null,
@@ -145,7 +148,7 @@ async function ouvrirLight(boardMemorise, moiMemorise) {
     const eq = (l) => { const p = String(l || '').split(' — '); return (p[1] || '').replace(/\s*\([^)]*\)\s*$/, '').trim(); };
     const ids = Object.keys(BOARDS).filter((k) => BOARDS[k] && BOARDS[k].kind !== 'abs');
     const rang = (k) => BOARDS[k].year * 12 + BOARDS[k].monthIdx;
-    const max = Math.max(...ids.map(rang));
+    const max = _depLatestRank();
     const recentes = new Set(ids.filter((k) => rang(k) === max).map((k) => eq(BOARDS[k].label)));
     const vieux = ids.filter((k) => rang(k) < max && recentes.has(eq(BOARDS[k].label)));
     return vieux.length ? { id: vieux[0], equipe: eq(BOARDS[vieux[0]].label), label: BOARDS[vieux[0]].label } : null;
@@ -177,7 +180,7 @@ console.log('\n=== Mon équipe ET mon miroir, compte par compte (page light) ===
   const comptesLight = await p0.evaluate(() => {
     const rang = (k) => BOARDS[k].year * 12 + BOARDS[k].monthIdx;
     const ids = Object.keys(BOARDS).filter((k) => BOARDS[k] && BOARDS[k].kind !== 'abs');
-    const recent = Math.max(...ids.map(rang));
+    const recent = _depLatestRank();
     const anciens = ids.filter((k) => rang(k) < recent);
     const out = [];
     // on prend des personnes présentes le mois PASSÉ *et* ce mois-ci, réparties sur des équipes
@@ -228,7 +231,7 @@ console.log('\n=== Mon équipe ET mon miroir, compte par compte (page light) ===
   const bilan = await page.evaluate(() => {
     const rang = (k) => (BOARDS[k] ? BOARDS[k].year * 12 + BOARDS[k].monthIdx : -1);
     const ids = Object.keys(BOARDS).filter((k) => BOARDS[k] && BOARDS[k].kind !== 'abs');
-    const recent = Math.max(...ids.map(rang));
+    const recent = _depLatestRank();
     const duMois = ids.filter((k) => rang(k) === recent);
     // repos majoritaires d'une équipe = sa signature ; deux équipes miroir la partagent
     const repos = (id) => {

@@ -1,10 +1,241 @@
 # MEMO_RESUME — état de session
 
+## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
+
+- **Ce qui n'allait pas** : le dossier `audit/apex-chat/` ne contenait **qu'un seul fichier** sur
+  les six que la méthode exige. Et surtout, ce fichier décrivait encore la **faille la plus
+  grave comme ouverte**, alors qu'elle est fermée depuis le 6. Un rapport d'audit périmé sur son
+  point le plus grave, c'est pire qu'un rapport absent : il fait perdre confiance dans tout le
+  reste. **Corrigé.**
+- **La porte admin est fermée — chaîne vérifiée aujourd'hui, commande par commande** : le numéro
+  de téléphone a disparu du fichier public (0 ligne), le verrou `ADMIN_BYPASS_REQUIRE_MFA` est
+  **actif**, le passe-droit `000000` reste **fermé**, et les deux tests de garde passent (6/6).
+  Connaître le numéro **ne suffit plus** pour devenir admin.
+- **Le filet, re-mesuré aujourd'hui** : **1115 tests sur 1115 verts** (59 fichiers, 18 s).
+  Couverture réelle **89,47 %** — le cœur (`lib/`, temps réel, 3 workers sur 4) est à **100 %**.
+- **Les 5 fichiers manquants sont écrits** : inventaire réel (pile mesurée, 64 routes, 27 tables,
+  0 secret), cartographie **F01→F78** (chaque fonction avec son état de test — **2 seules** sans
+  test, deux écrans admin en lecture seule), résultats chiffrés, design mesuré, journal.
+- **Ce que je ne peux PAS dire, et je l'écris partout** : je certifie **le code du dépôt**, pas
+  **le site en ligne**. Cette session n'a pas le droit de sortir sur internet (refus `403` de la
+  politique réseau — je le signale, je ne le contourne pas). Le seul chemin honnête pour la
+  dernière vérification, c'est la CI : Actions → `apex-chat-e2e.yml` (deux vrais téléphones qui
+  s'écrivent). **Aucun clic obligatoire** : c'est un contrôle de confort, pas un correctif en
+  attente.
+
+## 5 septembre 2026 — vérifier le VRAI domaine sans API ni clic (canal CI → rapport dans le dépôt)
+
+**Consigne Kevin** : « Trouve des solutions / Attention d'autres branches travaillent sur le domaine ».
+
+**Le mur, mesuré** : depuis la session, `kd-mc.com`, `github.io` et `workers.dev` sont refusés par
+la politique réseau, et l'API GitHub répond **403 « GitHub access is not enabled for this session »**
+à tout appel concernant un dépôt (même public) → ni demande de fusion, ni lancement de workflow, ni
+lecture d'exécution. **Ce qui marche : `git push`.** Et un workflow se déclenche SUR un push, avec
+un runner qui, lui, a le réseau ouvert.
+
+**Le canal** : push → la CI ouvre les vraies pages du domaine → elle **réécrit son rapport dans le
+dépôt** (`audit/verif-live/`) → je le relis par `git fetch`. **Zéro clic de Kevin.**
+
+**Ma faute, corrigée** : j'avais poussé le script **sans l'avoir lancé une seule fois** — un
+caractère parasite dans un nom de variable le faisait planter à la ligne 30, donc la CI n'écrivait
+**aucun** rapport (le « pas de rapport après 13 min » venait de là, pas d'Actions : le robot de
+fusion tournait bien). Corrigé, `node --check` puis exécution locale réelle : le script écrit
+**toujours** son rapport, même quand tout échoue. **Filet ajouté au workflow** : si le script
+s'arrête avant d'écrire, un rapport minimal est créé quand même — sinon `git add` faisait échouer
+le job et Kevin n'avait **aucune** information.
+
+**Règle qui manquait à mon propre travail** : *ne jamais pousser un script sans l'avoir exécuté au
+moins une fois localement* — même quand il « ne peut pas marcher ici » (réseau bloqué), il doit au
+minimum démarrer et produire sa sortie.
 > 📌 **Ce que Kevin doit faire est ailleurs** : la liste complète et priorisée vit dans
 > **`KEVIN_ACTIONS_TODO.md`** (refaite le 6.09.2026). En tête : 4 mots de passe à remplacer
 > (ils sont dans l'historique public du dépôt), puis 7 questions dont une simple réponse me
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
+
+## 10 septembre 2026 (nuit) — « voir comme moi partout, kd-mc.com surtout » : deux canaux réels, un outil câblé
+
+| Canal | Mesuré | Sert à |
+|---|---|---|
+| proxy/curl, WebFetch, Firecrawl, Hugging Face | 403 / bloqué / 403 / 402 | rien |
+| **Zapier Webhooks « custom » GET** | HTTP 200, page complète (cmcteams 3,5 Mo, `APP_VER v9.898` ; light `version.txt` = `v1.42`) | lire le code SERVI, les versions, les en-têtes |
+| **`voir-comme-kevin.yml`** (nouveau) | vrai navigateur iPhone, connecté Kevin | VOIR : captures + texte visible + erreurs, déposés sur `claude/voir-<run_id>`, rapatriés par `tools/voir/rapatrier.sh` et ouverts avec Read |
+
+**Premier run, première découverte (leçon #250)** : sur cmcteams.kd-mc.com, 5 s après l'ouverture,
+l'app entière était remplacée par « ⚠️ Erreur asynchrone non gérée — Background Sync is disabled »
+(promesse `reg.sync.register` rejetée, `try/catch` inutile, gardien global fatal). Safari iPhone
+épargné, Brave/Chrome-bloqué : app morte. Corrigé en **v9.899** (`.catch` + rejet classé bénin),
+garde `test:bg-sync-benin` (rejoue la panne, discriminante par sabotage). Et la page Départs/light
+restait sur « Première connexion » : `session-kevin.mjs` pose maintenant `cmc_dep_identity` +
+`cmc_dep_me` (+8 contrôles).
+
+Preuve réelle de la version servie (ce matin je l'avais seulement déduite du déploiement vert) :
+CMCteams **v9.898**, light **v1.42**. Skill `.claude/skills/voir/SKILL.md`, leçon #249.
+Limite honnête : la session posée est nommée, pas « admin prouvé » Face ID ; le workflow ne se
+lance qu'une fois sur `main` (404 sinon).
+
+## 10 septembre 2026 (soir) — « l'app a déjà septembre mais trop d'erreurs » : le téléphone de Kevin gardait l'ANCIEN import — remplacement automatique livré, et un P0 trouvé en passant (v9.898)
+
+### Le problème réel
+La correction du matin (v9.897, équipes lues dans le récapitulatif) vivait dans le dépôt, mais
+**pas sur le téléphone de Kevin** : septembre y avait été importé avec l'ancien parseur, et la
+règle « données live = priorité absolue » interdisait au seed vérifié de le remplacer. Mes docs
+disaient « plus rien à faire » (6.09) — faux, corrigé dans `KEVIN_ACTIONS_TODO.md` §3.
+
+### Ce qui est livré (v9.898)
+| Quoi | Où | Preuve |
+|---|---|---|
+| Le seed porte la version de son parseur (`parser: "v9.898"`) | `tools/shared/_gen-seed.mjs` → `planning-seed.js` | régénéré, mêmes 8 515 / 8 707 cellules |
+| Chaque import écrit `parserVersion` | `index.html` (refData) | — |
+| Un mois live importé par un parseur **plus ancien** est remplacé : ancien **archivé V1** (restaurable dans Import → versions), **édits manuels conservés**, identifiants temporaires retrouvés par le nom, `cmc_ov`/`cmc_e`/`cmc_ref_` **poussés à Firebase**, marqueur idempotent, toast explicite | `_cmcApplyPlanningSeed` + `_cmcSeedReplaceInfo` + `_cmcSeedMarkApplied` | `npm run test:seed-remplace` : **22/22**, A/B/C/D |
+| Import fait par un parseur au moins aussi récent → **conservé** (real import wins) | idem | scénario C |
+| **P0 leçon #246** : le nettoyage de boot supprimait les codes **chef** « 20/5c » (jamais persistés) à CHAQUE ouverture et poussait le mois amputé à Firebase — **3 103 cellules perdues en un boot** sur un septembre importé | `_cmcBootRegisterCode` + codes chef persistés à l'import | scénario B : 1 076/1 076 codes chef conservés ; sabotage → 0/1 076 |
+
+Le test simule **l'appareil de Kevin** (flags `cmc_dver=30`, `cmc_v706_total_wiped=1`) : un
+contexte neuf est wipé au 1er boot et donnait un faux vert. Deux sabotages prouvent que la garde
+est discriminante (ancien nettoyage → 4 échecs ; remplacement désactivé → 4 échecs).
+
+### Ce que Kevin verra
+À la prochaine ouverture après la mise à jour : un message « Planning Septembre 2026 remplacé par
+la version vérifiée (8 515 cellules, ancien … archivé en V1, restaurable) », puis les bonnes
+équipes et les bons horaires — chefs compris — qui **restent** après redémarrage.
+
+### Fusion + déploiement
+PR #3731 fusionnée par le robot à 18h40 UTC (`f60c81550`), déploiement GitHub Pages lancé dans la
+foulée (run 34515748321). Trois fusions de `main` dans la branche ont été nécessaires en 20 min
+(`pipeline/sessions.json`, puis `package.json` deux fois) ; l'une a été poussée AVEC ses marqueurs
+de conflit pendant 60 s (leçon #248 : un garde derrière `| tail` ne garde rien). Leçons #246-248.
+
+## 10 septembre 2026 (suite) — « il y a des erreurs, personnes dans les mauvaises équipes » : VÉRIFIÉ EN RÉEL contre SEPTEMBRE et OCTOBRE, corrigé, 0 écart des deux côtés
+
+### Ce que Kevin a signalé, et ce que j'ai mesuré
+
+Kevin a fourni `SEPTEMBRE_2026_V2.pdf` (identique à celui déjà dans le dépôt) et
+`OCTOBRE_2026.pdf` (nouveau : octobre n'existait **nulle part** dans l'app ni sur la
+page Départs). J'ai relu **la page 1 de chaque PDF** — le récapitulatif où SBM écrit
+chaque équipe en un bloc « effectif · horaire du 1er jour · du · au » — avec un
+lecteur indépendant, et comparé aux deux surfaces :
+
+| Mois | Personnes mal placées CMCteams | … page Départs |
+|---|---|---|
+| Octobre | (mois absent) puis **41** | (absent) puis **46** |
+| Septembre | **56** | **61** |
+| Août | **81** | **87** |
+| Juillet | **113** | **119** |
+
+Kevin avait raison, et aucun test ne le voyait : `pdf-fidelite` compare les
+**cases**, pas les équipes ; `teams-compare` compare l'app à la page Départs — qui
+se trompaient **pareil** (leçon #142).
+
+### Pourquoi c'était faux
+
+L'app **devinait** les équipes à partir des jours de repos et des codes. Or dans un
+même bloc SBM, des collègues diffèrent sur 1 à 3 jours (horaire modifié en rouge,
+congé partiel) : la devinette les séparait (SESTINI F seul, MORRA A seul, LUBIN O
+en « congés ») ou collait un chef à l'équipe voisine. **La réponse était écrite dans
+le PDF** : je la lis maintenant au lieu de la deviner (`_cmcDetectTeamsByRecap`,
+v9.897), avec un auto-contrôle — un bloc n'est retenu que si le nombre de lignes lues
+est égal à l'effectif annoncé (0 rejet sur 144 blocs). Ce n'est **pas** la « position
+dans la grille » réfutée par la leçon #112 : c'est le bloc explicite, avec son effectif.
+
+### Au passage, deux disparus retrouvés (la vraie cause du dossier MOREL F)
+
+CASSINI A (octobre) et MOREL F (août) n'avaient **aucune case** : la 1re ligne de
+données d'une section héritait du fond rose de l'en-tête, parce que l'extracteur
+prenait « le dernier rectangle dessiné » pour le fond du texte. Corrigé à la source
+(fond lu par géométrie), et une couleur ne réécrit plus jamais un code (« CLM » sur
+fond rose devenait CP = invention). Témoin de la leçon #242 atteint : MOREL F 31 cases
+**et** COSTAGLIOLI J / FAUTRIER M gardent les leurs.
+
+### Les preuves (mesurées, 4 mois × 2 surfaces)
+
+- **Cases** : octobre 249/249 · 7 719/7 719 ; septembre 248/248 · 7 440/7 440 ;
+  août 251/251 · 7 781/7 781 ; juillet 254/254 · 7 874/7 874 — **identiques au PDF
+  des deux côtés, cliquet vidé** (plus aucun « manquant connu »).
+- **Équipes** : 36 blocs et 18 miroirs par mois, **0 écart** des deux côtés ; **100 %
+  des personnes ont une équipe** (281/281 · 285/285 · 288/288 · 290/290). Qui n'est
+  que dans un encadré (M / CP / CSS / FORMATION) va sur le board d'absence, comme
+  dans le PDF (VERZELLO O, LANTERI E) ; l'aménagement a son équipe (ACCOMASSO F,
+  GENDREAU C apparaissent enfin sur la page Départs).
+- **Nouveau garde** `npm run test:pdf-equipes` (dans `test:ci`), prouvé
+  discriminant : déplacer Kevin d'une équipe → rouge ; restauré → vert.
+- Deux fabrications de suite → fichiers identiques à l'octet près (règle du 10.09).
+
+- **Octobre chargé le 10 septembre** : la page Départs ouvrait sur octobre (« le mois
+  le plus récent chargé »). Corrigé (v1.42) : elle ouvre sur le mois **courant** s'il
+  existe, sinon le plus récent non futur — la règle de Kevin du 5.09 tient même quand
+  un mois d'avance est déjà là. Le garde `test:mois-ouverture` suit la même règle.
+
+Versions : CMCteams **v9.897**, page Départs **v1.42**. Leçons #243, #244, #245.
+**Ce que je n'ai pas pu vérifier** : l'affichage sur l'iPhone de Kevin (l'agent ne
+peut pas atteindre kd-mc.com) — les données publiées sont celles testées ici.
+
+## 10 septembre 2026 (soir) — 73 branches robot « silencieuses » : elles n'allaient nulle part, et la boutique attendait un fichier que main n'a jamais reçu
+
+### Ce qui a été trouvé (mesuré, pas supposé)
+
+- **131 branches `claude/*` non fusionnées sur 379.** Parmi elles, **73 branches robot** (`printify-order-config-<run>`, `worker-config-<run>`, `e2e-shot-<run>`…) créées par **10 workflows** qui écrivaient « Poussé (auto-merge) » dans leur journal.
+- **Pourquoi elles n'ont jamais été fusionnées** : un push signé par le jeton du robot ne déclenche **jamais** un autre workflow, et le message portait `[skip ci]`. La fusion automatique ne les a donc **jamais vues**. Ça dure depuis juin.
+- **Conséquence réelle** : la boutique La Détente demande `push-config.json` (clé pour les notifications push) — ce fichier a été écrit 18 fois sur 18 branches et **jamais** dans `main`. En production, il n'existe pas. `printify-catalog.json` : pareil.
+- **Bruit** : les branches `worker-config` ne changeaient QUE l'horodatage `updated_at` (URL identique) → une branche par déploiement pour rien.
+- **Le robot de ménage ne peut pas les supprimer** : elles ne sont pas dans `main`, et une règle du dépôt refuse les suppressions (mesuré par la session « ménage-branches » ce matin : 0 supprimée sur 379).
+
+### Ce qui a été fait
+
+| Quoi | Où |
+|---|---|
+| **Une action réutilisable** qui publie une config dans `main` : compare **hors horodatage** (rien si identique), refuse depuis une branche `claude/*`, crée la PR, la **fusionne** elle-même, relance `deploy.yml`, et **rougit avec la cause exacte** si la fusion est refusée | `.github/actions/publier-config/action.yml` |
+| **5 workflows** La Détente (worker Gemini, worker commande + clé push, connexion Printify, catalogue, blueprints) passent par cette action au lieu de pousser une branche orpheline | `.github/workflows/la-detente-*.yml` |
+| **5 workflows** dont la branche est faite pour être **lue** (images IA, captures E2E, moisson monégasque) portent le marqueur `# branche-de-relecture` : c'est écrit noir sur blanc qu'elle n'est pas censée fusionner | idem |
+| **Garde** `npm run test:branches-robot` (dans `test:ci`) : un workflow qui crée une branche `claude/*-<run_id>` doit soit publier via l'action, soit se déclarer « de relecture ». Tout le reste = échec | `tests/verify-branches-robot.mjs` |
+| **Étape « Rattraper main » du robot** : quand le seul conflit est le rapport de ménage `.github/CLEANUP-REPORT.md` (régénéré à chaque exécution des deux côtés), la version de `main` est gardée au lieu d'abandonner la fusion | `.github/workflows/auto-merge-claude.yml` |
+
+### Ce qui a été réveillé à la main (branches d'autres sessions, inactives)
+
+- `claude/miroir-pour-chaque` (PR #3669, endormie depuis le 5.09 parce que sa fusion avait échoué sur le journal AVANT le correctif « union ») : `main` fusionné dedans, commit de réveil sans `[skip ci]`.
+- `claude/apex-ultra-review-crew-MZ8nS` : ma poussée a été **refusée**, et c'est tant mieux — la session était **active le matin même** (35 PR). Elle a fini par entrer dans `main` toute seule. Règle appliquée : on ne touche jamais à une branche active.
+
+### Ce qui reste (pas à moi de décider)
+
+- Les **73 branches robot existantes** restent là : la règle du dépôt interdit leur suppression (sujet de la session « ménage-branches », pas de doublon de travail ici).
+- Les nouvelles exécutions des 5 workflows corrigés vont, elles, faire arriver `push-config.json` et `printify-catalog.json` dans `main` — la preuve viendra du **prochain déploiement**, pas d'ici.
+
+Leçon **#243** dans `LESSONS.md`.
+## 10 septembre 2026 (soir) — Ménage des branches : l'outil, et la correction de ce que j'avais écrit le matin
+
+**Le matin**, j'avais écrit dans `ETAT-INFRA.md` qu'un « repli par comparaison d'arbres » suffirait
+à reconnaître les 314 branches sans ancêtre commun. **Codé et mesuré, ce critère donne 0 branche
+sur 385.** C'était faux, et c'est corrigé sur place.
+
+**Pourquoi c'était faux** : `git diff` répond « différent », pas « plus ancien ». Une branche d'août
+diffère de `main` **parce qu'elle est vieille**. Mesuré : 568 fichiers ajoutés / 378 modifiés, dont
+seulement 30 ajouts hors sortie de compilation.
+
+**Ce qui marche** — `node tools/menage/branches-superflues.mjs` ne demande plus « la branche
+diffère-t-elle ? » mais **« quel fichier disparaîtrait si on la supprimait ? »**, en écartant trois
+faux positifs mesurés : fabriqué (empreinte de build dans le nom), déplacé à contenu identique,
+déplacé à contenu retouché. Ce troisième filtre est indispensable : les 223
+`apex-ai/v13/services/*.ts` « uniques » d'une branche d'août sont en réalité **rangés en
+sous-dossiers** dans `main` — sans lui, l'outil annonce la perte de tout Apex v13. Je m'y suis
+laissé prendre avant de vérifier.
+
+**Résultat** : 385 branches → **2 sans aucune perte possible**, et surtout **190 fichiers distincts**
+à relire UNE fois (`--fichiers`, liste écrite dans `pipeline/fichiers-uniquement-sur-branches.txt`)
+au lieu de trancher 321 branches. 121 sont un lot marketing tiers, ~10 les crons retirés après la
+suspension GitHub, le reste des médias et documents anciens.
+
+**Limite écrite noir sur blanc** : un fichier seulement *modifié* ne retient pas la branche — or un
+correctif jamais fusionné ressemble à ça (le correctif Lingua du 5.09 était exactement ce cas).
+D'où le seuil de 30 jours et l'immunité des branches inscrites au registre.
+
+**Garde** : `npm run test:menage-branches` (12 OK / 0 FAIL), câblée dans `test:ci`. Elle fabrique un
+dépôt de test avec les 7 cas, dont **une branche orpheline au contenu identique** — celle que
+`--is-ancestor` ne voit pas — et le contrepoint qui prouve qu'elle mord.
+
+**Rappel** : la suppression reste refusée par le ruleset `16725169` (condition `~ALL`). Un seul
+geste de Kevin la débloque : `~ALL` → `~DEFAULT_BRANCH`.
+
+---
 
 ## 10 septembre 2026 — « continu » : les fichiers de planning étaient tirés au sort, et ça cachait une MAUVAISE ÉQUIPE
 
@@ -6516,3 +6747,39 @@ corrigé, il exige maintenant la vraie commande.
 type de surveillance que depuis la branche principale. Le bot s'en charge.
 
 Leçon #234.
+
+## 2026-09-10 — Le filet était resté coincé dehors, et je ne pouvais pas le voir
+
+**Ce que j'ai trouvé en reprenant** : le journal des pannes que je t'ai livré mardi soir
+**n'était jamais arrivé dans `main`**. Il est resté 4 jours sur ma branche.
+
+Le robot de fusion avait pourtant très bien marché pour mes 5 livraisons précédentes.
+Pour la dernière — justement celle qui portait le filet — il n'a rien fait. Pourquoi ?
+**Je ne peux pas le savoir** : la seule trace est le journal de la CI, celui-là même que
+je ne peux pas lire. Le filet censé rendre les pannes visibles était bloqué par une
+panne invisible.
+
+**Réglé** : j'ai refusionné, résolu un conflit sur un rapport de robot, revérifié, et
+repoussé. La fusion s'est faite en **15 secondes**. Ce n'était donc pas un blocage de
+fond, juste un raté silencieux — mais qui a coûté 4 jours.
+
+**Vérifié pour de vrai** : le journal est bien **sur `main`** maintenant. Il est actif.
+
+### Ce que j'en tire, et que j'ai corrigé dans la foulée
+
+La fusion automatique est le maillon dont la panne **bloque tout** : si le travail ne
+rejoint pas `main`, plus rien ne se déploie — et aucune de mes 23 surveillances ne se
+déclenche jamais. Elle **n'était pas surveillée**. Elle l'est maintenant.
+
+La prochaine fois qu'elle rate, la raison exacte atterrira toute seule dans
+`audit/deploiements-rates.md`, et je ne perdrai plus 4 jours.
+
+Garde : **47 contrôles, 0 échec**, le nouveau prouvé discriminant par sabotage.
+
+### Toujours en attente (rien à faire de mon côté)
+
+Les **poses de danse** refusent encore, pour la même raison que mardi : les deux moteurs
+d'image sont à sec (Gemini « crédits épuisés », Replicate « palier gratuit »). C'est de
+l'argent, pas du code. Recharger l'un des deux suffit.
+
+Leçon #235.

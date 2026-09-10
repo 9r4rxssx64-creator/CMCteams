@@ -1,6 +1,57 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
+> Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
+
+### 10 septembre 2026 (nuit) — « voir comme toi » : je peux maintenant regarder tes vraies pages
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/workflows/voir-comme-kevin.yml` | **Nouveau.** Ouvre n'importe quelle page kd-mc.com dans un vrai navigateur (écran iPhone, connecté comme toi), photographie, relève la version et les erreurs, dépose tout sur une branche que je peux lire. Tu peux aussi le lancer toi-même. | [▶️ Lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/voir-comme-kevin.yml) |
+| `tools/voir/voir.mjs` | Le script du workflow (périmètre kd-mc.com, lecture seule, aucun secret). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/voir/voir.mjs) |
+| `tools/voir/rapatrier.sh` | Ramène les captures d'un run dans ma session pour que je les ouvre. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/voir/rapatrier.sh) |
+| `tests/verify-background-sync-benin.mjs` | **Nouveau.** Rejoue la panne vue à l'écran (Background Sync refusé) et exige que l'app reste utilisable — v9.899 corrige l'écran d'erreur qui remplaçait toute l'app sur Brave/Chrome. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-background-sync-benin.mjs) |
+| `tools/smoke/session-kevin.mjs` | Modifié : sait aussi « être toi » sur la page Départs/light (elle restait sur l'écran de première connexion). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/smoke/session-kevin.mjs) |
+| `.claude/skills/voir/SKILL.md` | Ma marche à suivre : les canaux qui marchent (Zapier pour le code servi, le workflow pour l'écran) et ceux qui sont bloqués. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/voir/SKILL.md) |
+
+### 10 septembre 2026 (soir) — ton ancien septembre est remplacé tout seul, et les horaires des chefs ne disparaissent plus au redémarrage
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tests/verify-seed-remplace-import-perime.mjs` | **Nouveau.** Simule ton téléphone (ancien septembre importé) et prouve dans un vrai navigateur que la version vérifiée le remplace (ancien archivé V1, tes modifications manuelles gardées), qu'un import récent est respecté, et que les codes chef survivent au redémarrage. 22 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-seed-remplace-import-perime.mjs) |
+| `index.html` (v9.898) | Modifié : remplacement automatique d'un mois importé par un parseur plus ancien que le seed vérifié + correction du nettoyage de boot qui effaçait les horaires des chefs (« 20/5c ») à chaque ouverture. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/index.html) |
+| `tools/shared/_gen-seed.mjs` + `planning-seed.js` | Modifié : le seed porte la version du parseur qui l'a produit (`parser`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/shared/_gen-seed.mjs) |
+| `LESSONS.md` #246-247 | Le P0 du nettoyage de boot et la règle « import périmé remplacé ». | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+> Dernière mise à jour : **2026-09-10 (soir)** (les configs des workflows arrivent enfin dans `main` — 73 branches robot n'allaient nulle part depuis juin)
+
+### 10 septembre 2026 (soir) — les configs écrites par les workflows arrivent dans `main`
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/actions/publier-config/action.yml` | **Nouveau.** Quand un workflow écrit une config (URL de worker, clé push, catalogue), cette action la fait **arriver dans `main`** : PR créée et fusionnée par le robot, redéploiement lancé, rien de créé si seul l'horodatage a changé. Avant, la config partait sur une branche que personne ne fusionnait jamais. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/actions/publier-config/action.yml) |
+| `tests/verify-branches-robot.mjs` | **Nouveau garde** (dans `test:ci`) : un workflow qui crée une branche robot doit dire ce qu'elle devient — publiée dans `main`, ou « de relecture ». Une branche qui ne va nulle part fait échouer le test. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-branches-robot.mjs) |
+| `.github/workflows/la-detente-printify-order-deploy.yml` | Modifié : la **clé des notifications push** (`push-config.json`) va enfin dans `main` — la boutique la demandait depuis juin sans jamais la recevoir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/la-detente-printify-order-deploy.yml) |
+| `.github/workflows/la-detente-worker-deploy.yml` · `…-printify-connect.yml` · `…-printify-catalog.yml` · `…-printify-blueprints.yml` | Modifiés : même mécanisme pour l'URL du worker Gemini, la config Printify et les deux catalogues. | [dossier](https://github.com/9r4rxssx64-creator/CMCteams/tree/main/.github/workflows) |
+| `.github/workflows/auto-merge-claude.yml` | Modifié : si le seul conflit est le rapport de ménage (régénéré des deux côtés), le robot garde la version de `main` au lieu d'abandonner la fusion. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) |
+| `LESSONS.md` | Leçon **#243** : un push signé par le jeton du robot ne réveille jamais un autre workflow — « auto-merge » écrit dans un journal n'a jamais rien fusionné. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
+> Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
+
+Les 6 fichiers que la méthode d'audit exige. À lire dans l'ordre : le **02** pour les chiffres,
+le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `audit/apex-chat/00-INVENTAIRE.md` | Ce qu'est vraiment l'app, mesuré : pile réelle (0 dépendance), 24 194 lignes, **64 routes** dont 20 d'admin, 27 tables, **0 secret** dans le dépôt | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/00-INVENTAIRE.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/00-INVENTAIRE.md) |
+| `audit/apex-chat/01-FONCTIONS.md` | **F01→F78** : tout ce que l'app sait faire, une ligne par fonction, avec son état de test. 2 seules sans test (écrans admin en lecture seule) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/01-FONCTIONS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/01-FONCTIONS.md) |
+| `audit/apex-chat/02-RESULTATS.md` | Les chiffres, avec la commande qui les a produits : **1115/1115 tests**, couverture **89,47 %**, **0 finding ouvert** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/02-RESULTATS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/02-RESULTATS.md) |
+| `audit/apex-chat/03-FINDINGS.md` | Les 5 problèmes trouvés le 5/09 — **tous corrigés et prouvés**. La porte admin (le plus grave) est fermée depuis le 6 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/03-FINDINGS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/03-FINDINGS.md) |
+| `audit/apex-chat/04-DESIGN.md` | Le design **mesuré** et pas apprécié : 20 jetons de couleur, encoche iPhone traitée, 67 libellés accessibles, et les 2 dettes chiffrées | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/04-DESIGN.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/04-DESIGN.md) |
+| `audit/apex-chat/05-JOURNAL.md` | **Ce que je n'ai PAS pu vérifier**, en 10 points, et pourquoi. Plus mon auto-critique | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/05-JOURNAL.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/05-JOURNAL.md) |
 > Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 
 ### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
@@ -122,6 +173,9 @@
 
 | Fichier | À quoi ça sert | Liens |
 |---|---|---|
+| `tests/verify-pdf-equipes.mjs` **(nouveau, 10.09)** | **Le garde qui manquait pour les ÉQUIPES.** Relit la page 1 (récapitulatif) de chaque PDF avec pdfjs, reconstruit les 36 blocs d'équipe + 18 miroirs par mois, et exige qu'ils soient reproduits à l'identique dans CMCteams **et** sur la page Départs. C'est ce qui a mesuré 41 à 119 personnes mal placées par mois avant correction. `npm run test:pdf-equipes` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-equipes.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-equipes.mjs) |
+| `tests/fixtures/octobre-2026.pdf` **(nouveau, 10.09)** | Le planning d'octobre 2026 que tu as fourni — désormais dans les deux générateurs (CMCteams et Départs) et dans les deux gardes de fidélité. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/octobre-2026.pdf) |
+| `index.html` (v9.897) | Équipes lues dans le récapitulatif du PDF (`_cmcDetectTeamsByRecap`) au lieu d'être devinées · fond des cellules lu par géométrie (CASSINI A / MOREL F retrouvés) · plus aucune couleur ne réécrit un code. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
 | `tests/verify-pdf-vs-surfaces.mjs` **(nouveau)** | **Le garde qui manquait.** Relit les VRAIS PDF avec pdfjs **sans passer par le parser de l'app**, reconstruit la grille par géométrie, et exige que CHAQUE personne et CHAQUE cellule se retrouvent à l'identique dans CMCteams **et** dans la page Départs. C'est ce qui a trouvé MATTERA M (disparu), NICASTRO M (planning inventé) et BLANCHY F / DEGIOVANNI R (sans équipe). `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/verify-cmcteams-light-data-rzlvau/tests/verify-pdf-vs-surfaces.mjs) |
 | `tests/fixtures/pdf-fidelite-baseline.json` **(nouveau)** | Le **cliquet** : la liste des manques CONNUS d'août (MOREL F + 10 sans équipe). Le test échoue si un manque NOUVEAU apparaît — jamais de faux rouge sur l'existant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/tests/fixtures/pdf-fidelite-baseline.json) |
 | `index.html` (v9.894) | 3 correctifs : lignes du PDF regroupées par **proximité** (1,8 pt) et non par arrondi · les passes de réparation **n'inventent plus** de planning pour qui n'est pas dans le PDF · rattachement d'équipe par la **rotation d'horaires** quand les jours de repos ne suffisent pas (cadres exclus). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/verify-cmcteams-light-data-rzlvau/index.html) |
@@ -165,6 +219,15 @@
 | `services/kdmc-uptime/wrangler.toml` | Le cron horaire — côté **Cloudflare**, jamais GitHub (c'est ce qui avait fait suspendre le compte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-uptime/wrangler.toml) |
 | `.github/workflows/deploy-kdmc-uptime.yml` | Déploie la sonde + **premier relevé réel** des 26 adresses dans la foulée | [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-uptime.yml) — se lance **tout seul** à chaque push du worker |
 | `tests/uptime-couverture.test.mjs` | La garde : **aucun sous-domaine du routeur ne peut être oublié** par la surveillance. Ajouter une app sans l'ajouter à la sonde → le gate échoue | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/uptime-couverture.test.mjs) |
+
+## 🛰️ Vérifier le VRAI domaine sans API et sans clic — la CI regarde, et écrit son rapport ici (2026-09-05)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tests/verif-live-rapport.mjs` | Ouvre **cmcteams.kd-mc.com** (repli GitHub Pages, et il DIT lequel a répondu) : version servie, correctif v1.39 présent dans le fichier servi, aucun code admin dans la page — puis, **dans un vrai navigateur**, connecté comme toi : ton équipe et ton miroir du mois, y compris avec un vieux tableau mémorisé. Lecture seule, aucune fiche d'accès créée. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verif-live-rapport.mjs) |
+| `.github/workflows/verif-live-rapport.yml` | Le canal : mon `push` déclenche la CI (elle, elle a le réseau), elle **réécrit le rapport dans le dépôt** — je le relis sans API GitHub et **sans un seul clic de ta part**. | [Exécutions](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/verif-live-rapport.yml) |
+| `audit/verif-live/rapport.md` | **Le résultat, en clair.** Écrit par la CI à chaque contrôle (`audit/` n'est jamais publié sur le site). | [Lire le rapport](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/verif-live/rapport.md) |
+| `audit/verif-live/demande.txt` | Fichier-signal : le toucher relance le contrôle en ligne. | [Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/audit/verif-live/demande.txt) |
 
 ## 🔁 Départs light v1.39 — « Miroir aussi pour chaque » (2026-09-05)
 

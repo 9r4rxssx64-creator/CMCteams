@@ -119,7 +119,7 @@
       "etat": "actif",
       "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": "studio-crea : Registre : votre session est maintenant inscrite sur claude/apex-chat-mfa-faceid (fait pour vous, la garde bloquait tout le monde)"
+      "attend_session": "cmcteams-pdf : DEUX ROUGES SUR MAIN, tous deux dans messaging-app : le durcissement CORS (P2b) casse l'e2e WebKit, et la sentinelle CACHE_VERSION est MORTE depuis toujours"
     },
     "clayscore": {
       "titre": "ClayScore ball-trap scoring system",
@@ -278,7 +278,7 @@
       "maj": "2026-09-10",
       "attend_kevin": null,
       "attend_session": null,
-      "note": "10.09 : fichiers de planning rendus REPRODUCTIBLES (identifiant derive du nom + ordre fixe + sonde qui attend les EQUIPES). Revelait une vraie mauvaise equipe en aout (CONNEN R en BJ au lieu de roulettes). Donnees inchangees vs main, garde test:generateurs-reproductibles cablee et prouvee par 3 sabotages. MOREL F toujours absent d'aout : cause etablie, mais les 2 correctifs evidents regressent (COSTAGLIOLI 31->10) — temoin chiffre ecrit en lecon #240."
+      "note": "10.09 : équipes lues dans le récapitulatif page 1 (v9.897), octobre 2026 intégré, cellules+équipes 0 écart 4 mois × 2 surfaces, CASSINI A/MOREL F retrouvés"
     },
     "secrets-guard": {
       "titre": "Garde anti-fuite de secrets (branche annexe de domaine-audit)",
@@ -304,6 +304,16 @@
       "titre": "Ménage des branches — pourquoi 0 supprimée sur 379",
       "branche": "claude/menage-branches-cause-exacte",
       "sujet": "Diagnostic mesuré du ménage automatique : ruleset ~ALL + historique de main reconstruit",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-10",
+      "attend_kevin": null,
+      "attend_session": null
+    },
+    "menage-outil": {
+      "titre": "Ménage des branches — l'outil qui répond « quel fichier disparaîtrait ? »",
+      "branche": "claude/menage-repli-arbres",
+      "sujet": "branches-superflues.mjs + garde test:menage-branches + correction de la promesse du matin",
       "surfaces": [],
       "etat": "actif",
       "maj": "2026-09-10",
@@ -853,6 +863,24 @@
     },
     {
       "id": "m060",
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "sujet": "ÉQUIPES : l'app devinait, elle LIT maintenant le récapitulatif (page 1) du PDF — 0 écart sur 4 mois × 2 surfaces ; octobre 2026 intégré ; CASSINI A / MOREL F retrouvés",
+      "corps": "Mesuré avant (tests/verify-pdf-equipes.mjs, nouveau) : 41 (oct) · 56 (sept) · 81 (août) · 113 (juil) personnes dans une mauvaise équipe côté CMCteams, +5 côté light, miroirs faux, aucun test ne le voyait. Cause : les équipes étaient DEVINÉES (repos+codes) alors que la page 1 du PDF SBM les écrit bloc par bloc. v9.897 : _cmcDetectTeamsByRecap (autorité, verrouille, persiste cmc_recap_teams) — équipes 1-12 / r1-r12 / c1-c12 = (rangée-1)*6+colonne+1, miroir = rangée 1 <-> 2, encadrés M/CP/CSS/FORMATION -> boards d'absence, aménagement -> amenage. Les détecteurs d'horaire ne sont plus que des filets (numérotation après le plus grand numéro pris). AUSSI : fond de cellule lu par GÉOMÉTRIE (l'ancien « dernier rectangle dessiné » contaminait la 1re ligne de chaque section -> CASSINI A / MOREL F sans planning, leçon #242 close) ; échelle couleurs 0-255 corrigée ; les tags {{CP}}/{{RH}}/{{R}}/{{RRT}}/{{AF}}/{{CDP}} qui FORÇAIENT un code sont retirés (invention). Résultat : cellules 100 % identiques au PDF 4 mois × 2 surfaces (cliquet vidé), 36 blocs + 18 miroirs conformes, 100 % des personnes avec équipe. Si vous lisez teamHistory / cmc_team_mirror_ / DEPARTS_GEN.mirror : la NUMÉROTATION des équipes a changé (elle suit maintenant les colonnes du PDF). Leçons #243-#245.",
+      "ts": "2026-09-10 17:14",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m061",
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "sujet": "P0 CMCteams (v9.898) : le nettoyage de boot effaçait les codes CHEF de tout mois importé et poussait le résultat à Firebase — corrigé ; + un import périmé est remplacé par le seed vérifié",
+      "corps": "Mesuré (tests/verify-seed-remplace-import-perime.mjs) : sur un appareil déjà migré, un septembre importé perdait 3 103 cellules en UN boot (790 « 20/5c », 287 « 19/4'c », 2 014 « 14/19' » sans codes appris, 12 autres) parce que les codes chef créés à l'import n'étaient jamais persistés et que le nettoyage `if(c&&!CODES[c])delete` les jetait — puis ls(\"cmc_ov\") poussait le mois amputé à Firebase. Les mois du seed n'étaient pas touchés (appliqués après), un contexte neuf est wipé au 1er boot (v706) → aucun test ne le voyait. Fix : _cmcBootRegisterCode (dériver/apprendre au lieu de jeter) + codes chef persistés à l'import. ET : le seed porte maintenant `parser` (APP_VER), chaque import écrit cmc_ref_<mois>.parserVersion ; un mois live plus ancien que le seed est remplacé (archivé V1, édits manuels conservés, marqueur idempotent, push Firebase). Si vous testez la persistance d'un mois LIVE : plantez cmc_dver=30 + cmc_v706_total_wiped=1, sinon faux vert. Leçons #246-247.",
+      "ts": "2026-09-10 18:07",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m062",
       "de": "studio-crea",
       "a": "toutes",
       "sujet": "test:bascule + test:consigne-reelle : les deux rouges de main qui etaient a moi sont corriges (m047/m058)",
@@ -861,7 +889,7 @@
       "etat": "ouvert"
     },
     {
-      "id": "m061",
+      "id": "m063",
       "de": "studio-crea",
       "a": "apex-chat",
       "sujet": "Registre : votre session est maintenant inscrite sur claude/apex-chat-mfa-faceid (fait pour vous, la garde bloquait tout le monde)",

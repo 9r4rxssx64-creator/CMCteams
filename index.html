@@ -1315,7 +1315,8 @@ html[data-theme="light"] #topbar{
       /cmcteams-c16ab/i,          // Firebase d\u00e9j\u00e0 g\u00e9r\u00e9 par circuit breaker
       /anthropic\.com/i,          // Erreurs IA g\u00e9r\u00e9es par .catch du fetch IA
       /Failed to fetch/i,         // Chrome : r\u00e9seau
-      /QuotaExceeded/i            // localStorage plein, on a d\u00e9j\u00e0 un fallback
+      /QuotaExceeded/i,           // localStorage plein, on a d\u00e9j\u00e0 un fallback
+      /Background Sync/i          // v9.899 : Background Sync refusé/désactivé (Chrome/Brave) — la file a un repli online, jamais bloquant
     ];
     for(var i=0;i<benign.length;i++){
       if(benign[i].test(msg)||benign[i].test(stack)){
@@ -5739,6 +5740,47 @@ try{_rebuildIndexes();}catch(_){}
 // Firebase, aucune persistance ls() qui syncerait). La détection d'équipe re-tourne
 // ensuite sur ces cellules (comme un import). Désactivable via window.__CMC_NO_SEED
 // (harness de test : on teste l'import brut, pas le seed).
+// v9.898 — Décide si un mois LIVE doit être remplacé par le seed vérifié.
+//   • S.parser = version du parseur qui a produit le seed (écrite par _gen-seed.mjs).
+//   • cmc_ref_<key>.parserVersion = version du parseur de l'import live (écrite à l'import
+//     depuis v9.898 ; absente = import ancien). ref.seedApplied = marqueur d'idempotence.
+//   Remplace si : seed versionné ET (pas de marqueur pour cette version du seed) ET
+//   (import sans version OU version < seed). Jamais si l'import est au moins aussi récent.
+function _cmcSeedVerNum(v){ var mm=/(\d+)\.(\d+)/.exec(String(v||"")); return mm?parseFloat(mm[1]+"."+mm[2]):0; }
+function _cmcSeedReplaceInfo(key,S,cur){
+  try{
+    if(window.__CMC_NO_SEED_REPLACE)return null;
+    var sv=_cmcSeedVerNum(S&&S.parser); if(!sv)return null;
+    var ref=lg("cmc_ref_"+key,null)||null;
+    if(ref&&ref.seedApplied===S.parser)return null;
+    var rv=_cmcSeedVerNum(ref&&ref.parserVersion);
+    if(rv&&rv>=sv)return null;
+    var sig=function(r){ var o={}; Object.keys(r||{}).sort().forEach(function(id){ var d=r[id]||{}, ks=Object.keys(d).filter(function(k){return d[k];}).sort(); if(ks.length){ o[id]={}; ks.forEach(function(k){o[id][k]=d[k];}); } }); return JSON.stringify(o); };
+    var curSig=sig(cur), curCells=0; Object.keys(cur||{}).forEach(function(id){ curCells+=Object.keys(cur[id]||{}).filter(function(k){return cur[id][k];}).length; });
+    return { from:(ref&&ref.parserVersion)||"", to:S.parser, oldCells:curCells, created:0, manual:0, archived:null, identical:function(row){ return sig(row)===curSig; } };
+  }catch(_){ return null; }
+}
+// Persiste le remplacement (cellules, employés, meta) + marqueur idempotent + trace + toast.
+// row=null → les cellules live étaient DÉJÀ identiques au seed : marqueur seul, silencieux.
+function _cmcSeedMarkApplied(key,S,info,row){
+  try{
+    var ym=key.split("-"), iy=parseInt(ym[0],10), im=parseInt(ym[1],10);
+    var ref=lg("cmc_ref_"+key,null)||{year:iy,month:im,rows:{},importedAt:Date.now()};
+    ref.seedApplied=S.parser; ref.parserVersion=S.parser;
+    if(row){ ref.replacedAt=Date.now(); ref.replacedFrom=info.from||"import ancien (sans version)"; ref.archivedAs=info.archived||null; }
+    ls("cmc_ref_"+key,ref);
+    if(!row)return;
+    ls("cmc_ov",A.overrides); ls("cmc_e",A.employees);
+    try{if(typeof _cmcFlushOverridesMeta==="function")_cmcFlushOverridesMeta();}catch(_){}
+    var cells=0; Object.keys(row).forEach(function(id){cells+=Object.keys(row[id]).length;});
+    var label=((typeof MFR!=="undefined"&&MFR[im])||("mois "+(im+1)))+" "+iy;
+    var msg="Planning "+label+" remplacé par la version vérifiée ("+cells+" cellules, ancien "+(info.oldCells||0)+" cellules archivé"+(info.archived?" en "+info.archived:"")+", restaurable"+(info.manual?", "+info.manual+" modification(s) manuelle(s) conservée(s)":"")+")";
+    try{if(typeof _audit==="function")_audit("seed_replace_import_perime",AID,label,info.from||"sans version",S.parser+" · "+msg);}catch(_){}
+    try{console.info("[v9.898 seed] "+msg);}catch(_){}
+    window._cmcSeedReplaced=window._cmcSeedReplaced||[]; window._cmcSeedReplaced.push({key:key,cells:cells,oldCells:info.oldCells,archived:info.archived,manual:info.manual,created:info.created,from:info.from,to:S.parser});
+    setTimeout(function(){ try{if(typeof toast==="function")toast("✅ "+msg,"ok",9000);}catch(_){} },1500);
+  }catch(e){ try{console.warn("[v9.898 seed mark]",e&&e.message);}catch(_){} }
+}
 function _cmcApplyPlanningSeed(){
   try{
     if(window.__CMC_NO_SEED)return 0;
@@ -5748,19 +5790,44 @@ function _cmcApplyPlanningSeed(){
       var m=S.months[key]; if(!m||!m.ov)return;
       var cur=A.overrides[key]||{};
       var hasLive=Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
-      if(hasLive)return; // données live (import/Firebase) = priorité absolue → on ne touche pas
-      var byId={}; A.employees.forEach(function(e){if(e&&e.id)byId[e.id]=e;});
-      (m.emps||[]).forEach(function(se){ if(!se||!se.id)return; if(!byId[se.id]){ var ne={id:se.id,name:se.name,family:se.family||"bj",teamHistory:{},familyHistory:{}}; A.employees.push(ne); byId[se.id]=ne; } });
-      var row={}; Object.keys(m.ov).forEach(function(id){ row[id]={}; Object.keys(m.ov[id]).forEach(function(d){ row[id][d]=m.ov[id][d]; }); });
+      // v9.898 (Kevin 2026-09-10 « l'app a déjà septembre mais trop d'erreurs ») — un mois LIVE
+      // importé par un parseur PLUS ANCIEN que celui qui a produit le seed vérifié est REMPLACÉ
+      // (l'ancien est archivé V1/V2… restaurable, les édits manuels de Kevin sont ré-appliqués).
+      // Un import fait avec un parseur au moins aussi récent garde la priorité (real import wins).
+      var replaceInfo=hasLive?_cmcSeedReplaceInfo(key,S,cur):null;
+      if(hasLive&&!replaceInfo)return; // données live à jour = priorité absolue → on ne touche pas
+      var byId={}, byName={}; A.employees.forEach(function(e){if(e&&e.id){byId[e.id]=e; if(e.name&&!byName[e.name])byName[e.name]=e;}});
+      // Correspondance des identifiants : un employé créé par un ancien import (U_TMP_… daté) et
+      // présent dans le seed sous un autre identifiant temporaire est retrouvé PAR SON NOM.
+      var idMap={};
+      (m.emps||[]).forEach(function(se){ if(!se||!se.id)return; if(byId[se.id]){idMap[se.id]=se.id;return;} var ex=se.name&&byName[se.name]; if(ex&&!/^P\d/.test(ex.id)){idMap[se.id]=ex.id;return;} var ne={id:se.id,name:se.name,family:se.family||"bj",teamHistory:{},familyHistory:{}}; A.employees.push(ne); byId[se.id]=ne; byName[se.name]=ne; idMap[se.id]=se.id; if(replaceInfo)replaceInfo.created++; });
+      var mid=function(id){return idMap[id]||id;};
+      var row={}; Object.keys(m.ov).forEach(function(id){ var t=mid(id); row[t]=row[t]||{}; Object.keys(m.ov[id]).forEach(function(d){ row[t][d]=m.ov[id][d]; }); });
+      if(replaceInfo){
+        if(replaceInfo.identical(row)){ _cmcSeedMarkApplied(key,S,replaceInfo,null); return; }
+        var ym=key.split("-"), iyR=parseInt(ym[0],10), imR=parseInt(ym[1],10);
+        var arch=null; try{arch=_cmcSaveVersionedHistory(iyR,imR,{system:true});}catch(_){}
+        // Édits manuels de Kevin (cmc_manual_overrides_<key>) : priorité humaine, ré-appliqués.
+        var manual=0; try{ var mo=lg("cmc_manual_overrides_"+key,null)||{}; Object.keys(mo).forEach(function(eid){ Object.keys(mo[eid]||{}).forEach(function(d){ var c=mo[eid][d]&&mo[eid][d].code; if(c){ row[eid]=row[eid]||{}; row[eid][d]=c; manual++; } }); }); }catch(_){}
+        replaceInfo.manual=manual; replaceInfo.archived=arch?arch.version:null;
+      }
       A.overrides[key]=row;
       // v9.831 — couleurs PDF à l'identique : fond rouge (convention) / écriture rouge
       // (horaire modifié), portées par la meta (comme l'import).
-      if(m.meta){ A.overrides_meta=A.overrides_meta||{}; var mrow={}; Object.keys(m.meta).forEach(function(id){ mrow[id]={}; Object.keys(m.meta[id]).forEach(function(d){ mrow[id][d]=Object.assign({},m.meta[id][d]); }); }); A.overrides_meta[key]=mrow; }
+      if(m.meta){ A.overrides_meta=A.overrides_meta||{}; var mrow={}; Object.keys(m.meta).forEach(function(id){ var t=mid(id); mrow[t]=mrow[t]||{}; Object.keys(m.meta[id]).forEach(function(d){ mrow[t][d]=Object.assign({},m.meta[id][d]); }); }); A.overrides_meta[key]=mrow; }
+      else if(replaceInfo&&A.overrides_meta&&A.overrides_meta[key]){ delete A.overrides_meta[key]; }
       if(m.mirror&&Object.keys(m.mirror).length){ try{localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror));}catch(_){} }
-      if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[id]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
+      if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]=m.fam[id]; } }); }
       // v9.849 — marqueur STICKY école roulette Europe (KE) : survit au wipe familyHistory
       // one-shot + à la re-dérivation, sinon la détection différée les re-team en cartes.
-      if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[id]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
+      if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
+      if(replaceInfo){
+        // Mois REMPLACÉ : l'ancienne équipe du mois (import périmé) ne doit pas survivre —
+        // elle est re-dérivée des boards vérifiés (_cmcSyncChefsTFromBoards) et du seed.
+        A.employees.forEach(function(e){ if(e&&e.teamHistory&&e.teamHistory[key]&&!/^P\d/.test(e.id))delete e.teamHistory[key]; });
+        if(m.team){ Object.keys(m.team).forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=m.team[id]; } }); }
+        _cmcSeedMarkApplied(key,S,replaceInfo,row);
+      }
       applied++;
     });
     if(applied){ try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} try{if(typeof _rebuildIndexes==="function")_rebuildIndexes();}catch(_){} console.info("[v9.824 seed] "+applied+" mois intégrés (affichage, sans écrasement ni push)"); }
@@ -5821,7 +5888,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.896";
+var APP_VER="v9.899";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -9506,18 +9573,51 @@ function hardReset(){
 }());
 /* v9.783 — _postMigrationFamilies no-op supprimé (code mort vérifié) */
 // Nettoyage codes invalides dans les overrides existants (ex : "19" généré par bug de parsing)
+// v9.898 (P0 mesuré le 2026-09-10, leçon #246) — ce nettoyage SUPPRIMAIT à CHAQUE boot tout code
+// absent de CODES : les codes CHEF « 20/5c » / « 19/4'c » (créés en mémoire à l'import, jamais
+// persistés) et, sur un appareil sans codes appris, les variantes « 14/19' » et CDP « 18/2* ».
+// Mesuré : 3 103 cellules de septembre effacées en un boot (790 chef, 287 chef+apostrophe,
+// 2 014 apostrophe, 12 autres) puis POUSSÉES à Firebase → « mauvais horaires » chez Kevin.
+// Désormais : un code inconnu mais DÉRIVABLE d'un code connu (chef c / apostrophes / CDP *)
+// ou de forme horaire/lettres est ENREGISTRÉ (comme l'import l'aurait fait) ; seul un vrai
+// déchet (« 19 », chiffres seuls) est encore supprimé. Reproduction à l'identique = on ne
+// jette JAMAIS une cellule qu'un humain lit sur le PDF.
+function _cmcBootRegisterCode(c){
+  try{
+    if(!c||CODES[c])return !!CODES[c];
+    var m=String(c).match(/^(.+?)(['"]*)(\*?)(c?)$/); if(!m)return false;
+    var base=m[1], quotes=m[2], star=m[3], chef=m[4];
+    if(!CODES[base]){
+      if(/^\d{1,2}[Hh]?\d{0,2}\/\d{1,2}$/.test(base)||/^[A-Z]{1,6}$/.test(base)){ try{learnNewCode(base);}catch(_){} }
+      if(!CODES[base])return false;
+    }
+    if(base===c)return true;
+    var ent=Object.assign({},CODES[base],{learned:true});
+    if(chef)ent.chef=true;
+    if(star)ent.cdp=true;
+    if(quotes)ent.conv=false;
+    CODES[c]=ent;
+    if(typeof _learnedCodes==="object"&&_learnedCodes){ _learnedCodes[c]=ent; try{ls("cmc_learned_codes",_learnedCodes);}catch(_){} }
+    if(typeof _rebuildCK==="function")_rebuildCK();
+    return true;
+  }catch(_){return false;}
+}
 (function(){
-  var _changed=false;
+  var _changed=false,_kept=0;
   Object.keys(A.overrides).forEach(function(k){
     var empOvs=A.overrides[k]||{};
     Object.keys(empOvs).forEach(function(eid){
       var dayMap=empOvs[eid]||{};
       Object.keys(dayMap).forEach(function(d){
         var c=dayMap[d];
-        if(c&&!CODES[c]){delete dayMap[d];_changed=true;console.warn("Code invalide supprimé:",eid,"j"+d,"=",c);}
+        if(c&&!CODES[c]){
+          if(_cmcBootRegisterCode(c)){_kept++;return;}
+          delete dayMap[d];_changed=true;console.warn("Code invalide supprimé:",eid,"j"+d,"=",c);
+        }
       });
     });
   });
+  if(_kept)console.info("[v9.898 boot codes] "+_kept+" cellule(s) au code dérivé/appris conservée(s) (chef c, apostrophes, CDP *)");
   if(_changed)ls("cmc_ov",A.overrides);
 }());
 // Restaurer la session depuis localStorage avec vérification d'expiration (8h d'inactivité)
@@ -11442,6 +11542,7 @@ function dc(){
             });
             try{localStorage.removeItem("cmc_team_mirror_"+_dkKm);}catch(_){}
             try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(_dkKm);}catch(_){}
+            try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(_dkY,_dkM);}catch(_){}   // v9.897
             if(_dkHash>3){
               try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(_dkY,_dkM);}catch(_agt){}
               try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(_dkY,_dkM);}catch(_dcuf){}
@@ -11454,6 +11555,7 @@ function dc(){
               // étaient perdus après le wipe (régression rattrapée par test:vplan).
               try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(_dkY,_dkM);}catch(_fbErr){}
               try{if(typeof _cmcApplyMaladieLongueDuree==="function")_cmcApplyMaladieLongueDuree(_dkY,_dkM);}catch(_ldErr){}
+              try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(_dkY,_dkM);}catch(_){}   // v9.897 : le PDF fait foi
             }
           }catch(_detErr){}
           // UN SEUL re-render (cache key déjà posé → pas de re-détection → rapide).
@@ -14229,7 +14331,13 @@ try{if(typeof window!=="undefined")window.cmcDrillEmpsKpi=cmcDrillEmpsKpi;}catch
     setTimeout(function(){
       navigator.serviceWorker.ready.then(function(reg){
         if(reg && reg.sync){
-          try{ reg.sync.register("cmc-sync-queue"); }catch(_){}
+          // v9.899 (VU en vrai sur cmcteams.kd-mc.com, capture run 34517319384) : register()
+          // renvoie une PROMESSE — quand Background Sync est désactivé (Chrome : réglage
+          // du site, Brave par défaut, Chromium sans permission), elle est REJETÉE, le try/catch
+          // ne l'attrape pas, et l'écran « Erreur asynchrone non gérée » remplaçait TOUTE l'app
+          // 5 s après l'ouverture. La file de sync a déjà son repli (événement online) : on
+          // ignore l'échec (leçon #250).
+          try{ var _bs=reg.sync.register("cmc-sync-queue"); if(_bs&&typeof _bs.catch==="function")_bs.catch(function(){}); }catch(_){}
         }
       }).catch(function(){});
     }, 5000);
@@ -26961,8 +27069,10 @@ function _cmcShowRetryDiag(){
 //
 // Stockage : cmc_history_<year>-<month>_versioned = [{version:"V1",importedAt,snapshot,refData,verifData,pdfText,parserVersion}, ...]
 // Cap 10 versions max FIFO. Local seulement (pas Firebase, gros volume PDF text).
-function _cmcSaveVersionedHistory(iy,im){
-  if(!A.user||A.user.id!==AID)return null;
+function _cmcSaveVersionedHistory(iy,im,opts){
+  // v9.898 : opts.system=true → archivage SYSTÈME (remplacement d'un import périmé par le
+  // seed vérifié), possible même sans session admin (l'archive est locale, jamais destructrice).
+  if(!(opts&&opts.system)&&(!A.user||A.user.id!==AID))return null;
   try{
     var key=iy+"-"+im;
     var historyArr=lg("cmc_history_"+key+"_versioned",[]);
@@ -27560,12 +27670,14 @@ function cmcExportTeamsDetectionDiag(){
     // v9.808 — autorité union-find (verrouille) AVANT le filet rest-pattern, pour que
     // le diag reflète l'état FINAL réel (équipes séparées par codes journaliers).
     try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_){}   // v9.897
     // v9.810 — ré-applique l'autorité géométrique persistée (auto-pin) AVANT les
     // détecteurs d'horaire, pour que le diag reflète l'état FINAL réel (équipes
     // séparées par POSITION). window._cmcPdfGeometry absente ici → on lit cmc_geom_teams.
     try{if(typeof _cmcApplyGeomTeams==="function")_cmcApplyGeomTeams(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_){}   // v9.897 : le PDF fait foi
     try{ls("cmc_e",A.employees);}catch(_){}
 
     // Re-run algo pour avoir le report (FILET fill-only : ne touche pas les emps verrouillés)
@@ -38007,6 +38119,7 @@ function _cmcFinalGeometricFill(iy,im){
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_b){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_c){}
     try{if(typeof _cmcApplyMaladieLongueDuree==="function")_cmcApplyMaladieLongueDuree(iy,im);}catch(_ld){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_ra2){}   // v9.897 : le PDF fait foi
     try{ls("cmc_ov",A.overrides);ls("cmc_e",A.employees);}catch(_e2){}
     try{if(typeof fbWrite==="function"){fbWrite("cmc_ov",A.overrides);fbWrite("cmc_e",A.employees);}}catch(_f){}
     try{if(typeof dc==="function"&&!window._silentReplayMode)dc();}catch(_g){}
@@ -38258,6 +38371,9 @@ function _cmcDetectTeamsByRestPattern(iy,im){
     var _teamMap={};
     _nodes.forEach(function(n){var tk=n.fam+"|"+n.restKey+"|"+n.fwBase;(_teamMap[tk]=_teamMap[tk]||[]).push(n);});
     var famCounters={bj:0,roulettes:0,cmc:0,baccara:0,amenage:0};
+    // v9.897 — les équipes du récapitulatif (verrouillées) occupent déjà des numéros :
+    // repartir APRÈS le plus grand pour ne jamais fusionner un groupe d'horaire dans un bloc du PDF.
+    try{(A.employees||[]).forEach(function(_e){var _t=_e&&_e.teamHistory&&_e.teamHistory[key];if(!_t)return;var _mm=String(_t).match(/^(r|c|b)?(\d+)$/);if(!_mm)return;var _f=_mm[1]==="r"?"roulettes":_mm[1]==="c"?"cmc":_mm[1]==="b"?"baccara":"bj";var _n=parseInt(_mm[2],10);if(_n>(famCounters[_f]||0))famCounters[_f]=_n;});}catch(_fc){}
     var teamGroups=[],_singles=[];
     Object.keys(_teamMap).forEach(function(tk){
       var grp=_teamMap[tk];
@@ -38789,6 +38905,209 @@ function _cmcApplyGeomTeams(iy,im){
   }catch(e){console.warn("[v9.810 applyGeomTeams]",e&&e.message);return{ok:false,error:e&&e.message};}
 }
 
+// ============================================================================
+// v9.897 (Kevin 2026-09-10 « Personnes dans les mauvaises équipes… Aucune erreur n'est
+// tolérée ») — ÉQUIPES = BLOCS DU RÉCAPITULATIF (page 1 du PDF SBM).
+//
+// La page 1 du planning SBM est un récapitulatif où CHAQUE ÉQUIPE EST UN BLOC :
+// en-tête « <effectif> <horaire du 1er jour> du au », puis la liste de ses membres, sur
+// 6 colonnes (une par horaire de la rotation : 20/5 · 19/4 · 16/22 · 14/19 · RH · R).
+// Deux rangées de blocs par section = l'équipe et son MIROIR (même colonne). C'est le
+// « trait noir » de la règle métier de Kevin (2026-05-15 : « le trait noir délimite les
+// équipes quand il y est, sinon regarde les jours de repos ») — lu ici par GÉOMÉTRIE
+// (pdf.js, colonnes de ~101,5 pt), pas par le texte copié-collé où il disparaît.
+//
+// Pourquoi les détecteurs d'horaire ne suffisent pas (mesuré sur 4 PDF réels, 10.09) :
+// des membres d'un même bloc diffèrent sur 1-3 jours (horaire modifié en rouge, CP
+// partiel) → le regroupement « mêmes repos + mêmes codes » les sépare (SESTINI F seul,
+// MORRA A seul, LUBIN O en « congés »…) ou colle un chef à une autre équipe. Résultat :
+// 41 à 119 personnes mal placées par mois, des deux côtés (test:pdf-equipes).
+//
+// GARDE-FOU contre la leçon #112 (« position ≠ équipe ») : ce n'est PAS la position dans
+// la GRILLE (voisins verticaux) qui est lue, mais un BLOC EXPLICITE avec son EFFECTIF
+// annoncé — un bloc n'est retenu que si le nombre de lignes lues == l'effectif écrit
+// (auto-contrôle) ; un bloc d'absence (M/CP/FORMATION/CSS/DEPL…) n'est jamais une équipe.
+//
+// Numérotation : n = (rangée-1)*6 + colonne+1 par section → bj « 1..12 », roulettes
+// « r1..r12 », cartes « c1..c12 » ; miroir = rangée 1 ⇄ rangée 2 de la même colonne.
+// Résultat PERSISTÉ (cmc_recap_teams[key]) pour survivre aux re-détections (boot/diag,
+// où la géométrie n'existe plus) ; membres VERROUILLÉS (_cmcTeamLockAdd) → les détecteurs
+// d'horaire ne les réassignent pas ; ré-appliqué en FIN de chaîne (les filets n'écrasent
+// jamais un bloc du PDF). NE TOUCHE JAMAIS les codes de cellules (reproduction identique).
+// ============================================================================
+function _cmcRecapNorm(s){
+  try{return String(s||"").toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g," ").trim().replace(/ ([A-Z]{1,3}) \1$/," $1");}
+  catch(_){return String(s||"").toUpperCase().replace(/\s+/g," ").trim();}
+}
+// Lit les blocs de la page 1 (items {str,x,y}). Retourne [{section,fam,abs,col,y,count,code,membres:[...]}]
+// Un bloc = un EN-TÊTE « <effectif> <code> du au » (4 items consécutifs en x sur une ligne) ; sa
+// largeur = de l'effectif au « au » (~100 pt). Un nom appartient à l'en-tête le plus PROCHE
+// AU-DESSUS dont la largeur le contient. (Pas de colonnes à pas fixe : les encadrés M/CP/CSS
+// de droite sont décalés de ~20 pt par rapport aux 6 colonnes d'équipes.)
+function _cmcRecapBlocks(items){
+  var HORAIRE=/^(\d{1,2}\/\d{1,2}[^A-Za-z0-9]*c?[^A-Za-z0-9]*|RH|R)$/;   // 20/5 · 19/4"" · 22/6'c (chefs) · RH · R
+  var ABSHDR=/^(M|MAL|AT|CP|CSS|CDP|CRH|CLM|FORMATION|AF|DEPL|DEP|DELDS|SS)$/i;  // encadrés d'absence
+  var NAMERE=/^[A-ZÉÈÀÂÎÔÛÇ][A-Z' \-]*[A-Z]( [A-Za-z]{1,3})?$/;
+  var SECTION=/^(Roulettes|Chefs black Jack|Employés cartes)/i;
+  var its=[];
+  (items||[]).forEach(function(i){var t=String(i.str||"").trim();if(t)its.push({s:t,x:+i.x,y:+i.y});});
+  if(!its.length)return[];
+  var sections=its.filter(function(i){return SECTION.test(i.s);}).sort(function(a,b){return b.y-a.y;});
+  function sectionAt(y){var best="";for(var k=0;k<sections.length;k++){if(sections[k].y>y)best=sections[k].s;}return best;}   // le titre le plus PROCHE au-dessus
+  function famOf(sec){var n=_cmcRecapNorm(sec);if(/AMENAGEMENT/.test(n))return "amenage";if(/^ROULETTES/.test(n))return "roulettes";if(/^CHEFS BLACK/.test(n))return "bj";if(/^EMPLOYES CARTES/.test(n))return "cmc";return null;}
+  // lignes par proximité (« 1 30 » ou le code d'un encadré peuvent être 1 pt à côté)
+  var ys={};its.forEach(function(i){ys[Math.round(i.y*10)/10]=1;});
+  var ancres=[];Object.keys(ys).map(Number).sort(function(a,b){return b-a;}).forEach(function(y){if(!ancres.length||Math.abs(ancres[ancres.length-1]-y)>3)ancres.push(y);});
+  function ligne(i){var b=ancres[0],bd=Infinity;for(var k=0;k<ancres.length;k++){var d=Math.abs(ancres[k]-i.y);if(d<bd){bd=d;b=ancres[k];}}return b;}
+  var lignes={};its.forEach(function(i){var l=ligne(i);(lignes[l]=lignes[l]||[]).push(i);});
+  var lys=Object.keys(lignes).map(Number).sort(function(a,b){return b-a;});
+  // 1) en-têtes
+  var blocs=[];
+  lys.forEach(function(y){
+    var r=lignes[y].sort(function(a,b){return a.x-b.x;});
+    for(var k=0;k+3<r.length;k++){
+      if(!/^\d{1,2}$/.test(r[k].s)||r[k+2].s!=="du"||r[k+3].s!=="au")continue;
+      if(r[k+3].x-r[k].x>130)continue;                          // un en-tête tient dans ~100 pt
+      var cnt=parseInt(r[k].s,10),code=r[k+1].s,sec=sectionAt(y),fam=famOf(sec);
+      var b={section:sec,y:y,x0:r[k].x-25,x1:r[k+3].x+6,hx:r[k].x,count:cnt,code:code,membres:[],sousBlocs:0,ok:false};
+      // un en-tête à effectif 0 (« 0 M du au », rangées aménagement « 0 14/20 ») FERME le bloc du
+      // dessus : les noms qui suivent (ROBIN M, CAPRA C… en maladie longue durée) lui appartiennent
+      if(HORAIRE.test(code)&&fam){b.fam=fam;b.abs=null;}
+      else if(ABSHDR.test(code)){b.fam=null;b.abs=code.toUpperCase();}
+      else continue;
+      b.col=Math.max(0,Math.round((b.hx-22)/101.5));            // 0..5 pour les équipes
+      blocs.push(b);k+=3;
+    }
+  });
+  if(!blocs.length)return[];
+  function blocDe(item){var best=null;for(var k=0;k<blocs.length;k++){var b=blocs[k];if(b.y>item.y+1&&item.x>=b.x0&&item.x<=b.x1&&(!best||b.y<best.y))best=b;}return best;}
+  // 2) membres et sous-blocs
+  lys.forEach(function(y){
+    var r=lignes[y].sort(function(a,b){return a.x-b.x;});
+    r.forEach(function(it,idx){
+      if(/^GR\d CRAPS$/.test(it.s)){var bc=blocDe(it);if(bc)bc.sousBlocs++;return;}   // « GR1 CRAPS 1 31 » : compté comme une ligne par SBM
+      if(!NAMERE.test(it.s)||!/\s/.test(it.s))return;                 // un NOM = « PATRONYME I » (un code de poste « BRTE » n'a pas d'espace)
+      var b=blocDe(it);if(!b)return;
+      var nums=[];for(var q=idx+1;q<r.length&&r[q].x<=b.x1+6;q++){if(/^\d{1,2}$/.test(r[q].s))nums.push(parseInt(r[q].s,10));}
+      b.membres.push({nom:it.s,from:nums.length>=2?nums[0]:null,to:nums.length>=2?nums[1]:null});
+    });
+  });
+  // 3) rangée (équipe = 1, miroir = 2) = rang de l'en-tête parmi ceux de SA section ; auto-contrôle d'effectif
+  var rowsBySec={};
+  blocs.forEach(function(b){if(b.abs)return;(rowsBySec[b.section]=rowsBySec[b.section]||{})[Math.round(b.y)]=1;});
+  blocs.forEach(function(b){
+    var rows=b.abs?[]:Object.keys(rowsBySec[b.section]).map(Number).sort(function(a,c){return c-a;});
+    b.rangee=b.abs?0:rows.indexOf(Math.round(b.y))+1;
+    // auto-contrôle : l'effectif lu == l'effectif annoncé (équipes de rotation seulement ; les
+    // encadrés d'absence et l'aménagement sont pris tels quels, SBM y compte autrement)
+    b.ok=!!b.abs||b.fam==="amenage"||(b.membres.length+b.sousBlocs===b.count);
+  });
+  return blocs;
+}
+function _cmcDetectTeamsByRecap(iy,im){
+  var key=iy+"-"+im;
+  try{
+    var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
+    var page=null;
+    if(geo&&Array.isArray(geo.pages)){for(var pi=0;pi<geo.pages.length;pi++){if(geo.pages[pi]&&geo.pages[pi].pageNum===1){page=geo.pages[pi];break;}}}
+    if(!page||!Array.isArray(page.items)||!page.items.length)return _cmcApplyRecapRecord(iy,im); // hors import : record persisté
+    var blocs=_cmcRecapBlocks(page.items).filter(function(b){return b.membres.length;});
+    var absBlocs=blocs.filter(function(b){return !!b.abs;});
+    blocs=blocs.filter(function(b){return !b.abs;});
+    if(!blocs.length){console.info("[v9.897 recap] aucun bloc d'équipe lisible en page 1 → détecteurs d'horaire");return{ok:false,reason:"no_blocks"};}
+    var ov=(A.overrides&&A.overrides[key])||{};
+    // index des employés : ceux qui ont des cellules ce mois d'abord, puis les autres
+    var byNorm={},byNormAny={};
+    (A.employees||[]).forEach(function(e){
+      if(!e||!e.id||!e.name)return;var n=_cmcRecapNorm(e.name);
+      if(ov[e.id]&&Object.keys(ov[e.id]).length){if(!byNorm[n])byNorm[n]=e;}
+      if(!byNormAny[n])byNormAny[n]=e;
+    });
+    var rec={t:{},f:{},m:{},blocs:0,abs:0,rejets:0,inconnus:[],ts:Date.now()};
+    var byPos={};
+    blocs.forEach(function(b){
+      if(!b.ok){rec.rejets++;console.warn("[v9.897 recap] bloc rejeté (effectif "+b.count+" annoncé, "+(b.membres.length+b.sousBlocs)+" lu) : "+b.section+" col"+b.col+" "+b.code);return;}
+      var n=(b.rangee-1)*6+b.col+1;
+      // horaires aménagés (section « … aménagement ») = UNE équipe dédiée, pas une rotation
+      var tid=b.fam==="amenage"?"amenage":b.fam==="roulettes"?("r"+n):b.fam==="cmc"?("c"+n):String(n);
+      if(b.fam!=="amenage")byPos[b.section+"|"+b.col+"|"+b.rangee]=tid;
+      rec.blocs++;
+      b.membres.forEach(function(mb){
+        var nn=_cmcRecapNorm(mb.nom),e=byNorm[nn]||byNormAny[nn];
+        if(!e){rec.inconnus.push(mb.nom);return;}
+        rec.t[e.id]=tid;if(b.fam!=="amenage")rec.f[e.id]=b.fam;
+      });
+    });
+    // Encadrés d'absence : qui n'est dans AUCUN bloc d'équipe est là où le PDF le met
+    // (M → Maladie, CP/CSS → Congés, FORMATION/AF → Formation, DEPL → Déplacement). Un congé
+    // PARTIEL reste dans son équipe de travail (bloc d'équipe prioritaire). Si plusieurs
+    // encadrés, la période la plus longue l'emporte.
+    var ABSMAP={M:"maladie",MAL:"maladie",AT:"maladie",CP:"conges",CSS:"conges",CDP:"conges",CRH:"conges",CLM:"conges",FORMATION:"formation",AF:"formation",DEPL:"deplacement",DEP:"deplacement",DELDS:"deplacement",SS:"conges"};
+    var absLen={};
+    absBlocs.forEach(function(b){
+      var tid=ABSMAP[b.abs]||"conges";
+      b.membres.forEach(function(mb){
+        var nn=_cmcRecapNorm(mb.nom),e=byNorm[nn]||byNormAny[nn];
+        if(!e||rec.t[e.id]&&!absLen[e.id])return;                 // déjà dans un bloc d'équipe
+        var len=(mb.from&&mb.to)?(mb.to-mb.from+1):31;
+        if(absLen[e.id]&&absLen[e.id]>=len)return;
+        absLen[e.id]=len;rec.t[e.id]=tid;rec.abs++;
+      });
+    });
+    // miroirs : rangée 1 ⇄ rangée 2 d'une même colonne, même section
+    Object.keys(byPos).forEach(function(k){
+      var p=k.split("|");if(p[2]!=="1")return;
+      var m=byPos[p[0]+"|"+p[1]+"|2"];if(!m)return;
+      rec.m[byPos[k]]=m;rec.m[m]=byPos[k];
+    });
+    var all=lg("cmc_recap_teams",{})||{};all[key]=rec;
+    try{ls("cmc_recap_teams",all);}catch(_){}
+    if(rec.inconnus.length)console.warn("[v9.897 recap] "+rec.inconnus.length+" nom(s) du récapitulatif sans employé : "+rec.inconnus.join(", "));
+    var res=_cmcApplyRecapRecord(iy,im);
+    console.info("[v9.897 recap] "+rec.blocs+" blocs d'équipe, "+Object.keys(rec.t).length+" personnes, "+(Object.keys(rec.m).length/2)+" miroirs ("+rec.rejets+" bloc(s) rejeté(s))");
+    try{if(typeof _audit==="function")_audit("teams_recap_v897",AID,key,rec.blocs+" blocs / "+Object.keys(rec.t).length+" emps / "+(Object.keys(rec.m).length/2)+" miroirs",JSON.stringify({rejets:rec.rejets,inconnus:rec.inconnus.slice(0,20)}));}catch(_){}
+    return res;
+  }catch(e){console.warn("[v9.897 recap]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+// Pendant l'import (géométrie présente) : RE-LIT la page 1 — des employés sont créés TARD
+// (passe géométrique finale, v9.822) et doivent être rattachés ; hors import : record persisté.
+function _cmcApplyRecapTeams(iy,im){
+  try{
+    var geo=(typeof window!=="undefined")?window._cmcPdfGeometry:null;
+    if(geo&&Array.isArray(geo.pages)&&geo.pages.some(function(p){return p&&p.pageNum===1&&p.items&&p.items.length;}))return _cmcDetectTeamsByRecap(iy,im);
+  }catch(_){}
+  return _cmcApplyRecapRecord(iy,im);
+}
+// Ré-applique le record persisté : teamHistory + familyHistory + verrou + miroirs (fusion
+// dans cmc_team_mirror_<key>, les paires du récapitulatif faisant foi). Idempotent.
+function _cmcApplyRecapRecord(iy,im){
+  var key=iy+"-"+im;
+  try{
+    var all=lg("cmc_recap_teams",{})||{};var rec=all[key];
+    if(!rec||!rec.t||!Object.keys(rec.t).length)return{ok:false,reason:"no_record"};
+    var byId={};(A.employees||[]).forEach(function(e){if(e&&e.id)byId[e.id]=e;});
+    var applied=0;
+    Object.keys(rec.t).forEach(function(eid){
+      var e=byId[eid];if(!e)return;var tid=rec.t[eid];
+      if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(tid);
+      if(!e.teamHistory)e.teamHistory={};e.teamHistory[key]=tid;
+      if(rec.f&&rec.f[eid]){if(!e.familyHistory)e.familyHistory={};e.familyHistory[key]=rec.f[eid];}
+      if(typeof _cmcTeamLockAdd==="function")_cmcTeamLockAdd(key,eid);
+      applied++;
+    });
+    if(rec.m&&Object.keys(rec.m).length){
+      var mir=lg("cmc_team_mirror_"+key,{})||{};
+      Object.keys(mir).forEach(function(a){if(rec.m[a]||rec.m[mir[a]])delete mir[a];}); // retire les paires stale touchant une équipe du récap
+      Object.keys(rec.m).forEach(function(a){mir[a]=rec.m[a];});
+      try{ls("cmc_team_mirror_"+key,mir);}catch(_){}
+      if(typeof fbWrite==="function")try{fbWrite("cmc_team_mirror_"+key,mir);}catch(_){}
+    }
+    try{ls("cmc_e",A.employees);}catch(_){}
+    try{ls("cmc_t",A.teams);}catch(_){}
+    return{ok:true,applied:applied};
+  }catch(e){console.warn("[v9.897 applyRecap]",e&&e.message);return{ok:false,error:e&&e.message};}
+}
+
 // v9.733 RESCUE PASS retiré v9.734 (Kevin règle absolue "aucune invention,
 // reproduction exacte"). Voir _postValidateImport pour l'enregistrement.
 
@@ -38905,6 +39224,8 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     var ov=A.overrides[key]||{};
     // v9.808 : reset le LOCK union-find pour ce mois (fresh import).
     try{if(typeof _cmcTeamLockReset==="function")_cmcTeamLockReset(key);}catch(_){}
+    // v9.897 — AUTORITÉ : équipes = blocs du récapitulatif (page 1), verrouillées.
+    try{if(typeof _cmcDetectTeamsByRecap==="function")_cmcDetectTeamsByRecap(iy,im);}catch(_rc){console.warn("[v9.897 recap]",_rc&&_rc.message);}
     // v9.810 : ré-applique d'abord l'éventuel résultat géométrique déjà persisté
     // (auto-pin survivant) — il sera rafraîchi juste après par le compute frais
     // (_cmcDetectTeamsByGeometry, plus bas, une fois les cellules géométriques
@@ -38991,6 +39312,8 @@ function _postValidateImport(iy,im,okCount,errCount,errLines){
     // v9.825 — maladie longue durée (PORASSO C/ROBIN M/CAPRA C) : nom dans le PDF sans
     // grille → M intégral + équipe Maladie (en DERNIER, aucun détecteur ne l'écrase).
     try{_cmcApplyMaladieLongueDuree(iy,im);}catch(_ldErr){console.warn("[v9.825 maladie-LD]",_ldErr&&_ldErr.message);}
+    // v9.897 — les blocs du PDF font foi jusqu'au bout : ré-assertion (équipes + miroirs) après les filets.
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_ra){}
     // v9.734 (Kevin 2026-05-23 "Aucune invention. Reproduction exacte de l'import") :
     // Le RESCUE PASS v9.733 (assignation par signature similaire) a été RETIRÉ.
     // Inférer une équipe à partir d'autres emps de signature similaire = INVENTION.
@@ -39914,24 +40237,70 @@ function _doExtractPdfLines(file,onDone,onErr){
           Promise.all([page.getTextContent(),page.getOperatorList()]).then(function(results){
             var tc=results[0],ops=results[1];
             // Construire une map des couleurs texte + fond pour chaque item texte
-            var _colorMap={},_bgColorMap={},_curColor=null,_curBgColor=null,_textIdx=0;
+            var _colorMap={},_curColor=null,_textIdx=0;
             var OPS=pdfjsLib.OPS;
-            var _lastFillBeforeRect=null;
+            // v9.897 (Kevin 2026-09-10 « aucune erreur n'est tolérée ») — FOND DE CELLULE PAR
+            // GÉOMÉTRIE. Avant : « le dernier rectangle rempli avant le texte » servait de fond
+            // à CHAQUE texte suivant, sans regarder OÙ il est. La 1re ligne de données d'une
+            // section héritait donc du fond rose de l'en-tête « Colonne… » : « CASSINI A{{CP}}
+            // 1{{CP}} 31{{CP}} » → format positionnel non reconnu → la personne DISPARAÎT du mois
+            // (CASSINI A oct. 2026, MOREL F août 2026 — leçon #242 : la vraie correction est à
+            // la SOURCE, pas dans les 34 lecteurs en aval). Ici chaque rectangle rempli est gardé
+            // AVEC ses coordonnées (matrice de transformation suivie : save/restore/transform),
+            // et le fond d'un texte = le plus petit rectangle qui CONTIENT son centre. Un fond
+            // ne déborde plus ni sur la cellule d'à côté ni sur la ligne du dessous.
+            var _bgRects=[],_ctm=[1,0,0,1,0,0],_ctmStack=[],_pendingPaths=[],_curBg=null;
+            function _ctmMul(m,n){return [m[0]*n[0]+m[1]*n[2],m[0]*n[1]+m[1]*n[3],m[2]*n[0]+m[3]*n[2],m[2]*n[1]+m[3]*n[3],m[4]*n[0]+m[5]*n[2]+n[4],m[4]*n[1]+m[5]*n[3]+n[5]];}
+            function _ctmPt(x,y){return [_ctm[0]*x+_ctm[2]*y+_ctm[4],_ctm[1]*x+_ctm[3]*y+_ctm[5]];}
             for(var oi=0;oi<ops.fnArray.length;oi++){
-              if(ops.fnArray[oi]===OPS.setFillRGBColor){
-                var rgb=ops.argsArray[oi];
+              var _fn=ops.fnArray[oi],_ar=ops.argsArray[oi];
+              if(_fn===OPS.save){_ctmStack.push(_ctm.slice());}
+              else if(_fn===OPS.restore){_ctm=_ctmStack.pop()||_ctm;}
+              else if(_fn===OPS.transform&&_ar&&_ar.length===6){_ctm=_ctmMul(_ar,_ctm);}
+              else if(_fn===OPS.setFillRGBColor){
+                var rgb=_ar;
                 _curColor=rgb?{r:Math.round(rgb[0]*255),g:Math.round(rgb[1]*255),b:Math.round(rgb[2]*255)}:null;
-                _lastFillBeforeRect=_curColor;
+                // Fond : VRAIE échelle 0-255 (pdf.js 3.x livre déjà 0-255 ; ×255 rendait les seuils
+                // {{CP}}/{{RH}}/{{R}} insensés — un fond lavande RH passait pour du rose CP, et le
+                // parseur FORCE le code au tag : « RH{{CP}} » devenait CP). L'encre du texte garde
+                // l'ancienne échelle (comportement {{REDNAME}}/{{MODH}} inchangé).
+                var _bsc=(rgb&&rgb[0]<=1&&rgb[1]<=1&&rgb[2]<=1)?255:1;
+                _curBg=rgb?{r:Math.round(rgb[0]*_bsc),g:Math.round(rgb[1]*_bsc),b:Math.round(rgb[2]*_bsc)}:null;
               }
-              // Rectangles remplis = fonds de cellules
-              if(ops.fnArray[oi]===OPS.constructPath||ops.fnArray[oi]===OPS.fill){
-                _curBgColor=_lastFillBeforeRect;
+              else if(_fn===OPS.constructPath&&_ar&&_ar[0]&&_ar[1]){
+                var _po=_ar[0],_pa=_ar[1],_pk=0,_cur=[];
+                for(var _pi=0;_pi<_po.length;_pi++){
+                  var _op=_po[_pi];
+                  if(_op===OPS.moveTo){if(_cur.length)_pendingPaths.push(_cur);_cur=[_ctmPt(_pa[_pk],_pa[_pk+1])];_pk+=2;}
+                  else if(_op===OPS.lineTo){_cur.push(_ctmPt(_pa[_pk],_pa[_pk+1]));_pk+=2;}
+                  else if(_op===OPS.rectangle){var _rx=_pa[_pk],_ry=_pa[_pk+1],_rw=_pa[_pk+2],_rh=_pa[_pk+3];_pk+=4;_pendingPaths.push([_ctmPt(_rx,_ry),_ctmPt(_rx+_rw,_ry),_ctmPt(_rx+_rw,_ry+_rh),_ctmPt(_rx,_ry+_rh)]);}
+                  else if(_op===OPS.curveTo){_pk+=6;}
+                  else if(_op===OPS.curveTo2||_op===OPS.curveTo3){_pk+=4;}
+                  else if(_op===OPS.closePath){if(_cur.length)_pendingPaths.push(_cur);_cur=[];}
+                }
+                if(_cur.length)_pendingPaths.push(_cur);
               }
-              if(ops.fnArray[oi]===OPS.showText||ops.fnArray[oi]===OPS.showSpacedText){
+              else if(_fn===OPS.fill||_fn===OPS.eoFill||_fn===OPS.fillStroke||_fn===OPS.eoFillStroke||_fn===OPS.closeFillStroke||_fn===OPS.closeEOFillStroke){
+                for(var _pp=0;_pp<_pendingPaths.length;_pp++){
+                  var _p=_pendingPaths[_pp],_x0=Infinity,_x1=-Infinity,_y0=Infinity,_y1=-Infinity;
+                  for(var _q=0;_q<_p.length;_q++){var _px=_p[_q][0],_py=_p[_q][1];if(_px<_x0)_x0=_px;if(_px>_x1)_x1=_px;if(_py<_y0)_y0=_py;if(_py>_y1)_y1=_py;}
+                  if(_x1>_x0&&_y1>_y0)_bgRects.push({x0:_x0,x1:_x1,y0:_y0,y1:_y1,a:(_x1-_x0)*(_y1-_y0),c:_curBg});
+                }
+                _pendingPaths=[];
+              }
+              else if(_fn===OPS.endPath||_fn===OPS.stroke||_fn===OPS.closeStroke){_pendingPaths=[];}
+              if(_fn===OPS.showText||_fn===OPS.showSpacedText){
                 _colorMap[_textIdx]=_curColor;
-                _bgColorMap[_textIdx]=_curBgColor;
                 _textIdx++;
               }
+            }
+            // fond RÉEL d'un item texte : le plus petit rectangle rempli contenant son centre
+            function _cmcBgAt(it){
+              try{
+                var cx=it.transform[4]+(it.width||0)/2,cy=it.transform[5]+(it.height||0)/2,best=null;
+                for(var ri=0;ri<_bgRects.length;ri++){var r=_bgRects[ri];if(cx>=r.x0&&cx<=r.x1&&cy>=r.y0&&cy<=r.y1&&(!best||r.a<=best.a))best=r;}
+                return best?best.c:null;
+              }catch(_bg){return null;}
             }
             var TOL=3,rowMap={};
             // v9.892 (Kevin 2026-09-06 « vérifie en réel, tout à l'identique ») —
@@ -39966,7 +40335,7 @@ function _doExtractPdfLines(file,onDone,onErr){
               var x=it.transform[4];
               var t=(it.str||"").replace(/\s+/g," ").trim();
               var col=_colorMap[_ti]||null;
-              var bgCol=_bgColorMap[_ti]||null;
+              var bgCol=_cmcBgAt(it);   // v9.897 : fond par géométrie (plus d'héritage du rectangle précédent)
               _ti++;
               // v9.766 — collecte item brut avant le filtre du texte vide
               try{
@@ -40071,18 +40440,24 @@ function _doExtractPdfLines(file,onDone,onErr){
               });
               // Encoder la couleur de fond dans le texte avec un marqueur {{TYPE}}
               // v9.614 — Ajout {{FF}} faisant fonction (bleu) + {{STAR}} étoile (rouge) + {{REDNAME}} nom rouge non reconnu
-              var line=items.map(function(i){
+              var line=items.map(function(i,_ix){
                 var tag="";
-                if(i.bg){
+                // v9.897 — un marqueur de FOND ne se pose que sur une CELLULE de code, jamais sur
+                // un jeton STRUCTUREL : code de poste (1er de la ligne), nom (contient un espace),
+                // « * » (chef/CDP, fond rose décoratif), numéros « du / au ». Sinon le format
+                // positionnel ne reconnaît plus la ligne et la personne disparaît (leçon #242).
+                var _tStruct=(_ix===0)||/\s/.test(i.t||"")||/^\*$/.test(i.t||"")||/^\d{1,2}$/.test(i.t||"");
+                if(i.bg&&!_tStruct){
                   // v9.614 — Faisant fonction (fond bleu) prioritaire car spécifique
                   if(i.bg.b>180&&i.bg.r<150&&i.bg.g<180&&i.bg.b>i.bg.r+40)tag="{{FF}}";
-                  else if(i.bg.r>200&&i.bg.g>=80&&i.bg.g<=180&&i.bg.b<100)tag="{{CDP}}";
-                  else if(i.bg.g>150&&i.bg.r<150&&i.bg.b<150)tag="{{AF}}";
                   else if(i.bg.r>200&&i.bg.g<80&&i.bg.b<80)tag="{{CONV}}";
-                  else if(i.bg.r>200&&i.bg.g>150&&i.bg.b>180&&i.bg.r>i.bg.g)tag="{{CP}}";
-                  else if(i.bg.r>80&&i.bg.r<160&&i.bg.b>150&&i.bg.g<100)tag="{{RH}}";
-                  else if(i.bg.r>160&&i.bg.b>180&&i.bg.g>140&&i.bg.g<200&&i.bg.b>i.bg.g)tag="{{R}}";
-                  else if(i.bg.r>220&&i.bg.g>200&&i.bg.b<120)tag="{{RRT}}";
+                  // v9.897 — {{CDP}}/{{AF}}/{{CP}}/{{RH}}/{{R}}/{{RRT}} RETIRÉS : le parseur FORÇAIT le
+                  // code au tag (« CLM » sur fond rose devenait CP = une INVENTION, règle « reproduction
+                  // à l'identique » : le TEXTE du PDF fait foi, la couleur n'est qu'une méta). Avec les
+                  // vraies couleurs (fond par géométrie, échelle 0-255) ces tags tombaient sur des
+                  // centaines de cellules réelles ; l'ancien état « dernier rectangle » ne les posait
+                  // qu'au hasard, et la fidélité était déjà 100 % sans eux. CONV (méta rouge) et FF
+                  // (nom sur fond bleu) ne modifient jamais un code : conservés.
                 }
                 // v9.614 — Star explicite dans le texte
                 if(/[★☆⭐]/.test(i.t||"")) tag+="{{STAR}}";
@@ -40101,7 +40476,7 @@ function _doExtractPdfLines(file,onDone,onErr){
                 // codes). Le tag est confirmé APRÈS coup par correspondance à un vrai
                 // employé (_cmcApplyEcoleToRoulettes) → DELTTRA/faux positifs = ignorés.
                 if(i.bg && i.bg.b>=i.bg.r+15 && i.bg.b>=i.bg.g+8 && i.bg.b>190 && i.bg.r>130
-                   && /^[A-Z][A-Z\s.\-]{2,}$/.test((i.t||"").trim()) && tag.indexOf("{{ECOLE}}")<0){
+                   && /^[A-Z][A-Z\s.\-]{2,}$/.test((i.t||"").trim()) && /\s/.test((i.t||"").trim()) && tag.indexOf("{{ECOLE}}")<0){   // v9.897 : un NOM porte un espace (« DELDS » sur fond bleu clair n'est pas une école)
                   tag+="{{ECOLE}}";
                 }
                 // v9.831 — Reproduction identique : fond rouge = {{CONV}} (convention),
@@ -41990,7 +42365,7 @@ function doImport(){
   }
   if(!A.overrides[key])A.overrides[key]={};
   // Stocker la r\u00e9f\u00e9rence brute pour v\u00e9rification ult\u00e9rieure
-  var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory};
+  var refData={year:iy,month:im,rows:{},importedAt:Date.now(),version:_importVersion,history:_importHistory,parserVersion:APP_VER};
   var ok=0,err=0,errLines=[],_fuzzyMatches=[]; // _fuzzyMatches = correspondances incertaines (bigram)
   var _csvParsed=false,_csvCadreMode=false;
   var importFamily="bj"; // famille courante par defaut
@@ -42216,7 +42591,7 @@ function doImport(){
             if(_chefM&&CODES[_chefM[1]]){
               var _chefCode=_chefM[1]+_chefM[2]+"c";
               if(!CODES[_chefCode]){
-                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true,learned:true});if(typeof _learnedCodes==="object"&&_learnedCodes){_learnedCodes[_chefCode]=CODES[_chefCode];ls("cmc_learned_codes",_learnedCodes);}if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){} /* v9.898 : persisté, sinon supprimé au boot suivant (leçon #246) */
               }
               _ac=_chefCode;
             }
@@ -43164,7 +43539,7 @@ function doImport(){
             if(_chefM&&CODES[_chefM[1]]){
               var _chefCode=_chefM[1]+_chefM[2]+"c";
               if(!CODES[_chefCode]){
-                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true});if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){}
+                try{CODES[_chefCode]=Object.assign({},CODES[_chefM[1]],{chef:true,learned:true});if(typeof _learnedCodes==="object"&&_learnedCodes){_learnedCodes[_chefCode]=CODES[_chefCode];ls("cmc_learned_codes",_learnedCodes);}if(typeof _rebuildCK==="function")_rebuildCK();}catch(_ce){} /* v9.898 : persisté, sinon supprimé au boot suivant (leçon #246) */
               }
               code=_chefCode;
             }
@@ -48756,6 +49131,7 @@ setTimeout(function(){
     try{if(typeof _cmcDetectTeamsByDailyCodes==="function")_cmcDetectTeamsByDailyCodes(iy,im);}catch(_){}
     try{if(typeof _cmcDetectTeamsByRestPattern==="function")_cmcDetectTeamsByRestPattern(iy,im);}catch(_){}
     try{if(typeof _cmcFallbackUnassignedTeams==="function")_cmcFallbackUnassignedTeams(iy,im);}catch(_){}
+    try{if(typeof _cmcApplyRecapTeams==="function")_cmcApplyRecapTeams(iy,im);}catch(_){}   // v9.897 : le PDF fait foi
     try{ls("cmc_e",A.employees);}catch(_){}
     if(typeof dc==="function")setTimeout(dc,200);
     console.info("[v9.749 auto-fix-boot] terminé");
