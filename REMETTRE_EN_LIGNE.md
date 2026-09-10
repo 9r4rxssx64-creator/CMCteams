@@ -61,20 +61,26 @@ et une quinzaine d'autres. Dans le mauvais, seulement 4 ou 5.
 corrigé le 6.09.2026.)*
 
 1. **Créer un projet Pages** → onglet **« Upload assets »** (pas « Connect to Git ») → glisser le dossier des applications
-2. **Changer UNE ligne dans le routeur** (compte `9r4rxssx64`) → *Modifier le code* → cherche la ligne
-   qui commence par `const upstreamUrl = UPSTREAM` (**ligne ~309** aujourd'hui — le numéro bouge à
-   chaque commit, cherche par le contenu, jamais par le numéro) :
+2. **Poser DEUX variables dans le routeur** (compte `9r4rxssx64` → Worker `kdmc-router` →
+   *Paramètres → Variables et secrets*). **Zéro ligne de code à toucher** : le routeur en ligne
+   lit ces deux réglages (`env.UPSTREAM_BASE`, `env.UPSTREAM_PREFIX`) et garde son comportement
+   d'avant tant qu'ils sont absents.
 
-```js
-    const upstreamUrl = UPSTREAM + upstreamPath + url.search;   // ← avant
-    const upstreamUrl = 'https://kdmc0.pages.dev' + upstreamPath.replace('/CMCteams', '') + url.search;   // ← après
-```
+| Variable | Valeur à taper | Pourquoi |
+|---|---|---|
+| `UPSTREAM_BASE` | `https://kdmc0.pages.dev` (l'adresse de TON projet Pages) | d'où viennent les pages |
+| `UPSTREAM_PREFIX` | **vide** (rien du tout) | Cloudflare Pages sert à la RACINE, sans le `/CMCteams` de GitHub |
 
-→ *Deploy*. C'est tout. Prouvé par `tests/verify-bascule-une-ligne.mjs`
-(8 sous-domaines rendus depuis le VRAI code déployé, dans les deux rangements possibles
-du paquet). ⚠️ **Ce test ne tourne plus tel quel** : sa référence git est codée en dur sur une
-branche supprimée (`const REF` en tête du fichier) — à repointer sur `origin/main` avant de
-s'en servir comme preuve.
+→ *Déployer* (ou *Enregistrer*, les variables prennent effet tout de suite). C'est tout.
+Un espace ou une barre finale tapés par erreur sont nettoyés par le routeur.
+Prouvé par `tests/verify-bascule-une-ligne.mjs` (nom historique : le test date de
+l'époque « une ligne à changer ») : 8 sous-domaines rendus depuis le VRAI code déployé
+(`origin/main`), dans les deux rangements possibles du paquet, avec la preuve qu'à la racine
+`UPSTREAM_BASE` seule ne suffit PAS. Et `tests/verify-consigne-reelle.mjs` vérifie que ce
+tableau reste d'accord avec le code en ligne (variables lues, préfixe retiré).
+
+> Avant le 10.09.2026 ce document disait « change UNE ligne du routeur » : c'était vrai le
+> 17/08, quand le code ne lisait aucune variable. Depuis, la bascule est un **réglage**.
 
 **Le défaut** : à chaque modification, il faut refaire le paquet et le renvoyer.
 Ce n'est pas « tout auto ».
@@ -94,7 +100,7 @@ je pousse sur GitLab  →  Cloudflare construit et publie tout seul  →  kd-mc.
 3. **▶️ [Créer un projet Pages](https://dash.cloudflare.com/?to=/:account/workers-and-pages/create/pages)** → **« Connect to Git »** → GitLab → `CMCteams`, avec :
    - Build command : `node services/kdmc-router/prepare-secours.mjs --pages`
    - Output directory : `services/kdmc-router/pages-upload`
-4. La même ligne du routeur qu'en 🅰️ (`const upstreamUrl = UPSTREAM…`)
+4. Les mêmes deux variables du routeur qu'en 🅰️ (`UPSTREAM_BASE` = l'adresse Pages, `UPSTREAM_PREFIX` vide)
 
 **Ce que ça apporte en plus** : **16 applications** au lieu de 13 — l'arbre
 généalogique, Chez Lolo et La Détente reviennent aussi. Et plus jamais de ZIP.
@@ -115,8 +121,9 @@ C'est Kevin qui l'a prouvé en une phrase : *« ouvert kdmc0.pages.dev, CMCteams
 toujours »*. Impossible avec l'enveloppe — la racine n'aurait aucun `index.html`
 et Cloudflare aurait renvoyé sa page 404. Donc : fichiers à la racine.
 
-D'où la correction retenue : **une seule ligne**, la 111, qui change l'adresse
-**et** retire le préfixe.
+D'où la consigne retenue : **`UPSTREAM_PREFIX` vide**, en plus de l'adresse — le routeur
+retire alors lui-même le `/CMCteams` avant d'aller chercher la page. (Le 17/08 c'était
+« une seule ligne, la 111 » ; le routeur a été rendu réglable depuis.)
 
 | Adresse ouverte | Ce qui s'affiche (paquet à la racine) |
 |---|---|
@@ -126,8 +133,8 @@ D'où la correction retenue : **une seule ligne**, la 111, qui change l'adresse
 | `kdmc0.pages.dev/coffre-fort/index.html` | **🔐 Coffre-fort perso** |
 
 > Leçon : un rangement supposé n'est pas un rangement vérifié. Le test
-> `verify-bascule-une-ligne.mjs` couvre désormais **les deux** rangements et
-> prouve que la correction de l'un ne marche PAS sur l'autre.
+> `verify-bascule-une-ligne.mjs` couvre **les deux** rangements et prouve que le
+> réglage de l'un (adresse seule) ne marche PAS sur l'autre (racine).
 
 ---
 
