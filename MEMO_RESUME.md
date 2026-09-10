@@ -126,6 +126,77 @@ ce qui fait planter la page — page blanche, zéro bouton, attente de 15 s vou�
   partiellement effacé, l'utilisateur n'a plus rien. Leçon #222.
 
 ---
+## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
+
+- **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
+  vignette sombre (capture automatique de la page) : la page n'avait **aucune icône déclarée**,
+  ni manifest, ni couleur de thème.
+- **Livré** : une vraie icône **aux couleurs du drapeau de Monaco** (rouge Pantone 186 `#CE1126`
+  en haut, blanc en bas) avec le blason doré de la couverture au centre —
+  [icon.svg](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg)
+  (source) + PNG 32/180/192/512 rendus depuis le SVG ; `manifest.json` (nom « Cüjina », plein
+  écran, couleur rouge) ; en-tête de page : `apple-touch-icon`, `theme-color`, titre
+  d'écran d'accueil « Cüjina », favicon. La barre du haut gère déjà l'encoche (safe-area).
+- **Pour voir le changement sur l'iPhone** : supprimer l'ancienne icône de l'écran d'accueil et
+  refaire « Partager → Sur l'écran d'accueil » (iOS ne remplace pas l'icône d'un raccourci déjà
+  posé).
+- **Garde** : `tests/verify-cuisine-lecture.mjs` vérifie aussi la présence des 6 fichiers d'icône,
+  leurs couleurs (rouge/blanc) et leur déclaration dans la page.
+
+## 10 septembre 2026 (soir) — « Lire les étapes ne fonctionne pas » : la voix du livre de cuisine partait en une seule phrase de 1 400 caractères
+
+- **Ce que Kevin a vu** : sur une recette, le bouton « 🔊 Lire les étapes » ne lisait rien (ou
+  s'arrêtait net). **Ce qui se passait** : toute la recette (600 caractères en moyenne, 1 442 au
+  maximum) était envoyée en **UNE seule phrase vocale**, juste après un `cancel()`, et l'objet
+  n'était gardé nulle part. Sur iPhone, `cancel()` collé à `speak()` fait sauter la lecture et
+  une phrase trop longue se coupe ; sur Chrome, l'objet ramassé fait taire la voix au bout de
+  ~15 s. Le texte entier était en plus copié dans l'attribut du bouton (jusqu'à 1 442 caractères
+  dans le HTML, pour chaque recette ouverte).
+- **Corrigé** ([tools/cuisine/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html)) :
+  la lecture se fait **une phrase par étape** (« Recette : … », « Étape 1. … », « Étape 2. … »,
+  jamais plus de 220 caractères, coupure sur la ponctuation puis les virgules puis les espaces),
+  toutes les phrases sont **gardées en mémoire** et **enchaînées** à la fin de la précédente ;
+  **l'étape lue est surlignée** dans la liste et suit le défilement ; le bouton devient rouge
+  « ⏹ Arrêter la lecture » (un appui arrête, changer les portions ou mettre en favori ne perd
+  pas la lecture, quitter la recette l'arrête) ; plus jamais de `cancel()` à vide avant `speak()`
+  (moteur réveillé s'il est figé « en pause », annulation seulement s'il reste quelque chose,
+  puis 150 ms de respiration) ; une voix **française** est choisie quand l'appareil en a une ;
+  une **erreur du moteur est dite avec sa cause exacte** (« Lecture impossible
+  (synthesis-unavailable) : aucune voix disponible sur cet appareil ») ; si rien ne démarre en
+  3 s, conseil « monte le volume et vérifie le bouton silencieux de l'iPhone ». Bonus : la page
+  déclare enfin son encodage (`<meta charset>`) — sans lui, servie ailleurs que GitHub Pages,
+  tous les accents cassaient.
+- **Preuve** : [tests/verify-cuisine-lecture.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs)
+  (`npm run test:cuisine-lecture`, dans `test:ci`) charge la **vraie page** dans un vrai
+  Chromium avec un moteur vocal simulé qui note chaque phrase : **128 recettes, 991 phrases, la
+  plus longue 216 caractères, chaque étape couverte**, arrêt/quitter/re-rendu/erreur/muet/sans
+  moteur tous vérifiés, 0 erreur JS. Lancé sur l'**ancien** code : 141 problèmes (discriminant).
+  Captures iPhone regardées : étape 1 surlignée en or, bouton rouge « Arrêter ».
+- **Limite honnête** : le vrai iPhone n'a pas été écouté (pas d'iPhone dans le conteneur) ; le
+  test rejoue les événements du moteur comme un navigateur, et le correctif applique les
+  parades connues de Safari. Si Kevin n'entend toujours rien : le message dira la cause exacte,
+  et le bouton silencieux (interrupteur latéral) coupe la voix de synthèse sur iPhone.
+- Leçon **#251** ; inventaire mis à jour.
+## 10 septembre 2026 (soir, studio-crea) — « continu » : liste reprise, deux rouges à moi réparés, la caméra du Studio ne perd plus un film en silence
+
+- **`test:bascule` + `test:consigne-reelle`** (m047/m058) : référence git en dur → résolue ; postulat
+  périmé (« change UNE ligne ») → bascule par 2 variables prouvée sur le vrai code de `main`
+  (46/0, 13/0, 3 sabotages → 3 rouges) ; `REMETTRE_EN_LIGNE.md` remis d'accord. PR #3745. Leçon #243.
+- **Test XSS Départs** : pas cassé, dépendait du dossier courant → 1 ligne, câblé `test:departs-xss`
+  dans `test:ci` (m064 à cmcteams-departs). Vrais chemins des PIN par app dans KEVIN_ACTIONS_TODO.
+  Tâches 7/10/11/13 remesurées. PR #3747.
+- **Studio créa v9.18.2 — caméra** : `test:crea-camera` rouge **une fois sur ~20** (« galerie 2 → 2 »),
+  vert ensuite, sans aucune cause lisible. Sonde : 6 enregistrements de suite, tous rangés en 1,7 s
+  (donc pas une lenteur). Lecture du code : (a) le film n'était archivé **qu'après** la remise en
+  place des boutons — une exception là = film **perdu sans trace** ; (b) l'enregistreur n'avait
+  **aucun `onerror`** — après une erreur d'encodage, `rec` restait posé et le bouton ne faisait plus
+  rien, pour toujours, sans un mot. Corrigé : archiver **d'abord**, `onerror` qui dit la cause,
+  libère le bouton et range ce qui a été filmé. **Prouvé** (test 5b, 16/0) : erreur simulée avant
+  toute image → « Vidéo impossible : UnknownError : … », bouton libre, l'enregistrement suivant
+  marche ; erreur après 1,2 s d'images → film rangé + « Enregistrement interrompu (QuotaExceeded…) ».
+  Le test journalise désormais l'enregistreur : le prochain rouge dira POURQUOI. Attente 12 → 30 s
+  (machine chargée). `sw.js` bumpé avec (`crea-studio-v9.18.2`). Leçon #251.
+- Mon terrain, mesuré : 17 tests Studio créa verts ; `retard-branches` : à jour.
 
 ## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
 
@@ -2119,6 +2190,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    `tools/departs/boards-gen.js`) = les noms des employés, **par conception** de l'app (chaque
    employé voit son équipe). Les mettre derrière le SSO = changer le modèle d'accès de l'app → **feu
    vert Kevin d'abord** (ETAT-INFRA fait n°12 « ce qui reste ouvert »), territoire CMCteams.
+   ✅ **TRANCHÉ 10.09 par Kevin : « non »** — les plannings CMCteams restent accessibles comme
+   aujourd'hui. Tâche close, ne plus la reproposer (gravé : ETAT-INFRA fait n°12, NOTES_USER).
 8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande

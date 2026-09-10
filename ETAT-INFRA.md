@@ -431,6 +431,10 @@ le même fichier (leçon #142). Prouvée discriminante par sabotage.
    n'est vérifié qu'**après** le chargement. On ne peut pas le retirer : c'est l'app.
    Correctif = sortir les données du fichier et les servir derrière la connexion du
    domaine (SSO). **Chantier à part, en attente du feu vert de Kevin.**
+   → **Arbre : FAIT** (v3.16/v3.17, suite ci-dessous). → **CMCteams et ses plannings : NON, décision
+   de Kevin du 10.09.2026** (« 4- non ») : les noms des employés restent servis comme aujourd'hui
+   (l'app est faite pour que chaque employé voie son équipe). **Ne plus reproposer** de mettre
+   CMCteams / `planning-seed.js` / `boards-gen.js` derrière `/__sso/whoami`.
 2. Le **dépôt et son historique** restent publics : le retrait protège le **site**, pas
    `github.com`. Nettoyer l'historique se décide avec Kevin (réécriture = tous les liens
    de commit changent).

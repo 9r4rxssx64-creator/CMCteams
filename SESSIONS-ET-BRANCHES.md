@@ -5,6 +5,9 @@
 > GitLab maintenant jusqu'à nouvel ordre »*.
 > À lire au démarrage, avec `ETAT-INFRA.md` (les 16 faits).
 
+
+> ⚠️ **10.09 au soir — 253 branches `claude/*` supprimees** (389 → 126) apres la correction du ruleset `16725169` (`~ALL` → `~DEFAULT_BRANCH`). Les branches listees plus bas peuvent avoir disparu : **verifiez avant de vous y fier** (`git ls-remote --heads origin`). 18 des 19 sessions concernees avaient une PR fusionnee (numero dans `pipeline/sessions.json`), la 19e (`meta`) n'avait aucun commit. Rien n'est perdu.
+
 ## ⚡ PÉRIMÉ — ne redemandez PLUS le clic du connecteur GitHub (mis à jour le 6.09)
 
 > Cette section demandait à Kevin de retaper l'autorisation du connecteur GitHub. **C'est faux
@@ -65,6 +68,10 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Lingua — connexion prénom + nom | `claude/lingua-connexion-honnete` | ✅ fusionnée (0 commit hors de main, mesuré le 10.09) |
 | Ménage des branches — pourquoi 0 supprimée sur 379 | `claude/menage-branches-cause-exacte` | 🟢 diagnostic mesuré le 10.09 : ruleset `16725169` en `~ALL` (bloque toute suppression) + historique de `main` reconstruit le 09.08 (314 branches sur 361 sans ancêtre commun). PR #3725 |
 | Ménage des branches — l'outil | `claude/menage-repli-arbres` | 🟢 `tools/menage/branches-superflues.mjs` + garde `test:menage-branches` (12/12). 385 branches → 2 sûres et **190 fichiers** à relire une fois. Corrige la promesse fausse du matin |
+| Registre — remise à plat après le ménage | `claude/registre-branches-supprimees` | 🟢 19 sessions repointées, PR de fusion notée pour chacune |
+| Ménage — clôture | `claude/registre-clore-menage` | ✅ chantier terminé : 389 → 125 branches, gardes câblées, règle écrite |
+| « Voir comme Kevin » (sous-produit de workflow) | `claude/voir-34519286077` | 🟡 3 commits hors main, dont 2 de `cmcteams-pdf` — à elle de trancher (inscrite seulement pour éteindre le rouge du gate) |
+| Ménage — vérification de la levée | `claude/menage-verif-suppression` | ⚫ épuisée : fusionnée (PR #3746) avant mon dernier commit, contenu repris dans la ligne au-dessus |
 | CMCteams — Départs light (miroir pour chaque) | `claude/miroir-pour-chaque` | 🟢 Départs v1.39 + vérif LIVE écrite dans le dépôt (5.09) |
 | CMCteams — fidélité au PDF (planning/équipes/départs) | `claude/verify-cmcteams-light-data-rzlvau` | 🟢 septembre 2026 : 248/248 personnes et 7 440/7 440 cellules identiques au PDF, des deux côtés (6.09) |
 
