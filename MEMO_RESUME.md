@@ -51,6 +51,26 @@
   parades connues de Safari. Si Kevin n'entend toujours rien : le message dira la cause exacte,
   et le bouton silencieux (interrupteur latéral) coupe la voix de synthèse sur iPhone.
 - Leçon **#251** ; inventaire mis à jour.
+## 10 septembre 2026 (soir, studio-crea) — « continu » : liste reprise, deux rouges à moi réparés, la caméra du Studio ne perd plus un film en silence
+
+- **`test:bascule` + `test:consigne-reelle`** (m047/m058) : référence git en dur → résolue ; postulat
+  périmé (« change UNE ligne ») → bascule par 2 variables prouvée sur le vrai code de `main`
+  (46/0, 13/0, 3 sabotages → 3 rouges) ; `REMETTRE_EN_LIGNE.md` remis d'accord. PR #3745. Leçon #243.
+- **Test XSS Départs** : pas cassé, dépendait du dossier courant → 1 ligne, câblé `test:departs-xss`
+  dans `test:ci` (m064 à cmcteams-departs). Vrais chemins des PIN par app dans KEVIN_ACTIONS_TODO.
+  Tâches 7/10/11/13 remesurées. PR #3747.
+- **Studio créa v9.18.2 — caméra** : `test:crea-camera` rouge **une fois sur ~20** (« galerie 2 → 2 »),
+  vert ensuite, sans aucune cause lisible. Sonde : 6 enregistrements de suite, tous rangés en 1,7 s
+  (donc pas une lenteur). Lecture du code : (a) le film n'était archivé **qu'après** la remise en
+  place des boutons — une exception là = film **perdu sans trace** ; (b) l'enregistreur n'avait
+  **aucun `onerror`** — après une erreur d'encodage, `rec` restait posé et le bouton ne faisait plus
+  rien, pour toujours, sans un mot. Corrigé : archiver **d'abord**, `onerror` qui dit la cause,
+  libère le bouton et range ce qui a été filmé. **Prouvé** (test 5b, 16/0) : erreur simulée avant
+  toute image → « Vidéo impossible : UnknownError : … », bouton libre, l'enregistrement suivant
+  marche ; erreur après 1,2 s d'images → film rangé + « Enregistrement interrompu (QuotaExceeded…) ».
+  Le test journalise désormais l'enregistreur : le prochain rouge dira POURQUOI. Attente 12 → 30 s
+  (machine chargée). `sw.js` bumpé avec (`crea-studio-v9.18.2`). Leçon #251.
+- Mon terrain, mesuré : 17 tests Studio créa verts ; `retard-branches` : à jour.
 
 ## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
 
@@ -2044,6 +2064,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    `tools/departs/boards-gen.js`) = les noms des employés, **par conception** de l'app (chaque
    employé voit son équipe). Les mettre derrière le SSO = changer le modèle d'accès de l'app → **feu
    vert Kevin d'abord** (ETAT-INFRA fait n°12 « ce qui reste ouvert »), territoire CMCteams.
+   ✅ **TRANCHÉ 10.09 par Kevin : « non »** — les plannings CMCteams restent accessibles comme
+   aujourd'hui. Tâche close, ne plus la reproposer (gravé : ETAT-INFRA fait n°12, NOTES_USER).
 8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande

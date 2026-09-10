@@ -1080,7 +1080,7 @@
    100% client-side, hors-ligne, aucune dépendance externe.
    ============================================================ */
 'use strict';
-var APP_VER='v9.18.1';
+var APP_VER='v9.18.2';
 document.getElementById('vbadge').textContent=APP_VER;
 
 /* ---------- utils ---------- */
@@ -2338,14 +2338,32 @@ var Cam=(function(){
     try{rec=new MediaRecorder(out,mime?{mimeType:mime}:undefined);}catch(e){
       cancelAnimationFrame(raf);rec=null;return hint('⚠️ Vidéo impossible ici ('+String(e.message||e).slice(0,40)+').');}
     rec.ondataavailable=function(ev){if(ev.data&&ev.data.size)chunks.push(ev.data);};
-    rec.onstop=function(){
+    /* v9.18.2 — ranger le film AVANT tout le reste. Avant, la vidéo n'était archivée
+       qu'après la remise en place des boutons : si l'une de ces lignes lançait une
+       exception, le film était PERDU en silence (aucune trace, « Mes créas »
+       inchangé) — c'est ce qu'un rouge intermittent du test caméra laissait voir
+       sans l'expliquer. Et l'enregistreur n'avait AUCUN gestionnaire d'erreur :
+       après une erreur d'encodage, `rec` restait posé et le bouton ne faisait
+       plus rien, pour toujours, sans un mot (règle « toujours détailler l'erreur »). */
+    function finir(){
       cancelAnimationFrame(raf);
       try{out.getTracks().forEach(function(t){if(t.kind==='video')t.stop();});}catch(e){}
-      var b=new Blob(chunks,{type:mime||'video/webm'});rec=null;
-      $('camShoot').classList.remove('rec');$('camRecDot').classList.add('hidden');
+      rec=null;
       if(recT){clearInterval(recT);recT=null;}
+      try{$('camShoot').classList.remove('rec');$('camRecDot').classList.add('hidden');}catch(e){}
+    }
+    rec.onerror=function(ev){
+      var cause=(ev&&ev.error&&(ev.error.name+(ev.error.message?' : '+ev.error.message:'')))||'erreur inconnue';
+      var b=new Blob(chunks,{type:mime||'video/webm'});
+      finir();
+      if(b.size){archive(b,'Vidéo caméra');hint('⚠️ Enregistrement interrompu ('+cause+') — ce qui a été filmé est rangé dans « Mes créas » ('+Math.round(b.size/1024)+' Ko).');}
+      else hint('⚠️ Vidéo impossible : '+cause+'. Réessaie, ou change de navigateur.');
+    };
+    rec.onstop=function(){
+      var b=new Blob(chunks,{type:mime||'video/webm'});
+      if(b.size)archive(b,'Vidéo caméra');           /* d'abord ranger, ensuite l'habillage */
+      finir();
       if(!b.size)return hint('⚠️ Vidéo vide, réessaie.');
-      archive(b,'Vidéo caméra');
       hint('🎬 Vidéo enregistrée dans « Mes créas » ('+Math.round(b.size/1024)+' Ko).');
       var ext=(mime.indexOf('mp4')>=0)?'mp4':'webm';
       openExport('Vidéo prête 🎬','Elle est déjà rangée dans « Mes créas ».',[
