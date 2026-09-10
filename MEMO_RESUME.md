@@ -77,6 +77,11 @@ BJ Éq.3 (16/22) DESARZENS / MAGARA M / ROSSI J (CP) / ALDRIGHETTI JP / CASTEL N
 71 alertes / 71 conflits, 1 en ligne, couverture septembre 30/30. 0 erreur JS. (Le nom de vue
 « plan » n'existe pas : l'app retombe sur l'accueil — utiliser les vrais noms `sv()`.)
 
+**v9.900 (19h20)** : rappel programmé de la session « arbre » (identifiant U_TMP_ tiré de l'horloge) —
+déjà rectifié en v9.896 ; VÉRIFIÉ à l'instant : deux `_gen-boards.mjs` d'affilée identiques à l'octet
+près et identiques au fichier commis ; dernier site `Date.now()` (bouton manuel « Créer ») converti à
+`_cmcTmpEmpId`. Réponse m065, m038 clos.
+
 Preuve réelle de la version servie (ce matin je l'avais seulement déduite du déploiement vert) :
 CMCteams **v9.898**, light **v1.42**. Skill `.claude/skills/voir/SKILL.md`, leçon #249.
 Limite honnête : la session posée est nommée, pas « admin prouvé » Face ID ; le workflow ne se
