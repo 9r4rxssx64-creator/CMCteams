@@ -1,6 +1,21 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
+> Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
+
+Les 6 fichiers que la méthode d'audit exige. À lire dans l'ordre : le **02** pour les chiffres,
+le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `audit/apex-chat/00-INVENTAIRE.md` | Ce qu'est vraiment l'app, mesuré : pile réelle (0 dépendance), 24 194 lignes, **64 routes** dont 20 d'admin, 27 tables, **0 secret** dans le dépôt | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/00-INVENTAIRE.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/00-INVENTAIRE.md) |
+| `audit/apex-chat/01-FONCTIONS.md` | **F01→F78** : tout ce que l'app sait faire, une ligne par fonction, avec son état de test. 2 seules sans test (écrans admin en lecture seule) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/01-FONCTIONS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/01-FONCTIONS.md) |
+| `audit/apex-chat/02-RESULTATS.md` | Les chiffres, avec la commande qui les a produits : **1115/1115 tests**, couverture **89,47 %**, **0 finding ouvert** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/02-RESULTATS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/02-RESULTATS.md) |
+| `audit/apex-chat/03-FINDINGS.md` | Les 5 problèmes trouvés le 5/09 — **tous corrigés et prouvés**. La porte admin (le plus grave) est fermée depuis le 6 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/03-FINDINGS.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/03-FINDINGS.md) |
+| `audit/apex-chat/04-DESIGN.md` | Le design **mesuré** et pas apprécié : 20 jetons de couleur, encoche iPhone traitée, 67 libellés accessibles, et les 2 dettes chiffrées | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/04-DESIGN.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/04-DESIGN.md) |
+| `audit/apex-chat/05-JOURNAL.md` | **Ce que je n'ai PAS pu vérifier**, en 10 points, et pourquoi. Plus mon auto-critique | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/05-JOURNAL.md) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/audit/apex-chat/05-JOURNAL.md) |
 > Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 
 ### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
