@@ -110,6 +110,21 @@ const JOURS = 7;
 const NOM_DE_ROBOT = /-[0-9]{8,}$/;
 const ROBOTS = new Set(['kdmc-bot', 'github-actions[bot]', 'claude-bot']);
 
+/* Une branche dont TOUT est déjà dans `main` ne porte, par définition, aucun travail
+   qui pourrait se perdre — c'est le seul risque que ce contrôle existe pour couvrir
+   (voir l'en-tête : « son travail disparaît quand son conteneur est recyclé »).
+   MESURÉ le 10.09.2026 : les **7** branches que ce contrôle signalait avaient
+   **0 commit hors de main**. Il criait donc au loup sur du travail TERMINÉ, et le
+   cliquet ne servait qu'à taire ce bruit. On ne signale plus qu'une branche qui
+   porte réellement du travail que personne ne suit. */
+function porteDuTravailNonFusionne(branche) {
+  try {
+    const n = execFileSync('git', ['rev-list', '--count', `origin/main..origin/${branche}`],
+      { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return Number(n) > 0;
+  } catch (_) { return true; }        /* illisible → on préfère signaler que taire */
+}
+
 function ecriteParUnRobotSeulement(branche) {
   let auteurs;
   try {
@@ -141,7 +156,10 @@ if (!refs.trim()) {
   const robots = actives.filter((b) => NOM_DE_ROBOT.test(b.branche)
     && ecriteParUnRobotSeulement(b.branche)).map((b) => b.branche);
   const aSuivre = actives.filter((b) => !robots.includes(b.branche));
-  const orphelines = aSuivre.filter((b) => !inscrites.has(b.branche)).map((b) => b.branche).sort();
+  const orphelines = aSuivre
+    .filter((b) => !inscrites.has(b.branche))
+    .filter((b) => porteDuTravailNonFusionne(b.branche))   /* fusionnée = rien à perdre */
+    .map((b) => b.branche).sort();
 
   if (robots.length) {
     console.log(`  ·    ${robots.length} branche(s) fabriquée(s) par un workflow, sans session à inscrire`);

@@ -33,6 +33,32 @@ sabotage : arbre propre **9 OK / 0 FAIL** · chemin partagé réintroduit → **
 juste avant la fusion. Poussé sur la branche, ce commit **remet à zéro les contrôles de la PR** —
 le ménage aurait bloqué la fusion qu'il prétendait faciliter. Retiré avant d'aller plus loin.
 
+### Puis, en m'inscrivant au registre, deux faux succès — dont un à moi
+
+**1. L'outil du pipeline disait « inscrite » sans inscrire.** En inscrivant ma branche neuve,
+il a répondu `✅ inscrite (claude/suivi-domaine-suite)` — et le registre pointait toujours
+l'ancienne. L'objet existant était appliqué *après* les valeurs demandées : pour un identifiant
+déjà connu, l'ancien réécrasait tout, `--branche` compris, message de succès inclus.
+
+Ce n'est pas théorique : `apex-chat` était inscrite sur une branche du **10 juillet** alors que
+ses branches actives datent des **5 et 7 septembre** ; `cuisine` sur une du **14 août**, active
+le **5 septembre**. Le registre censé empêcher qu'une session travaille sans que personne le
+sache **produisait** cette situation. Corrigé, et le message nomme maintenant ce qui change
+(`branche X → Y` ou `à jour, rien à changer`). J'ai prévenu toutes les sessions (message m056)
+sans toucher à leurs branches : je ne sais pas laquelle chacune considère comme la sienne.
+
+**2. Mon propre contrôle des « branches orphelines » criait au loup.** Il en signalait 7 ;
+mesuré aujourd'hui, **les 7 ont 0 commit hors de `main`** — entièrement fusionnées, donc aucun
+travail à perdre, alors que c'est précisément le risque qu'il doit couvrir. J'avais donc créé
+une alarme sur du travail terminé, puis un cliquet pour **taire ma propre alarme**. Le critère
+est maintenant le bon : on ne signale qu'une branche qui porte du travail **non fusionné**.
+Résultat **0 orpheline**, cliquet **vidé (7 → 0)**. Prouvé dans les deux sens : travail non
+fusionné non suivi → **FAIL** ; branche fusionnée non suivie → **silence**.
+
+**Et la carte des branches était fausse** : elle annonçait « urgent, à fusionner » pour deux
+branches déjà dans `main`, et « +1 devant main » pour 7 branches à 0 commit. Remesurée : sur
+**378** branches, **4** portent réellement du travail hors de `main`.
+
 ---
 
 ## 7 septembre 2026 — PR #3679 débloquée (c'étaient des conflits, plus le rouge hérité)
