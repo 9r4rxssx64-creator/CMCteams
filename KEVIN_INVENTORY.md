@@ -1,7 +1,18 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
+> Dernière mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
+
+### 10 septembre 2026 — un diagnostic par branche, plus un fichier partagé
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/automerge-diag/README.md` | **Nouveau.** Explique pourquoi le robot écrit maintenant **un fichier par branche** quand une fusion échoue : avant, toutes les branches écrivaient dans le même fichier avec un contenu différent → conflit garanti dès que deux branches se croisaient. C'est ce qui avait bloqué la PR #3679. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/automerge-diag/README.md) |
+| `tests/verify-actions-conformes.mjs` | Modifié : **règle 5** — un robot qui écrit sur les branches ne doit plus jamais utiliser un chemin partagé. Prouvée par sabotage. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-actions-conformes.mjs) |
+| `.github/workflows/auto-merge-claude.yml` | Modifié : le diagnostic va dans `.github/automerge-diag/<branche>.md` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/auto-merge-claude.yml) |
+
+<!-- ancienne date -->
+> Précédente mise à jour : **2026-09-06** (relecture de tous les `.md` : 2 secrets trouvés en clair → **à régénérer**, nouveau garde anti-fuite, 87 documents corrigés)
 
 ### 6 septembre 2026 — garde « aucun secret écrit dans un document »
 
@@ -34,6 +45,9 @@
 | `tools/pipeline/retard-branches.mjs` | Dit si une branche est dangereusement en retard sur un fichier **partagé** — et surtout si un **mois de planning entier** y a disparu sans faire le moindre bruit. `npm run retard-branches` (ou `--toutes`, `--tout`). Non bloquant. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pipeline/retard-branches.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pipeline/retard-branches.mjs) |
 | `tests/verify-pdf-vs-surfaces.mjs` | Relit les **vrais PDF** sans le parser de l'app et exige chaque personne / chaque cellule des deux côtés. `npm run test:pdf-fidelite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-pdf-vs-surfaces.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-pdf-vs-surfaces.mjs) |
 | `tests/journal-erreurs-lisible.test.mjs` | Empêche le journal d'erreurs de redevenir illisible (3 formes, 3 lecteurs). `npm run test:journal-erreurs` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/journal-erreurs-lisible.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/journal-erreurs-lisible.test.mjs) |
+| `tests/generateurs-reproductibles.test.mjs` | Garantit que les **fichiers de planning fabriqués** sortent identiques à chaque fois. Sans ça, un employé peut se retrouver dans la **mauvaise équipe** selon la charge machine (mesuré : CONNEN R en équipe BJ au lieu de roulettes). `npm run test:generateurs-reproductibles` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/generateurs-reproductibles.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/generateurs-reproductibles.test.mjs) |
+| `tools/shared/_gen-stabilite.mjs` | Dit à la fabrication **quand tout est vraiment posé** : personnes, cases, **équipes** et familles — avant, elle s'arrêtait dès que le nombre de personnes ne bougeait plus, et lisait les équipes trop tôt. Partagé par les deux fabricants. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/shared/_gen-stabilite.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/shared/_gen-stabilite.mjs) |
+| `tools/shared/_json-stable.mjs` | Écrit les fichiers fabriqués dans un **ordre fixe**, pour qu'un changement se relise. Avant, tout le fichier changeait à chaque fabrication même sans aucune différence de données. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/shared/_json-stable.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/shared/_json-stable.mjs) |
 
 
 ## 🇲🇨 L'arbre aux couleurs de Monaco — session 2026-09-06 matin (arbre v3.18 « Munegu », branche `claude/sarzance-family-tree-3jxi7i`)
@@ -2147,3 +2161,20 @@ quelle — il faut l'emballer en app native (je le fais en CI sur un Mac GitHub)
 refuse les coquilles vides autour d'un site : les candidates crédibles sont **CMCteams**,
 **Apex Chat** et **Lingua**, qui ont un vrai contenu propre.
 
+
+---
+
+## 🧾 Journal des déploiements ratés (2026-09-06)
+
+Le connecteur GitHub Actions a été **refusé deux fois par GitHub** → je ne peux pas lire
+les journaux de la CI. Ce filet le remplace : quand une mise en ligne rate, la CI lit le
+journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic pour toi.
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| Le journal (à lire) | La cause exacte des dernières pannes, en français | [audit/deploiements-rates.md](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/deploiements-rates.md) |
+| Le déclencheur | Écoute les 23 mises en ligne, n'agit **que** sur échec | [journal-deploiements.yml](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/journal-deploiements.yml) |
+| Le rédacteur | Trie le journal brut et n'en garde que ce qui explique | [journal-deploiement.py](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/journal-deploiement.py) |
+| Le garde | Vérifie que les 23 restent surveillées, sans volume ni spam | [verify-deploiement-declenche.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-deploiement-declenche.mjs) |
+
+**Rien dans le journal = tout va bien.** Il ne se remplit que sur panne.
