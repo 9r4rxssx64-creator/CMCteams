@@ -53,6 +53,19 @@ minimum démarrer et produire sa sortie.
 > débloque, puis 1 seul clic technique. Ne pas dupliquer la liste ici — elle diverge.
 
 
+## 10 septembre 2026 (nuit) — « voir comme moi partout, kd-mc.com surtout » : deux canaux réels, un outil câblé
+
+| Canal | Mesuré | Sert à |
+|---|---|---|
+| proxy/curl, WebFetch, Firecrawl, Hugging Face | 403 / bloqué / 403 / 402 | rien |
+| **Zapier Webhooks « custom » GET** | HTTP 200, page complète (cmcteams 3,5 Mo, `APP_VER v9.898` ; light `version.txt` = `v1.42`) | lire le code SERVI, les versions, les en-têtes |
+| **`voir-comme-kevin.yml`** (nouveau) | vrai navigateur iPhone, connecté Kevin | VOIR : captures + texte visible + erreurs, déposés sur `claude/voir-<run_id>`, rapatriés par `tools/voir/rapatrier.sh` et ouverts avec Read |
+
+Preuve réelle de la version servie (ce matin je l'avais seulement déduite du déploiement vert) :
+CMCteams **v9.898**, light **v1.42**. Skill `.claude/skills/voir/SKILL.md`, leçon #249.
+Limite honnête : la session posée est nommée, pas « admin prouvé » Face ID ; le workflow ne se
+lance qu'une fois sur `main` (404 sinon).
+
 ## 10 septembre 2026 (soir) — « l'app a déjà septembre mais trop d'erreurs » : le téléphone de Kevin gardait l'ANCIEN import — remplacement automatique livré, et un P0 trouvé en passant (v9.898)
 
 ### Le problème réel
