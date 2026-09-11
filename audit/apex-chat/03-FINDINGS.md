@@ -675,9 +675,12 @@ avec findings ») : 2 MEDIUM, les deux confirmées dans le code et corrigées.**
   dans un token venait forcément de son propriétaire.
 - **Correctif** : `/me/history` et `/me/revoke` exigent `s.verified` (même règle que
   `/passkeys/delete`) ; `/__sso/issue` refuse un `Origin` hors `kd-mc.com` / `*.kd-mc.com` /
-  app native (`capacitor://`, `ionic://`) et `Origin: null` (sans en-tête Origin : inchangé,
-  aucun navigateur tiers en jeu). Rien ne change pour Kevin (ses sessions sont Face ID) ni pour
-  la connexion automatique par nom.
+  app native (`capacitor://`, `ionic://`) / **même origine que l'hôte appelé** (portail servi en
+  local, test navigateur), et `Origin: null` (sans en-tête Origin : inchangé, aucun navigateur
+  tiers en jeu). Rien ne change pour Kevin (ses sessions sont Face ID) ni pour la connexion
+  automatique par nom. **Mesuré après coup** : la première version refusait la même origine
+  sur `127.0.0.1:port` → le test navigateur réel du SSO (`tools/kdmc-sso-e2e`, relancé une fois
+  son installation réparée) perdait 2 contrôles ; corrigé, 8/8 en local.
 - **Test qui prouve** : `services/kdmc-router/self-service.test.mjs` (23/23, 10 nouveaux :
   token forgé → history/revoke refusés, fiche intacte, vraie session vivante ; `/issue` depuis
   `evil.example`, `null`, `kd-mc.com.evil.example` → 403 sans cookie ; depuis `kd-mc.com`,

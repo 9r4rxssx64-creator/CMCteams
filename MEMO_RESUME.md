@@ -70,6 +70,13 @@ Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
   (dont celles lancées après chaque fusion) : même cause que l'audit live le 05/09, le
   `package.json` de la racine fait planter `npm i`. Corrigé de la même façon
   (`--legacy-peer-deps`), relancé pour prouver le routeur corrigé sur le vrai domaine.
+  **Et ce test, une fois réveillé, a attrapé deux choses** : (a) ma première règle d'origine
+  refusait le portail servi en local (même hôte, port `127.0.0.1:…`) → 2 contrôles perdus ;
+  corrigé : la même origine que l'hôte appelé est toujours acceptée (c'est le contraire d'un
+  site tiers), 25/25 côté routeur ; (b) un contrôle périmé depuis le 05/08 (il attendait la
+  fiche `kevin-desarzens`, fusionnée depuis dans la fiche unique `kdmc_admin`) — vérifié avec
+  le routeur d'avant mes changements : déjà rouge. Corrigé. Les 4 tests navigateur du
+  workflow passent en local (8/8, 15/15, 7/7, 3/3).
 
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 

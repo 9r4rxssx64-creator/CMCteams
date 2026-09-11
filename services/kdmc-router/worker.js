@@ -446,14 +446,20 @@ function ssoCookie(request, name) {
    sous-domaine), une app native (capacitor:// / ionic://), ou AUCUN en-tête Origin (outil,
    app installée qui ne l'envoie pas : pas de navigateur tiers en jeu). « null » (iframe
    sandbox, fichier local) et tout autre site → refusé. Strix vuln-0001, 11/09/2026. */
-function ssoOriginOk(origin) {
+function ssoOriginOk(origin, selfHost) {
   if (!origin) return true;
   const o = String(origin).trim().toLowerCase();
   if (o === 'null') return false;
   if (/^(capacitor|ionic):\/\/localhost$/.test(o)) return true;
   let host = '';
-  try { host = new URL(o).hostname; } catch { return false; }
-  return host === 'kd-mc.com' || host.endsWith('.kd-mc.com');
+  try { host = new URL(o).host; } catch { return false; }
+  /* même origine que l'hôte appelé (portail local, test navigateur sur 127.0.0.1:port) :
+     par définition pas un site tiers. Mesuré le 11/09 : sans cette ligne, le test SSO réel
+     (tools/kdmc-sso-e2e) perdait 2 contrôles — le portail servi en local ne pouvait plus
+     émettre de session. */
+  if (selfHost && host === String(selfHost).toLowerCase()) return true;
+  const hn = host.replace(/:\d+$/, '');
+  return hn === 'kd-mc.com' || hn.endsWith('.kd-mc.com');
 }
 function ssoToken(request) {
   const auth = request.headers.get('authorization') || '';
@@ -1165,7 +1171,7 @@ async function handleSso(request, url, env) {
        verified), mais elle n'est acceptée que depuis le domaine lui-même (portail, apps
        *.kd-mc.com) ou une app native (capacitor:// / ionic://). Sans en-tête Origin (outil,
        app installée qui ne l'envoie pas) → inchangé : aucun navigateur tiers n'est en jeu. */
-    if (!ssoOriginOk(request.headers.get('origin'))) return J({ ok: false, reason: 'origine refusée' }, undefined, 403);
+    if (!ssoOriginOk(request.headers.get('origin'), url.host)) return J({ ok: false, reason: 'origine refusée' }, undefined, 403);
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const uid = String(b.uid || '').slice(0, 80).trim();
     const name = String(b.name || '').slice(0, 80).trim();
