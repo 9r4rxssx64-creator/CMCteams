@@ -1,12 +1,20 @@
 {
-  "updated_at": 1789134136209,
-  "total_commits": 906,
+  "updated_at": 1789135615546,
+  "total_commits": 907,
   "projects": [
     "apex",
     "cmcteams",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "af803cc2",
+      "ts": 1789134158000,
+      "msg": "v9.902 / light v1.43: MAJ forcée prouvée en vrai navigateur sur les deux surfaces — 4 écarts corrigés, plus de boucle ni de rechargement en trop",
+      "project": "cmcteams",
+      "ver": "9.902",
+      "author": "claude-code"
+    },
     {
       "sha": "9fb13afd",
       "ts": 1789132650000,
@@ -955,14 +963,6 @@
       "sha": "732bf446",
       "ts": 1789068522000,
       "msg": "apex-chat: voies iPhone des tests e2e rouges depuis le 6.09 — CORS local https + garde specs-lances",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "42752368",
-      "ts": 1789068514000,
-      "msg": "menage: 0 branche(s), 0 annulation(s) fermee(s) [skip ci]",
       "project": "multi",
       "ver": null,
       "author": "claude-code"

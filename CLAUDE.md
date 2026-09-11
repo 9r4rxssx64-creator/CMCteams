@@ -285,6 +285,10 @@ un test d'égalité seul ne l'aurait jamais vu).
 `npm run test:parite-cmcteams-light` (câblé dans `test:ci`) compare la liste de PDF des deux
 générateurs, les mois réellement produits, et l'effectif de chaque mois des deux côtés.
 **Prouvé discriminant** : retirer septembre d'un seul générateur → FAIL immédiat.
+`npm run test:light-firebase` (v9.903 / light v1.44, leçon #264) nourrit la light avec un **Firebase périmé** (ce que
+Kevin a vraiment) et exige les équipes du PDF ; `test:departs-compare` seul ne le voit pas (il affame Firebase).
+**L'appartenance aux équipes vient des boards générés des DEUX côtés ; une correction en mémoire côté app doit être
+PERSISTÉE (`cmc_e`), sinon la light reste fausse.**
 
 ### 4. Test mental obligatoire
 

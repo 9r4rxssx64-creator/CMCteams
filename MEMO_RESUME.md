@@ -1,5 +1,12 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-11 (14h30) — v9.903 / light v1.44 : la LIGHT était encore « mélangée » (Firebase périmé) — corrigé, gardé
+- **Vérif live de v9.901** (run voir 34605702050, main déployé 13h26) : app ✅ 247/247 familles = équipes, Kevin BJ Éq.3, Mon équipe = 5 membres, Départs sous le bon dossier. **Light ❌** : « ton équipe : BJ Éq.12 (16/22) », « Éq.3 (14/19) » avec GATTI/FIA/COZZI… → la light groupe par `teamHistory` de Firebase (ancien import faux) et l'app ne persistait jamais sa correction (4 écritures `cmc_e` au boot re-persistaient les valeurs fausses).
+- **Fix light v1.44** : équipe du mois = board généré qui contient la personne (par nom), teamHistory Firebase seulement pour les mois non générés, normalisation « 2026-09-3 » → « 3 », absents du PDF non versés dans une équipe. **Fix app v9.903** : sync boards persiste `cmc_e` (admin, 1 écriture par mois corrigé).
+- **Garde** `test:light-firebase` (dans test:ci) : Firebase simulé périmé → light = PDF (36 équipes, membres exacts, Kevin 2026-09-3), app répare Firebase (247/247, 0 cellule, ≤ 8 écritures puis silence). Ancienne light → 4 échecs, ancienne app → 237 faux. Leçon #264.
+- v9.902 fusionnée dans main (MAJ forcée) ; v9.903 poussée ensuite.
+- **Reste** : après fusion + déploiement de v9.903/v1.44, relancer « voir comme Kevin » sur main et lire la light (attendu : ton équipe = BJ Éq.3 (16/22)).
+
 ## 2026-09-11 (14h) — « light 42 ? Vérifie Maj forcé pour tous et tout » : v9.902 / light v1.43, prouvé en vrai navigateur
 - **Réponse courte** : light v1.42 ÉTAIT la dernière (v9.901 ne touchait pas la light) ; CMCteams servait v9.900 parce que v9.901 n'était pas encore fusionnée (fusion PR #3773 à 13h24, déploiement run 34604153623 vert à 13h26). L'app n'était pas en retard : la correction n'était pas encore en ligne.
 - **MAJ forcée auditée en RÉEL** (`tests/verify-maj-forcee-reelle.mjs`, `test:maj-forcee` dans test:ci, 27 contrôles, SW actif, session anonyme, cache GitHub Pages simulé) : 4 écarts à la règle + 1 boucle infinie possible + 1 rechargement en trop, tous corrigés (détail leçon #263) : sonde `cache:"reload"`, rechargement sur `?_force_upd_` via `forceRefresh()` (attend SW+caches), `location.pathname` (le hash SSO neutralisait le rechargement — les deux surfaces), 60 s, plafond 3 essais/10 min (`cmc_upd_tries`, `cmc_dep_upd_tries`), plus de 2e rechargement après MAJ ni à la 1re ouverture, badge light = APP_VER = version.txt (v1.43).
