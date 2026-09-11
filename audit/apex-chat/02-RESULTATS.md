@@ -59,7 +59,7 @@ All files          |   82.86 |       76 |   78.55 |   85.52
 | `crypto-core.js` à 100 % partout | **100 / 100 / 100 / 100** — la branche « pas de `window` » (Worker) est maintenant exécutée par `crypto-core-node.test.js` | ✅ |
 | Durable Objects | ConversationDO **99,3 %** lignes ; `BroadcastDO.js` / `PresenceDO.js` = **purs réexports** (0 instruction mesurable → le résumé JSON écrit « 0 % », vitest les tient pour satisfaits) ; contrat prouvé par `durable-objects-shims.test.js` | ✅ |
 | 3 workers secondaires à 100 % | **100 %** (ia, push, sms) | ✅ |
-| `api-worker.js` au-dessus de son plancher | **79,20 %** lignes · 68,48 % branches · 64,47 % fonctions ; plancher **1 point sous la mesure** (78,2 / 67,4 / 63,4 / 74,7) | ✅ |
+| `api-worker.js` au-dessus de son plancher | ~~79,20 % lignes · 68,48 % branches · 64,47 % fonctions~~ → **11/09 : 94,25 % lignes · 81,92 % branches · 100 % fonctions · 91,98 % instructions** (118 tests ajoutés pour les 108 fonctions jamais appelées, `api-worker-fonctions-non-appelees.test.js`) ; plancher relevé à **93,5 / 81 / 99 / 91** | ✅ mesuré |
 | Le gate ne ment pas et ne bloque pas pour une raison d'outil | seuils **par fichier** = valeur mesurée (dixième inférieur) dans `vitest.config.js` ; `messaging-app-tests.yml` **lit cette table** (plus de copie à tenir en miroir) ; `npx vitest run --coverage` → **exit 0** | ✅ VÉRIFIÉ |
 
 **Lecture honnête** : la couverture « réelle » d'Apex Chat n'a pas baissé, elle a été
@@ -69,6 +69,20 @@ couvert reste le plus critique (`api-worker.js`, 6 045 lignes : OTP, admin, JWT,
 **64 % de ses fonctions** seulement sont appelées par un test. Il n'est **pas exclu** de la
 mesure ; son plancher est un cliquet (il ne peut que monter). Je n'ai pas listé une par une les
 fonctions non appelées — c'est le prochain chantier utile, pas un chiffre à maquiller.
+
+**Chantier fait le 11/09.** Les 108 fonctions jamais exécutées ont été listées (16 routes
+nommées : `check-phone`, cercle de confiance, avatar, réglages par utilisateur, cercle privé,
+fiche contact, suppression de conversation, recherche IA, abonnement/désabonnement/test push,
+mise à jour forcée ×3, configuration TURN ; ~90 rappels anonymes : `.catch` des écritures D1
+« au mieux », abandons `setTimeout(() => ctrl.abort())`, envois de files rejetés) et couvertes
+par **118 tests** qui passent tous par `worker.fetch` avec la vraie route, méthode et
+authentification, et vérifient status + code d'erreur exact + `detail`. Mesure après :
+
+```
+$ npx vitest run --coverage          # 11/09, vitest 5.0.0 — 1241 tests, 62 fichiers
+All files          |   94.31 |       86 |   99.05 |   95.96
+  api-worker.js    |   91.98 |    81.92 |     100 |   94.25   (avant : 75.71 / 68.48 / 64.47 / 79.20)
+```
 
 ## 3. Le P0 — la porte admin
 
@@ -116,10 +130,10 @@ chemin légitime existe et a le réseau ouvert : Actions → `apex-chat-e2e.yml`
 | Passe | Statut | Résultat mesuré |
 |---|---|---|
 | **LIVE Apex Chat** (`apex-chat-e2e.yml`) | ✅ **EXÉCUTÉE, puis VERTE** | 1ʳᵉ passe : **prod HTTP 200**, **18 OK / 2 KO** (le même test sur 2 navigateurs) → cause identifiée, test corrigé → **2ᵉ passe : 20/20 ✅** (run `34518010574`, l'issue d'échec #3742 s'est refermée automatiquement) |
-| **LIVE domaine** (`audit-live.yml`) | ✅ **EXÉCUTÉE** | Toutes les surfaces répondent **sauf `lingua.kd-mc.com`** (hors périmètre Apex Chat, signalé à part) |
+| **LIVE domaine** (`audit-live.yml`) | ✅ **EXÉCUTÉE** | Toutes les surfaces répondent **sauf `lingua.kd-mc.com`** (hors périmètre Apex Chat, signalé à part). **11/09** : relancé après le correctif de l'écran blanc (run `34588152564`, lu dans le nouveau check-run) → **toujours rouge sur Lingua, même message**. Rejoué en local : la fenêtre « Nouveau compte » demande **prénom + nom** depuis le 05/09 (`#acPrenom`/`#acNom`), la sonde remplissait l'ancien `#acName` → **défaut de la sonde, pas de l'app** (16 langues, 189 unités, 607 boutons, 0 erreur JS après correction). Sonde corrigée et poussée ; le balayage qu'elle déclenche donne le verdict en ligne |
 | **Second avis indépendant** (`ai-review-independent.yml`) | 🔴 **ÉTEINT — découverte majeure** | **0 succès sur 100 runs** (92 sautés, 6 échecs, 2 annulés). Cause + correctif : voir ci-dessous |
 | **Scan sécu outillé** (`security-suite.yml`) | ✅ **EXÉCUTÉ, LU, TRIÉ** (run `34519764156`) | **2 211 signalements bruts** sur tout le dépôt, **0 secret confirmé vivant** (TruffleHog). Pour Apex Chat : voir § 6.5 — 0 vulnérabilité en production, 7 dans les outils de test **corrigées**, 3 durcissements de workflows **appliqués**, 9 signalements Semgrep encore à identifier (outil livré pour les lire) |
-| **Pentest IA** (`strix-scan.yml`) | ⏱ **EXÉCUTÉ mais TUÉ par le délai** (run `34520670517`, rc = 124 à 26 min) | Le tableau de bord annonce **1 vulnérabilité MEDIUM** dont le contenu n'a pas été écrit avant l'arrêt. Coût mesuré : **13,77 $** (31,8 M jetons). Pas relancé sans ton accord (ça coûte) |
+| **Pentest IA** (`strix-scan.yml`) | ⏱ **EXÉCUTÉ mais TUÉ par le délai** (run `34520670517`, rc = 124 à 26 min) → **11/09 : cause comprise, workflow corrigé, relancé** | Le tableau de bord annonçait **1 vulnérabilité MEDIUM** « non écrite ». Lu dans le code de Strix 1.6.2 : il écrit dans `strix_runs/` (le workflow copiait `agent_runs/`) et **écrit son rapport à l'interruption**. Corrigé : bon dossier copié, dépense bornée (`--max-budget-usd 15`) au lieu du temps, profondeur `standard`, 75 min, inventaire + rapport + fiches dans le check-run. Coût du 1ᵉʳ run : **13,77 $** (31,8 M jetons) |
 
 ### 6.1 Le seul échec e2e était un **test périmé**, pas une régression de l'app
 
@@ -202,7 +216,7 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 |---|---|---|
 | Chaque signalement du périmètre porte sa ligne | **47 / 47** listés par le check-run (`detail_path`), 0 valeur de secret imprimée | ✅ VÉRIFIÉ |
 | Chaque ligne a été ouverte, pas seulement comptée | 47 lues ; verdict et preuve dans le tableau | ✅ VÉRIFIÉ |
-| Failles à corriger | **0** — 2 recommandations P3 (`jq` au lieu de `python3 -c`, SHA au lieu de tag) | ✅ |
+| Failles à corriger | **0** — 2 recommandations P3 (`jq` au lieu de `python3 -c`, SHA au lieu de tag) → **appliquées le 11/09** (3 workflows en `jq`, 23 actions des 10 workflows épinglées `@<sha> # vN`, 4 gardes vertes) | ✅ |
 
 ---
 
@@ -210,8 +224,8 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 
 | Indicateur | Valeur mesurée |
 |---|---|
-| Tests | **1123 / 1123** verts, 61 fichiers (vitest 5 / happy-dom 20) |
-| Couverture globale | **85,52 %** lignes · 76,00 % branches · 78,55 % fonctions — **mesure AST de vitest 5** (le matin, l'ancien outil disait 89,47 / 84,30 / 94,96 pour le même code : voir § 2) ; gate par fichier, exit 0 |
+| Tests | ~~1123 / 1123, 61 fichiers~~ → **1241 / 1241** verts, 62 fichiers (vitest 5 / happy-dom 20) — 11/09 |
+| Couverture globale | ~~85,52 % lignes · 76,00 % branches · 78,55 % fonctions~~ → **95,96 %** lignes · 86,00 % branches · 99,05 % fonctions (11/09, `api-worker.js` 64 → 100 % de fonctions) — **mesure AST de vitest 5** (le 10/09 au matin, l'ancien outil disait 89,47 / 84,30 / 94,96 pour le même code : voir § 2) ; gate par fichier, exit 0 |
 | Findings d'audit | **6** — les **5 de sécurité corrigés et prouvés** (0 ouvert) + **1 P3 vie privée** partiellement traité (numéro personnel dans 12 fichiers de test) |
 | Fonctions cartographiées | **78** (F01–F78) |
 | Fonctions sans aucun test | **2** (F18 sentinelles, F19 chronologie — vues admin en lecture seule) |

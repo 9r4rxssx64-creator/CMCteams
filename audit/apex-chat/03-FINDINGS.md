@@ -618,14 +618,36 @@ dns-prefetch>` (pas de SRI possible), 5 `unsafe-formatstring` INFO sur des `cons
 d'origine **après** liste blanche (voulu, testé), **3 `gha-curl-pipe-shell` classés ERROR qui
 sont des `curl | python3 -c "json.load…"`** — la réponse d'API est parsée, jamais exécutée —,
 et les 7 gitleaks (clé VAPID publique ×3, CSS, `'TEAMID'` de test, en-têtes PEM ×2). Deux
-recommandations P3 restent ouvertes, ni l'une ni l'autre n'est une faille : remplacer
+recommandations P3 restaient ouvertes, ni l'une ni l'autre n'est une faille : remplacer
 `python3 -c` par `jq` dans les trois workflows, et épingler les actions sur un SHA.
 
-### Pentest IA (Strix) — exécuté, mais tué par le délai
+**Appliquées le 11/09** (Kevin : « Go ») : `jq -r '.[0].number // empty'` dans
+`apex-chat-e2e.yml`, `jq -er '.result[0].id'` et `jq -r '.result.id // empty'` dans
+`deploy-apex-chat.yml` (la réponse était déjà lue comme une donnée ; `jq` est déclaratif, sans
+interpréteur) ; les **23 `uses:`** des 10 workflows du périmètre sont épinglés sur le SHA de
+leur tag (`actions/checkout@d23441a4… # v6`, etc., SHA résolus par `git ls-remote` sur les
+dépôts officiels), la version restant lisible en commentaire. Dependabot (déjà configuré,
+hebdomadaire) proposera les montées. Gardes relancées : `test:depot-public-sain`,
+`test:actions-conformes`, `test:workflows-pipefail`, `test:ci-no-stampede` — vertes.
+
+### Pentest IA (Strix) — exécuté, tué par le délai, puis compris et relancé
 
 `strix-scan.yml` a été **arrêté par le délai de 26 minutes** (rc = 124) avant d'écrire son
-rapport. Son tableau de bord annonce **1 vulnérabilité MEDIUM** dont je ne connais **pas le
-contenu**. Coût mesuré de cette exécution : **13,77 $** (31,8 M jetons, modèle gpt-5.4, avec
-des erreurs de flux « Error streaming response » répétées). Je ne l'ai **pas relancé** : ça
-coûte de l'argent réel, et il faudrait d'abord allonger le délai et capturer le dossier de
-travail à l'arrêt. C'est une décision pour Kevin.
+rapport. Son tableau de bord annonçait **1 vulnérabilité MEDIUM** dont je ne connaissais **pas
+le contenu**. Coût mesuré de cette exécution : **13,77 $** (31,8 M jetons, modèle gpt-5.4, avec
+des erreurs de flux « Error streaming response » répétées).
+
+**11/09 — cause racine, lue dans le code de Strix** (clone superficiel de `usestrix/strix`,
+version 1.6.2, `requires-python >= 3.12`) : (1) Strix écrit ses résultats dans
+**`strix_runs/<run>/`** (`penetration_test_report.md`, `vulnerabilities/*.md`,
+`vulnerabilities.csv|json`, `run.json`) — le workflow copiait **`agent_runs/`**, l'ancien
+nom ; (2) sur SIGTERM, `signal_handler` appelle `report_state.cleanup(status="interrupted")`
+qui **écrit les artefacts avant de sortir**. Le rapport de la MEDIUM a donc très probablement
+été écrit, dans un dossier que personne ne copiait. **Correctif** : les deux dossiers sont
+copiés ; la dépense est **bornée** (`--max-budget-usd`, 15 $ par défaut : Strix s'arrête seul,
+proprement) au lieu de compter sur un `timeout` qui le tue au milieu d'une phrase ; la
+profondeur est un choix (`--scan-mode quick|standard|deep`, `standard` par défaut) ; délai du job
+75 min ; le check-run porte l'**inventaire des fichiers produits**, le nombre d'erreurs de
+flux, puis le rapport final, les fiches de vulnérabilité et l'index CSV, dans cet ordre.
+Relancé sur `https://apex-chat.kd-mc.com/` — résultat à lire par
+`node tools/ci/ci.mjs report <run_id>`.
