@@ -1,12 +1,20 @@
 {
-  "updated_at": 1789132650308,
-  "total_commits": 905,
+  "updated_at": 1789134136209,
+  "total_commits": 906,
   "projects": [
     "apex",
     "cmcteams",
     "multi"
   ],
   "commits": [
+    {
+      "sha": "9fb13afd",
+      "ts": 1789132650000,
+      "msg": "v9.901: équipes et familles DU MOIS dans toutes les vues — « toutes les équipes sont mélangées » corrigé, mesuré, gardé",
+      "project": "cmcteams",
+      "ver": "9.901",
+      "author": "claude-code"
+    },
     {
       "sha": "4143516e",
       "ts": 1789131561000,
@@ -955,14 +963,6 @@
       "sha": "42752368",
       "ts": 1789068514000,
       "msg": "menage: 0 branche(s), 0 annulation(s) fermee(s) [skip ci]",
-      "project": "multi",
-      "ver": null,
-      "author": "claude-code"
-    },
-    {
-      "sha": "d69bd4b9",
-      "ts": 1789068417000,
-      "msg": "🧾 Déploiement raté consigné : 10/09/2026 19:26 UTC [skip ci]",
       "project": "multi",
       "ver": null,
       "author": "claude-code"

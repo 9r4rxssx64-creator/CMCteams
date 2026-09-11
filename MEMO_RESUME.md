@@ -1,5 +1,12 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-11 (14h) — « light 42 ? Vérifie Maj forcé pour tous et tout » : v9.902 / light v1.43, prouvé en vrai navigateur
+- **Réponse courte** : light v1.42 ÉTAIT la dernière (v9.901 ne touchait pas la light) ; CMCteams servait v9.900 parce que v9.901 n'était pas encore fusionnée (fusion PR #3773 à 13h24, déploiement run 34604153623 vert à 13h26). L'app n'était pas en retard : la correction n'était pas encore en ligne.
+- **MAJ forcée auditée en RÉEL** (`tests/verify-maj-forcee-reelle.mjs`, `test:maj-forcee` dans test:ci, 27 contrôles, SW actif, session anonyme, cache GitHub Pages simulé) : 4 écarts à la règle + 1 boucle infinie possible + 1 rechargement en trop, tous corrigés (détail leçon #263) : sonde `cache:"reload"`, rechargement sur `?_force_upd_` via `forceRefresh()` (attend SW+caches), `location.pathname` (le hash SSO neutralisait le rechargement — les deux surfaces), 60 s, plafond 3 essais/10 min (`cmc_upd_tries`, `cmc_dep_upd_tries`), plus de 2e rechargement après MAJ ni à la 1re ouverture, badge light = APP_VER = version.txt (v1.43).
+- Ancien code → 8 échecs ; nouveau → 27/27. Suites relancées vertes : autoupdate 7/7, parité 7/7, seed-remplace, departs-pin 9/9, departs-compare 0 écart, equipes-mois, no-pin-leak, check-syntax.
+- Vérifié : le minifieur du déploiement garde `var APP_VER=` ; le routeur transmet `?_v=` à Pages.
+- **En cours** : run « voir comme Kevin » sur main (v9.901 déployée) pour lire `equipes.json` + captures (attendu : 247/247 familles = équipes, Mon équipe = Éq.3).
+
 ## 2026-09-11 (13h30) — v9.901 « Toutes les équipes sont mélangées » : corrigé, prouvé, garde
 - **Données justes, affichage faux.** seed = boards = PDF (285/285 sept, 281/281 oct). Sur les VRAIES données de Kevin (relevé `equipes.json`, run voir 34601813763) : 56/247 personnes en équipe affichées sous leur famille d'origine, 0 `familyHistory` du mois, « Mon équipe » vide, cartes avec l'équipe DEF_EMP figée (« Roul. Éq.7 » pour un membre de BJ Éq.3).
 - **Fix index.html v9.901** : `familyForMonth` → famille de l'équipe du mois avant la famille figée ; seed pose fam/école/miroir manquants même sur un mois live à jour ; boards portent leur famille ; `_getMyTeamFirst`, vEmps (sections, cartes, tri), vPlan (puces), vDeparts (dossiers), modale jour, export PDF, vAbsences → équipe/famille DU MOIS. sw.js `cmcteams-v9.901`.

@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.40</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.43</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.42";
+var APP_VER="v1.43";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -851,7 +851,9 @@ function paintAppDiag(){ var el=document.getElementById("appDiag"); if(!el)retur
   if(!warn && !isAdmin()){ el.style.display="none"; el.innerHTML=""; return; }
   el.style.display="";
   el.innerHTML=(warn?"<span class='warn'>":"<b style='color:var(--gold2)'>")+_appDiagText()+(warn?"</span>":"</b>"); }
-function forceRefresh(){ var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
+// v1.43 : location.pathname (un #hash SSO derrière href.split("?")[0] transformait le rechargement en simple
+// changement de fragment = rien ne se rechargeait).
+function forceRefresh(){ var go=function(){location.replace(location.pathname+"?_force_upd_"+Date.now());};
   if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
     .then(function(){return ('caches' in window)?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(go).catch(go); } else go(); }
 
@@ -869,9 +871,16 @@ document.getElementById("ver").textContent=APP_VER;
         if(!/^v[\d.]+$/.test(t))return;
         if(t===APP_VER)return;
         if(window._depUpdTs&&Date.now()-window._depUpdTs<15000)return; window._depUpdTs=Date.now();
+        // v1.43 ANTI-BOUCLE (Kevin 2026-09-11 « Vérifie Maj forcé pour tous et tout ») : version.txt annonce
+        // une version mais la page servie reste l'ancienne (cache amont pendant une publication) → au plus
+        // 3 rechargements vers la MÊME cible par 10 min, puis le badge (MAJ manuelle) — la page ne saute pas.
+        try{ var tr=JSON.parse(localStorage.getItem("cmc_dep_upd_tries")||"null")||{}; var now=Date.now();
+          if(tr.v===t&&now-(tr.ts||0)<600000){ if((tr.n||0)>=3){console.warn("[v1.43 MAJ] "+t+" annoncée mais page servie toujours "+APP_VER+" après 3 essais — MAJ auto suspendue 10 min");return;} tr.n=(tr.n||0)+1; }
+          else{ tr={v:t,n:1,ts:now}; }
+          localStorage.setItem("cmc_dep_upd_tries",JSON.stringify(tr)); }catch(_){}
         try{if(typeof toast==="function")toast("🔄 Mise à jour "+t+" en cours…");}catch(_){}
         setTimeout(function(){ try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
-          location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now()); },700);
+          location.replace(location.pathname+"?_force_upd_"+Date.now()); },700);
       }).catch(function(){});
     }catch(_){}
   }
