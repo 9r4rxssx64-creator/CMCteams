@@ -88,8 +88,41 @@ for (const url of urls) {
     for (const v of VUES) {
       const ok = await page.evaluate((vv) => { try { if (typeof window.sv === 'function') { window.sv(vv); return true; } } catch (e) { return String(e); } return false; }, v);
       await page.waitForTimeout(2500);
+      // v9.901 — TOUT OUVRIR avant la photo : les familles/sections du planning et des employés
+      // sont fermées par défaut, la capture ne montrait que « Ma section » (on ne voyait pas
+      // les équipes mélangées que Kevin voit en dépliant). Sans secret, lecture seule.
+      await page.evaluate((vv) => { try {
+        if (vv === 'planning' && window._planFamOpen) { Object.keys(_planFamOpen).forEach((f) => { _planFamOpen[f] = true; }); if (window._planAbsOpen) Object.keys(_planAbsOpen).forEach((f) => { _planAbsOpen[f] = true; }); dc(); }
+        if (vv === 'employees' && typeof _adminViewState === 'function') { const s = _adminViewState(); ['primary', 'mirror', 'fam:bj', 'fam:roulettes', 'fam:baccara', 'fam:cmc', 'fam:cadres', 'noteam:nopresence'].forEach((k) => { s[k] = true; }); _setAdminViewState(s); dc(); }
+      } catch (e) {} }, v);
+      await page.waitForTimeout(800);
       const iv = await lire(String(n++).padStart(2, '0') + '-' + v.replace(/[^\w]+/g, '_'));
       P['vue_' + v] = { demandee: ok, affichee: iv.vue, texte: iv.texte.slice(0, 1500) };
+    }
+    // v9.901 — RELEVÉ DES ÉQUIPES (CMCteams) : pour le mois affiché et le suivant, l'équipe et la
+    // famille de CHAQUE employé telles que l'app les calcule sur CET appareil (données Firebase de
+    // Kevin), à comparer au seed (= PDF) depuis l'agent. Aucun secret, aucune donnée sensible :
+    // matricule, nom tel qu'affiché, équipe, famille, nb de cellules.
+    if (VUES.length && await page.evaluate(() => !!(window.A && Array.isArray(A.employees) && typeof teamForMonth === 'function'))) {
+      const releve = await page.evaluate(() => {
+        const out = { appVer: window.APP_VER, seedParser: (window.CMC_PLANNING_SEED || {}).parser || null, mois: {} };
+        const keys = []; const y0 = A.year, m0 = A.month; keys.push(y0 + '-' + m0); keys.push(m0 === 11 ? (y0 + 1) + '-0' : y0 + '-' + (m0 + 1));
+        keys.forEach((key) => {
+          const [y, m] = key.split('-').map(Number);
+          let ref = null, recap = false, hist = null; try { ref = lg('cmc_ref_' + key, null); recap = !!(JSON.parse(localStorage.getItem('cmc_recap_teams') || '{}')[key]); hist = (lg('cmc_history_' + key + '_versioned', []) || []).length; } catch (e) {}
+          out.mois[key] = {
+            ref: ref && { parserVersion: ref.parserVersion || null, seedApplied: ref.seedApplied || null, importedAt: ref.importedAt || null, version: ref.version || null }, recap, versions: hist,
+            mirror: (function () { try { return JSON.parse(localStorage.getItem('cmc_team_mirror_' + key)); } catch (e) { return null; } })(),
+            chefsT: Object.keys(typeof CHEFS_T !== 'undefined' ? CHEFS_T : {}),
+            emps: A.employees.filter((e) => e && e.id).map((e) => ({ id: e.id, n: e.name, fam: e.family || null, fh: (e.familyHistory || {})[key] || null, th: (e.teamHistory || {})[key] || null, tm: teamForMonth(e, y, m, { strict: true }), fm: familyForMonth(e, y, m), cells: Object.keys((A.overrides[key] || {})[e.id] || {}).length, tmo: e.toMo || null })),
+          };
+        });
+        out.teams = (A.teams || []).map((t) => ({ id: t.id, name: t.name, family: t.family || null, board: !!t._board }));
+        return out;
+      }).catch((e) => ({ erreur: String(e && e.message || e).slice(0, 200) }));
+      writeFileSync(join(dossier, 'equipes.json'), JSON.stringify(releve));
+      P.releve = Object.keys(releve.mois || {}).map((k) => k + ' : ' + (releve.mois[k].emps || []).length + ' employés, ' + (releve.mois[k].emps || []).filter((e) => e.tm).length + ' avec équipe, ' + (releve.mois[k].emps || []).filter((e) => e.cells > 0).length + ' avec cellules, recap ' + releve.mois[k].recap + ', parser import ' + ((releve.mois[k].ref || {}).parserVersion || '∅')).join(' · ') || releve.erreur || '';
+      P.captures.push('equipes.json');
     }
   } catch (e) { P.ok = false; P.erreur = String(e && e.message || e).slice(0, 300); echecs++; }
   if (jsErr.length || reqKo.length || http.length) P.ok = P.ok && false;
@@ -106,6 +139,7 @@ for (const P of rapport.pages) {
   if (P.erreur) md.push('- **échec** : ' + P.erreur, '');
   md.push('<details><summary>Texte visible (début)</summary>', '', '```', P.texte.slice(0, 2500), '```', '', '</details>', '');
   for (const k of Object.keys(P).filter((x) => x.startsWith('vue_'))) md.push('- ' + k + ' : demandée ' + JSON.stringify(P[k].demandee) + ' · affichée ' + P[k].affichee, '');
+  if (P.releve) md.push('- relevé des équipes (equipes.json) : ' + P.releve, '');
 }
 writeFileSync(join(SORTIE, 'RAPPORT.md'), md.join('\n'));
 writeFileSync(join(SORTIE, 'rapport.json'), JSON.stringify(rapport, null, 2));
