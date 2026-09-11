@@ -107,6 +107,13 @@ try {
     const p = P(a.CIBLE);
     const carte = document.querySelector('[data-open="' + a.CIBLE + '"]');
     const img = carte ? carte.querySelector('img') : null;
+    /* SA FICHE (Kevin 11.09 « sur sa fiche ») : la photo doit s'y voir en grand, et
+       la fiche doit rester complète — nom, dates, note, commentaire. */
+    openPerson(a.CIBLE);
+    const ov = document.querySelector('.ov');
+    const slides = ov ? [].slice.call(ov.querySelectorAll('.caro .slide img')).map((x) => x.getAttribute('src')) : [];
+    const avatarFiche = ov && ov.querySelector('.av img') ? ov.querySelector('.av img').getAttribute('src') : null;
+    const texteFiche = ov ? (ov.textContent || '') : '';
     return {
       un, deux, trois, quatre,
       champs: Object.keys(p).sort(), photos: (p.photos || []).slice(),
@@ -114,6 +121,8 @@ try {
       naissance: JSON.stringify(p.naissance || {}), pere: p.pere || null, mere: p.mere || null,
       conjoints: (p.conjoints || []).slice(),
       imgSrc: img ? img.getAttribute('src') : null,
+      slides, avatarFiche, ficheNom: texteFiche.indexOf(P(a.CIBLE).prenom || '') >= 0,
+      ficheNote: texteFiche.indexOf('téléphone') >= 0,
       inconnuCree: !!DB.persons.personne_absente_xyz,
     };
   }, { patchPhoto, patchTexte, patchInconnu, CIBLE });
@@ -136,6 +145,12 @@ try {
     'un export TEXTE réimporté (plus récent, sans photos) n\'efface PLUS les photos');
   check(r.quatre.ignor === 1 && !r.inconnuCree,
     'un complément pour quelqu\'un d\'absent est ignoré (aucune carte sans nom)');
+  check(r.slides.length === 2 && r.slides.indexOf(PHOTO_NOUVELLE) >= 0,
+    'SA FICHE affiche la photo en grand (et garde l\'ancienne)', r.slides.length + ' photo(s) dans la fiche');
+  check(r.avatarFiche === PHOTO_ANCIENNE || r.avatarFiche === PHOTO_NOUVELLE,
+    'la vignette en haut de sa fiche est bien une photo');
+  check(r.ficheNom && r.ficheNote,
+    'sa fiche reste complète : son prénom et sa note sont toujours là');
   check(errors.length === 0, '0 erreur JavaScript', errors.slice(0, 2).join(' | '));
 } finally {
   await browser.close(); srv.close();

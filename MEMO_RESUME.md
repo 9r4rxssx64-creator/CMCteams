@@ -20,6 +20,11 @@ Demande de Kevin : *« Intègre la photo de mon père Gérard. »*
   carte qui affiche bien l'image, note/commentaire/dates/parents/conjoints intacts, double import
   sans doublon, export texte réimporté qui n'efface plus rien, complément visant un absent ignoré
   (aucune carte sans nom), 0 erreur. Sabotage → 5 échecs : la fusion compte vraiment.
+- **« Sur sa fiche » (Kevin, 11.09)** — vérifié précisément, en ouvrant la fiche dans le vrai
+  navigateur après l'import : la photo s'affiche **en grand dans sa fiche** (le défilement des
+  photos), **et** en vignette en haut de sa fiche, **et** sur sa carte dans l'arbre. Sa fiche
+  reste complète (prénom, dates, note). Aucun nouveau fichier à envoyer : celui déjà transmis
+  fait exactement ça.
 - Garde `test:arbre-photo` câblée dans `test:ci`. Leçon **#256**.
 
 **⚠️ Deux constats de confidentialité signalés à Kevin (non corrigés — c'est sa décision)** :
