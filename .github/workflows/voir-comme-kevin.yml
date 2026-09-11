@@ -74,7 +74,12 @@ jobs:
           DEST="voir/${{ github.run_id }}"
           mkdir -p "$DEST" && cp -r voir/out/. "$DEST"/ 2>/dev/null || true
           cp /tmp/voir.log "$DEST/journal.txt" 2>/dev/null || true
-          git checkout -b "$BR"
+          # Branche ORPHELINE : elle ne contient QUE les captures (pas de .github/workflows) — sinon
+          # GitHub refuse la création de la branche par le jeton du job dès que l'historique porte
+          # un workflow modifié (« refusing to allow a GitHub App to create or update workflow »,
+          # vécu run 34601407690) ; et la relecture n'a besoin que du dossier voir/<run_id>.
+          git checkout --orphan "$BR"
+          git rm -r -q --cached . >/dev/null 2>&1 || true
           git add "$DEST"
           if git diff --cached --quiet; then echo "Rien à déposer."; exit 0; fi
           git commit -m "voir comme Kevin — captures run ${{ github.run_id }} (${{ inputs.urls }}) [skip ci]"
