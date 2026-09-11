@@ -7,6 +7,28 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 11/09/2026 10:21 UTC
+
+- **Branche** : `claude/apex-chat-suite-2210` · **Commit** : `39b2d744` · **Run** : `34588152576`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34588152576
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3767 — merge auto refusé. Cause exacte ci-dessous.
+[claude/apex-chat-suite-2210 632d03018] diag: pourquoi l'auto-merge de claude/apex-chat-suite-2210 est refusé [skip ci]
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 10/09/2026 22:22 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `4491f54c` · **Run** : `34535801571`
@@ -430,21 +452,6 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 
 ```
 ^[[36;1mif [ -z "$URL" ]; then echo "::error::URL worker introuvable"; exit 1; fi^[[0m
-  Please update to the latest version to prevent critical errors.
-^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mBuild failed with 1 error:^[[0m
-  ^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mExpected string in JSON but found "<<"^[[0m
-##[error]Process completed with exit code 1.
-```
-
-## ❌ La Détente — Déploie le Worker Gemini (autonome) — 10/09/2026 18:37 UTC
-
-- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `033ace14` · **Run** : `34515315340`
-- **Ce qui a lâché** : deploy › Déploiement + secret + capture URL
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34515315340
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mif [ -z "$URL" ]; then echo "::error::URL worker introuvable dans le log"; exit 1; fi^[[0m
   Please update to the latest version to prevent critical errors.
 ^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mBuild failed with 1 error:^[[0m
   ^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mExpected string in JSON but found "<<"^[[0m
