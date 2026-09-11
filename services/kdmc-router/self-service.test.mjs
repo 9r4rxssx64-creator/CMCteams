@@ -93,6 +93,33 @@ const run = async () => {
   j = await r.json();
   ok(j.ok && j.count === 1, 'mes passkeys = les MIENS uniquement (pas ceux d\'autre-user)');
 
+  /* 8) Strix vuln-0001 (11/09/2026) : un token FAIBLE se forge avec n'importe quel uid via
+     /issue. Il ne doit NI lire l'historique de cet uid, NI révoquer ses sessions. */
+  const forged = await mod.fetch(POST('/__sso/issue', { uid: 'kevin-desarzens', name: 'Kevin Desarzens', cgu: true }), env);
+  const forgedCookie = 'kdmc_sso=' + cookieOf(forged);
+  r = await mod.fetch(REQ('/__sso/me/history', { headers: { cookie: forgedCookie } }), env);
+  j = await r.json();
+  ok(j.ok === false && /Face ID/.test(j.reason || '') && !j.history, 'token FAIBLE forgé sur kevin-desarzens → /me/history refusé (Face ID requis), rien de renvoyé');
+  const revokedBefore = JSON.parse(store.get('acc:kevin-desarzens') || '{}').revoked_at || 0;
+  r = await mod.fetch(POST('/__sso/me/revoke', undefined, { cookie: forgedCookie }), env);
+  j = await r.json();
+  ok(j.ok === false && /Face ID/.test(j.reason || ''), 'token FAIBLE forgé → /me/revoke refusé (Face ID requis)');
+  ok((JSON.parse(store.get('acc:kevin-desarzens') || '{}').revoked_at || 0) === revokedBefore, 'la fiche de Kevin n\'a PAS été révoquée par le token forgé');
+  r = await mod.fetch(REQ('/__sso/whoami', { headers: { authorization: fresh } }), env);
+  ok((await r.json()).ok === true, 'la vraie session (Face ID) de Kevin est toujours vivante');
+
+  /* 9) Strix vuln-0001 (CSRF de connexion) : /issue refuse un site tiers, accepte le domaine */
+  r = await mod.fetch(POST('/__sso/issue', { uid: 'csrf-user', name: 'Csrf User' }, { origin: 'https://evil.example' }), env);
+  ok(r.status === 403 && (await r.json()).ok === false && !r.headers.get('set-cookie'), '/issue depuis https://evil.example → 403, aucun cookie posé');
+  r = await mod.fetch(POST('/__sso/issue', { uid: 'csrf-user', name: 'Csrf User' }, { origin: 'null' }), env);
+  ok(r.status === 403, '/issue avec Origin « null » (iframe sandbox) → 403');
+  for (const o of ['https://kd-mc.com', 'https://apex-chat.kd-mc.com', 'capacitor://localhost']) {
+    r = await mod.fetch(POST('/__sso/issue', { uid: 'u-ok', name: 'U Ok' }, { origin: o }), env);
+    ok(r.status === 200 && (await r.json()).ok === true, '/issue depuis ' + o + ' → accepté');
+  }
+  r = await mod.fetch(POST('/__sso/issue', { uid: 'u-ok', name: 'U Ok' }, { origin: 'https://kd-mc.com.evil.example' }), env);
+  ok(r.status === 403, '/issue depuis kd-mc.com.evil.example (préfixe trompeur) → 403');
+
   console.log(`Self-service test: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 };
