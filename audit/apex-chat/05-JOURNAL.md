@@ -126,8 +126,9 @@ identifiées », pas « les 78 fonctions de l'application ».
 |---|---|
 | Trier le scan **par reproduction locale** (npm audit, lecture des fichiers, awk sur les workflows) plutôt qu'attendre le rapport détaillé | Le rapport détaillé est derrière un 403 ; ce qui se reproduit sans réseau se prouve ici, ligne par ligne |
 | Mettre à jour les outils de test (vitest 5, happy-dom 20) au lieu de « noter pour plus tard » | 7 vulnérabilités connues, correctif sans risque pour l'app (paquets de test), prouvé par 1117/1117 |
-| Ne **pas** épingler les actions officielles sur un SHA | La règle du dépôt exige une version publiée, c'est le cas ; le SHA est un durcissement, pas une faille — consigné en recommandation |
-| Ne **pas** relancer Strix | 13,77 $ l'exécution, tuée par le délai ; relancer sans allonger le délai reproduirait l'échec. Décision de Kevin |
+| Ne **pas** épingler les actions officielles sur un SHA | La règle du dépôt exige une version publiée, c'est le cas ; le SHA est un durcissement, pas une faille — consigné en recommandation. **11/09 : appliqué** sur le « Go » de Kevin (23 `uses:`, SHA résolus par `git ls-remote`) |
+| Ne **pas** relancer Strix | 13,77 $ l'exécution, tuée par le délai ; relancer sans allonger le délai reproduirait l'échec. Décision de Kevin. **11/09 : « Go »** → avant de relancer, lecture du code de Strix (il écrit dans `strix_runs/`, pas `agent_runs/`, et il écrit à l'interruption) ; workflow corrigé (bon dossier, plafond de dépense 15 $, profondeur `standard`, 75 min, inventaire dans le check-run), puis relancé |
+| Réparer l'environnement de test local par des **liens**, pas en modifiant le test | `verify-lingua-voix.mjs` échouait pour `Cannot find package 'playwright'` puis pour une version de Chromium (1243 attendue, 1194 installée) : deux liens symboliques (paquet de `messaging-app/node_modules`, binaire `headless_shell`), zéro téléchargement, test inchangé → 26/26 |
 | Construire `detail_path` sur `security-suite.yml` | 9 signalements Semgrep impossibles à identifier autrement ; un compte ne se trie pas |
 
 **Hypothèse écrite** : les 9 signalements Semgrep non identifiés de `messaging-app` sont
@@ -135,4 +136,8 @@ probablement de la même famille que les 1 159 du dépôt (balises sans `integri
 `path.join`), donc des recommandations plutôt que des failles — **c'est une hypothèse, pas un
 résultat**, et elle sera remplacée par la lecture du check-run détaillé.
 
-**Non vérifié** : le contenu de la vulnérabilité MEDIUM annoncée par Strix.
+**Non vérifié** : le contenu de la vulnérabilité MEDIUM annoncée par Strix — **11/09 : en cours
+de vérification**, le workflow corrigé a été relancé et son check-run contiendra le rapport.
+**Non vérifié depuis la session** : que `lingua.kd-mc.com` est vert **en ligne** après le
+correctif de l'écran blanc (mesuré seulement en local, 26/26) — le balayage live relancé par le
+push de cette branche le dira dans son check-run.

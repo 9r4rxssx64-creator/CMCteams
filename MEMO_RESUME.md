@@ -1,5 +1,41 @@
 # MEMO_RESUME — état de session
 
+## 11 septembre 2026 (matin) — « Go » sur les quatre points laissés à ta décision
+
+Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
+
+- **Le fichier le plus critique d'Apex Chat est enfin couvert** : `workers/api-worker.js` (6 045
+  lignes : codes OTP, admin, jetons, premium) avait **64 % de ses fonctions** appelées par un test.
+  108 fonctions ne l'étaient jamais (16 routes nommées + ~90 rappels d'erreur). **118 tests
+  ajoutés** (`tests/unit/api-worker-fonctions-non-appelees.test.js`), chacun passe par le vrai
+  routeur avec la vraie route et la vraie authentification, et exerce au moins une branche
+  d'erreur (code exact + détail). Mesuré vitest 5 : **91,98 % instructions · 81,92 % branches ·
+  100 % fonctions · 94,25 % lignes** (avant : 75,71 / 68,48 / 64,47 / 79,20). Plancher relevé à
+  91 / 81 / 99 / 93,5. **1241 / 1241 tests, 62 fichiers, couverture exit 0**, gate CI simulé OK.
+- **Les deux conseils du scan sécu sont appliqués** : `jq` remplace `python3 -c` dans les 3
+  workflows signalés (la réponse d'API n'était déjà que lue, `jq` lève le doute) ; les **23
+  actions** des 10 workflows d'Apex Chat sont **épinglées sur leur SHA** (`@<sha> # v6`), plus la
+  version en commentaire. Dependabot (déjà en place, hebdo) continue de proposer les montées.
+  Les 4 gardes de workflows restent vertes.
+- **Strix : la cause du rapport illisible est comprise et corrigée.** Lu dans le code de Strix
+  1.6.2 : il écrit dans **`strix_runs/`** (le workflow copiait `agent_runs/`, l'ancien nom) et il
+  **écrit son rapport même quand on le coupe** (SIGTERM → état « interrupted »). Le workflow
+  laisse maintenant 75 min, **borne la dépense** (`--max-budget-usd`, 15 $ par défaut, Strix
+  s'arrête seul et proprement) plutôt que le temps, choisit la profondeur (`quick` / `standard` /
+  `deep`, `standard` par défaut), copie le bon dossier, et pose dans le check-run l'**inventaire
+  des fichiers**, le **rapport final**, les **fiches de vulnérabilité** et le nombre d'erreurs de
+  flux. Relancé sur `https://apex-chat.kd-mc.com/` (voir le run dans le rapport de session).
+- **Lingua : la panne signalée était antérieure au correctif.** Le run d'audit live qui disait
+  « `page.fill` Timeout » (`34517173393`) a tourné à **18 h 54** ; le correctif de l'écran blanc
+  (`97253ebdb`) est arrivé sur `main` à **20 h 52** et le déploiement Pages a réussi après. En
+  local, la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26** — elle
+  échouait ici pour une raison d'outillage (Playwright absent à la racine, puis version de
+  Chromium différente de celle installée : relié par un lien, sans rien télécharger). Pour que la
+  prochaine panne se lise sans deviner, `audit-live.yml` pose désormais son **verdict par surface
+  dans un check-run** (`node tools/ci/ci.mjs report <run>`), comme les deux scans de sécurité.
+  Le push de cette branche relance le balayage live : c'est lui qui dit si Lingua est vert **en
+  ligne**.
+
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 
 Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le

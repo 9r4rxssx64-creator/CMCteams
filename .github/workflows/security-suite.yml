@@ -53,7 +53,7 @@ jobs:
       contents: read
       checks: write     # pour le « check-run » de fin (rapport lisible par l'API, voir plus bas)
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0   # gitleaks/trufflehog scannent l'historique
 
@@ -314,7 +314,7 @@ jobs:
       #    règle : aucune valeur de secret, jamais.
       - name: Résumé → check-run (lisible par l'API depuis une session d'agent)
         if: always()
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           RUN_ID: ${{ github.run_id }}
         with:
@@ -337,7 +337,7 @@ jobs:
             core.info(`check-run créé sur ${context.sha.slice(0, 9)}`);
 
       - name: Rapport en artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: security-report-${{ github.run_id }}
           path: /tmp/sec/
