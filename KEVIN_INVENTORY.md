@@ -134,6 +134,44 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 📷 Arbre — la photo de Gérard, et l'import qui ne fait plus perdre de photos — session 2026-09-11
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-photo-gerard.json` *(envoyé dans la conversation, **hors dépôt**)* | La photo de ton père, prête à importer : **Réglages → Importer**. Marquée « complément » : elle s'ajoute à sa fiche **sans rien remplacer**. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (v3.20, `fusionnerFiche`) | L'import **complète** une fiche au lieu de la remplacer, et garde toujours photos, documents et commentaires de l'appareil — même quand on réimporte un export texte (qui, lui, n'emporte jamais les photos). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/photo-vers-fiche.mjs` | Prépare **n'importe quelle photo** pour **n'importe qui** : `--photo <image> --id <identifiant>`. Elle est traitée par la fonction même de l'app (2200 px, qualité 0,9), le fichier est écrit **hors du dépôt** — et depuis le 11.09 l'outil **refuse** d'écrire si l'app **en ligne** ne sait pas encore compléter une fiche (elle l'écraserait). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/photo-vers-fiche.mjs) |
+| `tools/arbre/app-en-ligne.mjs` | Répond à une seule question avant d'envoyer quoi que ce soit à l'iPhone : **quelle version tourne vraiment en ligne, et sait-elle compléter une fiche ?** (lit `origin/main`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/app-en-ligne.mjs) |
+| `tools/arbre/verify-photo-fusion.mjs` | Vérifie en **vrai navigateur** qu'ajouter une photo ne fait rien perdre, que la carte l'affiche, et qu'un export texte réimporté n'efface plus les photos. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-photo-fusion.mjs) |
+| `tests/arbre-photo-fusion.test.mjs` | La garde hors ligne (dans `test:ci`) : la fusion existe, elle est **câblée**, les listes sont protégées, un champ vide n'efface pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-photo-fusion.test.mjs) |
+
+## 👨‍👩‍👧 Arbre — ajouter la famille de Marie-France (Kim, Déborah, sa fille) — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-ajout-marie-france.json` *(envoyé dans la conversation, **hors dépôt** — aucun nom réel dans le code public)* | Le petit fichier à importer sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Il ajoute Kim LORENZI (époux), Déborah (leur fille) et la fille de Déborah. Il ne contient **que** ces trois personnes : la fiche de Marie-France n'est pas touchée, donc ses photos et ses actes sont conservés. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (`normaliserConjoints`) | Un couple noté d'un **seul** côté s'affichait comme deux personnes séparées. Réparé à chaque sauvegarde : le lien manquant est **ajouté** en miroir, jamais effacé (une fiche pas encore synchronisée n'est pas supprimée). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-ajout-famille.mjs` | Vérifie en **vrai navigateur** sur la famille synthétique (0 donnée réelle) que l'import ajoute sans rien écraser, que le couple s'affiche, que l'enfant est sous ses deux parents et la petite-fille sous sa mère. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-ajout-famille.mjs) |
+| `tools/arbre/mesure-couples.mjs` | Mesure (pas un avis) l'écart réel entre les cartes d'un foyer, y compris avec **deux** conjointes : 222 px de pas pour une carte de 158 px → **64 px de blanc**, aucun chevauchement. Vérifie aussi qu'un enfant ajouté n'est pas rattaché d'office au mauvais parent. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/mesure-couples.mjs) |
+
+## 🔗 Arbre v3.19 — « à relier » : les branches qui flottent enfin nommées — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.19) | Un bloc séparé du tronc s'appelle « 🔗 Branche à rattacher · Famille … (N) » et dit **qui** rattacher. Les personnes seules sont groupées **par cause** (fiche du parent introuvable · relié dans l'autre arbre · couple sans parents ni enfants · aucun lien renseigné) puis par lignée. Panneau « 🔗 À relier » dans Réglages : le compte des **deux** arbres, chaque nom ouvre sa fiche. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-relier.mjs` | Vérifie en **vrai navigateur**, sur les deux arbres : personne ne disparaît, chaque détaché est rangé sous sa cause, le panneau liste les mêmes personnes que l'arbre, un nom ouvre bien sa fiche. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-relier.mjs) |
+| `tests/arbre-relier.test.mjs` | La garde hors ligne (dans `test:ci`) : le classement existe, il est **câblé**, les 4 causes sont distinctes, le compteur est écrit après la mise en page. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-relier.test.mjs) |
+
+## 📣 Prévenir ne suffit pas : faire rectifier, puis vérifier — session 2026-09-10 (branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `CLAUDE.md` (règle en tête) | La règle absolue en 4 temps : **prévenir** → **réveiller** la session vivante → **faire rectifier** → **vérifier soi-même** en refaisant la mesure. Vaut pour toutes les sessions, tous projets présents et futurs. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `tests/messages-suivis.test.mjs` | La garde qui rend la règle impossible à oublier : tout message **ouvert** de plus de **2 jours** sans suivi daté fait **échouer** `test:ci`. `npm run test:messages-suivis` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis.test.mjs) |
+| `tests/messages-suivis-baseline.json` | Le cliquet : 42 anciens messages figés pour ne pas bloquer sur la dette existante — toute **nouvelle** négligence, elle, est refusée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis-baseline.json) |
+| `services/kdmc-router/prepare-secours.mjs` | La bouée de secours du domaine copiait **cuisine.kd-mc.com** et **shops.kd-mc.com** nulle part depuis le 13.08 : si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent. Bouché. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-router-secours.mjs` | Le contrôle accusait 4 dossiers d'être « oubliés » alors qu'ils sont copiés avec leur parent. Un faux rouge coûte aussi cher qu'un faux vert. **43/6 → 49/0**. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-router-secours.mjs) |
+
 ## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
 
 | Fichier | À quoi ça sert | Liens |

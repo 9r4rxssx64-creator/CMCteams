@@ -53,6 +53,31 @@ export function fixture() {
   const pontC = add({ id: 'pont_2', prenom: 'Pont-Z2', nom: 'SAUVAIGO', sexe: 'F', pere: 'o_g2_0_0', mere: 'o_g2_0_0_c', naissance: { date: '4.04.1980', lieu: 'Ville-Test' }, vivant: true });
   couple(pont, pontC);
   add({ id: 'pont_3', prenom: 'Pont-Z3', nom: 'DESARZENS', sexe: 'M', pere: pont, mere: pontC, naissance: { date: '5.05.2008', lieu: 'Ville-Test' }, vivant: true });
+  /* PERSONNES DÉTACHÉES — une par cause, pour que la section « 🔗 À relier » de l'app
+     (v3.19) soit vérifiable en vrai navigateur au lieu d'être supposée. Sans elles la
+     fixture n'a AUCUN isolé : le code d'affichage des détachés ne serait jamais exécuté
+     par les gardes, donc jamais prouvé (leçon #103 : ne rien vérifier ressemble à OK).
+     Les 4 causes que relierPourquoi() doit distinguer : */
+  /* 1. « fiche du parent introuvable » — la mère est renseignée mais n'existe pas dans
+        la base : le lien est perdu dans les DEUX arbres. C'est le seul VRAI défaut. */
+  add({ id: 'iso_fantome', prenom: 'Isolée-F1', nom: 'MAIFFRET', sexe: 'F', mere: 'personne_supprimee_xyz', naissance: { date: '6.06.1962', lieu: 'Ville-Test' } });
+  /* 2. « aucun lien renseigné » — personne ne sait encore où la placer. */
+  add({ id: 'iso_seul', prenom: 'Isolé-S1', nom: 'MOLINARIO', sexe: 'M', naissance: { date: '7.07.1948', lieu: 'Ville-Test' } });
+  /* 3. « couple sans parents ni enfants » — mariés, mais rattachés à rien. */
+  const isoA = add({ id: 'iso_couple_1', prenom: 'Isolé-C1', nom: 'VIRGILI', sexe: 'M', naissance: { date: '8.08.1955', lieu: 'Ville-Test' } });
+  const isoB = add({ id: 'iso_couple_2', prenom: 'Isolée-C2', nom: 'BOSCH', sexe: 'F', naissance: { date: '9.09.1957', lieu: 'Ville-Test' } });
+  couple(isoA, isoB);
+  /* 4. « relié dans l'autre arbre » — son père est un DESARZENS (chêne) : dans la vue
+        olivier le lien est coupé par le filtre, alors qu'elle est bien reliée à côté. */
+  add({ id: 'iso_autrefam', prenom: 'Isolée-A1', nom: 'SAUVAIGO', sexe: 'F', pere: 'c_g1_0_0', naissance: { date: '10.10.1984', lieu: 'Ville-Test' } });
+  /* 5. UNE BRANCHE SÉPARÉE — le cas le plus fréquent et le plus invisible : une mère et
+        sa fille sont bien reliées ENTRE ELLES, mais leur petit groupe ne touche pas le
+        tronc (les parents de la mère ne sont pas encore renseignés). L'arbre l'affichait
+        avec le même bandeau que le tronc principal : rien ne disait que ces deux-là
+        flottaient à côté. C'est la situation signalée le 10.09.2026
+        (aucun prénom réel ici : le garde arbre-prive les refuse, commentaires compris). */
+  const brMere = add({ id: 'branche_mere', prenom: 'Branche-M1', nom: 'MAIFFRET', sexe: 'F', naissance: { date: '11.11.1938', lieu: 'Ville-Test' } });
+  add({ id: 'branche_fille', prenom: 'Branche-F1', nom: 'MAIFFRET', sexe: 'F', mere: brMere, naissance: { date: '12.12.1966', lieu: 'Ville-Test' }, vivant: true });
   return { persons, meta: { updatedAt: t } };
 }
 

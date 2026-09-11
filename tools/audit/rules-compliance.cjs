@@ -49,6 +49,9 @@ const REGISTRE = [
   // tournaient dans test:ci, mais l'entrée manquait ici → le ratchet comptait la règle comme
   // « sans automatisme » (19 → 20) et rougissait test:ci pour TOUTES les sessions (6.09).
   [/QWEN GRATUIT EN IA PRINCIPALE/i, ['npm:test:qwen-gratuit', 'npm:test:bascule', 'npm:test:ia-route', 'npm:test:cmc-ia-gratuite', 'npm:test:apex-proxy-qwen']],
+  // Règle « prévenir ne suffit pas » (CLAUDE.md, Kevin 10.09.2026) : un signalement ouvert de plus
+  // de 2 jours doit porter un suivi daté (réveil, relance, prise en charge, vérification).
+  [/PRÉVENIR NE SUFFIT PAS/i, ['npm:test:messages-suivis', 'npm:test:pipeline-sessions']],
   [/TOUT LE MONDE A UN PLANNING/i, ['npm:test:everyone-has-planning']],
   // Règle « J'ai internet et des outils » (CLAUDE.md, Kevin 14.08.2026) : sa garde EXISTE
   // depuis le 6.09 (tools/audit/liens-check.mjs, joué par le job GitLab « liens-reels » —

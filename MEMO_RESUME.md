@@ -1,5 +1,221 @@
 # MEMO_RESUME — état de session
 
+## 11 septembre 2026 (22h) — POURQUOI L'IMPORT N'A RIEN FAIT CHEZ KEVIN : son app est en v3.18, ma correction en v3.20 n'était pas déployée
+
+Kevin : *« J'ai dû la mettre moi dedans, il n'y avait rien. »* (capture : **v3.18 · 119 pers.**)
+
+- **Ma faute, mesurée** : j'ai préparé le fichier photo au format « fusion » (compléter la fiche
+  sans l'écraser) — une notion qui n'existe **que** dans ma v3.20, restée sur ma branche. L'app en
+  ligne, c'est `origin/main` = **v3.18**, et la PR #3730 était **bloquée** (`mergeable_state: dirty`,
+  conflits), donc jamais publiée.
+- **Ce que la v3.18 aurait fait** (rejoué dans un vrai Chromium sur la page v3.18, famille
+  synthétique, forme exacte du fichier envoyé) : elle ignore « fusion » et **remplace** la fiche.
+  14 champs → **4** (`fusion, id, photos, updatedAt`), carte « **(sans nom)** », prénom, dates,
+  parents, conjoints **perdus**. Qu'il n'ait rien vu est une chance : l'import aurait effacé la
+  fiche de son père.
+- **Sa photo n'est pas que sur l'iPhone** : enregistrer une fiche appelle `persist(id)` →
+  `cloudPush(id)`, qui envoie la fiche **entière, photos comprises**, au cloud familial (v3.18,
+  `index.html` l.354/362). Réserve honnête : je ne peux pas le **lire** d'ici (il faudrait le code
+  famille, que je ne dois pas connaître) — c'est établi par le code, pas par une lecture du cloud.
+- **Débloqué** : `main` fusionné dans la branche (4 conflits résolus en gardant les deux côtés —
+  `test:ci` uni, registre des messages, et le correctif lingua **repris de leur session**), pour que
+  la v3.20 parte enfin en ligne.
+- **Garde pour que ça ne recommence pas** : `tools/arbre/app-en-ligne.mjs` + `photo-vers-fiche.mjs`
+  refusent désormais d'écrire un fichier que l'app **en ligne** ne sait pas lire (vérifié pour de
+  vrai : refus aujourd'hui, sortie 2, aucun fichier écrit). `test:arbre-photo` devient
+  comportementale (16 contrôles), **prouvée discriminante par 2 sabotages**. Leçon **#265**.
+- Remesuré moi-même après fusion : `test:lingua-voix` **26 OK / 0 FAIL** (la session lingua avait
+  corrigé elle-même — j'ai gardé LEUR version et retiré la mienne), `test:arbre-photo`,
+  `test:arbre-relier`, `test:arbre-prive`, `test:pipeline-sessions`, `test:messages-suivis` verts.
+
+---
+
+## 11 septembre 2026 — la photo de Gérard, et un défaut qui pouvait effacer TOUTES les photos
+
+Demande de Kevin : *« Intègre la photo de mon père Gérard. »*
+
+- **Le fichier est prêt** (envoyé dans la conversation) : sur l'iPhone, **Réglages → Importer →
+  choisis-le**. La photo apparaît alors sur la carte de Gérard.
+- **La photo est passée par la fonction même de l'app** (`importPhoto`, jouée dans un vrai
+  navigateur) : même réduction 2200 px, même qualité, même fond — **2,2 Mo → 339 Ko**. Exactement
+  ce que l'iPhone aurait produit. Elle n'entre **pas** dans le dépôt (public) : l'outil refuse
+  d'écrire sa sortie dedans.
+- **Un défaut sérieux trouvé en lisant le code avant d'écrire le fichier** : l'import
+  **remplaçait** la fiche reconnue au lieu de la compléter. Donc (a) ajouter une photo aurait fait
+  perdre dates, parents, notes et commentaires ; (b) bien pire, **réimporter son propre export
+  texte** — qui ne contient jamais les photos — **effaçait toutes les photos du téléphone**, en
+  silence, par une manipulation normale. Corrigé : l'import complète, ne remplace plus, et garde
+  toujours photos, documents et commentaires de l'appareil.
+- **Vérifié en vrai navigateur** sur la famille inventée : photo ajoutée sans effacer l'ancienne,
+  carte qui affiche bien l'image, note/commentaire/dates/parents/conjoints intacts, double import
+  sans doublon, export texte réimporté qui n'efface plus rien, complément visant un absent ignoré
+  (aucune carte sans nom), 0 erreur. Sabotage → 5 échecs : la fusion compte vraiment.
+- **« Sur sa fiche » (Kevin, 11.09)** — vérifié précisément, en ouvrant la fiche dans le vrai
+  navigateur après l'import : la photo s'affiche **en grand dans sa fiche** (le défilement des
+  photos), **et** en vignette en haut de sa fiche, **et** sur sa carte dans l'arbre. Sa fiche
+  reste complète (prénom, dates, note). Aucun nouveau fichier à envoyer : celui déjà transmis
+  fait exactement ça.
+- Garde `test:arbre-photo` câblée dans `test:ci`. Leçon **#256**.
+
+**⚠️ Deux constats de confidentialité signalés à Kevin (non corrigés — c'est sa décision)** :
+le dépôt est **public** (vérifié : `"visibility": "public"`), et il contient (1) `arbre/research/`
+— 646 fichiers suivis, dont `cloudraw/*.json` avec **20 fiches, 8 personnes vivantes** et des
+notes du type « Mère de Kevin » ; (2) `arbre/index.html` lui-même expose des **prénoms réels** et
+la **liste des divorces** (`DIVORCED`, `FAM_OVERRIDE`). Les 391 images d'actes sont, elles, des
+archives publiques anciennes. Retirer ces fichiers du dépôt ne les retire **pas** de l'historique.
+
+---
+
+## 10 septembre 2026 (20h30) — j'ai refait les 3 mesures moi-même, sans croire personne sur parole
+
+Quatrième temps de la règle « prévenir ne suffit pas ». J'avais réveillé trois sessions à 19h ;
+une routine m'a rappelé de **revérifier**. Résultat, chiffres réels :
+
+| Sujet | Avant | Après ma vérification | Qui a corrigé |
+|---|---|---|---|
+| **Lingua** — `test:lingua-voix` | 21 OK / 5 FAIL | **26 OK / 0 FAIL** | **moi** (leur session muette, ça bloquait tout le monde) |
+| **Domaine** — `test:router-secours` | 43 OK / 6 FAIL | **49 OK / 0 FAIL** (tient après fusion de main) | moi, hier soir |
+| **Départs** — fichiers reproductibles | changeaient à chaque génération | **2 générations identiques à l'octet** (498 454 o) | eux (vérifié par moi) |
+
+- **Lingua, ce que j'ai trouvé au lieu de les relancer une 3ᵉ fois** : le mot à apprendre partait
+  **deux fois**, à **1–3 ms d'écart**, même langue et même voix. Cause exacte : quand la belle voix
+  en ligne tombe, **deux guetteurs** répondent (l'erreur de lecture ET le refus de démarrer le son)
+  et chacun relançait la voix du téléphone. J'ai posé un verrou : **un seul repli par demande**.
+  Prouvé en le retirant (22/4) puis en le remettant (26/0). J'ai aussi précisé le message de repli,
+  qui ne **nommait** pas la voix qui marche hors-ligne. C'est leur fichier : je leur ai envoyé la
+  mesure et la ligne exacte (m070-arbre), la formulation reste leur appel.
+- **Départs** : reste non bloquant, le bouton « Créer » manuel (`createEmpFromImport`) tire encore
+  son identifiant de l'horloge — il ne passe pas dans les générateurs.
+- Suivis datés inscrits au registre pour les trois (la garde `test:messages-suivis` les exige).
+
+---
+
+## 10 septembre 2026 (nuit) — Ajouter la famille de Marie-France sans toucher à sa fiche
+
+Demande de Kevin (répétée deux fois, donc c'est sa décision) : *« Marie France est marié à kim
+Lorenzi et ont Déborah comme enfant qui a 1 fille. »*
+
+- **Le fichier est prêt** — je l'ai envoyé dans la conversation : `arbre-ajout-marie-france.json`
+  (1,4 Ko). Sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Ensuite, ouvrir la fiche
+  de Marie-France : Kim doit apparaître à côté d'elle, Déborah en dessous, sa fille encore en
+  dessous.
+- **Il ne contient QUE les trois personnes nouvelles** (Kim, Déborah, sa fille). Volontairement :
+  l'import **remplace la fiche entière** quand il reconnaît quelqu'un — renvoyer la fiche de
+  Marie-France « pour y ajouter son mari » lui aurait fait perdre ses photos, ses actes et ses
+  commentaires. Ce sont donc les nouveaux qui portent le lien vers elle.
+- **Un couple ne s'affichait pas s'il n'était noté que d'un côté.** Le lien de conjoint vit dans
+  la fiche de chacun des deux ; écrit d'un seul côté, le mariage existait dans les données mais
+  l'écran montrait deux personnes séparées, sans rien signaler. `normaliserConjoints()` répare
+  maintenant à chaque sauvegarde — il **ajoute** le lien manquant, il n'efface jamais un conjoint
+  dont la fiche n'est pas (encore) arrivée.
+- **Vérifié en vrai navigateur** sur la famille synthétique (`tools/arbre/verify-ajout-famille.mjs`,
+  0 donnée réelle) : 88 → 91 personnes, la fiche existante garde ses 11 champs, le lien d'un seul
+  côté est réparé dans les deux sens, l'ancien conjoint est conservé (remariage ≠ remplacement),
+  conjoint sur la même ligne, enfant sous ses deux parents, petite-fille sous sa mère, aucun des
+  trois ne tombe dans les « à relier », 0 erreur JS. Sabotage (retirer la réparation) → 2 échecs.
+- **Ce que je n'ai pas pu faire, et que je dis franchement** : je ne vois pas ses vraies données
+  (mesuré : `403 CONNECT` sur le domaine, aucun export privé dans le conteneur). Les identifiants
+  du fichier viennent de la dernière version que je peux lire. Le **nom de famille de Déborah** et
+  le **prénom de sa petite-fille** sont laissés **vides avec une note** : je ne les invente pas.
+- **Guy / Renée** : mesuré, ce n'est pas un problème d'espace — 222 px de pas pour une carte de
+  158 px, soit **64 px de blanc**, aucun chevauchement nulle part
+  (`tools/arbre/mesure-couples.mjs`). En revanche j'ai trouvé un vrai défaut à côté : un enfant
+  ajouté à quelqu'un ayant eu **deux unions** était rattaché d'office au premier conjoint de la
+  liste — une fois sur deux au mauvais parent, en silence. Corrigé : le second parent n'est
+  pré-rempli que s'il n'y a **aucun** doute.
+- Leçon **#255**.
+
+---
+
+## 10 septembre 2026 (soir) — Arbre v3.19 : les « orphelins » n'étaient pas ceux qu'on croit
+
+Demande de Kevin : *« as-tu attribué les orphelins ? tous, chaque arbre ? organise au plus clair.
+Marielle est séparé des deux. »*
+
+- **Ce que j'ai trouvé en lisant le code, et qui change tout** : le vrai cas n'est pas la personne
+  toute seule, c'est la **branche entière qui flotte**. Une mère et sa fille reliées entre elles
+  forment un groupe — donc pas une « personne seule » — et l'arbre leur donnait **le même bandeau
+  que le tronc principal**. Rien ne disait qu'elles étaient à côté au lieu d'être raccrochées.
+  C'est exactement la situation signalée.
+- **Ce qui change à l'écran** : chaque bloc séparé du tronc s'appelle maintenant
+  « 🔗 Branche à rattacher · Famille … (N) » et indique **qui** rattacher (la personne la plus
+  ancienne du groupe). Les personnes seules sont regroupées **par cause puis par lignée**, la
+  cause la plus grave d'abord, chaque bandeau portant son compte.
+- **Les 4 causes, enfin distinguées** : fiche du parent introuvable (le seul vrai défaut de
+  données : le lien est perdu dans les **deux** arbres) · relié dans l'autre arbre · couple sans
+  parents ni enfants · aucun lien renseigné.
+- **Un panneau « 🔗 À relier » dans les Réglages** répond à « tous ? chaque arbre ? » en chiffres,
+  pour les **deux** arbres à la fois, chaque nom ouvrant sa fiche en un geste.
+- **Ce que je ne pouvais pas faire, et que je dis** : les vraies données ne sont ni dans le dépôt
+  ni joignables depuis ma session (mesuré : `403 CONNECT` sur le domaine, aucun export privé dans
+  le conteneur). Je n'ai donc pas inventé de chiffre — j'ai livré l'instrument qui le donne sur
+  l'iPhone.
+- Vérifié en vrai navigateur (`tools/arbre/verify-relier.mjs`) sur les deux arbres : 0 erreur JS,
+  personne ne disparaît, les 5 cas exercés par la famille synthétique. Garde `test:arbre-relier`
+  câblée dans `test:ci`, discriminante prouvée par sabotage. Leçon **#254**.
+
+---
+
+## 10 septembre 2026 (soir) — « prévenir » ne suffit pas : réveiller, faire corriger, revérifier soi-même
+
+Demande de Kevin : *« Prévient les branches concernées et fait les rectifier, vérifier, etc. À chaque fois
+et les autres aussi. Note le. »* C'est écrit, et surtout **rendu obligatoire par une garde**.
+
+- **Le défaut constaté sur moi-même** : le 6.09 j'avais signalé le test Lingua dans `pipeline/sessions.json`,
+  puis considéré le dossier clos. **Trois jours** plus tard, personne ne l'avait lu — un message déposé dans
+  un fichier ne réveille personne — et la chaîne de tests restait rouge **pour toutes les sessions**.
+- **La règle, en haut de `CLAUDE.md`** : 4 temps à chaque fois — **prévenir** (message mesuré, ligne exacte),
+  **réveiller** la session vivante, **faire rectifier** (et corriger soi-même ce qui est sûr si personne ne
+  répond et que ça bloque les autres), **vérifier soi-même** en refaisant la mesure. Jamais clore sur
+  « ils ont dit que c'était corrigé ».
+- **La garde mécanique** : `npm run test:messages-suivis`, câblée dans `test:ci`. Tout message **ouvert** de
+  plus de **2 jours** doit porter un `suivi` daté. Sans suivi, la chaîne échoue : un signalement ne peut plus
+  s'oublier en silence. Cliquet initial de 50 identifiants figés (dette existante gelée, dette nouvelle
+  bloquée) — même principe que `improvements-baseline.json`.
+- **Appliqué tout de suite, pas seulement écrit** : 3 sessions réveillées pour de vrai (Lingua, Domaine,
+  Départs) avec la mesure et la ligne exacte, 8 de mes messages ouverts pourvus d'un suivi daté, et une
+  vérification programmée de mon côté pour refaire les mesures moi-même.
+- Leçon **#251**.
+
+**Appliqué à moi-même dans la foulée (les 4 temps, pas seulement écrits) :**
+
+- **Lingua** — remesuré par moi à 19h15, pas cru sur parole : `test:lingua-voix` toujours **21 OK / 5 FAIL**,
+  inchangé depuis le réveil de 19h03. La session n'a pas repris les 5 échecs de voix ; je ne les corrige pas
+  (leur domaine, aucune mesure probante de mon côté). Suivi daté au registre.
+- **Départs** — annoncé corrigé par eux ; **vérifié par moi** : l'identifiant est bien dérivé du nom
+  (`_cmcTmpEmpId`, FNV-1a) et `test:generateurs-reproductibles` passe **8 OK** — mêmes PDF, mêmes fichiers
+  à l'octet près. Reste un identifiant tiré de l'horloge (`createEmpFromImport`), signalé, non bloquant.
+- **Domaine** — réveillé, muet, et ça bloquait `test:ci` pour tout le monde → **corrigé moi-même** :
+  4 des 6 rouges de `test:router-secours` étaient de **faux rouges** (le test cherchait la chaîne exacte
+  d'un dossier alors que la copie est récursive : `kdmc-home/osint` était déjà copié avec `kdmc-home`).
+  Les 2 vrais trous existaient depuis le 13.08 : **cuisine.kd-mc.com** et **shops.kd-mc.com** n'avaient
+  aucune copie de secours — si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent.
+  Mesuré après : **43/6 → 49 OK / 0 FAIL**, paquet 497 fichiers / 18,2 Mo (limite 20 000).
+- **Cause commune enfin corrigée** — trois fusions refusées aujourd'hui pour la même raison : deux
+  sessions tiraient le **même identifiant de message** (m039, m055, m064), parce que le numéro venait
+  d'un compteur calculé dans la copie de chaque branche. Ce n'était pas de la malchance, c'était garanti.
+  Pire : le cliquet de la garde gèle des identifiants — un identifiant réattribué **exemptait en silence**
+  un message d'une autre session. L'identifiant porte maintenant le nom de l'expéditeur (`m067-arbre`),
+  et le registre **refuse** deux messages sous le même identifiant. Leçon **#253**.
+
+---
+
+## 10 septembre 2026 — Lingua : le dernier rouge de `test:ci` était un test qui ne testait rien
+
+Trois jours sans que personne le prenne, et il bloquait la chaîne pour **toutes** les sessions. Tranché en
+ouvrant l'app comme un utilisateur : le bouton 🔊 **existe** (parcours réel, classe `pod-say`, écran à 607
+boutons). C'est le **montage du test** qui était périmé : il fabriquait un compte sans la clé de progression,
+ce qui fait planter la page — page blanche, zéro bouton, attente de 15 s vouée à expirer.
+
+- **Corrigé** : le test injecte la progression de la langue testée. **0 vérification exécutée → 21 réelles.**
+- **Reste 5 échecs de contenu** (phrase dite deux fois sur 4 langues, message qui ne nomme pas la voix de
+  secours). Je ne les ai **pas** qualifiés : c'est la voix, domaine de la session Lingua, et mon espion sur
+  `speechSynthesis` n'a rien capté dans le parcours réel. Donc `test:ci` **reste rouge**, mais pour de vraies
+  raisons mesurables au lieu d'un blocage muet.
+- **Fragilité signalée, non patchée** : un compte sans progression = **écran blanc total**. Si un stockage est
+  partiellement effacé, l'utilisateur n'a plus rien. Leçon #222.
+
+---
 ## 2026-09-11 (19h55) — Stratégie agressive +++ : les 6 bots juste plus de risque, plus de trades, toujours faux argent
 
 - **Demande de Kevin** : « Stratégie agressive +++ ». Argent réel toujours HORS DE PORTÉE — je n'ai touché ni `TESTNET`, ni `PAPER`, ni aucune clé sur aucun des 6 bots.
