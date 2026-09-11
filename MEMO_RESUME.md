@@ -1,5 +1,35 @@
 # MEMO_RESUME — état de session
 
+## 11 septembre 2026 (23h) — « Centre les images auto à chaque fois » : les photos se cadrent sur le visage, partout (arbre v3.21)
+
+Demande de Kevin : *« Centre les images auto à chaque fois. »*
+
+- **Le vrai défaut** : partout où l'app découpe une photo — vignette de carte, vignette de fiche,
+  **et la vignette dessinée sur l'affiche imprimée** — le découpage se faisait au **centre de
+  l'image**. Sur un portrait dont le visage est en haut, la tête se faisait couper.
+- **Ce qui change** : le point de cadrage est calculé **à partir de la photo elle-même** (lue en
+  64 px, invisible) : photo détourée → on vise ce qui n'est pas transparent ; photo sur fond uni →
+  le fond est estimé sur le pourtour et le sujet est ce qui s'en éloigne ; personne en pied → on
+  remonte au quart supérieur (le visage, pas le ventre). Borné 15–85 %, retour au centre si la
+  photo est unie, aucune erreur possible.
+- **Rien n'est enregistré dans les fiches** : le point se recalcule et reste en mémoire. Donc **les
+  photos déjà dans l'arbre — dont celle que tu as mise toi-même — sont recadrées sans rien
+  réimporter**, et l'export comme la synchro ne changent pas d'un octet.
+- **« À chaque fois »** : un observateur rattrape ce qui s'affiche plus tard (fiche ouverte, photo
+  ajoutée à l'instant, défilement des photos, retour de synchro).
+- **Mesuré en vrai navigateur, avant → après**, sur des photos dont on connaît le sujet au pixel :
+  visage en haut à gauche `50/50` → **`22,5 / 20`** · personne en pied `50/50` → **`50 / 32`** ·
+  sujet détouré à droite `50/50` → **`75 / 53`** · photo déjà centrée **inchangée** ·
+  **affiche imprimée : la tête passe de 0,1 % à 7,0 % de la vignette**. Sabotage → 5 échecs.
+- Un **acte scanné** garde son cadrage par le haut : sur un document, c'est l'en-tête qui compte.
+- Garde `test:arbre-cadrage` (17 contrôles) câblée dans `test:ci`, discriminante ; preuve navigateur
+  `npm run arbre:verif-cadrage` (10 contrôles). Leçon **#266**.
+- **La v3.20 est fusionnée dans `main`** (la correction « compléter au lieu de remplacer » part donc
+  en ligne avec ce cadrage) : l'outil photo, qui refusait d'écrire tant que l'app en ligne ne savait
+  pas fusionner, **accepte à nouveau** — vérifié.
+
+---
+
 ## 11 septembre 2026 (22h) — POURQUOI L'IMPORT N'A RIEN FAIT CHEZ KEVIN : son app est en v3.18, ma correction en v3.20 n'était pas déployée
 
 Kevin : *« J'ai dû la mettre moi dedans, il n'y avait rien. »* (capture : **v3.18 · 119 pers.**)

@@ -281,7 +281,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.20";
+var APP_VER="v3.21";
 /* ===== MUNEGU — thème monégasque (v3.18, Kevin 2026-09-05 « Accentue le thème spécialité monégasque, Monaco. Va plus loin ») =====
    Vocabulaire vérifié (Comité National des Traditions Monégasques / chroniques « A lenga munegasca ») :
    Munegu = Monaco · àrburu = arbre · famiya = famille · munegascu = la langue. Devise de la Principauté : Deo Juvante.
@@ -395,6 +395,82 @@ function isSeparated(a,b){return SEPARATED.some(function(d){return (d[0]===a&&d[
 function spouseNames(p){return (p.conjoints||[]).map(function(id){return full(P(id));}).filter(Boolean);}
 function initials(p){return ((p.prenom||"?")[0]||"?").toUpperCase();}
 function avatarHTML(p,sz){var cls=p.sexe==="F"?"F":p.sexe==="M"?"M":"";var ph=(p.photos&&p.photos[0]);var st=sz?'style="width:'+sz+'px;height:'+sz+'px;font-size:'+(sz*0.42|0)+'px"':"";return '<div class="av '+cls+'" '+st+'>'+(ph?'<img src="'+ph+'" alt="">':esc(initials(p)))+'</div>';}
+/* ---------- CADRAGE AUTOMATIQUE DES PHOTOS (Kevin 11.09.2026 : « Centre les images auto à chaque fois ») ----------
+   Une photo de famille est rarement cadrée au milieu : le visage est souvent en haut, parfois de côté.
+   Or une vignette ronde (carte, fiche, affiche imprimée) découpait au CENTRE GÉOMÉTRIQUE — donc coupait
+   les fronts et les mentons. On cherche donc le SUJET et on cale le découpage dessus, partout, tout seul.
+   Méthode — aucune dépendance, marche hors-ligne, même résultat à chaque fois :
+     1. la photo est réduite à 64 px et lue pixel par pixel (invisible, quelques millisecondes) ;
+     2. photo détourée (transparente) : le sujet, c'est ce qui n'est PAS transparent ;
+     3. sinon le fond est estimé sur le POURTOUR (un mur, un ciel, un studio uni) et le sujet, c'est
+        ce qui s'en éloigne ;
+     4. le point retenu est le barycentre du sujet ; si le sujet est nettement plus HAUT que large
+        (portrait en pied ou à mi-corps), on remonte au quart supérieur : c'est là qu'est le visage ;
+     5. borné entre 15 % et 85 % pour ne jamais coller à un bord.
+   RIEN n'est enregistré dans la fiche : le point se recalcule et reste en mémoire (une fois par photo).
+   Donc les photos DÉJÀ dans l'arbre en profitent aussi, sans rien réimporter. Les ACTES et DOCUMENTS
+   scannés gardent leur cadrage par le haut (`object-position:top` du CSS) : sur un acte, c'est l'en-tête
+   qui compte, pas un visage. */
+var CADRE_SEL=".av img,.caro img,.thumbs .t img",_cadreVus={},_cadreObs=null,_cadreTic=0;
+function _cadreKey(src){src=String(src||"");return src.length+"|"+src.slice(-48);}
+function _cadrePoint(im){
+  var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(!w||!h)return null;
+  var S=64,s=Math.min(S/w,S/h),cw=Math.max(2,Math.round(w*s)),ch=Math.max(2,Math.round(h*s));
+  var cv=document.createElement("canvas");cv.width=cw;cv.height=ch;
+  var cx=cv.getContext("2d",{willReadFrequently:true});if(!cx)return null;
+  cx.drawImage(im,0,0,cw,ch);
+  var d;try{d=cx.getImageData(0,0,cw,ch).data;}catch(e){return null;}   /* image d'une autre origine : on ne force pas */
+  var i,x,y,a,transp=false;
+  for(i=3;i<d.length;i+=4){if(d[i]<200){transp=true;break;}}
+  var br=0,bg=0,bb=0,bn=0;
+  if(!transp){ /* couleur du POURTOUR = le fond présumé */
+    for(x=0;x<cw;x++){[0,ch-1].forEach(function(yy){var k=(yy*cw+x)*4;br+=d[k];bg+=d[k+1];bb+=d[k+2];bn++;});}
+    for(y=0;y<ch;y++){[0,cw-1].forEach(function(xx){var k=(y*cw+xx)*4;br+=d[k];bg+=d[k+1];bb+=d[k+2];bn++;});}
+    br/=bn;bg/=bn;bb/=bn;
+  }
+  var sx=0,sy=0,tot=0,pds=[],maxp=0;
+  for(y=0;y<ch;y++)for(x=0;x<cw;x++){
+    var k=(y*cw+x)*4,p;
+    if(transp){a=d[k+3]/255;p=a<0.5?0:a;}
+    else{var dist=(Math.abs(d[k]-br)+Math.abs(d[k+1]-bg)+Math.abs(d[k+2]-bb))/765;p=dist>0.12?dist:0;}
+    pds.push(p);if(p>maxp)maxp=p;
+    if(p>0){sx+=x*p;sy+=y*p;tot+=p;}
+  }
+  if(tot<=0||maxp<=0)return {x:0.5,y:0.5};   /* image unie : rien à viser, on reste au centre */
+  var fx=(sx/tot+0.5)/cw,fy=(sy/tot+0.5)/ch;
+  var seuil=maxp*0.35,l=cw,r=-1,t=ch,b=-1;
+  for(y=0;y<ch;y++)for(x=0;x<cw;x++){if(pds[y*cw+x]>=seuil){if(x<l)l=x;if(x>r)r=x;if(y<t)t=y;if(y>b)b=y;}}
+  if(r>=l&&b>=t){
+    var bw=(r-l+1)/cw,bh=(b-t+1)/ch;
+    /* nettement plus haut que large = personne debout ou à mi-corps → le visage est en haut */
+    if(bh>bw*1.35)fy=(t/ch)+bh*0.25;
+  }
+  var bornes=function(v){return v<0.15?0.15:(v>0.85?0.85:v);};
+  return {x:bornes(fx),y:bornes(fy)};
+}
+/* Point de cadrage d'une photo, calculé UNE fois puis gardé en mémoire. */
+function cadrePour(im,src){var k=_cadreKey(src);if(_cadreVus[k])return _cadreVus[k];var pt=_cadrePoint(im)||{x:0.5,y:0.5};_cadreVus[k]=pt;return pt;}
+function cadrerImage(img){
+  try{
+    var src=img.getAttribute("src");if(!src)return;
+    var k=_cadreKey(src);if(img.getAttribute("data-cadre")===k)return;   /* déjà fait pour CETTE photo */
+    if(!img.complete||!(img.naturalWidth>0)){img.addEventListener("load",function(){cadrerImage(img);},{once:true});return;}
+    var pt=cadrePour(img,src);
+    img.style.objectPosition=(pt.x*100).toFixed(1)+"% "+(pt.y*100).toFixed(1)+"%";
+    img.setAttribute("data-cadre",k);
+  }catch(e){}
+}
+function cadrerImages(racine){try{(racine||document).querySelectorAll(CADRE_SEL).forEach(cadrerImage);}catch(e){}}
+/* « à chaque fois » : tout ce qui s'affiche plus tard (fiche ouverte, photo qu'on vient d'ajouter,
+   défilement des photos, retour de synchro) est cadré sans qu'on ait à y penser à chaque endroit. */
+function cadrerAuto(){
+  cadrerImages(document);
+  if(_cadreObs||typeof MutationObserver!=="function")return;
+  try{_cadreObs=new MutationObserver(function(){if(_cadreTic)return;_cadreTic=1;
+    (window.requestAnimationFrame||setTimeout)(function(){_cadreTic=0;cadrerImages(document);},16);});
+    _cadreObs.observe(document.body,{childList:true,subtree:true});   /* childList seul : poser un style ne relance rien */
+  }catch(e){}
+}
 function personCardHTML(id){var p=P(id);if(!p)return "";var ls=lifespan(p);var sub=[ls,(p.naissance&&p.naissance.lieu)||""].filter(Boolean).join(" · ");var cc=(p.comments||[]).length;var b='';/* badge « vivant » retiré (règle Kevin 1.09.2026) */return '<div class="pc" data-open="'+id+'" style="border-left:6px solid '+branchOf(p).c+'">'+avatarHTML(p)+'<div style="flex:1;min-width:0"><div class="nm">'+esc(full(p))+b+mcBadge(p)+'</div><div class="sub">'+esc(sub)+(cc?' · 💬 '+cc:"")+'</div></div><span class="mut">›</span></div>';}
 
 /* ---------- graphical tree ---------- */
@@ -1227,7 +1303,12 @@ function posterThumbs(lay,withPhotos){
   if(!withPhotos)return Promise.resolve({});
   var jobs=[];
   lay.nodes.forEach(function(n){var p=P(n.id);var ph=p&&p.photos&&p.photos[0];if(!ph)return;var key=n.id+":"+ph.length;if(_posterThumbCache[key])return;
-    jobs.push(new Promise(function(res){var im=new Image();im.onload=function(){try{var S=96,cv=document.createElement("canvas");cv.width=S;cv.height=S;var cx=cv.getContext("2d");var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,s=Math.max(S/w,S/h);cx.drawImage(im,(S-w*s)/2,(S-h*s)/2,w*s,h*s);_posterThumbCache[key]=cv.toDataURL("image/jpeg",0.82);}catch(e){}res();};im.onerror=function(){res();};im.src=ph;}));});
+    jobs.push(new Promise(function(res){var im=new Image();im.onload=function(){try{var S=96,cv=document.createElement("canvas");cv.width=S;cv.height=S;var cx=cv.getContext("2d");var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,s=Math.max(S/w,S/h);
+      /* l'affiche découpait au centre GÉOMÉTRIQUE et coupait les visages : on vise le sujet,
+         exactement comme les vignettes à l'écran (Kevin 11.09 « centre les images auto »). */
+      var f=cadrePour(im,ph),dx=S/2-f.x*w*s,dy=S/2-f.y*h*s;
+      dx=Math.max(S-w*s,Math.min(0,dx));dy=Math.max(S-h*s,Math.min(0,dy));
+      cx.drawImage(im,dx,dy,w*s,h*s);_posterThumbCache[key]=cv.toDataURL("image/jpeg",0.82);}catch(e){}res();};im.onerror=function(){res();};im.src=ph;}));});
   return Promise.all(jobs).then(function(){var out={};lay.nodes.forEach(function(n){var p=P(n.id);var ph=p&&p.photos&&p.photos[0];if(ph&&_posterThumbCache[n.id+":"+ph.length])out[n.id]=_posterThumbCache[n.id+":"+ph.length];});return out;});
 }
 function posterBuild(opt){
@@ -1472,7 +1553,7 @@ function renderTools(){var w=$("#wrap");var n=Object.keys(DB.persons).length;w.i
   $("#btnPublish").onclick=publishDomain;fillDomainStatus();$("#btnExport").onclick=doExport;$("#btnImport").onclick=function(){$("#fileImport").click();};var bg=$("#btnGedcom");if(bg)bg.onclick=function(){$("#fileImport").click();};$("#fileImport").onchange=doImport;
   $("#btnCode").onclick=changeCode;$("#btnLock").onclick=function(){sessionStorage.removeItem("arbre_unlocked");localStorage.removeItem("arbre_trust");location.reload();};
 }
-function render(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("act",t.dataset.view===VIEW);});if(VIEW==="tree")renderTree();else if(VIEW==="list")renderList();else if(VIEW==="search")renderSearch();else if(VIEW==="blasons")renderBlasons();else renderTools();$("#ver").textContent=APP_VER+" · "+Object.keys(DB.persons).length+" pers.";}
+function render(){document.querySelectorAll("#tabs .tab").forEach(function(t){t.classList.toggle("act",t.dataset.view===VIEW);});if(VIEW==="tree")renderTree();else if(VIEW==="list")renderList();else if(VIEW==="search")renderSearch();else if(VIEW==="blasons")renderBlasons();else renderTools();$("#ver").textContent=APP_VER+" · "+Object.keys(DB.persons).length+" pers.";cadrerAuto();}
 
 /* Accès aux ACTES officiels, calculé pour CHAQUE personne selon son cas :
    - état civil français : images librement consultables au-delà de 100 ans
@@ -1700,7 +1781,7 @@ function importPhoto(file){return new Promise(function(res,rej){
 
 /* ---------- overlay ---------- */
 function _removeOv(){clearInterval(_caro.timer);var ov=$(".ov");if(ov)ov.remove();}
-function showOverlay(html){_removeOv();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});ov.addEventListener("click",function(e){var a=e.target.closest("[data-add]");if(a){var pr=a.dataset.add.split(":"),rel=pr[0],pid=pr[1];if(rel==="conj")openEdit(null,{conj:pid});else if(rel==="child")openEdit(null,{childOf:pid});else openEdit(null,{parentType:rel,childId:pid});return;}var o=e.target.closest("[data-open]");if(o){openPerson(o.dataset.open);return;}var ed=e.target.closest("[data-edit]");if(ed){openEdit(ed.dataset.edit);return;}var bl=e.target.closest("[data-bl]");if(bl){openBlason(bl.dataset.bl);return;}var s=e.target.closest("[data-searchp]");if(s){openSearch(s.dataset.searchp);}});}
+function showOverlay(html){_removeOv();var ov=el('<div class="ov">'+html+'</div>');document.body.appendChild(ov);ov.addEventListener("click",function(e){if(e.target===ov)closeOverlay();});ov.querySelectorAll("[data-close]").forEach(function(b){b.onclick=closeOverlay;});ov.addEventListener("click",function(e){var a=e.target.closest("[data-add]");if(a){var pr=a.dataset.add.split(":"),rel=pr[0],pid=pr[1];if(rel==="conj")openEdit(null,{conj:pid});else if(rel==="child")openEdit(null,{childOf:pid});else openEdit(null,{parentType:rel,childId:pid});return;}var o=e.target.closest("[data-open]");if(o){openPerson(o.dataset.open);return;}var ed=e.target.closest("[data-edit]");if(ed){openEdit(ed.dataset.edit);return;}var bl=e.target.closest("[data-bl]");if(bl){openBlason(bl.dataset.bl);return;}var s=e.target.closest("[data-searchp]");if(s){openSearch(s.dataset.searchp);}});cadrerImages(ov);}
 function closeOverlay(){_removeOv();_pStack=[];_curPerson=null;}
 
 /* ---------- export/import + name + code ---------- */
