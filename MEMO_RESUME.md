@@ -25,16 +25,20 @@ Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
   `deep`, `standard` par défaut), copie le bon dossier, et pose dans le check-run l'**inventaire
   des fichiers**, le **rapport final**, les **fiches de vulnérabilité** et le nombre d'erreurs de
   flux. Relancé sur `https://apex-chat.kd-mc.com/` (voir le run dans le rapport de session).
-- **Lingua : la panne signalée était antérieure au correctif.** Le run d'audit live qui disait
-  « `page.fill` Timeout » (`34517173393`) a tourné à **18 h 54** ; le correctif de l'écran blanc
-  (`97253ebdb`) est arrivé sur `main` à **20 h 52** et le déploiement Pages a réussi après. En
-  local, la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26** — elle
-  échouait ici pour une raison d'outillage (Playwright absent à la racine, puis version de
-  Chromium différente de celle installée : relié par un lien, sans rien télécharger). Pour que la
-  prochaine panne se lise sans deviner, `audit-live.yml` pose désormais son **verdict par surface
-  dans un check-run** (`node tools/ci/ci.mjs report <run>`), comme les deux scans de sécurité.
-  Le push de cette branche relance le balayage live : c'est lui qui dit si Lingua est vert **en
-  ligne**.
+- **Lingua « en panne » : c'était la sonde, pas l'app.** Le balayage live relancé ce matin (run
+  `34588152564`, lu dans son nouveau check-run) donnait encore **27 vertes, 1 rouge : Lingua,
+  « `page.fill` Timeout »**, alors que le correctif de l'écran blanc était bien en ligne. Rejoué
+  pas à pas en local sur le code de `main` : la fenêtre « Nouveau compte » s'ouvre, mais depuis le
+  **05/09** elle demande **prénom + nom** (deux champs, pour distinguer les homonymes) et la sonde
+  remplissait toujours l'**ancien champ unique**, qui n'existe plus. Chaque balayage depuis le
+  05/09 échouait donc sur Lingua **pour un défaut de la sonde**. Mesuré après correction de la
+  sonde : fenêtre ouverte, **16 langues, 189 unités, 607 boutons, 0 erreur JS**. La sonde
+  corrigée est poussée ; le balayage live qu'elle déclenche donne le verdict en ligne. Pour que la
+  prochaine alerte se lise sans deviner, `audit-live.yml` pose désormais son **verdict par
+  surface dans un check-run** (`node tools/ci/ci.mjs report <run>`), comme les deux scans de
+  sécurité. À côté : la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26**
+  en local — elle échouait ici pour une raison d'outillage (Playwright absent à la racine, puis
+  version de Chromium différente de celle installée : relié par un lien, sans rien télécharger).
 
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 

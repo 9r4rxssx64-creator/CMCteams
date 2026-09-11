@@ -138,6 +138,8 @@ résultat**, et elle sera remplacée par la lecture du check-run détaillé.
 
 **Non vérifié** : le contenu de la vulnérabilité MEDIUM annoncée par Strix — **11/09 : en cours
 de vérification**, le workflow corrigé a été relancé et son check-run contiendra le rapport.
-**Non vérifié depuis la session** : que `lingua.kd-mc.com` est vert **en ligne** après le
-correctif de l'écran blanc (mesuré seulement en local, 26/26) — le balayage live relancé par le
-push de cette branche le dira dans son check-run.
+**Vérifié le 11/09** : le balayage live relancé (run `34588152564`) donnait Lingua rouge avec le
+même message ; cause trouvée en rejouant la sonde pas à pas en local — elle remplissait un champ
+(`#acName`) remplacé le 05/09 par prénom + nom (`#acPrenom`/`#acNom`). **Défaut de la sonde**,
+corrigé dans `tools/smoke/audit-live.mjs`. **Non vérifié depuis la session** : le verdict en
+ligne après cette correction — il est dans le check-run du balayage déclenché par le push.
