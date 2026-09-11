@@ -621,6 +621,10 @@ describe('handleAiVoiceTranscribe (v1.1.28)', () => {
     expect(r.status).toBe(400);
   });
 
+  // Délai élargi (10/09, happy-dom 20 + vitest 5) : le multipart de 26 Mo passe par le
+  // Blob/FormData de happy-dom, ~14 s sous --coverage (5 s avant) → le test expirait en CI
+  // (run 34527870783) alors qu'il est déterministe. On garde la VRAIE taille (c'est ce
+  // que le worker refuse) et on donne le temps ; une régression rendrait toujours ≠ 400.
   it('refuse audio > 25 MB', async () => {
     const env = userEnv({ GROQ_API_KEY: 'k' });
     const tok = await userToken();
@@ -629,7 +633,7 @@ describe('handleAiVoiceTranscribe (v1.1.28)', () => {
     const blob = new Blob([big], { type: 'audio/webm' });
     const r = await handleAiVoiceTranscribe(makeMultipartReq(blob, 'big.webm', tok), env);
     expect(r.status).toBe(400);
-  });
+  }, 60_000);
 
   it('audio binary direct (application/octet-stream)', async () => {
     const env = userEnv({ GROQ_API_KEY: 'k' });

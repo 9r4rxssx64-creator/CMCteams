@@ -129,6 +129,19 @@ Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité 
   le nom, pas sur le contenu. Corrigé : il ne supprime plus que ce qui est déjà entièrement dans
   `main`, et un test rejoue le cas (`tests/verify-cleanup-nom-reutilise.mjs`). Ça touchait
   aussi les autres sessions qui réutilisent un nom de branche.
+- **Les 9 signalements Semgrep sont identifiés, et les 47 lignes du scan ont été ouvertes une
+  par une** : **aucune faille**. Les trois classés « grave » sont des `curl` qui lisent une
+  réponse d'API comme une donnée, pas comme un programme. Détail au § 6.5 de
+  `audit/apex-chat/02-RESULTATS.md`. Il reste deux conseils mineurs (pas des failles).
+- **La couverture de tests d'Apex Chat a « baissé » sans qu'un seul test ait été retiré — c'est
+  la règle qui a changé, pas l'app.** La mise à jour de sécurité des outils de test (vitest 5)
+  compte désormais les branches et rappels jamais exécutés, et inclut tous les fichiers dans un
+  seuil global. Le matin l'outil disait 89 % de lignes, le soir 85,5 % pour le même code. Avec un
+  seuil global à 100 %, **la CI de `main` était rouge après la fusion**. Corrigé sans tricher :
+  un seuil **par fichier = sa valeur mesurée** (cliquet : ne peut que monter), le workflow **lit
+  cette table** au lieu d'en tenir une copie, 8 tests ajoutés (`crypto-core` et `ia-worker`
+  revenus à 100 %, contrat des deux fichiers-relais Durable Object prouvé). **1123 / 1123 tests,
+  couverture exit 0.** Les chiffres avant/après sont écrits côte à côte dans le dossier d'audit.
 ## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
 
 - **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
