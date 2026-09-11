@@ -64,7 +64,11 @@ export default defineConfig({
         'lib/push-key.js': { statements: 100, branches: 91.6, functions: 100, lines: 100, perFile: true },
         'lib/sw-handlers.js': { statements: 100, branches: 98.3, functions: 94.7, lines: 100, perFile: true },
         'lib/visio-mesh.js': { statements: 100, branches: 95.5, functions: 100, lines: 100, perFile: true },
-        'workers/api-worker.js': { statements: 74.7, branches: 67.4, functions: 63.4, lines: 78.2, perFile: true },
+        // 11/09/2026 : 118 tests ajoutés (tests/unit/api-worker-fonctions-non-appelees.test.js —
+        // les 108 fonctions jamais exécutées, chacune par le routeur avec chemin nominal + branche
+        // d'erreur). Mesuré vitest 5 : 91.98 % instructions / 81.92 % branches / 100 % fonctions /
+        // 94.25 % lignes (avant : 75.71 / 68.48 / 64.47 / 79.20). Plancher = mesure moins ~1 point.
+        'workers/api-worker.js': { statements: 91, branches: 81, functions: 99, lines: 93.5, perFile: true },
         'workers/ia-worker.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },
         'workers/push-worker.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },
         'workers/sms-worker.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },

@@ -123,7 +123,16 @@ const SURFACES = [
         await page.waitForTimeout(1200);
         if (!(await page.$('.acc-card.add'))) return { ok:false, note:'écran comptes absent' };
         await tap('.acc-card.add'); await page.waitForTimeout(600);
-        await page.fill('#acName', 'Audit'); await tap('.modal .btn-main'); await page.waitForTimeout(700);
+        // 05/09 (commit 1ed68de2e) : la création de compte demande PRÉNOM + NOM (deux champs
+        // `#acPrenom` / `#acNom`, homonymes) — l'ancien champ unique `#acName` n'existe plus.
+        // La sonde le remplissait encore → « page.fill: Timeout 30000ms » sur CHAQUE balayage
+        // depuis le 05/09 (runs 34517173393, 34588152564…) : un défaut de la sonde présenté comme
+        // une panne de l'app (mesuré le 11/09 : l'app rend bien la fenêtre, avec les deux champs).
+        // Un compte de test au nom évident, aucune donnée réelle.
+        if (await page.$('#acPrenom')) { await page.fill('#acPrenom', 'Audit'); await page.fill('#acNom', 'Live'); }
+        else if (await page.$('#acName')) { await page.fill('#acName', 'Audit'); }
+        else return { ok:false, note:'fenêtre « Nouveau compte » sans champ prénom/nom (#acPrenom/#acNom absents)' };
+        await tap('.modal .btn-main'); await page.waitForTimeout(700);
         const langs = await page.$$eval('.course-card', els => els.length).catch(() => 0);
         if (langs < 6) return { ok:false, note:'langues attendues ≥6, vues ' + langs };
         // 🇲🇨 v2.119 : le monégasque doit être RÉELLEMENT proposé sur le vrai domaine

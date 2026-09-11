@@ -618,14 +618,100 @@ dns-prefetch>` (pas de SRI possible), 5 `unsafe-formatstring` INFO sur des `cons
 d'origine **après** liste blanche (voulu, testé), **3 `gha-curl-pipe-shell` classés ERROR qui
 sont des `curl | python3 -c "json.load…"`** — la réponse d'API est parsée, jamais exécutée —,
 et les 7 gitleaks (clé VAPID publique ×3, CSS, `'TEAMID'` de test, en-têtes PEM ×2). Deux
-recommandations P3 restent ouvertes, ni l'une ni l'autre n'est une faille : remplacer
+recommandations P3 restaient ouvertes, ni l'une ni l'autre n'est une faille : remplacer
 `python3 -c` par `jq` dans les trois workflows, et épingler les actions sur un SHA.
 
-### Pentest IA (Strix) — exécuté, mais tué par le délai
+**Appliquées le 11/09** (Kevin : « Go ») : `jq -r '.[0].number // empty'` dans
+`apex-chat-e2e.yml`, `jq -er '.result[0].id'` et `jq -r '.result.id // empty'` dans
+`deploy-apex-chat.yml` (la réponse était déjà lue comme une donnée ; `jq` est déclaratif, sans
+interpréteur) ; les **23 `uses:`** des 10 workflows du périmètre sont épinglés sur le SHA de
+leur tag (`actions/checkout@d23441a4… # v6`, etc., SHA résolus par `git ls-remote` sur les
+dépôts officiels), la version restant lisible en commentaire. Dependabot (déjà configuré,
+hebdomadaire) proposera les montées. Gardes relancées : `test:depot-public-sain`,
+`test:actions-conformes`, `test:workflows-pipefail`, `test:ci-no-stampede` — vertes.
+
+### Pentest IA (Strix) — exécuté, tué par le délai, puis compris et relancé
 
 `strix-scan.yml` a été **arrêté par le délai de 26 minutes** (rc = 124) avant d'écrire son
-rapport. Son tableau de bord annonce **1 vulnérabilité MEDIUM** dont je ne connais **pas le
-contenu**. Coût mesuré de cette exécution : **13,77 $** (31,8 M jetons, modèle gpt-5.4, avec
-des erreurs de flux « Error streaming response » répétées). Je ne l'ai **pas relancé** : ça
-coûte de l'argent réel, et il faudrait d'abord allonger le délai et capturer le dossier de
-travail à l'arrêt. C'est une décision pour Kevin.
+rapport. Son tableau de bord annonçait **1 vulnérabilité MEDIUM** dont je ne connaissais **pas
+le contenu**. Coût mesuré de cette exécution : **13,77 $** (31,8 M jetons, modèle gpt-5.4, avec
+des erreurs de flux « Error streaming response » répétées).
+
+**11/09 — cause racine, lue dans le code de Strix** (clone superficiel de `usestrix/strix`,
+version 1.6.2, `requires-python >= 3.12`) : (1) Strix écrit ses résultats dans
+**`strix_runs/<run>/`** (`penetration_test_report.md`, `vulnerabilities/*.md`,
+`vulnerabilities.csv|json`, `run.json`) — le workflow copiait **`agent_runs/`**, l'ancien
+nom ; (2) sur SIGTERM, `signal_handler` appelle `report_state.cleanup(status="interrupted")`
+qui **écrit les artefacts avant de sortir**. Le rapport de la MEDIUM a donc très probablement
+été écrit, dans un dossier que personne ne copiait. **Correctif** : les deux dossiers sont
+copiés ; la dépense est **bornée** (`--max-budget-usd`, 15 $ par défaut : Strix s'arrête seul,
+proprement) au lieu de compter sur un `timeout` qui le tue au milieu d'une phrase ; la
+profondeur est un choix (`--scan-mode quick|standard|deep`, `standard` par défaut) ; délai du job
+75 min ; le check-run porte l'**inventaire des fichiers produits**, le nombre d'erreurs de
+flux, puis le rapport final, les fiches de vulnérabilité et l'index CSV, dans cet ordre.
+Relancé sur `https://apex-chat.kd-mc.com/` — résultat à lire par
+`node tools/ci/ci.mjs report <run_id>`.
+
+**Lu (run `34588162278`, 38 min, 14,00 $, 33,1 M jetons dont 31,8 M en cache, rc=2 = « fini
+avec findings ») : 2 MEDIUM, les deux confirmées dans le code et corrigées.**
+
+### [P1] Une session SSO « faible » forgée à distance lisait l'historique de Kevin et coupait toutes ses sessions — ✅ CORRIGÉ le 11/09
+
+- **Axe** : sécurité (routeur `services/kdmc-router/worker.js`, hors app mais sur le chemin
+  de toutes les apps du domaine). Strix vuln-0001, CWE-287, CVSS 6,5.
+- **Preuve (Strix, sur le vrai domaine)** : `POST /__sso/issue {"uid":"x","name":"y"}` sans
+  aucune preuve → `ok:true` + cookie `kdmc_sso` sur `.kd-mc.com` ; `GET /__sso/whoami` le
+  reconnaît (`verified:false, admin:false`). Aussi accepté avec `Origin: https://evil.example`
+  et `Content-Type: text/plain` (requête « simple » : un site tiers pose le cookie dans le
+  navigateur d'un visiteur).
+- **Ce qui est voulu** (pas une faille) : l'émission auto-déclarée existe pour la règle
+  « reconnu auto pour tous » ; `admin` exige `verified` (Face ID), c'est vérifié par `whoami`.
+- **Ce qui était une faille, trouvé en lisant les consommateurs de cette session** :
+  `GET /__sso/me/history` et `POST /__sso/me/revoke` ne demandaient qu'une **session**, pas une
+  session **vérifiée**. Avec un token forgé sur `uid=kdmc_admin`, un inconnu lisait la fiche
+  canonique de Kevin (appareils, apps, historique de connexions) et posait `revoked_at` sur
+  cette fiche → **toutes** les sessions de Kevin tombaient, Face ID comprises (déconnexion
+  forcée de l'admin par n'importe qui). Cause racine : le self-service supposait qu'un uid
+  dans un token venait forcément de son propriétaire.
+- **Correctif** : `/me/history` et `/me/revoke` exigent `s.verified` (même règle que
+  `/passkeys/delete`) ; `/__sso/issue` refuse un `Origin` hors `kd-mc.com` / `*.kd-mc.com` /
+  app native (`capacitor://`, `ionic://`) / **même origine que l'hôte appelé** (portail servi en
+  local, test navigateur), et `Origin: null` (sans en-tête Origin : inchangé, aucun navigateur
+  tiers en jeu). Rien ne change pour Kevin (ses sessions sont Face ID) ni pour la connexion
+  automatique par nom. **Mesuré après coup** : la première version refusait la même origine
+  sur `127.0.0.1:port` → le test navigateur réel du SSO (`tools/kdmc-sso-e2e`, relancé une fois
+  son installation réparée) perdait 2 contrôles ; corrigé, 8/8 en local.
+- **Test qui prouve** : `services/kdmc-router/self-service.test.mjs` (23/23, 10 nouveaux :
+  token forgé → history/revoke refusés, fiche intacte, vraie session vivante ; `/issue` depuis
+  `evil.example`, `null`, `kd-mc.com.evil.example` → 403 sans cookie ; depuis `kd-mc.com`,
+  `apex-chat.kd-mc.com`, `capacitor://localhost` → accepté). **Ces tests SSO ne tournaient dans
+  aucun workflow** : ajoutés à `deploy-kdmc-router.yml` avant chaque déploiement.
+- **Résiduel assumé** : une session faible forgée sur un uid admin **écrit toujours un
+  passage** dans la fiche « qui se connecte » (métadonnées d'appareil, aucune donnée) — les
+  apps de Kevin envoient elles-mêmes cet uid avant Face ID, le bloquer casserait sa connexion
+  automatique. Consigné, pas corrigé.
+- Effort S · régression : un utilisateur **sans** passkey ne peut plus lire son historique ni
+  « déconnecter ses autres appareils » sans Face ID — message clair, aucun blocage de connexion.
+
+### [P2] Un lien piégé faisait activer un Premium par l'admin sans confirmation — ✅ CORRIGÉ le 11/09 (v1.1.289)
+
+- **Axe** : sécurité (client `messaging-app/index.html`). Strix vuln-0002, CWE-352, CVSS 4,3.
+- **Preuve** : au boot, `?grant_premium=<uid>&plan=<plan>` est lu et, dès que `K.user.is_admin`,
+  `K._adminGrantPremium(guid, gplan)` part **sans confirmation** (`POST /api/admin/grant-premium`
+  intercepté avec les valeurs de l'URL). Même chemin via le message `grant-premium` du service
+  worker. Le serveur exige le jeton admin : seul Kevin peut le déclencher, mais **à son insu**.
+- **Correctif** : `K._confirmGrantPremium(uid, plan)` — une fenêtre qui **nomme** l'utilisateur
+  et la formule — devant les deux déclencheurs externes ; « Annuler » ne fait rien ; le bouton
+  du panneau admin (clic explicite) est inchangé. La notification « ✅ Activer » demande donc
+  un tap de plus, qui dit ce qui va être activé (règle « double-confirm » des actions admin).
+- **Test qui prouve** : `messaging-app/tests/unit/premium-deep-link-confirm.test.js` (4 tests,
+  lit la page servie ; **prouvé discriminant** : garde retirée → 2 échecs nommant le
+  déclencheur).
+- Effort S · régression : aucune (un tap de plus pour l'admin sur ce seul parcours).
+
+**Ce que Strix n'a pas trouvé** (surfaces revues sans problème) : `/diag.html`,
+`/force-update.html`, `/force-logout.html` (nettoyage local, aucune action serveur), injection
+sur les entrées SSO (SQL/NoSQL/XXE/timing : rien). **Ce qu'il n'a pas testé** : les parcours
+authentifiés (OTP), conversations, invitations, WebSocket, admin — il n'avait pas de compte.
+Le run montre encore **654 erreurs de flux LLM** (« Error streaming response ») : le scan a
+fini quand même, mais c'est du temps et de l'argent perdus côté fournisseur.

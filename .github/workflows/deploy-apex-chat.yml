@@ -38,10 +38,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 20
 
@@ -78,9 +78,11 @@ jobs:
             ACC="$KEVIN_ACCOUNT_ID"
             echo "::notice::Account ID depuis secret CLOUDFLARE_ACCOUNT_ID: $ACC"
           else
+            # 10/09/2026 : jq à la place de `| python3 -c` (Semgrep gha-curl-pipe-shell — la réponse est
+            # une donnée parsée, jamais exécutée ; jq rend ça explicite). `-e` : exit 1 si résultat vide.
             ACC=$(curl -s -X GET "https://api.cloudflare.com/client/v4/accounts" \
               -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | \
-              python3 -c "import json,sys; d=json.load(sys.stdin); r=d.get('result',[]); print(r[0]['id']) if r else exit(1)" 2>/dev/null) || {
+              jq -er '.result[0].id' 2>/dev/null) || {
               echo "::error::Secret CLOUDFLARE_ACCOUNT_ID manquant ET token sans Memberships:Read"
               echo "Solution : ajoute secret CLOUDFLARE_ACCOUNT_ID dans Settings > Secrets"
               exit 1
@@ -99,13 +101,14 @@ jobs:
           echo "=== Verify token ==="
           VERIFY=$(curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/verify" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
-          echo "$VERIFY" | python3 -m json.tool || echo "$VERIFY"
-          TOKEN_ID=$(echo "$VERIFY" | grep -oE '"id":"[a-f0-9]+"' | head -1 | cut -d'"' -f4)
+          echo "$VERIFY" | jq . || echo "$VERIFY"
+          TOKEN_ID=$(echo "$VERIFY" | jq -r '.result.id // empty')
           echo "Token ID: $TOKEN_ID"
           echo ""
           echo "=== Full token policies (DEFINITIVE proof of permissions) ==="
+          # 10/09/2026 : jq à la place de `| python3 -m json.tool` (Semgrep gha-curl-pipe-shell).
           curl -s -X GET "https://api.cloudflare.com/client/v4/user/tokens/$TOKEN_ID" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | python3 -m json.tool || true
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" | jq . || true
           echo ""
           echo "=== Test list Workers (le token a Workers Scripts:Edit?) ==="
           curl -s -X GET "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts" \
@@ -159,7 +162,7 @@ jobs:
           echo "::notice::5 Queues OK"
 
       - name: Deploy api-worker (official Cloudflare action)
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@9acf94ace14e7dc412b076f2c5c20b8ce93c79cd # v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
