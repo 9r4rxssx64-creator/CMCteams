@@ -98,6 +98,16 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
 
+## 📷 Arbre — la photo de Gérard, et l'import qui ne fait plus perdre de photos — session 2026-09-11
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-photo-gerard.json` *(envoyé dans la conversation, **hors dépôt**)* | La photo de ton père, prête à importer : **Réglages → Importer**. Marquée « complément » : elle s'ajoute à sa fiche **sans rien remplacer**. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (v3.20, `fusionnerFiche`) | L'import **complète** une fiche au lieu de la remplacer, et garde toujours photos, documents et commentaires de l'appareil — même quand on réimporte un export texte (qui, lui, n'emporte jamais les photos). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/photo-vers-fiche.mjs` | Prépare **n'importe quelle photo** pour **n'importe qui** : `--photo <image> --id <identifiant>`. Elle est traitée par la fonction même de l'app (2200 px, qualité 0,9) et le fichier est écrit **hors du dépôt** — l'outil refuse d'écrire dedans. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/photo-vers-fiche.mjs) |
+| `tools/arbre/verify-photo-fusion.mjs` | Vérifie en **vrai navigateur** qu'ajouter une photo ne fait rien perdre, que la carte l'affiche, et qu'un export texte réimporté n'efface plus les photos. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-photo-fusion.mjs) |
+| `tests/arbre-photo-fusion.test.mjs` | La garde hors ligne (dans `test:ci`) : la fusion existe, elle est **câblée**, les listes sont protégées, un champ vide n'efface pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-photo-fusion.test.mjs) |
+
 ## 👨‍👩‍👧 Arbre — ajouter la famille de Marie-France (Kim, Déborah, sa fille) — session 2026-09-10
 
 | Fichier | À quoi ça sert | Liens |

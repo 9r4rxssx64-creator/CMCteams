@@ -281,7 +281,7 @@ a{color:var(--cyan);text-decoration:none}
 
 <script>
 "use strict";
-var APP_VER="v3.19";
+var APP_VER="v3.20";
 /* ===== MUNEGU — thème monégasque (v3.18, Kevin 2026-09-05 « Accentue le thème spécialité monégasque, Monaco. Va plus loin ») =====
    Vocabulaire vérifié (Comité National des Traditions Monégasques / chroniques « A lenga munegasca ») :
    Munegu = Monaco · àrburu = arbre · famiya = famille · munegascu = la langue. Devise de la Principauté : Deo Juvante.
@@ -1789,9 +1789,51 @@ async function gedImport(text){
   await persist();ROOT=ROOT||Object.keys(DB.persons)[0];render();
   toast("✅ GEDCOM importé : "+nNew+" nouvelle(s), "+nEnr+" complétée(s)");
 }
+/* v3.20 — IMPORTER SANS RIEN ÉCRASER.
+   Avant, une fiche reconnue était REMPLACÉE en entier par celle du fichier : ajouter
+   une photo ou une date à quelqu'un lui faisait perdre ses autres photos, ses actes et
+   ses commentaires, sans un mot. Deux garde-fous, dans les deux sens :
+   · FUSION (meta.fusion, ou fusion:true sur la fiche) : on part de la fiche de
+     l'appareil et on n'écrit QUE les champs réellement fournis. Un champ vide veut dire
+     « je ne sais pas », jamais « efface » — sinon un fichier partiel viderait des dates.
+   · REMPLACEMENT (cas normal) : photos, documents et commentaires de l'appareil sont
+     GARDÉS quand le fichier n'en apporte pas. Une photo prise sur le téléphone ne peut
+     plus disparaître parce qu'on a réimporté un export texte (qui, lui, n'a jamais les
+     photos : textOnly les retire).
+   Dans les deux cas les listes sont FUSIONNÉES sans doublon : réimporter deux fois le
+   même fichier n'ajoute pas la même photo deux fois. */
+function fusionnerFiche(lp,rp,fusion){
+  var q=fusion?Object.assign({},lp):Object.assign({},rp);
+  if(fusion){for(var k in rp){
+    if(k==="photos"||k==="docs"||k==="comments"||k==="fusion")continue;
+    var v=rp[k];if(v===null||v===undefined||v==="")continue;            // vide = « je ne sais pas »
+    q[k]=v;}}
+  ["photos","docs","comments"].forEach(function(c){
+    var a=(lp&&lp[c])||[],b=(rp&&rp[c])||[];
+    if(!a.length&&!b.length){if(!(lp&&c in lp)&&!(rp&&c in rp))delete q[c];return;} // ni l'un ni l'autre : on n'invente pas la clé
+    if(!b.length){q[c]=a.slice();return;}                                // le fichier n'en parle pas : on garde les nôtres
+    var vus={},out=[];
+    a.concat(b).forEach(function(x){var k2=(typeof x==="string")?x:JSON.stringify(x);if(vus[k2])return;vus[k2]=1;out.push(x);});
+    q[c]=out;});
+  delete q.fusion;delete q.photoCount;delete q.docCount;   // restes d'un export texte, pas des données
+  q.id=(lp&&lp.id)||rp.id;q.updatedAt=Math.max(rp.updatedAt||0,(lp&&lp.updatedAt)||0)||now();
+  return q;
+}
 function doImport(e){var f=e.target.files[0];if(!f)return;var isGed=/\.(ged|gedcom)$/i.test(f.name||"");var r=new FileReader();r.onload=async function(){var txt=r.result;
   if(isGed||/^\s*0\s+HEAD/m.test(String(txt).slice(0,200))){try{await gedImport(txt);}catch(err){toast("GEDCOM illisible : "+String(err&&err.message||err).slice(0,60));}return;}
-  try{var d=JSON.parse(txt);if(!d.persons)throw 0;var add=0;for(var id in d.persons){var rp=d.persons[id],lp=DB.persons[id];if(!lp||(rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=rp;add++;}}await persist();render();toast("⬆️ Importé ("+add+" fiches)");}catch(err){toast("Fichier invalide (JSON ou GEDCOM attendu)");}};r.readAsText(f);e.target.value="";}
+  try{var d=JSON.parse(txt);if(!d.persons)throw 0;var add=0,maj=0,ignor=0;
+    var fus=!!(d.meta&&d.meta.fusion);
+    for(var id in d.persons){var rp=d.persons[id],lp=DB.persons[id];
+      /* un complément (fusion) sans fiche à compléter ne doit PAS créer une fiche sans
+         nom : mieux vaut le dire que laisser une carte vide dans l'arbre. */
+      if(!lp&&(fus||rp.fusion)&&!rp.prenom&&!rp.nom){ignor++;continue;}
+      if(!lp){var q0=Object.assign({},rp);delete q0.fusion;DB.persons[id]=q0;add++;continue;}
+      if(fus||rp.fusion){DB.persons[id]=fusionnerFiche(lp,rp,true);maj++;continue;}
+      if((rp.updatedAt||0)>(lp.updatedAt||0)){DB.persons[id]=fusionnerFiche(lp,rp,false);maj++;}
+    }
+    await persist();render();
+    toast("⬆️ Importé : "+add+" ajoutée(s)"+(maj?", "+maj+" complétée(s)":"")+(ignor?" · "+ignor+" ignorée(s) : personne introuvable dans ton arbre":""));
+  }catch(err){toast("Fichier invalide (JSON ou GEDCOM attendu)");}};r.readAsText(f);e.target.value="";}
 function setMe(){var n=prompt("Ton prénom (apparaîtra sur tes ajouts/commentaires) :",ME||"");if(n!=null){ME=n.trim();localStorage.setItem("arbre_me",ME);if(VIEW==="tools")render();}}
 async function changeCode(){var c=prompt("Nouveau code famille :");if(!c)return;var c2=prompt("Confirme :");if(c!==c2){toast("Codes différents");return;}var nh=await sha256("arbre::"+c.trim());var old=CODEHASH;
   /* v3.16 : le domaine doit connaître le nouveau code (sinon les nouveaux appareils seraient refusés). Preuve = l'ancien. */

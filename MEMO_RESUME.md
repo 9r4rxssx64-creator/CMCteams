@@ -1,5 +1,36 @@
 # MEMO_RESUME — état de session
 
+## 11 septembre 2026 — la photo de Gérard, et un défaut qui pouvait effacer TOUTES les photos
+
+Demande de Kevin : *« Intègre la photo de mon père Gérard. »*
+
+- **Le fichier est prêt** (envoyé dans la conversation) : sur l'iPhone, **Réglages → Importer →
+  choisis-le**. La photo apparaît alors sur la carte de Gérard.
+- **La photo est passée par la fonction même de l'app** (`importPhoto`, jouée dans un vrai
+  navigateur) : même réduction 2200 px, même qualité, même fond — **2,2 Mo → 339 Ko**. Exactement
+  ce que l'iPhone aurait produit. Elle n'entre **pas** dans le dépôt (public) : l'outil refuse
+  d'écrire sa sortie dedans.
+- **Un défaut sérieux trouvé en lisant le code avant d'écrire le fichier** : l'import
+  **remplaçait** la fiche reconnue au lieu de la compléter. Donc (a) ajouter une photo aurait fait
+  perdre dates, parents, notes et commentaires ; (b) bien pire, **réimporter son propre export
+  texte** — qui ne contient jamais les photos — **effaçait toutes les photos du téléphone**, en
+  silence, par une manipulation normale. Corrigé : l'import complète, ne remplace plus, et garde
+  toujours photos, documents et commentaires de l'appareil.
+- **Vérifié en vrai navigateur** sur la famille inventée : photo ajoutée sans effacer l'ancienne,
+  carte qui affiche bien l'image, note/commentaire/dates/parents/conjoints intacts, double import
+  sans doublon, export texte réimporté qui n'efface plus rien, complément visant un absent ignoré
+  (aucune carte sans nom), 0 erreur. Sabotage → 5 échecs : la fusion compte vraiment.
+- Garde `test:arbre-photo` câblée dans `test:ci`. Leçon **#256**.
+
+**⚠️ Deux constats de confidentialité signalés à Kevin (non corrigés — c'est sa décision)** :
+le dépôt est **public** (vérifié : `"visibility": "public"`), et il contient (1) `arbre/research/`
+— 646 fichiers suivis, dont `cloudraw/*.json` avec **20 fiches, 8 personnes vivantes** et des
+notes du type « Mère de Kevin » ; (2) `arbre/index.html` lui-même expose des **prénoms réels** et
+la **liste des divorces** (`DIVORCED`, `FAM_OVERRIDE`). Les 391 images d'actes sont, elles, des
+archives publiques anciennes. Retirer ces fichiers du dépôt ne les retire **pas** de l'historique.
+
+---
+
 ## 10 septembre 2026 (20h30) — j'ai refait les 3 mesures moi-même, sans croire personne sur parole
 
 Quatrième temps de la règle « prévenir ne suffit pas ». J'avais réveillé trois sessions à 19h ;
