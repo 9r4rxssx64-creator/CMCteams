@@ -138,11 +138,13 @@ résultat**, et elle sera remplacée par la lecture du check-run détaillé.
 
 **Non vérifié** : le contenu de la vulnérabilité MEDIUM annoncée par Strix — **11/09 : lu**
 (run `34588162278`) : 2 MEDIUM, les deux vérifiées dans le code et corrigées (voir
-`03-FINDINGS.md`). **Non vérifié depuis la session** : que le routeur corrigé est déployé
-(`deploy-kdmc-router.yml` se déclenche sur le push de la branche ; à relire) et que le
-correctif Premium est servi (`deploy.yml` après fusion). **Hypothèse écrite** : le résiduel
-« passage écrit dans la fiche par un uid forgé » n'a pas d'impact au-delà du journal des
-connexions — non prouvé par un test, consigné comme accepté.
+`03-FINDINGS.md`). **Vérifié ensuite** : routeur corrigé déployé (runs `34591858792` puis
+`34593899829`, gate SSO 25/25 avant chaque déploiement) ; page Apex Chat v1.1.289 publiée
+(`deploy.yml` run `34592467330`) et parcours live vert après (`apex-chat-e2e.yml` run
+`34593090073`) ; test navigateur réel du SSO vert sur le vrai routeur (`kdmc-sso-e2e.yml` run
+`34593741155`, après 30 exécutions rouges d'affilée pour une installation cassée).
+**Hypothèse écrite** : le résiduel « passage écrit dans la fiche par un uid forgé » n'a pas
+d'impact au-delà du journal des connexions — non prouvé par un test, consigné comme accepté.
 **Vérifié le 11/09** : le balayage live relancé (run `34588152564`) donnait Lingua rouge avec le
 même message ; cause trouvée en rejouant la sonde pas à pas en local — elle remplissait un champ
 (`#acName`) remplacé le 05/09 par prénom + nom (`#acPrenom`/`#acNom`). **Défaut de la sonde**,
