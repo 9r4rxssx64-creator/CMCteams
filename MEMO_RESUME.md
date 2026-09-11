@@ -24,6 +24,10 @@ Demande de Kevin : *« Centre les images auto à chaque fois. »*
 - Un **acte scanné** garde son cadrage par le haut : sur un document, c'est l'en-tête qui compte.
 - Garde `test:arbre-cadrage` (17 contrôles) câblée dans `test:ci`, discriminante ; preuve navigateur
   `npm run arbre:verif-cadrage` (10 contrôles). Leçon **#266**.
+- **Et pour ne plus jamais dire « c'est corrigé » sans que ce soit en ligne** : la Vérif RÉELLE
+  compare maintenant la version **réellement servie** par `arbre.kd-mc.com` à celle du dépôt et
+  **échoue** si le domaine sert plus ancien (déploiement fantôme, erreur #33). C'est la question
+  exacte qui m'a manqué hier soir.
 - **La v3.20 est fusionnée dans `main`** (la correction « compléter au lieu de remplacer » part donc
   en ligne avec ce cadrage) : l'outil photo, qui refusait d'écrire tant que l'app en ligne ne savait
   pas fusionner, **accepte à nouveau** — vérifié.

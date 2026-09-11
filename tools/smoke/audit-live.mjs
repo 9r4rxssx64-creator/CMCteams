@@ -18,7 +18,7 @@
  * du projet — worker/firebase/domaine — échouée/bloquée = la classe « CORS commande »).
  */
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { connecte, masque } from './session-kevin.mjs';
 
 const BASE = (process.argv[2] || 'https://kd-mc.com').replace(/\/$/, '');
@@ -89,6 +89,23 @@ const SURFACES = [
       const ver = await page.evaluate(() => (document.querySelector('#ver') || {}).textContent || '').catch(() => '');
       const base = j.count + ' fiches servies (' + (j.source || '?') + ', seedVersion ' + (j.seedVersion || '?') + ') · grille ' + (gate ? 'affichée' : 'ABSENTE') + ' · mauvais code refusé (' + bj.reason + ')' + (ver ? ' · ' + ver : '');
       if (!gate) return { ok:false, note: base + ' — la grille devrait être affichée sans code' };
+      /* « FUSIONNÉ » NE VEUT PAS DIRE « EN LIGNE » (erreur #33, et vécu le 11.09.2026 : une
+         correction écrite en v3.20 dormait sur une branche pendant que l'iPhone de Kevin tournait
+         en v3.18 — je lui ai envoyé un fichier que son app ne savait pas lire). On compare donc la
+         version RÉELLEMENT SERVIE à celle du dépôt : si le domaine sert plus ancien, c'est rouge,
+         et le message dit les deux numéros. Plus récent (déploiement en cours d'un autre commit)
+         n'est pas une faute : on le signale sans échouer. */
+      const vLive = (await page.evaluate(() => {
+        const m = String(document.documentElement.outerHTML).match(/var APP_VER="([^"]+)"/);
+        return m ? m[1] : '';
+      }).catch(() => '')) || (ver.match(/v[\d.]+/) || [''])[0];
+      let vRepo = '';
+      try { vRepo = (readFileSync('arbre/index.html', 'utf8').match(/var APP_VER="([^"]+)"/) || [])[1] || ''; } catch (e) { /* hors dépôt : on ne compare pas */ }
+      const num = (v) => String(v || '').replace(/^v/, '').split('.').map((n) => +n || 0);
+      const plusAncien = (a, b) => { const x = num(a), y = num(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); } return false; };
+      if (vRepo && vLive && plusAncien(vLive, vRepo)) {
+        return { ok:false, note: base + ' — DÉPLOIEMENT FANTÔME : le domaine sert ' + vLive + ' alors que le dépôt est en ' + vRepo + ' (publication non faite ou cache)' };
+      }
       const codeHash = (process.env.ARBRE_CODE_SHA256 || '').trim().toLowerCase();
       if (!/^[0-9a-f]{64}$/.test(codeHash)) return { ok:true, note: base + ' · cartes non comptées (secret ARBRE_CODE_SHA256 absent — rendu prouvé hors ligne par verify-domaine)' };
       // Opt-in : avec l'empreinte du code, on entre vraiment et on compte les cartes
