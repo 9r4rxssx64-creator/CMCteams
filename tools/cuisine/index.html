@@ -534,6 +534,25 @@ function ttsHighlight(step){
     if(on&&lis[i].scrollIntoView){ try{ lis[i].scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){} }
   }
 }
+/* iPhone : un élément <audio> qui joue (même muet) fait passer la page en session audio « lecture » —
+ * la voix de synthèse n'est alors plus coupée par l'interrupteur silencieux. Le son (0,1 s de silence,
+ * WAV fabriqué en mémoire) est créé une fois ; ne fait rien hors iPhone/iPad. */
+function ttsUnlockAudio(){
+  try{
+    var ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    if(!ios)return;
+    if(!TTS.audio){
+      var n=800,b=new Uint8Array(44+n),v=new DataView(b.buffer),i;
+      var S=function(o,s){for(var k=0;k<s.length;k++)b[o+k]=s.charCodeAt(k);};
+      S(0,'RIFF');v.setUint32(4,36+n,true);S(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+      v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);S(36,'data');v.setUint32(40,n,true);
+      for(i=0;i<n;i++)b[44+i]=128;
+      var a=document.createElement('audio');a.setAttribute('playsinline','');a.preload='auto';
+      a.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'}));TTS.audio=a;
+    }
+    var p=TTS.audio.play(); if(p&&p.catch)p.catch(function(){});
+  }catch(e){}
+}
 function readAloud(id,btn){
   if(!ttsSupported()){ toast('🔇 Lecture vocale non disponible sur ce navigateur'); return; }
   if(TTS.active){ ttsStop(true); return; }
@@ -542,6 +561,11 @@ function readAloud(id,btn){
   TTS.active=true; TTS.id=id; TTS.btn=btn||null; TTS.idx=0; TTS.started=false;
   TTS.utts=chunks.map(ttsMakeUtt); /* gardées en mémoire : Chrome coupe la voix si l'objet est ramassé */
   ttsButton(true);
+  toast('🔊 Lecture de '+(chunks.length-1)+' phrases… (v2)');
+  /* iPhone : la voix de synthèse est coupée par le bouton silencieux (catégorie « ambiante »). iOS 17+ permet
+   * de passer la page en catégorie « lecture » (comme une app de musique) → la voix passe même en mode silencieux. */
+  try{ if(navigator.audioSession&&navigator.audioSession.type!=='playback')navigator.audioSession.type='playback'; }catch(e){}
+  ttsUnlockAudio(); /* iPhone plus anciens : même effet en jouant un son muet dans le même appui */
   try{ if(speechSynthesis.paused)speechSynthesis.resume(); }catch(e){} /* iPhone : moteur parfois figé « en pause » */
   var busy=false; try{ busy=!!(speechSynthesis.speaking||speechSynthesis.pending); }catch(e){}
   /* Jamais cancel() collé à speak() : sur iPhone la phrase saute. On n'annule que s'il reste quelque chose, et on laisse respirer. */

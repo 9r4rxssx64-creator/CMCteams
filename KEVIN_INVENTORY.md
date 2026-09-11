@@ -1,7 +1,13 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-10** (soir : « Lire les étapes » réparé + icône drapeau de Monaco pour le livre de cuisine)
+> Dernière mise à jour : **2026-09-11** (livre de cuisine : la voix passe même avec l'iPhone en mode silencieux)
+
+### 11 septembre 2026 — la voix du livre de cuisine passe même en mode silencieux
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/cuisine/index.html` | Modifié : à l'appui sur « Lire les étapes », la page passe en catégorie audio « lecture » (iOS 17+) et joue un son muet embarqué (iPhone plus anciens) → la voix n'est plus coupée par l'interrupteur silencieux. Message « Lecture de N phrases… (v2) » à chaque appui. | [🧪 Ouvrir le livre](https://cuisine.kd-mc.com/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html) |
 
 ### 10 septembre 2026 (soir) — « Lire les étapes » du livre de cuisine, réparé et prouvé
 

@@ -236,6 +236,35 @@ async function openPage(init) {
   await ctx.close();
 }
 
+/* (7) iPhone : la session audio passe en « lecture » et un son muet est joué dans le geste (contre l'interrupteur silencieux) */
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1' });
+  await ctx.route(/^https?:\/\//, (r) => (/^https?:\/\/(127\.0\.0\.1|localhost)[:\/]/.test(r.request().url()) ? r.continue() : r.abort()));
+  const page = await ctx.newPage();
+  const jsErrors = [];
+  page.on('pageerror', e => jsErrors.push(String(e)));
+  await page.addInitScript(FAKE + `;(()=>{ const s={type:'auto'}; Object.defineProperty(navigator,'audioSession',{value:s,configurable:true}); window.__played=0; const P=HTMLMediaElement.prototype.play; HTMLMediaElement.prototype.play=function(){ window.__played++; return Promise.resolve(); }; })();`);
+  await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
+  await page.waitForFunction(() => typeof window.readAloud === 'function' && Array.isArray(window.R) && window.R.length > 0);
+  const r = await page.evaluate(async () => {
+    go('recipe', { id: 2, _from: "go('home')", _portions: null });
+    const btn = document.querySelector('[data-tts]'); if (!btn) return { err: 'pas de bouton' };
+    btn.click();
+    const out = { session: navigator.audioSession.type, played: window.__played, audio: !!(window.TTS.audio && window.TTS.audio.src), toast: document.getElementById('toast').textContent, spoken: window.__tts.spoken.length };
+    ttsStop(false); return out;
+  });
+  if (r.err) ko('scénario iPhone : ' + r.err);
+  else {
+    if (r.session !== 'playback') ko('iPhone : la session audio n\'est pas passée en « playback » (' + r.session + ')');
+    else if (!r.audio || r.played < 1) ko('iPhone : le son muet n\'a pas été joué dans le geste (audio=' + r.audio + ', play=' + r.played + ')');
+    else if (!/\(v2\)/.test(r.toast)) ko('iPhone : pas de message de version à l\'appui (« ' + r.toast + ' »)');
+    else if (r.spoken < 1) ko('iPhone : la voix n\'a pas démarré dans le geste');
+    else ok('iPhone : session audio « lecture » + son muet joué dans l\'appui + message « (v2) » + voix lancée dans le geste');
+  }
+  if (jsErrors.length) ko('erreurs JS scénario iPhone : ' + jsErrors.join(' | '));
+  await ctx.close();
+}
+
 /* (5) navigateur sans moteur vocal */
 {
   const { page, ctx, jsErrors } = await openPage(`(() => { try { Object.defineProperty(window, 'speechSynthesis', { value: undefined, configurable: true }); } catch (e) {} try { delete window.SpeechSynthesisUtterance; window.SpeechSynthesisUtterance = undefined; } catch (e) {} })();`);
