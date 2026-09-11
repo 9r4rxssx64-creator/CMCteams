@@ -1,5 +1,9 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-11 (midi) — « Toutes les équipes sont mélangées » : mesure en cours
+- Mesure locale (appareil neuf, seed seul, `tests/_scratch/mesure-equipes-local.mjs`) : équipes de travail sept 282/285 (3 écarts = groupes d'absence déduits des cellules), oct 249/281 (32 écarts = tous des groupes d'absence sans `teamHistory`, attendu) ; **vue Employés : 55-61 personnes/mois classées sous la MAUVAISE famille** (`_empGroupKey` lit `e.family` figé au lieu de `familyForMonth`) ; juin/juillet : 30 familles cmc→roulettes.
+- `tools/voir/voir.mjs` : « Tout ouvrir » avant chaque capture (planning + employés) + relevé `equipes.json` (équipe/famille de chaque employé, mois affiché + suivant, données Firebase de Kevin) → relance du workflow pour voir les VRAIES données de Kevin avant de corriger.
+
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 
 Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le
