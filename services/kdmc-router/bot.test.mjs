@@ -193,6 +193,68 @@ r = await mod.fetch(REQ({ path: '/__bot/analysis?tf=;DROP', headers: H }), env);
 j = await r.json();
 ok(j.ok === true && j.tf === '1h', 'tf invalide → replié sur 1h');
 
+/* ===== 22-29) JOURNAL PERSISTANT DU BILAN (Kevin 2026-09-11)
+   Le bilan ne doit PLUS dépendre des logs Railway (purgés) ni survivre au hasard d'un
+   redéploiement : il vit dans KV. On vérifie l'écriture, le throttle, le premier relevé
+   jamais écrasé, le gate admin, et le fail-open si KV tombe. ===== */
+
+/* 22) /__bot/history est admin-gated comme le reste (fail-closed) */
+r = await mod.fetch(REQ({ path: '/__bot/history' }), env);
+ok(r.status === 403, '/__bot/history sans grant → 403');
+
+/* 23) Consulter la flotte écrit un relevé durable dans KV */
+store.delete('bot:hist'); store.delete('bot:first');
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+ok((await r.json()).ok === true, 'fleet → ok (le relevé ne casse pas la réponse)');
+let hist = JSON.parse(store.get('bot:hist') || '[]');
+ok(hist.length === 1 && hist[0].b['crypto-bot'] && hist[0].b['crypto-bot'].e === 10005, 'fleet → 1 relevé écrit, equity 10005 enregistrée');
+ok(hist[0].b['crypto-bot'].n === 5 && hist[0].b['crypto-bot'].a === 1 && hist[0].b['crypto-bot'].v === 1, 'relevé → net/achats/ventes enregistrés');
+
+/* 24) Throttle : une 2e consultation dans l'heure n'ajoute PAS de relevé */
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+await r.json();
+hist = JSON.parse(store.get('bot:hist') || '[]');
+ok(hist.length === 1, 'deux consultations rapprochées → un seul relevé (throttle 1 h)');
+
+/* 25) Après plus d'une heure, un nouveau relevé s'ajoute */
+hist[0].t = Date.now() - 2 * 60 * 60 * 1000;
+store.set('bot:hist', JSON.stringify(hist));
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+await r.json();
+hist = JSON.parse(store.get('bot:hist') || '[]');
+ok(hist.length === 2, 'plus d\'une heure après → 2e relevé ajouté');
+
+/* 26) Le PREMIER relevé de chaque bot n'est jamais écrasé (c'est le point de départ du bilan) */
+const first = JSON.parse(store.get('bot:first') || '{}');
+ok(first['crypto-bot'] && first['crypto-bot'].e === 10005, 'bot:first → point de départ mémorisé');
+const firstTs = first['crypto-bot'].t;
+/* On fait « vieillir » le dernier relevé pour que le throttle laisse passer un nouveau
+   snapshot : sans ça le test passerait même si bot:first était réécrit (faux vert). */
+const aged = JSON.parse(store.get('bot:hist'));
+aged[aged.length - 1].t = Date.now() - 2 * 60 * 60 * 1000;
+store.set('bot:hist', JSON.stringify(aged));
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+await r.json();
+ok(JSON.parse(store.get('bot:hist')).length === 3, 'un 3e relevé a bien été écrit (sinon le test suivant serait un faux vert)');
+ok(JSON.parse(store.get('bot:first'))['crypto-bot'].t === firstTs, 'bot:first → jamais réécrit');
+
+/* 27) Le bilan restitue départ, actuel et écart */
+r = await mod.fetch(REQ({ path: '/__bot/history', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && j.bilan && j.bilan['crypto-bot'], 'history → bilan par bot');
+ok(j.bilan['crypto-bot'].depart === 10005 && j.bilan['crypto-bot'].actuel === 10005 && j.bilan['crypto-bot'].ecart === 0, 'bilan → départ/actuel/écart chiffrés');
+ok(j.releves >= 2 && Array.isArray(j.points), 'history → nombre de relevés + série pour la courbe');
+
+/* 28) Un bot « absent » (jamais déployé) n'entre pas dans le journal — pas de faux zéro */
+ok(!hist[0].b['crypto-bot-p5'], 'bot absent → aucun relevé inventé');
+
+/* 29) FAIL-OPEN : si KV tombe, la flotte s'affiche quand même */
+const envKO = { ...env, ACCOUNTS: { get: async () => { throw new Error('KV down'); }, put: async () => { throw new Error('KV down'); }, delete: async () => {} } };
+const grantKO = grant;   /* le grant est signé, il ne dépend pas de KV */
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: { 'x-kdmc-admin': grantKO } }), envKO);
+j = await r.json();
+ok(j.ok === true && Array.isArray(j.bots), 'KV en panne → la flotte reste affichée (fail-open)');
+
 globalThis.fetch = realFetch;
 console.log(`bot.test.mjs : ${pass} OK / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);
