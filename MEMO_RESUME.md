@@ -59,6 +59,12 @@ Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
      Apex Chat **v1.1.289**, garde `premium-deep-link-confirm.test.js` (prouvé discriminant).
   Ce que Strix n'a **pas** trouvé : pas d'injection, pas d'accès aux conversations, pas
   d'élévation admin. Ce qu'il n'a **pas** testé : les parcours connectés (OTP), le temps réel.
+- **Vu au passage, réparé** : la garde `test:router-secours` (câblée dans `test:ci`) était
+  **rouge sur `main`** avant mon passage : 6 adresses du routeur (cuisine, portail boutiques,
+  les 4 « belles adresses » de l'accueil) n'étaient pas prévues dans la copie de secours
+  (celle qui sert les pages si GitHub Pages tombe). Ajoutées : cuisine et le portail
+  (`index.html` + pages légales seulement, pas tout le dossier), les 4 autres sont déjà
+  dedans par leur dossier parent. Guard 49/49, paquet 40/40, copie légère refaite en vrai.
 
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 
