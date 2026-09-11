@@ -442,6 +442,25 @@ function ssoCookie(request, name) {
 /* Source du pass de session : header Authorization Bearer EN PRIORITÉ (marche
    même avec les PWA installées sur iOS, où chaque app a un jar de cookies isolé),
    sinon le cookie (Safari même-origine). Rend le compte unique iPhone-proof. */
+/* Origine acceptée pour ÉMETTRE une session (/__sso/issue) : le domaine lui-même (racine ou
+   sous-domaine), une app native (capacitor:// / ionic://), ou AUCUN en-tête Origin (outil,
+   app installée qui ne l'envoie pas : pas de navigateur tiers en jeu). « null » (iframe
+   sandbox, fichier local) et tout autre site → refusé. Strix vuln-0001, 11/09/2026. */
+function ssoOriginOk(origin, selfHost) {
+  if (!origin) return true;
+  const o = String(origin).trim().toLowerCase();
+  if (o === 'null') return false;
+  if (/^(capacitor|ionic):\/\/localhost$/.test(o)) return true;
+  let host = '';
+  try { host = new URL(o).host; } catch { return false; }
+  /* même origine que l'hôte appelé (portail local, test navigateur sur 127.0.0.1:port) :
+     par définition pas un site tiers. Mesuré le 11/09 : sans cette ligne, le test SSO réel
+     (tools/kdmc-sso-e2e) perdait 2 contrôles — le portail servi en local ne pouvait plus
+     émettre de session. */
+  if (selfHost && host === String(selfHost).toLowerCase()) return true;
+  const hn = host.replace(/:\d+$/, '');
+  return hn === 'kd-mc.com' || hn.endsWith('.kd-mc.com');
+}
 function ssoToken(request) {
   const auth = request.headers.get('authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
@@ -1145,6 +1164,14 @@ async function handleSso(request, url, env) {
     return J({ ok: true, uid, name, verified: true, token }, cookie);
   }
   if (path === '/__sso/issue' && request.method === 'POST') {
+    /* SÉCU (Strix vuln-0001, 11/09/2026 — CWE-287/CSRF de connexion) : un site TIERS pouvait
+       POSTer ici depuis le navigateur d'un visiteur (requête « simple » text/plain) et lui
+       POSER un cookie kdmc_sso à un nom choisi par l'attaquant → toutes les apps du domaine
+       l'auraient « reconnu » sous ce nom. L'émission reste auto-déclarée (jamais admin ni
+       verified), mais elle n'est acceptée que depuis le domaine lui-même (portail, apps
+       *.kd-mc.com) ou une app native (capacitor:// / ionic://). Sans en-tête Origin (outil,
+       app installée qui ne l'envoie pas) → inchangé : aucun navigateur tiers n'est en jeu. */
+    if (!ssoOriginOk(request.headers.get('origin'), url.host)) return J({ ok: false, reason: 'origine refusée' }, undefined, 403);
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const uid = String(b.uid || '').slice(0, 80).trim();
     const name = String(b.name || '').slice(0, 80).trim();
@@ -1198,6 +1225,10 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/history' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    /* SÉCU (Strix vuln-0001, 11/09) : un token FAIBLE se fabrique avec n'importe quel uid
+       (/issue est auto-déclaré) → sans cette ligne, quiconque tapait « kdmc_admin » lisait
+       les appareils, apps et connexions de Kevin. Lire SON historique exige Face ID prouvé. */
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour lire ton historique' });
     /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
        d'où vient la session, au lieu de l'historique complet de la personne). */
     const acc = await accGet(env, await canonFor(env, s.uid, s.name));
@@ -1215,6 +1246,10 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/revoke' && request.method === 'POST') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    /* SÉCU (Strix vuln-0001, 11/09) : avec un token FAIBLE forgé sur « kdmc_admin », n'importe
+       qui posait revoked_at sur la fiche de Kevin → TOUTES ses sessions (Face ID comprises)
+       tombaient : déconnexion forcée de l'admin par un inconnu. Révoquer exige Face ID prouvé. */
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour déconnecter tes appareils' });
     const acc = (await accGet(env, s.uid)) || { uid: s.uid, name: s.name };
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     acc.revoked_at = Date.now();
@@ -1508,6 +1543,77 @@ function taRating(h, l, c) {
   const label = score >= 0.5 ? 'Achat fort' : score >= 0.1 ? 'Achat' : score > -0.1 ? 'Neutre' : score > -0.5 ? 'Vente' : 'Vente forte';
   return { price, score: Math.round(score * 100) / 100, label, rsi: rsi == null ? null : Math.round(rsi * 10) / 10, ma_buy: maBuy, ma_sell: maSell, osc_buy: oscBuy, osc_sell: oscSell, macd_up: macd > macdSig };
 }
+/* ===== JOURNAL PERSISTANT DE LA FLOTTE (Kevin 2026-09-11 « bilan de ce qu'ils ont
+   pu gagner ou perdre ») =====
+   POURQUOI : jusqu'ici le bilan se lisait UNIQUEMENT dans les logs Railway, qui sont
+   PURGÉS (mesuré le 11.09 : plus rien avant le 19 août) et qui repartent de zéro à
+   chaque redéploiement (un bot papier relancé réaffiche equity=10000). Résultat :
+   impossible de répondre à « combien ont-ils gagné depuis le début ». Le journal
+   ci-dessous garde la trace DANS KV, donc elle survit aux deux.
+   COMMENT : à chaque consultation de la flotte, on enregistre un relevé — au plus un
+   par heure (BOT_SNAP_MS) pour ne pas marteler KV. `bot:hist` garde les 720 derniers
+   relevés (~30 jours d'historique horaire), `bot:first` garde le TOUT PREMIER relevé
+   de chaque bot et n'est JAMAIS écrasé : c'est lui qui permet de dire « depuis le
+   (date), ce bot est passé de X à Y », même bien au-delà des 30 jours.
+   Fail-open total : une panne KV ne doit jamais casser l'affichage de la flotte. */
+const BOT_SNAP_MS = 60 * 60 * 1000;   /* au plus 1 relevé par heure */
+const BOT_HIST_CAP = 720;             /* ~30 jours en horaire */
+async function botSnapshot(env, bots, now) {
+  if (!env || !env.ACCOUNTS || !Array.isArray(bots)) return;
+  const t = Number(now) || Date.now();
+  try {
+    const hist = JSON.parse((await env.ACCOUNTS.get('bot:hist')) || '[]');
+    const last = hist.length ? hist[hist.length - 1] : null;
+    if (last && t - Number(last.t || 0) < BOT_SNAP_MS) return;   /* déjà relevé il y a moins d'une heure */
+    const b = {};
+    for (const x of bots) {
+      if (!x || !x.name || x.equity == null || !isFinite(Number(x.equity))) continue;
+      b[x.name] = { e: Math.round(Number(x.equity) * 100) / 100, n: Number(x.net) || 0, a: Number(x.buys) || 0, v: Number(x.sells) || 0 };
+    }
+    if (!Object.keys(b).length) return;   /* rien de chiffré à enregistrer */
+    hist.push({ t, b });
+    await env.ACCOUNTS.put('bot:hist', JSON.stringify(hist.slice(-BOT_HIST_CAP)));
+    /* Premier relevé par bot : écrit UNE fois, jamais modifié ensuite. */
+    const first = JSON.parse((await env.ACCOUNTS.get('bot:first')) || '{}');
+    let addedFirst = false;
+    for (const [name, v] of Object.entries(b)) {
+      if (!first[name]) { first[name] = { t, e: v.e }; addedFirst = true; }
+    }
+    if (addedFirst) await env.ACCOUNTS.put('bot:first', JSON.stringify(first));
+  } catch { /* fail-open : le bilan est un bonus, jamais un blocage */ }
+}
+/* Bilan lisible : pour chaque bot, d'où il part, où il en est, et l'écart.
+   `reprises` compte les remises à zéro visibles (un bot papier redéployé repart à
+   son capital de départ) — sans ça, un écart nul cacherait un redémarrage. */
+function botBilan(hist, first) {
+  const out = {};
+  const names = new Set();
+  (hist || []).forEach((p) => Object.keys(p.b || {}).forEach((n) => names.add(n)));
+  Object.keys(first || {}).forEach((n) => names.add(n));
+  for (const name of names) {
+    const pts = (hist || []).filter((p) => p.b && p.b[name] != null).map((p) => ({ t: p.t, ...p.b[name] }));
+    const f = (first || {})[name] || (pts[0] ? { t: pts[0].t, e: pts[0].e } : null);
+    const l = pts.length ? pts[pts.length - 1] : null;
+    let reprises = 0;
+    for (let i = 1; i < pts.length; i++) {
+      /* une chute de plus de 1 % pile sur la valeur ronde de départ = redémarrage */
+      if (pts[i].a === 0 && pts[i].v === 0 && pts[i - 1].a + pts[i - 1].v > 0) reprises++;
+    }
+    out[name] = {
+      depuis: f ? f.t : null,
+      depart: f ? f.e : null,
+      actuel: l ? l.e : null,
+      ecart: (f && l) ? Math.round((l.e - f.e) * 100) / 100 : null,
+      achats: l ? l.a : null,
+      ventes: l ? l.v : null,
+      net_realise: l ? l.n : null,
+      releves: pts.length,
+      vu_le: l ? l.t : null,
+      reprises,
+    };
+  }
+  return out;
+}
 function fleetTradeStats(logs) {
   const fifo = {}; let buys = 0, sells = 0, wins = 0, losses = 0, net = 0;
   for (const l of logs) {
@@ -1691,7 +1797,20 @@ async function handleBot(request, url, env) {
     }));
     /* Tri par net réalisé décroissant ; les bots absents/sans logs en dernier. */
     bots.sort((a, b) => (((b.net == null) ? -1e9 : b.net) - ((a.net == null) ? -1e9 : a.net)));
+    /* Trace durable (survit à la purge des logs Railway et aux redéploiements). */
+    await botSnapshot(env, bots, Date.now());
     return J({ ok: true, bots });
+  }
+
+  /* Bilan DURABLE (Kevin 2026-09-11) : ce que le journal KV a vu, pas ce que les logs
+     Railway veulent bien garder. Renvoie le résumé par bot + la série pour la courbe. */
+  if (path === '/__bot/history' && request.method === 'GET') {
+    let hist = [], first = {};
+    try { hist = JSON.parse((await env.ACCOUNTS.get('bot:hist')) || '[]'); } catch { hist = []; }
+    try { first = JSON.parse((await env.ACCOUNTS.get('bot:first')) || '{}'); } catch { first = {}; }
+    const bilan = botBilan(hist, first);
+    /* La série complète peut peser : on rend au plus 200 points, les plus récents. */
+    return J({ ok: true, bilan, points: hist.slice(-200), releves: hist.length });
   }
 
   /* ANALYSE EXPERT (Kevin 2026-07-10 « qu'il serve à faire des analyses ») :

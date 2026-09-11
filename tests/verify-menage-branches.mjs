@@ -20,10 +20,25 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { analyser } from '../tools/menage/branches-superflues.mjs';
 
 const R = { ok: [], ko: [] };
 const chk = (c, m) => (c ? R.ok : R.ko).push(m);
+
+/* --- garde de source : le menage du workflow doit REGARDER les deux familles
+   jetables, et garder son filtre de surete. Mesure du 10.09 : 453 des 461
+   `auto-deploy/*` etaient deja des ancetres de main et ne partaient pas, parce
+   que la boucle ne les regardait pas. */
+{
+  const wf = readFileSync('.github/workflows/auto-merge-claude.yml', 'utf8');
+  chk(/FAMILLES=.*claude.*auto-deploy/.test(wf),
+    'source : le menage regarde claude/* ET auto-deploy/* (les deux familles jetables)');
+  chk(!/grep '\^origin\/claude\/'/.test(wf),
+    'source : plus de filtre code en dur sur la seule famille claude/*');
+  chk(/merge-base --is-ancestor "\$b" origin\/main/.test(wf),
+    'source : le filtre de surete est intact — seule une branche ENTIEREMENT dans main est supprimee');
+}
 
 const D = mkdtempSync(join(tmpdir(), 'menage-'));
 const git = (...a) => execFileSync('git', ['-C', D, ...a], { encoding: 'utf8' });

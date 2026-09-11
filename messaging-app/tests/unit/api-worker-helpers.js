@@ -98,7 +98,7 @@ export const ENV = (overrides = {}) => ({
   JWT_SIGN_KEY: SECRET,
   ALLOW_TEST_OTP: 'true',            // v1.1.172 — mode cercle privé (défaut wrangler)
   APEX_CHAT_ADMIN_TOKEN: 'admin-secret',
-  APEX_CHAT_ADMIN_PHONE_E164: '+33672280277',
+  APEX_CHAT_ADMIN_PHONE_E164: '+33600000001',
   APEX_CHAT_DB: makeDB(),
   APEX_CHAT_CACHE: makeKV(),
   APEX_CHAT_KV: makeKV(),            // v1.1.30 — quota daily store

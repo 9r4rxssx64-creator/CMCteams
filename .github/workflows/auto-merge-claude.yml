@@ -33,7 +33,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -365,7 +365,15 @@ jobs:
           # ---------- 1) Branches deja entierement dans main ----------
           git remote set-branches origin '*' || true
           git fetch origin --prune '+refs/heads/*:refs/remotes/origin/*' --quiet || true
-          TOTAL=$(git branch -r 2>/dev/null | grep -c 'origin/claude/' || echo 0)
+          # Familles de branches JETABLES, fabriquees par nos automatismes. Elles ne
+          # portent jamais de travail original : `claude/*` est ouverte par une
+          # session (son travail part dans main par une PR), `auto-deploy/*` est
+          # ouverte par le robot de build. Mesure du 10.09.2026 : 453 des 461
+          # `auto-deploy/*` sont deja des ancetres de main — elles ne partaient pas
+          # parce que la boucle ne les REGARDAIT pas. Le filtre de surete ne change
+          # PAS : seule une branche entierement contenue dans main est supprimee.
+          FAMILLES='^origin/\(claude\|auto-deploy\)/'
+          TOTAL=$(git branch -r 2>/dev/null | grep -c "$FAMILLES" || echo 0)
           DEL=0; GARDE=0; ECH=0; RESTE_A_FAIRE=0; BLOQUE_PAR_REGLE=0
           echo "## Branches" >> "$REP"
           echo "" >> "$REP"
@@ -374,7 +382,7 @@ jobs:
           else
             CUT=$(date -u -d '7 days ago' +%s)
             COURANTE="${{ steps.src.outputs.branch }}"
-            for b in $(git branch -r | sed 's|^ *||' | grep '^origin/claude/'); do
+            for b in $(git branch -r | sed 's|^ *||' | grep "$FAMILLES"); do
               NAME="${b#origin/}"
               case "$NAME" in main|master|develop|production|claude/test-699LQ) GARDE=$((GARDE+1)); continue ;; esac
               [ "$NAME" = "$COURANTE" ] && { GARDE=$((GARDE+1)); continue; }

@@ -36,8 +36,19 @@ export const ALLOWED_ORIGINS = [
   'https://www.kd-mc.com',
 ];
 
-/** Développement local (`npm run preview`, tests navigateur sur port éphémère). */
-const LOCAL_DEV = /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
+/**
+ * Développement local (`npm run preview`, tests navigateur sur port éphémère).
+ *
+ * `https?` et pas `http` — trouvé le 2026-09-10 : les tests navigateur se servent
+ * en **HTTPS** (`tests/serve-https.sh`, obligatoire pour WebKit à cause de
+ * `upgrade-insecure-requests`), donc l'origine est `https://localhost:4173`.
+ * Avec `http` seul, WebKit refusait chaque appel API depuis cette origine
+ * (« due to access control checks ») et les deux voies iPhone de
+ * `messaging-app-tests.yml` étaient rouges à chaque exécution — pendant que
+ * Chromium, plus silencieux sur ce point, restait vert. Même machine, même
+ * confiance : autoriser `https://localhost` n'ouvre rien de plus que `http://`.
+ */
+const LOCAL_DEV = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/;
 
 export function isAllowedOrigin(origin) {
   if (!origin) return false;

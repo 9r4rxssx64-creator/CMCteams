@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.40</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.44</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.42";
+var APP_VER="v1.44";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -316,8 +316,28 @@ JUL_TEAMS.forEach(function(t){ BOARDS[t.id]={label:t.label,month:"Juillet 2026",
 // ── CMC depuis l'app principale CMCteams (MÊME origine localStorage → données du parser géométrique validé, lessons #66-77) ──
 function _appDecomp(v){ if(typeof v!=="string")return v; if(v.indexOf("__LZ__")===0){ try{ return (window.LZString&&LZString.decompressFromUTF16)?(LZString.decompressFromUTF16(v.slice(6))||""):""; }catch(e){ return ""; } } return v; }
 function _appRead(k){ try{ var v=localStorage.getItem(k); if(!v)return null; v=_appDecomp(v); if(!v)return null; return JSON.parse(v); }catch(e){ return null; } }
-function _appFam(e,key){ try{ if(e.familyHistory&&e.familyHistory[key]) return e.familyHistory[key]; }catch(_e){} return (e.family==="baccara"?"cmc":e.family)||"bj"; } // = familyForMonth() de l'app
-function _appTeam(e,key){ try{ if(e.teamHistory&&e.teamHistory[key]) return e.teamHistory[key]; }catch(_e){} return "?"; } // = teamForMonth() de l'app
+function _appFam(e,key){ try{ return _depGenFamOf(e,key); }catch(_e){} return (e.family==="baccara"?"cmc":e.family)||"bj"; } // = familyForMonth() de l'app
+function _appTeam(e,key){ try{ var t=_depGenTeamOf(e,key); if(t)return t; }catch(_e){} return "?"; } // = teamForMonth() de l'app (v1.44 : boards générés d'abord)
+// v1.44 (Kevin 2026-09-11, mesuré LIVE run 34605702050 : la light rangeait Kevin en « BJ Éq.12 » et mettait
+// GATTI/FIA/COZZI… en « Éq.3 (14/19) ») — L'ÉQUIPE DU MOIS VIENT DES BOARDS GÉNÉRÉS (= PDF vérifié) pour tout
+// mois qu'ils couvrent ; le teamHistory de Firebase (ancien import faux, jamais corrigé côté app avant v9.903)
+// ne sert que pour les mois non générés. Miroir exact de _cmcSyncChefsTFromBoards (app) : résolution PAR NOM.
+// Un teamHistory « 2026-09-3 » (clé de board écrite par l'app) est ramené à « 3 ».
+var _depGenIdxCache={},_depGenIdxN={};
+function _depGenIndex(key){ if(_depGenIdxCache[key])return _depGenIdxCache[key];
+  var idx={},G=window.DEPARTS_GEN,pm=String(key).split("-"),y=+pm[0],mi=+pm[1];
+  if(G&&G.boards){ Object.keys(G.boards).forEach(function(bk){ var b=G.boards[bk]; if(!b||b.year!==y||b.monthIdx!==mi||b.kind==="abs")return;
+    var tid=bk.replace(/^\d{4}-\d{2}-/,""); (b.people||[]).forEach(function(p){ if(p&&p.name&&!idx[p.name])idx[p.name]={tid:tid,fam:b.fam||""}; }); }); }
+  if(G&&G.boards){_depGenIdxCache[key]=idx;_depGenIdxN[key]=Object.keys(idx).length;}   // pas de cache tant que boards-gen.js n'est pas chargé (index vide figé sinon)
+  return idx; }
+function _depGenTeamOf(e,key){ if(!e)return ""; var idx=_depGenIndex(key),g=idx[e.name]; if(g&&g.tid)return g.tid;
+  var th=(e.teamHistory&&e.teamHistory[key])||""; th=th?String(th).replace(/^\d{4}-\d{2}-/,""):"";
+  // mois couvert par les boards générés : une personne absente de TOUTES les équipes du PDF (cadre, absent le
+  // mois entier) ne rejoint pas une équipe sur la foi d'un teamHistory périmé (mesuré : 36 personnes versées
+  // dans Roul. Éq.10/Éq.6/BJ Éq.11) — seules les « équipes » d'absence restent lisibles.
+  if(_depGenIdxN[key]&&!(_ABS_TEAMS&&_ABS_TEAMS[th]))return "";
+  return th; }
+function _depGenFamOf(e,key){ if(!e)return "bj"; var g=_depGenIndex(key)[e.name]; var f=(g&&g.fam)||(e.familyHistory&&e.familyHistory[key])||e.family||"bj"; return f==="baccara"?"cmc":f; }
 function buildAppCmcBoards(){
   var key="2026-6"; // juillet 2026 (mois 0-indexé comme l'app)
   var emps=_appRead("cmc_e"), ov=_appRead("cmc_ov");
@@ -373,8 +393,8 @@ function buildBoardsFromState(emps,ov,metaAll,mirrorByKey){
     var days=_diM(year,mi),row=ov[key]||{},metaK=(metaAll&&metaAll[key])||{},teams={},mm=_pad2(mi+1);
     Object.keys(row).forEach(function(id){
       var e=byId[id];if(!e||!e.name)return;var cells=row[id];if(!cells||!Object.keys(cells).length)return;
-      var tid=(e.teamHistory&&e.teamHistory[key]);if(!tid)return;
-      var fam=(e.familyHistory&&e.familyHistory[key])||e.family||'bj';if(fam==='baccara')fam='cmc';
+      var tid=_depGenTeamOf(e,key);if(!tid)return;              // v1.44 : boards générés d'abord (voir _depGenTeamOf)
+      var fam=_depGenFamOf(e,key);
       var codes={},conv={},modh={};
       for(var d=1;d<=days;d++){var c=cells[d]||cells[String(d)]||'';if(c)codes[d]=c;
         var md=(metaK[id]&&(metaK[id][d]||metaK[id][String(d)]))||null;if(md){if(md.bg==='CONV')conv[d]=1;if(md.fg==='red')modh[d]=1;}}
@@ -851,7 +871,9 @@ function paintAppDiag(){ var el=document.getElementById("appDiag"); if(!el)retur
   if(!warn && !isAdmin()){ el.style.display="none"; el.innerHTML=""; return; }
   el.style.display="";
   el.innerHTML=(warn?"<span class='warn'>":"<b style='color:var(--gold2)'>")+_appDiagText()+(warn?"</span>":"</b>"); }
-function forceRefresh(){ var go=function(){location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now());};
+// v1.43 : location.pathname (un #hash SSO derrière href.split("?")[0] transformait le rechargement en simple
+// changement de fragment = rien ne se rechargeait).
+function forceRefresh(){ var go=function(){location.replace(location.pathname+"?_force_upd_"+Date.now());};
   if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister();}));})
     .then(function(){return ('caches' in window)?caches.keys().then(function(k){return Promise.all(k.map(function(x){return caches.delete(x);}));}):0;}).then(go).catch(go); } else go(); }
 
@@ -869,9 +891,16 @@ document.getElementById("ver").textContent=APP_VER;
         if(!/^v[\d.]+$/.test(t))return;
         if(t===APP_VER)return;
         if(window._depUpdTs&&Date.now()-window._depUpdTs<15000)return; window._depUpdTs=Date.now();
+        // v1.43 ANTI-BOUCLE (Kevin 2026-09-11 « Vérifie Maj forcé pour tous et tout ») : version.txt annonce
+        // une version mais la page servie reste l'ancienne (cache amont pendant une publication) → au plus
+        // 3 rechargements vers la MÊME cible par 10 min, puis le badge (MAJ manuelle) — la page ne saute pas.
+        try{ var tr=JSON.parse(localStorage.getItem("cmc_dep_upd_tries")||"null")||{}; var now=Date.now();
+          if(tr.v===t&&now-(tr.ts||0)<600000){ if((tr.n||0)>=3){console.warn("[v1.43 MAJ] "+t+" annoncée mais page servie toujours "+APP_VER+" après 3 essais — MAJ auto suspendue 10 min");return;} tr.n=(tr.n||0)+1; }
+          else{ tr={v:t,n:1,ts:now}; }
+          localStorage.setItem("cmc_dep_upd_tries",JSON.stringify(tr)); }catch(_){}
         try{if(typeof toast==="function")toast("🔄 Mise à jour "+t+" en cours…");}catch(_){}
         setTimeout(function(){ try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
-          location.replace(location.href.split("?")[0]+"?_force_upd_"+Date.now()); },700);
+          location.replace(location.pathname+"?_force_upd_"+Date.now()); },700);
       }).catch(function(){});
     }catch(_){}
   }

@@ -321,11 +321,89 @@ Ce correctif ferme l'abus **par navigateur de visiteur**, pas l'abus direct.
 
 ---
 
+## [P2] Les deux voies **iPhone** des tests navigateur sont rouges à chaque exécution depuis le 6 septembre — et personne ne le voyait
+
+- **Axe** : Fiabilité / fausse assurance (le test qui compte le plus pour Kevin est celui qui échoue)
+- **Fichier:ligne** : `messaging-app/workers/lib/cors.js:40` (`LOCAL_DEV = /^http:\/\/…/`) · symptôme dans `messaging-app/tests/e2e/smoke.spec.js:78`
+- **Statut** : ✅ **VÉRIFIÉ** (2026-09-10, mesuré sur 60 runs réels) · ✅ **CORRIGÉ** (même jour)
+
+> ⚠️ **Correction de ma propre erreur.** La première version de ce finding disait :
+> *« 19 tests navigateur sur 22 ne sont lancés par aucune automatisation »*. **C'était faux.**
+> Les 19 fichiers de `messaging-app/tests/e2e/` **sont** lancés — par `messaging-app-tests.yml`
+> (job `e2e`, 4 navigateurs : iphone-safari, iphone-se, chromium-desktop, pixel-android), à
+> chaque push sur `claude/**` et `main`. Mon grep cherchait `test:e2e` dans les workflows ;
+> celui-ci appelle `npx playwright test` directement. Une recherche trop étroite m'a fait
+> déclarer dormante une suite qui tournait — et m'a fait **rater ce qu'elle disait vraiment**.
+> Le garde `tests/specs-lances.test.mjs` (ajouté) ne cherche plus un mot : il suit ce que
+> chaque workflow **exécute** (étape `playwright test` + `testDir` de sa config).
+
+### Preuve (sorties réelles)
+
+```
+$ 60 derniers runs de messaging-app-tests.yml (API GitHub, 2026-09-10 19:20 UTC)
+  60 runs terminés · 28 en échec · 19 où SEULES les voies iPhone échouent
+  plus ancien échec « iPhone seulement » : 2026-09-06T16:00:55Z
+
+$ run 34519030133 (le dernier avant correction)
+  success   tests
+  success   e2e (chromium-desktop)
+  success   e2e (pixel-android)
+  failure   e2e (iphone-safari)   → smoke.spec.js:70 « crypto-core ESM module chargé sans erreur »
+  failure   e2e (iphone-se)       → idem
+  erreur capturée : "…/apex-chat-api.9r4rxssx64.workers.dev/api/system/config due to access control checks."
+
+$ localement, les 19 fichiers (56 tests) sur Chromium préinstallé → 56 passed (29.6s)
+```
+
+### Impact
+
+Le navigateur de Kevin est **Safari sur iPhone**. C'est précisément la seule voie qui échoue.
+Depuis le 6 septembre, **chaque** push d'Apex Chat produit un run rouge sur iPhone, noyé dans
+un workflow qui n'est ni bloquant ni lu (28 échecs sur 60, aucun n'a été traité). Un contrôle
+rouge en permanence finit par ne plus être regardé : c'est le contraire d'un contrôle.
+
+### Cause racine (pas le symptôme)
+
+Le 6 septembre, l'audit P2b (v1.1.287) a remplacé `Access-Control-Allow-Origin: *` par une
+liste d'origines — un vrai durcissement. L'exception « développement local » a été écrite
+`http://localhost` **uniquement**. Or les tests navigateur se servent en **HTTPS**
+(`tests/serve-https.sh`), et ce n'est pas un caprice : WebKit applique
+`upgrade-insecure-requests` même sur localhost, donc en HTTP tous les modules ES échouent.
+L'origine des tests est `https://localhost:4173` → refusée → **WebKit** signale l'appel API
+bloqué comme une erreur de page → le test « 0 erreur » tombe. **Chromium**, lui, ne remonte
+pas cet échec de la même façon → vert. Le durcissement a cassé sa propre vérification, sur
+le seul navigateur qui compte, et la couleur verte de Chromium a masqué le rouge de WebKit.
+
+Le fait qui prouve le lien : la date du premier échec « iPhone seulement » (6.09 16:00) est
+celle du déploiement de v1.1.287.
+
+### Correctif (appliqué)
+
+`LOCAL_DEV = /^https?:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/` — `https?` au lieu de
+`http`. Même machine, même confiance : autoriser `https://localhost` n'ouvre **rien** de plus
+que `http://localhost` déjà autorisé. Le déploiement du worker est automatique (push sur
+`claude/**` touchant `workers/**`).
+
+### Test qui le prouve
+
+- `tests/unit/cors-origines-autorisees.test.js` : `https://localhost:4173` et
+  `https://127.0.0.1:4173` → autorisés ; `https://localhost.evil.example` → refusé (5/5 ✅).
+- La preuve **réelle** : le prochain run de `messaging-app-tests.yml` avec les 4 voies vertes
+  (consigné dans `02-RESULTATS.md` § 6.4 dès qu'il est passé).
+- Garde permanente ajoutée : `npm run test:specs-lances` (dans `test:ci`) — tout dossier de
+  specs Playwright du dépôt doit être exécuté par un workflow, en suivant ce que le workflow
+  **lance**, pas un mot-clé.
+
+**Effort** : S · **Régression possible** : aucune sur la prod (les origines réelles ne
+changent pas) ; la seule chose qui change, c'est qu'un test rouge devient vert pour de vrai.
+
+---
+
 ## [P3] Le numéro personnel de Kevin reste écrit dans 12 fichiers de test d'un dépôt **public**
 
 - **Axe** : Vie privée (plus sécurité)
 - **Fichiers** : `messaging-app/tests/unit/*.js` (11) + `tests/e2e/auth-flow.spec.js`
-- **Statut** : ✅ VÉRIFIÉ (`grep -rln`) · **partiellement traité** le 10/09
+- **Statut** : ✅ VÉRIFIÉ (`grep -rln`) · ✅ **CORRIGÉ le 10/09 (soir)** — plus aucun numéro réel dans le dépôt
 
 **Ce que ce n'est PAS** : ce n'est plus une faille. Depuis v1.1.284, connaître ce numéro
 n'ouvre **aucune** porte — l'admin exige une preuve serveur (`X-Apex-Admin-Token` ou SSO
@@ -341,18 +419,25 @@ intrusion dans l'app.
 supprimé depuis, elle a été corrigée en même temps). ✅ Vérifié : **plus aucun `.md`** du
 dépôt ne contient le numéro.
 
-**Reste à faire — délibérément pas fait dans cette passe** : les 12 fichiers de test l'utilisent
-comme donnée de scénario (ils testent justement le chemin admin). Les modifier, c'est toucher
-**12 fichiers d'une suite verte à 1115/1115** pour un gain de confidentialité, pas de sécurité.
-Le faire à la fin d'une passe d'audit, sans nécessité, c'est prendre un risque de régression
-contre un bénéfice modeste — l'inverse de « jamais régresser ».
+**Fait le 10/09 au soir (à froid, suite verte avant et après)** :
+- **113 occurrences** du numéro, sous 4 formes, dans **12 fichiers** de test → remplacées par un
+  analogue **fictif de même forme** (`+33600000001`, `0600000001`…), de façon programmatique :
+  le vrai numéro n'a jamais été affiché ni écrit pendant l'opération. Les 1115 tests restent verts
+  (le format `0X → +33X` est conservé, donc les tests de normalisation aussi).
+- Deux autres numéros de fixture **ne ressemblaient pas** à des valeurs synthétiques (pas de
+  suite de zéros, pas de répétition). Impossible de savoir s'ils étaient réels ; traités comme
+  s'ils l'étaient → remplacés (`+33600000010`, `+33600000020`). Coût : nul. Bénéfice si c'était
+  vrai : une personne de moins publiée.
+- **Le garde lui-même publiait ce qu'il protégeait** : `no-admin-phone-in-page.test.js` portait le
+  vrai numéro sous 4 formes pour vérifier qu'il n'était pas dans la page. Réécrit : il refuse
+  **tout** numéro dans `index.html` hors 5 exemples pédagogiques faux, et **tout** numéro dans
+  `tests/` hors la liste des fixtures synthétiques — sans jamais connaître un vrai numéro. Prouvé
+  discriminant (un numéro inconnu → échec, masqué à 5 caractères dans le message).
+- Vérification finale : scan de tout `messaging-app/` (code, tests, docs, config) → **0 fichier**
+  contenant une forme du numéro. Les vrais numéros vivent en secrets Cloudflare
+  (`KEVIN_PHONE_E164`, `LAURENCE_PHONE_E164`), jamais dans le dépôt.
 
-**Correctif recommandé (étape séparée, à froid)** : extraire le numéro dans **une** constante
-de test partagée (`tests/unit/api-worker-helpers.js` porte déjà les fixtures communes), lue
-depuis `process.env.APEX_TEST_ADMIN_PHONE` avec un numéro fictif par défaut — même schéma que
-le code admin, qui ne s'écrit jamais et se lit dans l'environnement. Douze occurrences
-deviennent alors une, et la suite reste verte.
-**Effort** : S · **Régression possible** : faible mais réelle (12 fichiers, 1115 tests).
+**Effort réel** : S · **Régression** : aucune (1115/1115 avant, 1115/1115 après ; le garde passe de 2 à 4 contrôles).
 
 ---
 
@@ -448,3 +533,185 @@ peux donc pas dater le déploiement, et je ne l'affirme pas.
 Les livrables `00-INVENTAIRE.md`, `01-FONCTIONS.md`, `02-RESULTATS.md`, `04-DESIGN.md` et
 `05-JOURNAL.md`, absents jusqu'ici (le protocole d'audit en exige six, il n'y en avait qu'un),
 ont été écrits dans la même passe.
+
+---
+
+## Addendum — 2026-09-10 (soir) — le scan sécu outillé a tourné : ce qu'il dit **vraiment** d'Apex Chat
+
+Le tableau « Ce que je n'ai PAS pu faire » plus haut est désormais faux sur sa troisième ligne :
+`security-suite.yml` (run `34519764156`) et `strix-scan.yml` (run `34520670517`) ont tourné, lancés
+par `node tools/ci/ci.mjs run`, et leur rapport a été lu par `node tools/ci/ci.mjs report`.
+
+**Chiffre brut, à ne pas prendre pour un verdict** : 2 211 signalements sur **tout** le dépôt
+(gitleaks 258, TruffleHog 52, OSV 17, Trivy 0, Semgrep 1 167, zizmor 717). La règle de l'audit
+impose de **vérifier chaque signalement avant d'agir** et d'écarter les faux positifs **avec
+preuve**. Voici le tri, limité au périmètre Apex Chat (`messaging-app/` + les 19 workflows qui
+le touchent), avec pour chaque classe : ce que dit l'outil, ce que j'ai vérifié, la conclusion.
+
+### [P3] Outils de test d'Apex Chat portant 7 vulnérabilités connues — ✅ CORRIGÉ le 10/09
+
+- **Axe** : sécurité (dépendances) · **Fichier** : `messaging-app/package.json`
+- **Preuve** (`npm audit`, exécuté ici) : **production : 0** vulnérabilité. Outils de test :
+  **7** (4 critiques, 1 haute, 2 moyennes) — toutes dans la chaîne `vitest 1.x` (`@vitest/ui`
+  : lecture de fichiers arbitraires quand son serveur écoute · `happy-dom 14` : évasion du bac
+  à sable → exécution de code depuis une balise `<script>` · `vite`/`esbuild` : traversée de
+  chemin, serveur de dev interrogeable).
+- **Impact réel** : aucun sur l'app déployée — ces paquets ne tournent qu'en CI et sur les
+  machines de test. Le risque est un test qui charge du HTML hostile.
+- **Cause racine** : versions figées depuis la création du projet (`^1.6.0`, `^14.12.0`), aucun
+  garde ne signale une dépendance de test vulnérable.
+- **Correctif** : `vitest 5`, `@vitest/ui 5`, `@vitest/coverage-v8 5`, `happy-dom 20` →
+  `npm audit` : **0** vulnérabilité, toutes catégories.
+- **Test qui prouve** : **1 117 / 1 117** tests unitaires verts après mise à jour. Un seul
+  fichier a dû être adapté (`tests/unit/visio-mesh.test.js`) : happy-dom 20 rend `navigator`
+  non assignable, le test redéfinit la propriété au lieu de l'écraser. Comportement testé
+  inchangé.
+- **Effort** : S · **Régression possible** : aucune sur l'app (paquets de test uniquement).
+
+### [P3] Deux workflows installaient `wrangler` sans version, avec le jeton Cloudflare en main — ✅ CORRIGÉ le 10/09
+
+- **Axe** : sécurité (chaîne d'approvisionnement) · **Fichiers** : `deploy-apex-chat.yml`
+  (`npm install -g wrangler`), `sync-secrets-to-cloudflare.yml` (`wrangler@latest`).
+- **Preuve** : zizmor « adhoc-packages » ; lecture des deux lignes.
+- **Impact** : « ce que npm publiera demain » s'exécute avec le jeton qui déploie l'API et pose
+  les secrets. Une majeure publiée avec un changement de comportement casse un déploiement ;
+  un paquet compromis fait pire.
+- **Correctif** : `wrangler@4` — c'est ce qui tourne déjà (dernier déploiement vert
+  `34520637740` a installé la dernière version, 4.x). Zéro changement de comportement aujourd'hui,
+  plus de saut de majeure silencieux demain.
+- **Test qui prouve** : YAML validé ; le prochain déploiement le prouvera en vrai.
+
+### [P3] Un job de déploiement sans `permissions:` déclarées — ✅ CORRIGÉ le 10/09
+
+- **Fichier** : `deploy-cloudflare-workers.yml` (services Apex, adjacent à Apex Chat — il est
+  apparu dans le périmètre parce qu'il déploie `chat-svc`).
+- **Preuve** : zizmor « excessive-permissions » ; le job ne fait que `wrangler` + `curl` vers
+  Cloudflare, jamais un `git push` ni un appel `gh`.
+- **Correctif** : `permissions: contents: read` sur le job. Les 18 autres workflows du
+  périmètre déclaraient déjà leurs permissions.
+
+### Écartés avec preuve (faux positifs)
+
+| Outil · règle | Ce qu'il signale | Ce que j'ai vérifié | Verdict |
+|---|---|---|---|
+| gitleaks × 8 | `messaging-app/workers/push-worker.js` | Lecture du fichier : **une clé VAPID publique** (envoyée à chaque navigateur, publique par conception) et les deux chaînes `-----BEGIN/END PRIVATE KEY-----` qui servent à **retirer l'en-tête** d'une variable d'environnement. Aucune valeur de clé dans le fichier | faux positif |
+| TruffleHog × 52 (dépôt entier) | « secrets » | **0 confirmé vivant** par l'outil lui-même (vérification auprès des fournisseurs) | rien à révoquer |
+| zizmor « template-injection » | 149 sur le dépôt | Passe `awk` sur les 19 workflows Apex Chat : **0** `${{ github.event.* }}` dans un `run:` | hors périmètre |
+| zizmor « artipacked » | 5 étapes `upload-artifact` du périmètre | Chemins : rapports Playwright, couverture, un fichier chiffré `/tmp/out/latest.sql.enc` — **jamais le dépôt** ni `.git/` | faux positif |
+| zizmor « unpinned-uses » | 33 `uses:` du périmètre | Tous des actions **officielles** (`actions/*`, `cloudflare/wrangler-action`) sur une **version publiée** (`@v4`, `@v6`…), conformes à la règle du dépôt public | recommandation P3 : épingler sur un SHA, pas une faille |
+| Semgrep « plaintext-http-link » × 2 | `tests/unit/media-gallery.test.js` | `http://b.io` = URL de **fixture** dans un test, jamais appelée | faux positif |
+| OSV × 17 (dépôt entier) | dépendances | `messaging-app` : production 0 (mesuré `npm audit`) ; les 7 de test corrigées ci-dessus. Les autres lignes sont dans d'autres lockfiles du dépôt | hors périmètre |
+
+### Ce que je n'avais **pas** pu trier — trié le soir même, avec l'outil construit pour ça
+
+**9 des 11 signalements Semgrep de `messaging-app` étaient anonymes** à 20 h : le rapport
+lisible depuis cette session ne portait que des comptes par règle et par dossier, pas les
+lignes. Rejouer Semgrep ici est impossible : ses règles se téléchargent depuis `semgrep.dev`,
+injoignable (mesuré : réponse 000). J'ai ajouté à `security-suite.yml` une entrée `detail_path` :
+pour les préfixes demandés, le check-run liste **chaque signalement** (outil · gravité ·
+fichier:ligne · règle), plafonné à 400 lignes, sans jamais imprimer la valeur d'un secret.
+
+**Relancé (run 34527892077) et lu : 47 lignes, 47 ouvertes, 0 faille.** Le détail est au
+§ 6.5 de `02-RESULTATS.md`. En résumé : 4 `missing-integrity` sur des `<link canonical /
+dns-prefetch>` (pas de SRI possible), 5 `unsafe-formatstring` INFO sur des `console.warn`, 1
+`urllib` dans un script CI sans entrée utilisateur, 1 `cors-misconfiguration` sur la réflexion
+d'origine **après** liste blanche (voulu, testé), **3 `gha-curl-pipe-shell` classés ERROR qui
+sont des `curl | python3 -c "json.load…"`** — la réponse d'API est parsée, jamais exécutée —,
+et les 7 gitleaks (clé VAPID publique ×3, CSS, `'TEAMID'` de test, en-têtes PEM ×2). Deux
+recommandations P3 restaient ouvertes, ni l'une ni l'autre n'est une faille : remplacer
+`python3 -c` par `jq` dans les trois workflows, et épingler les actions sur un SHA.
+
+**Appliquées le 11/09** (Kevin : « Go ») : `jq -r '.[0].number // empty'` dans
+`apex-chat-e2e.yml`, `jq -er '.result[0].id'` et `jq -r '.result.id // empty'` dans
+`deploy-apex-chat.yml` (la réponse était déjà lue comme une donnée ; `jq` est déclaratif, sans
+interpréteur) ; les **23 `uses:`** des 10 workflows du périmètre sont épinglés sur le SHA de
+leur tag (`actions/checkout@d23441a4… # v6`, etc., SHA résolus par `git ls-remote` sur les
+dépôts officiels), la version restant lisible en commentaire. Dependabot (déjà configuré,
+hebdomadaire) proposera les montées. Gardes relancées : `test:depot-public-sain`,
+`test:actions-conformes`, `test:workflows-pipefail`, `test:ci-no-stampede` — vertes.
+
+### Pentest IA (Strix) — exécuté, tué par le délai, puis compris et relancé
+
+`strix-scan.yml` a été **arrêté par le délai de 26 minutes** (rc = 124) avant d'écrire son
+rapport. Son tableau de bord annonçait **1 vulnérabilité MEDIUM** dont je ne connaissais **pas
+le contenu**. Coût mesuré de cette exécution : **13,77 $** (31,8 M jetons, modèle gpt-5.4, avec
+des erreurs de flux « Error streaming response » répétées).
+
+**11/09 — cause racine, lue dans le code de Strix** (clone superficiel de `usestrix/strix`,
+version 1.6.2, `requires-python >= 3.12`) : (1) Strix écrit ses résultats dans
+**`strix_runs/<run>/`** (`penetration_test_report.md`, `vulnerabilities/*.md`,
+`vulnerabilities.csv|json`, `run.json`) — le workflow copiait **`agent_runs/`**, l'ancien
+nom ; (2) sur SIGTERM, `signal_handler` appelle `report_state.cleanup(status="interrupted")`
+qui **écrit les artefacts avant de sortir**. Le rapport de la MEDIUM a donc très probablement
+été écrit, dans un dossier que personne ne copiait. **Correctif** : les deux dossiers sont
+copiés ; la dépense est **bornée** (`--max-budget-usd`, 15 $ par défaut : Strix s'arrête seul,
+proprement) au lieu de compter sur un `timeout` qui le tue au milieu d'une phrase ; la
+profondeur est un choix (`--scan-mode quick|standard|deep`, `standard` par défaut) ; délai du job
+75 min ; le check-run porte l'**inventaire des fichiers produits**, le nombre d'erreurs de
+flux, puis le rapport final, les fiches de vulnérabilité et l'index CSV, dans cet ordre.
+Relancé sur `https://apex-chat.kd-mc.com/` — résultat à lire par
+`node tools/ci/ci.mjs report <run_id>`.
+
+**Lu (run `34588162278`, 38 min, 14,00 $, 33,1 M jetons dont 31,8 M en cache, rc=2 = « fini
+avec findings ») : 2 MEDIUM, les deux confirmées dans le code et corrigées.**
+
+### [P1] Une session SSO « faible » forgée à distance lisait l'historique de Kevin et coupait toutes ses sessions — ✅ CORRIGÉ le 11/09
+
+- **Axe** : sécurité (routeur `services/kdmc-router/worker.js`, hors app mais sur le chemin
+  de toutes les apps du domaine). Strix vuln-0001, CWE-287, CVSS 6,5.
+- **Preuve (Strix, sur le vrai domaine)** : `POST /__sso/issue {"uid":"x","name":"y"}` sans
+  aucune preuve → `ok:true` + cookie `kdmc_sso` sur `.kd-mc.com` ; `GET /__sso/whoami` le
+  reconnaît (`verified:false, admin:false`). Aussi accepté avec `Origin: https://evil.example`
+  et `Content-Type: text/plain` (requête « simple » : un site tiers pose le cookie dans le
+  navigateur d'un visiteur).
+- **Ce qui est voulu** (pas une faille) : l'émission auto-déclarée existe pour la règle
+  « reconnu auto pour tous » ; `admin` exige `verified` (Face ID), c'est vérifié par `whoami`.
+- **Ce qui était une faille, trouvé en lisant les consommateurs de cette session** :
+  `GET /__sso/me/history` et `POST /__sso/me/revoke` ne demandaient qu'une **session**, pas une
+  session **vérifiée**. Avec un token forgé sur `uid=kdmc_admin`, un inconnu lisait la fiche
+  canonique de Kevin (appareils, apps, historique de connexions) et posait `revoked_at` sur
+  cette fiche → **toutes** les sessions de Kevin tombaient, Face ID comprises (déconnexion
+  forcée de l'admin par n'importe qui). Cause racine : le self-service supposait qu'un uid
+  dans un token venait forcément de son propriétaire.
+- **Correctif** : `/me/history` et `/me/revoke` exigent `s.verified` (même règle que
+  `/passkeys/delete`) ; `/__sso/issue` refuse un `Origin` hors `kd-mc.com` / `*.kd-mc.com` /
+  app native (`capacitor://`, `ionic://`) / **même origine que l'hôte appelé** (portail servi en
+  local, test navigateur), et `Origin: null` (sans en-tête Origin : inchangé, aucun navigateur
+  tiers en jeu). Rien ne change pour Kevin (ses sessions sont Face ID) ni pour la connexion
+  automatique par nom. **Mesuré après coup** : la première version refusait la même origine
+  sur `127.0.0.1:port` → le test navigateur réel du SSO (`tools/kdmc-sso-e2e`, relancé une fois
+  son installation réparée) perdait 2 contrôles ; corrigé, 8/8 en local.
+- **Test qui prouve** : `services/kdmc-router/self-service.test.mjs` (23/23, 10 nouveaux :
+  token forgé → history/revoke refusés, fiche intacte, vraie session vivante ; `/issue` depuis
+  `evil.example`, `null`, `kd-mc.com.evil.example` → 403 sans cookie ; depuis `kd-mc.com`,
+  `apex-chat.kd-mc.com`, `capacitor://localhost` → accepté). **Ces tests SSO ne tournaient dans
+  aucun workflow** : ajoutés à `deploy-kdmc-router.yml` avant chaque déploiement.
+- **Résiduel assumé** : une session faible forgée sur un uid admin **écrit toujours un
+  passage** dans la fiche « qui se connecte » (métadonnées d'appareil, aucune donnée) — les
+  apps de Kevin envoient elles-mêmes cet uid avant Face ID, le bloquer casserait sa connexion
+  automatique. Consigné, pas corrigé.
+- Effort S · régression : un utilisateur **sans** passkey ne peut plus lire son historique ni
+  « déconnecter ses autres appareils » sans Face ID — message clair, aucun blocage de connexion.
+
+### [P2] Un lien piégé faisait activer un Premium par l'admin sans confirmation — ✅ CORRIGÉ le 11/09 (v1.1.289)
+
+- **Axe** : sécurité (client `messaging-app/index.html`). Strix vuln-0002, CWE-352, CVSS 4,3.
+- **Preuve** : au boot, `?grant_premium=<uid>&plan=<plan>` est lu et, dès que `K.user.is_admin`,
+  `K._adminGrantPremium(guid, gplan)` part **sans confirmation** (`POST /api/admin/grant-premium`
+  intercepté avec les valeurs de l'URL). Même chemin via le message `grant-premium` du service
+  worker. Le serveur exige le jeton admin : seul Kevin peut le déclencher, mais **à son insu**.
+- **Correctif** : `K._confirmGrantPremium(uid, plan)` — une fenêtre qui **nomme** l'utilisateur
+  et la formule — devant les deux déclencheurs externes ; « Annuler » ne fait rien ; le bouton
+  du panneau admin (clic explicite) est inchangé. La notification « ✅ Activer » demande donc
+  un tap de plus, qui dit ce qui va être activé (règle « double-confirm » des actions admin).
+- **Test qui prouve** : `messaging-app/tests/unit/premium-deep-link-confirm.test.js` (4 tests,
+  lit la page servie ; **prouvé discriminant** : garde retirée → 2 échecs nommant le
+  déclencheur).
+- Effort S · régression : aucune (un tap de plus pour l'admin sur ce seul parcours).
+
+**Ce que Strix n'a pas trouvé** (surfaces revues sans problème) : `/diag.html`,
+`/force-update.html`, `/force-logout.html` (nettoyage local, aucune action serveur), injection
+sur les entrées SSO (SQL/NoSQL/XXE/timing : rien). **Ce qu'il n'a pas testé** : les parcours
+authentifiés (OTP), conversations, invitations, WebSocket, admin — il n'avait pas de compte.
+Le run montre encore **654 erreurs de flux LLM** (« Error streaming response ») : le scan a
+fini quand même, mais c'est du temps et de l'argent perdus côté fournisseur.

@@ -36,10 +36,10 @@ jobs:
         working-directory: messaging-app
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -74,28 +74,38 @@ jobs:
             echo "❌ coverage-summary.json missing"
             exit 1
           fi
-          node -e "
-            const cov = require('./coverage/coverage-summary.json');
-            const FLOOR = { 'api-worker.js': { statements: 80, branches: 74, functions: 86, lines: 80 } };
+          # 10/09/2026 — SOURCE UNIQUE : les seuils sont LUS dans vitest.config.js (un seuil
+          # par fichier = cliquet sur la mesure vitest 5). Avant, une table copiée ici
+          # (FLOOR) devait être tenue à la main en miroir — deux vérités, une dérive garantie.
+          node --input-type=module -e "
+            import { readFileSync } from 'node:fs';
+            const cov = JSON.parse(readFileSync('./coverage/coverage-summary.json', 'utf8'));
+            const { default: cfg } = await import('./vitest.config.js');
+            const T = cfg.test.coverage.thresholds;
             const KEYS = ['lines','statements','branches','functions'];
-            let failed = false;
+            let failed = false, seen = 0;
             for (const [path, s] of Object.entries(cov)) {
               if (path === 'total' || !s || !s.lines) continue;
-              const base = path.split('/').pop();
-              const floor = FLOOR[base];
-              const bad = KEYS.filter(k => s[k].pct < (floor ? floor[k] : 100));
+              const rel = path.replace(/^.*\/messaging-app\//, '');
+              const t = T[rel];
+              if (!t) { failed = true; console.error('❌', rel, 'aucun seuil dans vitest.config.js — un fichier nouveau doit avoir le sien'); continue; }
+              seen++;
+              // total === 0 : rien de mesurable (fichier de pur réexport, ex. durable-objects/*DO.js
+              // shims) — json-summary écrit pct 0 alors que vitest considère le seuil satisfait.
+              // On aligne la lecture sur vitest : une métrique vide ne peut pas être « en dessous ».
+              const bad = KEYS.filter(k => s[k].total > 0 && s[k].pct < t[k]);
               if (bad.length) {
                 failed = true;
-                console.error('❌', base, bad.map(k => k+'='+s[k].pct+'% (min '+(floor?floor[k]:100)+')').join(', '));
+                console.error('❌', rel, bad.map(k => k+'='+s[k].pct+'% (min '+t[k]+')').join(', '));
               }
             }
             if (failed) process.exit(1);
-            console.log('✅ Couverture conforme : 100 % partout, api-worker.js au-dessus du plancher.');
+            console.log('✅ Couverture conforme : ' + seen + ' fichiers au-dessus de leur seuil (vitest.config.js).');
           "
 
       - name: Upload coverage HTML report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: messaging-app-coverage
           path: messaging-app/coverage/
@@ -112,10 +122,10 @@ jobs:
       matrix:
         project: [iphone-safari, iphone-se, chromium-desktop, pixel-android]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Setup Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -137,7 +147,7 @@ jobs:
 
       - name: Upload Playwright report
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: playwright-report-${{ matrix.project }}
           path: messaging-app/playwright-report/

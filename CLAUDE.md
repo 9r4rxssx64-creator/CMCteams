@@ -333,6 +333,10 @@ un test d'égalité seul ne l'aurait jamais vu).
 `npm run test:parite-cmcteams-light` (câblé dans `test:ci`) compare la liste de PDF des deux
 générateurs, les mois réellement produits, et l'effectif de chaque mois des deux côtés.
 **Prouvé discriminant** : retirer septembre d'un seul générateur → FAIL immédiat.
+`npm run test:light-firebase` (v9.903 / light v1.44, leçon #264) nourrit la light avec un **Firebase périmé** (ce que
+Kevin a vraiment) et exige les équipes du PDF ; `test:departs-compare` seul ne le voit pas (il affame Firebase).
+**L'appartenance aux équipes vient des boards générés des DEUX côtés ; une correction en mémoire côté app doit être
+PERSISTÉE (`cmc_e`), sinon la light reste fausse.**
 
 ### 4. Test mental obligatoire
 
@@ -1774,6 +1778,7 @@ Implementation : `_cmcDetectTeamsByRestPattern(iy, im)` ligne ~32700 (v9.648).
 - `emp.teamHistory[YYYY-M]` = équipe pour ce mois (écrite par import)
 - Si pas de teamHistory → pas d'équipe ce mois (afficher "❔ Pas de planning")
 - INTERDIT d'utiliser `emp.team` comme fallback pour affichage équipe courante
+- **`emp.family` non plus** (v9.901, leçon #262) : la famille affichée = `familyForMonth` (section du PDF, puis famille de l'équipe du mois) — jamais `e.family` DEF_EMP dans une vue mensuelle (vEmps/vPlan/vDeparts). Garde `test:equipes-mois`.
 
 Voir NOTES_USER.md section "RÈGLE MÉTIER FONDAMENTALE — DÉTECTION ÉQUIPES PAR JOURS REPOS"
 pour détails complets de l'algorithme + safeguards.
@@ -1850,6 +1855,14 @@ Si réponse "je crois que oui" sans vérif → tester avant push. Si non → fix
 - ❌ Throttle > 60s entre tentatives (Kevin manque les MAJ rapides)
 - ❌ Force-update bouton manuel sans auto-fallback (Kevin doit pas avoir à cliquer)
 - ❌ MAJ sans pre-snapshot backup (risque perdre données vault si fix v13.X foireux)
+- ❌ URL de rechargement construite sur `location.href.split("?")[0]` : avec un `#kdmc_sso=` le `?_force_upd_` tombe derrière le hash = changement de fragment = RIEN ne se recharge → toujours `location.pathname` (leçon #263)
+- ❌ Paramètre de rechargement absent de la liste que `sw.js` exonère (`?_forceupd=` ≠ `_force_upd_`) — vérifier les deux fichiers ensemble
+- ❌ Rechargement automatique SANS plafond d'essais : serveur qui annonce v+1 mais sert encore l'ancienne page = boucle toutes les 2 s (mesuré) → 3 essais / 10 min max, puis badge manuel
+- ❌ `controllerchange → reload` à la 1re installation du SW ou après `?_force_upd_` (la page vient du réseau) : l'app « saute » une fois de trop
+
+### 8. Garde en vrai navigateur (CMCteams v9.902 / light v1.43, 2026-09-11)
+
+`npm run test:maj-forcee` (dans `test:ci`) = `tests/verify-maj-forcee-reelle.mjs` : serveur local aux versions MUTABLES + en-têtes de cache GitHub Pages + Service Worker actif + session anonyme ; on PUBLIE une version pendant que l'app tourne et on exige qu'elle arrive seule (focus, boot, 0 clic), qu'une version identique ne recharge rien, et qu'une page servie périmée ne boucle pas — sur les DEUX surfaces (27 contrôles ; ancien code → 8 échecs). **Un test statique (« le drapeau est posé ») n'est pas une preuve de MAJ auto.**
 
 S'applique : Apex (v13.4.188+ ABSOLU), CMCteams (v9.615+ ABSOLU), tous projets futurs Kevin.
 

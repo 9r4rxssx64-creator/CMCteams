@@ -186,6 +186,292 @@ ce qui fait planter la page — page blanche, zéro bouton, attente de 15 s vou�
   partiellement effacé, l'utilisateur n'a plus rien. Leçon #222.
 
 ---
+## 2026-09-11 (19h55) — Stratégie agressive +++ : les 6 bots juste plus de risque, plus de trades, toujours faux argent
+
+- **Demande de Kevin** : « Stratégie agressive +++ ». Argent réel toujours HORS DE PORTÉE — je n'ai touché ni `TESTNET`, ni `PAPER`, ni aucune clé sur aucun des 6 bots.
+- **Mesuré AVANT de pousser** (`backtest.py` + un script maison réutilisant `make_strategy()`, 4 graines aléatoires) : le préréglage agressif fait passer les cryptos **dipup de 0 trade à 3-7 trades** (correspond exactement à ce que Kevin observait en vrai : « P3 ne trade quasiment jamais »), et **meanrev de ~23 à ~75 trades**. Résultat honnête sur données synthétiques : ema et dipup s'en sortent mieux amplifiés, **meanrev est PLUS RISQUÉ** (une graine sur 4 tombe nettement dans le rouge, -18,67 %) — cohérent avec son propre principe (conçu pour un marché plat, pas une tendance). Gardé quand même car c'est du faux argent et Kevin a demandé explicitement l'agressivité ; le nouveau bilan durable (livré à 17h30) dira la vérité sur données RÉELLES d'ici quelques jours.
+- **Réglage appliqué aux 6 bots** (Railway, `set-variables`, redéploiement confirmé par leur propre ligne « Démarrage » dans les journaux) : `TIMEFRAME` 15m/5m→**3m**, `LOOP_SECONDS` 60→**30**, `RISK_PER_TRADE_PCT` 1→**4 %**, `MAX_POSITION_PCT` 25→**60 %**, `ATR_STOP_MULT` 2.0→**1.3**, `DAILY_LOSS_CAP_PCT` 3→**10 %**, `MAX_DRAWDOWN_PCT` 15→**35 %**, seuils RSI relâchés pour les 3 familles de stratégie (`RSI_MAX` 70→85, `MR_RSI_BUY/SELL` 35/60→45/55, `MR_STD_MULT` 2.0→1.5, `DU_RSI_BUY/SELL` 35/60→45/55). **Jamais touché** : `STRATEGY`, `EMA_FAST/SLOW`, `DU_TREND_PERIOD`, `SYMBOLS`, `HOLD_UNTIL_PROFIT`, kill switch — l'identité de chaque bot dans le tournoi et tous les garde-fous restent en place, juste recalibrés plus larges (jamais retirés).
+- **Trouvé en vrai en poussant le changement** : le bot principal (testnet) tourne en `HOLD_UNTIL_PROFIT=true` (« ne vend jamais à perte ») — dans ce mode le stop-loss ATR est désactivé pour la position, seul `CATASTROPHE_STOP_PCT` limite encore la perte. Il était à 0 (désactivé) → avec la position agrandie à 60 % du capital, une position tenue aurait pu perdre **sans aucune limite**. Corrigé : `CATASTROPHE_STOP_PCT=20` pour ce bot.
+- **Garde permanente ajoutée** (`crypto-bot/config.py` → `Config.risk_warnings()`, appelée dans `bot.py` au démarrage, journalisée dans `audit.jsonl` + console) : signale désormais TOUJOURS la combinaison dangereuse ci-dessus (`HOLD_UNTIL_PROFIT` + frein catastrophe désactivé), et la concentration `MAX_POSITION_PCT ≥ 50 %`. `test_multi.py` : 49→**59 contrôles**, 0 échec, **prouvés discriminants par 4 sabotages** (l'un d'eux a révélé une erreur dans mon propre seuil de test au premier jet — corrigée avant livraison).
+- **`.env.example`** réécrit : reflète maintenant les valeurs réellement déployées (avant/après en commentaire pour revenir en arrière), et complète les champs qui manquaient depuis toujours (`STRATEGY`, `MR_*`, `DU_*`, `HOLD_UNTIL_PROFIT`, `CATASTROPHE_STOP_PCT`, `PAPER`, `BOT_NAME`) — un clone frais du dépôt ne pouvait pas reproduire ce que la flotte fait réellement avant ce commit.
+- **Pas de CI ajoutée pour ces tests** (choix assumé, pas un oubli) : `crypto-bot/` n'a jamais été branché à aucune CI (ni GitHub ni GitLab) et je ne l'ai pas changé — cohérent avec la règle « jamais de crypto dans GitHub Actions » (leçon de la suspension du 15/08) ; les tests restent lancés à la main (`python3 test_multi.py`), comme ils l'ont toujours été pour ce sous-projet.
+- **Coût** : inchangé (mêmes 6 conteneurs Railway, juste des variables d'environnement différentes ; aucun redéploiement ne recrée de service).
+
+## 2026-09-11 (17h30) — Robots crypto : où ils en sont, ce qu'ils ont gagné/perdu, et un bilan qui ne s'efface plus
+
+- **Mesuré sur Railway (pas déduit)** : 6 services existent. **2 tournaient** (`crypto-bot` testnet + `crypto-bot-p3`), **4 étaient muets depuis le 18 juillet** (`p1`, `p2`, `p4`, `p5` : build OK, 0 log runtime, 0 % CPU, 0 Go RAM sur 24 h). **Relancés** → les 6 tournent (vérifié dans leurs journaux, 17h32-17h33).
+- **Argent réel ? NON.** Le bot principal interroge `testnet.binance.vision` (vu dans ses journaux) = faux argent. Les 5 autres sont en mode papier (10 000 faux $ chacun).
+- **Bilan mesurable aujourd'hui** : `crypto-bot` equity **92 013 $** (faux) ; **1 seul trade** dans tout le journal disponible (vente SOL le 19 août) ; panne Binance 502 en boucle le 9 septembre, revenu seul. `p3` : **10 000,32 $** (+0,32 en 2 mois). Les 4 relancés repartent de **10 000,00 $** : le portefeuille papier vit en mémoire, un redémarrage le remet à zéro.
+- **Pourquoi le bilan « depuis le début » était IMPOSSIBLE** : il n'existait que dans les journaux Railway, **purgés** (plus rien avant le 19 août) et remis à zéro à chaque redéploiement. Rien n'était enregistré ailleurs.
+- **Corrigé** (`services/kdmc-router/worker.js`) : la flotte est **relevée dans KV** à chaque consultation, au plus 1 fois par heure (`bot:hist`, 720 relevés ≈ 30 jours) ; le **tout premier relevé de chaque bot** (`bot:first`) n'est jamais écrasé → le bilan « depuis le (date) » survit à la purge ET aux redémarrages. Nouvel endpoint admin `GET /__bot/history`. Fail-open : KV en panne ⇒ la flotte s'affiche quand même.
+- **Tableau de bord** (`tools/crypto-bot-dashboard/index.html`) : nouvelle carte « 🧾 Bilan — depuis le premier relevé » (départ → actuel, écart, nombre de redémarrages, 😴 si un bot n'a plus donné signe depuis 3 h).
+- **Garde** : `npm run test:bot-dashboard` — le test existait mais **n'était lancé nulle part** (test orphelin) ; il est maintenant **câblé dans `test:ci`**. 37 → **51 contrôles**, 0 échec. **Prouvé discriminant par 4 sabotages** (relevé retiré, throttle retiré, `bot:first` écrasé, fail-open retiré → échec à chaque fois). Le contrôle « bot:first jamais réécrit » était un **faux vert** au premier jet (le throttle l'empêchait d'être testé) — corrigé avant livraison.
+- **Règles respectées** : rien de crypto n'est revenu dans GitHub Actions (les 6 workflows restent « jamais » dans `DESTINATIONS.json`) ; 0 cron ; les bots tournent sur Railway et le tableau de bord sur Cloudflare, hors CI. `test:actions-conformes`, `test:destinations-workflows`, `test:depot-public-sain`, `test:no-pin-leak` verts.
+- **Coût mesuré** : ~0,099 Go de RAM et ~0,001 vCPU par bot ⇒ **≈ 1 $/mois par bot** au tarif Railway ; les 4 relancés ajoutent donc ≈ 4 $/mois. Arrêtables en un geste depuis le tableau de bord.
+- **Limite honnête** : le relevé se fait quand la flotte est consultée (tableau de bord ou appel admin). Sans consultation pendant des jours, l'historique a un trou. Un relevé vraiment automatique demanderait une place de cron Cloudflare — le compte gratuit est à 5/5.
+
+## 2026-09-11 (14h30) — v9.903 / light v1.44 : la LIGHT était encore « mélangée » (Firebase périmé) — corrigé, gardé
+- **Vérif live de v9.901** (run voir 34605702050, main déployé 13h26) : app ✅ 247/247 familles = équipes, Kevin BJ Éq.3, Mon équipe = 5 membres, Départs sous le bon dossier. **Light ❌** : « ton équipe : BJ Éq.12 (16/22) », « Éq.3 (14/19) » avec GATTI/FIA/COZZI… → la light groupe par `teamHistory` de Firebase (ancien import faux) et l'app ne persistait jamais sa correction (4 écritures `cmc_e` au boot re-persistaient les valeurs fausses).
+- **Fix light v1.44** : équipe du mois = board généré qui contient la personne (par nom), teamHistory Firebase seulement pour les mois non générés, normalisation « 2026-09-3 » → « 3 », absents du PDF non versés dans une équipe. **Fix app v9.903** : sync boards persiste `cmc_e` (admin, 1 écriture par mois corrigé).
+- **Garde** `test:light-firebase` (dans test:ci) : Firebase simulé périmé → light = PDF (36 équipes, membres exacts, Kevin 2026-09-3), app répare Firebase (247/247, 0 cellule, ≤ 8 écritures puis silence). Ancienne light → 4 échecs, ancienne app → 237 faux. Leçon #264.
+- v9.902 fusionnée dans main (MAJ forcée) ; v9.903 poussée ensuite.
+- **VÉRIFIÉ LIVE** (run voir 34609999429, main déployé 14h16) : light **v1.44** « ton équipe : Septembre 2026 — BJ Éq.3 (16/22) », tableau = MAGARA / ROSSI / ALDRIGHETTI / CASTEL / DESARZENS (les 5 du PDF), 0 erreur JS ; app **v9.903** Kevin `2026-09-3` / bj, 0 erreur JS. Les deux surfaces disent la même chose que le PDF.
+
+## 2026-09-11 (14h) — « light 42 ? Vérifie Maj forcé pour tous et tout » : v9.902 / light v1.43, prouvé en vrai navigateur
+- **Réponse courte** : light v1.42 ÉTAIT la dernière (v9.901 ne touchait pas la light) ; CMCteams servait v9.900 parce que v9.901 n'était pas encore fusionnée (fusion PR #3773 à 13h24, déploiement run 34604153623 vert à 13h26). L'app n'était pas en retard : la correction n'était pas encore en ligne.
+- **MAJ forcée auditée en RÉEL** (`tests/verify-maj-forcee-reelle.mjs`, `test:maj-forcee` dans test:ci, 27 contrôles, SW actif, session anonyme, cache GitHub Pages simulé) : 4 écarts à la règle + 1 boucle infinie possible + 1 rechargement en trop, tous corrigés (détail leçon #263) : sonde `cache:"reload"`, rechargement sur `?_force_upd_` via `forceRefresh()` (attend SW+caches), `location.pathname` (le hash SSO neutralisait le rechargement — les deux surfaces), 60 s, plafond 3 essais/10 min (`cmc_upd_tries`, `cmc_dep_upd_tries`), plus de 2e rechargement après MAJ ni à la 1re ouverture, badge light = APP_VER = version.txt (v1.43).
+- Ancien code → 8 échecs ; nouveau → 27/27. Suites relancées vertes : autoupdate 7/7, parité 7/7, seed-remplace, departs-pin 9/9, departs-compare 0 écart, equipes-mois, no-pin-leak, check-syntax.
+- Vérifié : le minifieur du déploiement garde `var APP_VER=` ; le routeur transmet `?_v=` à Pages.
+- **En cours** : run « voir comme Kevin » sur main (v9.901 déployée) pour lire `equipes.json` + captures (attendu : 247/247 familles = équipes, Mon équipe = Éq.3).
+
+## 2026-09-11 (13h30) — v9.901 « Toutes les équipes sont mélangées » : corrigé, prouvé, garde
+- **Données justes, affichage faux.** seed = boards = PDF (285/285 sept, 281/281 oct). Sur les VRAIES données de Kevin (relevé `equipes.json`, run voir 34601813763) : 56/247 personnes en équipe affichées sous leur famille d'origine, 0 `familyHistory` du mois, « Mon équipe » vide, cartes avec l'équipe DEF_EMP figée (« Roul. Éq.7 » pour un membre de BJ Éq.3).
+- **Fix index.html v9.901** : `familyForMonth` → famille de l'équipe du mois avant la famille figée ; seed pose fam/école/miroir manquants même sur un mois live à jour ; boards portent leur famille ; `_getMyTeamFirst`, vEmps (sections, cartes, tri), vPlan (puces), vDeparts (dossiers), modale jour, export PDF, vAbsences → équipe/famille DU MOIS. sw.js `cmcteams-v9.901`.
+- **Garde** `test:equipes-mois` (dans test:ci) : appareil de Kevin simulé, 4 vues, 15 contrôles verts ; ancien code → 10 échecs. Autres tests relancés : baccara-chef, kevin-truth, mois-ouverture, vplan, seed, departs-compare, departs-algo, seed-remplace, render-views verts (`runtime-audit-v703-section-family` = test périmé hors CI qui exige APP_VER v9.703 ; `verify-app-as-kevin` exige un serveur :8099 lancé à part).
+- **Outil voir** : « Tout ouvrir » avant capture + `equipes.json` ; branche de relecture ORPHELINE (le jeton du job ne peut pas pousser un historique avec workflow — run 34601407690 refusé).
+- **Reste** : après fusion + déploiement, relancer « voir comme Kevin » sur main et lire captures + `equipes.json` (attendu : familles = équipes pour 247/247, Mon équipe = Éq.3 ; light inchangée).
+- Seed + boards régénérés (seul le champ `parser` change → v9.901, garde `test:seed-remplace` exige parser = APP_VER). Branche `claude/voir-34600331412` : suppression git REFUSÉE par le proxy (send-pack hung up ×5) → inscrite au cliquet `pipeline/branches-orphelines-baseline.json` (elle redevient robot-seule après fusion de la PR #3765). m065 clos.
+- Leçon #262.
+
+## 2026-09-11 (midi) — « Toutes les équipes sont mélangées » : mesure en cours
+- Mesure locale (appareil neuf, seed seul, `tests/_scratch/mesure-equipes-local.mjs`) : équipes de travail sept 282/285 (3 écarts = groupes d'absence déduits des cellules), oct 249/281 (32 écarts = tous des groupes d'absence sans `teamHistory`, attendu) ; **vue Employés : 55-61 personnes/mois classées sous la MAUVAISE famille** (`_empGroupKey` lit `e.family` figé au lieu de `familyForMonth`) ; juin/juillet : 30 familles cmc→roulettes.
+- `tools/voir/voir.mjs` : « Tout ouvrir » avant chaque capture (planning + employés) + relevé `equipes.json` (équipe/famille de chaque employé, mois affiché + suivant, données Firebase de Kevin) → relance du workflow pour voir les VRAIES données de Kevin avant de corriger.
+## 11 septembre 2026 (matin) — « Go » sur les quatre points laissés à ta décision
+
+Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
+
+- **Le fichier le plus critique d'Apex Chat est enfin couvert** : `workers/api-worker.js` (6 045
+  lignes : codes OTP, admin, jetons, premium) avait **64 % de ses fonctions** appelées par un test.
+  108 fonctions ne l'étaient jamais (16 routes nommées + ~90 rappels d'erreur). **118 tests
+  ajoutés** (`tests/unit/api-worker-fonctions-non-appelees.test.js`), chacun passe par le vrai
+  routeur avec la vraie route et la vraie authentification, et exerce au moins une branche
+  d'erreur (code exact + détail). Mesuré vitest 5 : **91,98 % instructions · 81,92 % branches ·
+  100 % fonctions · 94,25 % lignes** (avant : 75,71 / 68,48 / 64,47 / 79,20). Plancher relevé à
+  91 / 81 / 99 / 93,5. **1241 / 1241 tests, 62 fichiers, couverture exit 0**, gate CI simulé OK.
+- **Les deux conseils du scan sécu sont appliqués** : `jq` remplace `python3 -c` dans les 3
+  workflows signalés (la réponse d'API n'était déjà que lue, `jq` lève le doute) ; les **23
+  actions** des 10 workflows d'Apex Chat sont **épinglées sur leur SHA** (`@<sha> # v6`), plus la
+  version en commentaire. Dependabot (déjà en place, hebdo) continue de proposer les montées.
+  Les 4 gardes de workflows restent vertes.
+- **Strix : la cause du rapport illisible est comprise et corrigée.** Lu dans le code de Strix
+  1.6.2 : il écrit dans **`strix_runs/`** (le workflow copiait `agent_runs/`, l'ancien nom) et il
+  **écrit son rapport même quand on le coupe** (SIGTERM → état « interrupted »). Le workflow
+  laisse maintenant 75 min, **borne la dépense** (`--max-budget-usd`, 15 $ par défaut, Strix
+  s'arrête seul et proprement) plutôt que le temps, choisit la profondeur (`quick` / `standard` /
+  `deep`, `standard` par défaut), copie le bon dossier, et pose dans le check-run l'**inventaire
+  des fichiers**, le **rapport final**, les **fiches de vulnérabilité** et le nombre d'erreurs de
+  flux. Relancé sur `https://apex-chat.kd-mc.com/` (voir le run dans le rapport de session).
+- **Lingua « en panne » : c'était la sonde, pas l'app.** Le balayage live relancé ce matin (run
+  `34588152564`, lu dans son nouveau check-run) donnait encore **27 vertes, 1 rouge : Lingua,
+  « `page.fill` Timeout »**, alors que le correctif de l'écran blanc était bien en ligne. Rejoué
+  pas à pas en local sur le code de `main` : la fenêtre « Nouveau compte » s'ouvre, mais depuis le
+  **05/09** elle demande **prénom + nom** (deux champs, pour distinguer les homonymes) et la sonde
+  remplissait toujours l'**ancien champ unique**, qui n'existe plus. Chaque balayage depuis le
+  05/09 échouait donc sur Lingua **pour un défaut de la sonde**. Mesuré après correction de la
+  sonde : fenêtre ouverte, **16 langues, 189 unités, 607 boutons, 0 erreur JS**. La sonde
+  corrigée est poussée ; le balayage live qu'elle déclenche donne le verdict en ligne. Pour que la
+  prochaine alerte se lise sans deviner, `audit-live.yml` pose désormais son **verdict par
+  surface dans un check-run** (`node tools/ci/ci.mjs report <run>`), comme les deux scans de
+  sécurité. À côté : la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26**
+  en local — elle échouait ici pour une raison d'outillage (Playwright absent à la racine, puis
+  version de Chromium différente de celle installée : relié par un lien, sans rien télécharger).
+- **Strix a fini, et cette fois je l'ai lu** (run `34588162278`, 38 min, **14,00 $**, 33,1 M
+  jetons dont 31,8 M en cache, 2 fiches MEDIUM). Les deux sont **vraies**, vérifiées dans le
+  code, **corrigées** dans le même commit avec un test chacune :
+  1. **Une session « nommée » se fabriquait à distance et servait à lire ou couper la tienne.**
+     Le portail accepte qu'une app déclare un nom sans preuve (c'est voulu : « reconnu auto »,
+     jamais admin sans Face ID). Mais deux pages du portail se contentaient de cette session
+     faible : « mon historique » (avec un faux nom `kdmc_admin`, un inconnu lisait tes appareils,
+     tes apps, tes connexions) et « déconnecter mes autres appareils » (le même inconnu **coupait
+     toutes tes sessions**, Face ID comprises). Les deux exigent maintenant Face ID prouvé. Et un
+     site tiers pouvait poser ce cookie **dans le navigateur d'un visiteur** (connexion forcée
+     sous un faux nom) : l'émission n'est plus acceptée que depuis le domaine ou une app native.
+     Tests : `services/kdmc-router/self-service.test.mjs` 23/23 (10 nouveaux), et ces tests
+     tournent enfin avant chaque déploiement du routeur (ils ne tournaient nulle part).
+  2. **Un lien piégé activait un Premium à ton insu.** `?grant_premium=<qui>&plan=<formule>`
+     partait tout seul dès que tu étais connecté en admin, sans rien te demander. Maintenant
+     une fenêtre te dit **qui** et **quelle formule** avant d'envoyer ; « Annuler » ne fait
+     rien. Même chose pour le bouton « Activer » de la notification (un tap de plus, nommé).
+     Apex Chat **v1.1.289**, garde `premium-deep-link-confirm.test.js` (prouvé discriminant).
+  Ce que Strix n'a **pas** trouvé : pas d'injection, pas d'accès aux conversations, pas
+  d'élévation admin. Ce qu'il n'a **pas** testé : les parcours connectés (OTP), le temps réel.
+- **Vu au passage, réparé** : la garde `test:router-secours` (câblée dans `test:ci`) était
+  **rouge sur `main`** avant mon passage : 6 adresses du routeur (cuisine, portail boutiques,
+  les 4 « belles adresses » de l'accueil) n'étaient pas prévues dans la copie de secours
+  (celle qui sert les pages si GitHub Pages tombe). Ajoutées : cuisine et le portail
+  (`index.html` + pages légales seulement, pas tout le dossier), les 4 autres sont déjà
+  dedans par leur dossier parent. Guard 49/49, paquet 40/40, copie légère refaite en vrai.
+- **Vu au passage, réparé (2)** : le test navigateur réel du SSO (`kdmc-sso-e2e.yml`, Face ID
+  + multi-apps sur le vrai domaine) **échouait à l'installation depuis au moins 5 exécutions**
+  (dont celles lancées après chaque fusion) : même cause que l'audit live le 05/09, le
+  `package.json` de la racine fait planter `npm i`. Corrigé de la même façon
+  (`--legacy-peer-deps`), relancé pour prouver le routeur corrigé sur le vrai domaine.
+  **Et ce test, une fois réveillé, a attrapé deux choses** : (a) ma première règle d'origine
+  refusait le portail servi en local (même hôte, port `127.0.0.1:…`) → 2 contrôles perdus ;
+  corrigé : la même origine que l'hôte appelé est toujours acceptée (c'est le contraire d'un
+  site tiers), 25/25 côté routeur ; (b) un contrôle périmé depuis le 05/08 (il attendait la
+  fiche `kevin-desarzens`, fusionnée depuis dans la fiche unique `kdmc_admin`) — vérifié avec
+  le routeur d'avant mes changements : déjà rouge. Corrigé. Les 4 tests navigateur du
+  workflow passent en local (8/8, 15/15, 7/7, 3/3).
+
+## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
+
+Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le
+signalement d'origine — le message **m051** du 6.09 : la « Vérif RÉELLE » sur le VRAI domaine
+avait **27 surfaces vertes et une seule rouge**, `lingua.kd-mc.com` :
+`deep: exception TimeoutError: page.fill: Timeout 30000ms exceeded`. La page ne se montait pas
+assez pour qu'on puisse seulement **remplir un champ**. Un élève tombait sur une page vide,
+sans message : la panne la plus pénible, celle qui ne fait aucun bruit.
+
+**C'était exactement le bug corrigé quelques heures plus tôt** (`u0-0` sur `undefined`, l'app
+rendait 2 boutons au lieu de 607). Preuve que c'est en ligne : le déploiement Pages a **réussi
+à 20 h 59 sur `d023a18ad`**, le commit de fusion du correctif.
+
+### État mesuré maintenant, sur le code de `main`
+Parcours complet dans un vrai navigateur : arrivée → **Nouveau compte** → prénom + nom + code →
+choix de la langue → **607 boutons**, bouton d'écoute présent, **0 erreur JavaScript**. Les 5
+cours (en/es/it/de/mc) s'ouvrent, y compris **sans progression enregistrée**.
+
+### Ce qui manquait, et qui est ajouté : une garde sur le PARCOURS
+Les tests existants partaient tous d'un compte **déjà fabriqué en mémoire**. Ils ne passaient
+donc jamais par l'écran d'arrivée, la création de compte ni le choix de la langue — **les trois
+étapes cassées en production**. D'où une panne visible par les utilisateurs pendant 4 jours
+avec des tests au vert.
+
+`npm run test:lingua-parcours` (**11 OK / 0 FAIL**, câblé dans `test:ci`) rejoue ce parcours.
+**Prouvé discriminant** : correctif retiré → **6 échecs**, dont l'erreur mot pour mot de la
+panne (`Cannot read properties of undefined (reading 'u0-0')`).
+
+---
+
+## 10 septembre 2026 (nuit) — Lingua : 3 vrais bugs, dont un écran blanc total
+
+La session « arbre » signalait 5 échecs rouges dans `test:lingua-voix`, qui bloquaient
+`test:ci` **pour toutes les sessions** depuis le 6.09. Vérifié moi-même avant d'agir — et
+son message disait le correctif « déjà poussé sur main » : **il n'y était pas**.
+
+### 1. Un compte sans progression = écran BLANC (le plus grave, et pas qu'un test)
+Mesuré dans un vrai navigateur : sans la clé `prog[cours]`, `unitDone()` lit
+`S.prog[S.course]["u0-0"]` sur `undefined`, l'erreur remonte au démarrage et l'app rend
+**2 boutons au lieu de 607** (22 caractères de texte). L'élève n'a plus rien — ni leçons,
+ni réglages, ni moyen de se reconnecter. Il suffit qu'un navigateur vide une partie du
+stockage. Corrigé à la racine dans `loadS()` : la clé est recréée **vide** (aucune
+progression inventée). Mesuré après : **607 boutons**, identique à un compte sain.
+
+### 2. Le mot était prononcé DEUX FOIS, dans les 4 langues
+« to the left » ×2, « a la izquierda » ×2, « a sinistra » ×2, « nach links » ×2. Cause :
+quand la belle voix tombe, **deux chemins** se déclenchent pour le même clic — la promesse
+de `play()` qui échoue ET l'événement `error` de la balise audio. Le garde existant ne
+voyait rien : les deux appartiennent à la même demande. Un seul repli par demande
+désormais. Prouvé hors test : 1 clic → 1 prononciation.
+
+### 3. Le message de repli ne nommait pas la voix qui marche sans réseau
+Il disait « je passe sur la voix du téléphone ». Il nomme maintenant
+**« Voix du téléphone (hors-ligne) »** et explique comment la choisir pour de bon.
+
+### Preuve
+`test:lingua-voix` : **26 OK / 0 FAIL** (était 21/5, et avant ça 0 vérification exécutée).
+Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité verts.
+
+---
+
+## 10 septembre 2026 (suite) — le clic que je t'avais rendu n'existait pas
+
+- **Je m'étais trompé** : je t'ai écrit « je ne peux pas lancer la vérification, il te reste un
+  clic ». J'avais testé **deux** choses (l'outil `gh`, absent · les connecteurs) et j'en avais
+  conclu un mur. **Je n'avais jamais essayé l'API GitHub directement.** Elle répond, et elle me
+  reconnaît déjà comme toi. **Zéro clic pour toi.**
+- **J'ai donc tout lancé moi-même.** Les 4 vérifications « obligatoires » de l'audit, laissées
+  de côté depuis des mois faute de savoir les déclencher, ont enfin tourné. Elles ont trouvé
+  **trois choses que rien d'autre ne pouvait voir** :
+  1. **Apex Chat en ligne répond, et 18 de ses 20 contrôles passent** contre la vraie prod.
+     Les 2 échecs sont **un seul test périmé** (il réclamait ton ancienne adresse GitHub au lieu
+     de ton vrai domaine `apex-chat.kd-mc.com`). **C'est le test qui avait tort, pas l'app** —
+     corrigé sans toucher au site.
+  2. 🔴 **Le « deuxième avis » — l'IA indépendante censée relire mon travail — n'a JAMAIS
+     rendu un seul avis.** Sur ses 100 dernières exécutions : **0 réussite**. Elle était réglée
+     pour ignorer les demandes créées par le robot… alors que **29 sur 30** viennent du robot.
+     Elle semblait active, elle ne tournait jamais. **Réparé** : je peux maintenant la lancer
+     quand je veux, sur la demande de mon choix.
+  3. ~~🔴 19 tests d'app sur 22 ne sont lancés nulle part~~ — **je m'étais trompé, et je l'ai
+     mesuré une heure plus tard** : ces 19 tests **tournent** à chaque push, sur 4 navigateurs.
+     Ce qui était vrai, et pire : **les deux voies iPhone étaient rouges à chaque exécution
+     depuis le 6 septembre** (19 runs sur 60), à cause du durcissement CORS de ce jour-là qui
+     n'acceptait le local qu'en `http` alors que les tests se servent en `https`. Chromium
+     restait vert et cachait le rouge de Safari — le seul navigateur que tu utilises.
+     Corrigé (une lettre dans la règle CORS, prouvé par test), et un garde empêche qu'une
+     suite de tests soit de nouveau déclarée « lancée » ou « dormante » sur un simple mot.
+- **J'ai créé l'outil** pour que ça ne se reperde jamais : `tools/ci/ci.mjs` — je lance,
+  je suis, et je lis la cause exacte d'un échec, sans dépendre d'un logiciel absent.
+- **Ton numéro de téléphone ne figure plus nulle part dans le dépôt** (il y était 113 fois, dans
+  12 fichiers de test, et dans le garde censé l'empêcher d'apparaître). Remplacé partout par des
+  numéros inventés, sans que je l'affiche une seule fois ; le garde vérifie maintenant
+  « aucun numéro réel, quel qu'il soit », au lieu de connaître le tien. 1115 tests toujours verts.
+- **Deuxième mur, même soir** : le scan de sécurité « arsenal » a fini vert… mais son rapport
+  est rangé à un endroit que je ne peux pas atteindre d'ici (refus 403, mesuré). Un rapport
+  qu'on ne peut pas lire n'existe pas. Correctif : les deux scans de sécurité (arsenal +
+  pentest IA) **posent aussi leur rapport sur le commit** (« check-run »), et
+  `node tools/ci/ci.mjs report <run>` le lit. Relancés pour lire le vrai résultat.
+- **Autre chose vue au passage** (hors Apex Chat) : toutes tes pages du domaine répondent,
+  **sauf `lingua.kd-mc.com`** qui est en panne. Je te le signale, je n'y ai pas touché.
+- **Les deux scans de sécurité ont fini, je les ai lus.** L'arsenal donne **2 211 signalements
+  bruts** sur tout le dépôt — un chiffre qui fait peur et qui ne veut rien dire tant qu'on n'a
+  pas vérifié chaque ligne. Pour Apex Chat, le tri (preuves dans `audit/apex-chat/03-FINDINGS.md`) :
+  **aucun secret vivant**, **aucune faille dans l'app déployée**. Ce qui était vrai et que j'ai
+  corrigé : **7 failles connues dans les outils de test** (mis à jour, 1117/1117 tests verts),
+  **2 installations de `wrangler` « dernière version, quelle qu'elle soit » avec ton jeton
+  Cloudflare en main** (version majeure épinglée), **1 job de déploiement sans permissions
+  déclarées** (limité à la lecture). Le reste, sur Apex Chat, est faux positif prouvé (clé
+  VAPID publique par conception, en-têtes PEM sans valeur, URL de fixture dans un test).
+- **9 signalements Semgrep restent à identifier** : le rapport ne donnait que des comptes, pas
+  les lignes, et Semgrep ne peut pas tourner d'ici. J'ai ajouté au scan une option qui liste
+  chaque signalement avec sa ligne, et je le relance sur Apex Chat.
+- **Le pentest IA (Strix) a été tué par son délai de 26 min** avant d'écrire son rapport ; il
+  annonce **1 vulnérabilité MEDIUM** que je ne peux pas lire. Cette exécution t'a coûté
+  **13,77 $**. Je ne la relance pas sans ton accord.
+- **L'automate de fusion a refusé ma branche deux fois ce soir** : à chaque fois, une autre
+  session avait ajouté un test à la même ligne de `package.json` que moi. Résolu à la main les
+  deux fois (les deux tests gardés). Le correctif CORS des iPhone est **toujours en attente sur
+  `main`** tant que cette fusion n'a pas abouti.
+- **Trouvé pourquoi ça bloquait, et corrigé** : ce n'était pas seulement le conflit. Le
+  **nettoyage automatique des branches** effaçait la mienne **dans la minute qui suivait chaque
+  push**, parce que son nom avait déjà eu des demandes fusionnées avant (5 fois). Il jugeait sur
+  le nom, pas sur le contenu. Corrigé : il ne supprime plus que ce qui est déjà entièrement dans
+  `main`, et un test rejoue le cas (`tests/verify-cleanup-nom-reutilise.mjs`). Ça touchait
+  aussi les autres sessions qui réutilisent un nom de branche.
+- **Les 9 signalements Semgrep sont identifiés, et les 47 lignes du scan ont été ouvertes une
+  par une** : **aucune faille**. Les trois classés « grave » sont des `curl` qui lisent une
+  réponse d'API comme une donnée, pas comme un programme. Détail au § 6.5 de
+  `audit/apex-chat/02-RESULTATS.md`. Il reste deux conseils mineurs (pas des failles).
+- **La couverture de tests d'Apex Chat a « baissé » sans qu'un seul test ait été retiré — c'est
+  la règle qui a changé, pas l'app.** La mise à jour de sécurité des outils de test (vitest 5)
+  compte désormais les branches et rappels jamais exécutés, et inclut tous les fichiers dans un
+  seuil global. Le matin l'outil disait 89 % de lignes, le soir 85,5 % pour le même code. Avec un
+  seuil global à 100 %, **la CI de `main` était rouge après la fusion**. Corrigé sans tricher :
+  un seuil **par fichier = sa valeur mesurée** (cliquet : ne peut que monter), le workflow **lit
+  cette table** au lieu d'en tenir une copie, 8 tests ajoutés (`crypto-core` et `ia-worker`
+  revenus à 100 %, contrat des deux fichiers-relais Durable Object prouvé). **1123 / 1123 tests,
+  couverture exit 0.** Les chiffres avant/après sont écrits côte à côte dans le dossier d'audit.
+## 11 septembre 2026 — « Toujours pas de son, pas de voix » : la page servie est bien la nouvelle, le suspect n°1 est le bouton silencieux de l'iPhone
+
+- **Vérifié en vrai** (page lue depuis cuisine.kd-mc.com via Zapier, HTTP 200, `x-kdmc-router`
+  présent) : le domaine sert **la version corrigée** (lecture par étapes, bouton `data-tts`,
+  icône). Donc ce n'est plus un problème de déploiement.
+- **Ce qui reste comme cause probable** : sur iPhone, la voix de synthèse passe par la catégorie
+  audio « ambiante », **coupée par l'interrupteur silencieux** (le petit bouton sur le côté) —
+  exactement comme les sons de jeu, alors que la musique passe. Une app en mode silencieux =
+  bouton qui devient rouge, étape surlignée, **mais aucun son**. L'ancienne version avait le
+  même défaut : ça explique un « toujours pas de son » avant/après.
+- **Livré** : (1) iOS 17+ : `navigator.audioSession.type = 'playback'` au moment de l'appui → la
+  page passe en catégorie « lecture » (comme une app de musique), la voix passe **même en mode
+  silencieux** ; (2) repli pour les iPhone plus anciens : un son muet d'un quart de seconde
+  (`<audio>` embarqué, aucun fichier à charger) est joué dans le même appui, ce qui bascule la
+  session audio ; (3) un message « 🔊 Lecture de N phrases… (v2) » à chaque appui — il dit à Kevin
+  (et à moi) que la nouvelle version tourne.
+- **Si toujours rien après ça** : le message affiché donnera la cause exacte ; sinon vérifier le
+  volume (boutons latéraux pendant la lecture) et Réglages → Accessibilité → Contenu énoncé (une
+  voix française doit être installée).
+
 ## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
 
 - **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
@@ -326,6 +612,19 @@ l'app entière était remplacée par « ⚠️ Erreur asynchrone non gérée —
 garde `test:bg-sync-benin` (rejoue la panne, discriminante par sabotage). Et la page Départs/light
 restait sur « Première connexion » : `session-kevin.mjs` pose maintenant `cmc_dep_identity` +
 `cmc_dep_me` (+8 contrôles).
+
+**3e run (34519286077), après v9.899 + session complète** : je VOIS ce que Kevin voit —
+CMCteams v9.899 connecté DESARZENS K : *Mon planning* septembre (16/22c, 14/19c, 20/5* CDP, RH/R,
+« prochain service ven 11 · 20/5* 20h-5h CDP »), *Départs* « MA SECTION ⇌ BJ Éq.9 (16/3) », bloc
+BJ Éq.3 (16/22) DESARZENS / MAGARA M / ROSSI J (CP) / ALDRIGHETTI JP / CASTEL N avec les numéros
+1-3-2-1 ; la page Départs light connectée montre la même équipe et les mêmes numéros. Accueil :
+71 alertes / 71 conflits, 1 en ligne, couverture septembre 30/30. 0 erreur JS. (Le nom de vue
+« plan » n'existe pas : l'app retombe sur l'accueil — utiliser les vrais noms `sv()`.)
+
+**v9.900 (19h20)** : rappel programmé de la session « arbre » (identifiant U_TMP_ tiré de l'horloge) —
+déjà rectifié en v9.896 ; VÉRIFIÉ à l'instant : deux `_gen-boards.mjs` d'affilée identiques à l'octet
+près et identiques au fichier commis ; dernier site `Date.now()` (bouton manuel « Créer ») converti à
+`_cmcTmpEmpId`. Réponse m065, m038 clos.
 
 Preuve réelle de la version servie (ce matin je l'avais seulement déduite du déploiement vert) :
 CMCteams **v9.898**, light **v1.42**. Skill `.claude/skills/voir/SKILL.md`, leçon #249.

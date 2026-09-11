@@ -40,8 +40,8 @@ describe('handleSendOtp — validation', () => {
   });
 
   it('admin Kevin via KEVIN_PHONE_E164 → bypass OTP', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277' });
-    const r = await sendOtp({ phone: '+33672280277', name: 'X' }, env);
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001' });
+    const r = await sendOtp({ phone: '+33600000001', name: 'X' }, env);
     expect(r.status).toBe(200);
     const b = await r.json();
     expect(b.provider).toBe('admin-bypass');
@@ -49,8 +49,8 @@ describe('handleSendOtp — validation', () => {
   });
 
   it('admin Kevin avec name 1 token → bypass OTP (exception name)', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277' });
-    const r = await sendOtp({ phone: '+33672280277' }, env);
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001' });
+    const r = await sendOtp({ phone: '+33600000001' }, env);
     expect(r.status).toBe(200);
     expect((await r.json()).provider).toBe('admin-bypass');
   });
@@ -152,7 +152,7 @@ describe('handleSendOtp — validation', () => {
   });
 
   it('ALLOW_TEST_OTP off + code 000000 d\'un inconnu → refusé (pas de signup direct)', async () => {
-    const env = ENV({ ALLOW_TEST_OTP: 'false', KEVIN_PHONE_E164: '+33672280277' });
+    const env = ENV({ ALLOW_TEST_OTP: 'false', KEVIN_PHONE_E164: '+33600000001' });
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
       bind: function () { return this; },
       first: async () => null,   // aucun otp_pending → code refusé
@@ -165,13 +165,13 @@ describe('handleSendOtp — validation', () => {
   });
 
   it('ALLOW_TEST_OTP off : bypass admin Kevin TOUJOURS actif (jamais verrouillé)', async () => {
-    const env = ENV({ ALLOW_TEST_OTP: 'false', KEVIN_PHONE_E164: '+33672280277' });
+    const env = ENV({ ALLOW_TEST_OTP: 'false', KEVIN_PHONE_E164: '+33600000001' });
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
       bind: function () { return this; },
       first: async () => sql.includes('WHERE id=?') ? { id: 'kdmc_admin', pseudo: 'kevin', is_admin: 1 } : null,
       all: async () => ({ results: [] }), run: async () => ({ success: true }),
     }));
-    const r = await verifyOtp({ phone: '+33672280277', name: 'Kevin DESARZENS', pseudo: 'kevin', otp: '000000' }, env);
+    const r = await verifyOtp({ phone: '+33600000001', name: 'Kevin DESARZENS', pseudo: 'kevin', otp: '000000' }, env);
     expect(r.status).toBe(200);
     const b = await r.json();
     expect(b.token).toBeTruthy();
@@ -204,14 +204,14 @@ describe('handleVerifyOtp', () => {
     expect(r.status).toBe(400);
   });
   it('admin Kevin via KEVIN_PHONE_E164 → JWT directement', async () => {
-    const env = ENV({ KEVIN_PHONE_E164: '+33672280277' });
+    const env = ENV({ KEVIN_PHONE_E164: '+33600000001' });
     env.APEX_CHAT_DB.prepare = vi.fn((sql) => ({
       bind: function () { return this; },
       first: async () => sql.includes('FROM users WHERE phone_hash') ? null : null,
       all: async () => ({ results: [] }),
       run: async () => ({ success: true }),
     }));
-    const r = await verifyOtp({ phone: '+33672280277', pseudo: 'kdmc', name: 'Kevin Desarzens' }, env);
+    const r = await verifyOtp({ phone: '+33600000001', pseudo: 'kdmc', name: 'Kevin Desarzens' }, env);
     expect([200, 400, 500]).toContain(r.status);
   });
 

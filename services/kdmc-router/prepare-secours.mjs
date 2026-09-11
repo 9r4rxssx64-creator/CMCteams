@@ -60,15 +60,16 @@ const APPS = [
   { chemin: 'lingua', quoi: 'lingua' },
   { chemin: 'shops/dashboard', quoi: 'dashboard' },
   { chemin: 'shops/sourcing', quoi: 'sourcing' },
-  /* Ajouté le 10/09/2026 par la session arbre : shops.kd-mc.com est routé sur
-     /CMCteams/shops (la vitrine « A Cüjina de Mùnegu ») et n'avait aucune copie.
-     fichiersSeuls : on prend les 5 fichiers de l'accueil, PAS les 167 Mo / 470
-     fichiers de l'arborescence — les boutiques réellement routées (dashboard,
-     sourcing, chez-lolo, _shared) ont déjà leur propre entrée, et les dossiers
-     non routés (digital-vault, ecocraft, legal, pawsome, tech-hub) n'ont aucune
-     adresse à dépanner. Copier tout ferait exploser le paquet pour rien. */
-  { chemin: 'shops', quoi: 'vitrine boutiques (accueil seul)', fichiersSeuls: true },
+  /* 11/09/2026 — la parité avec ROUTES échouait (6 entrées) depuis que ces routes existent :
+     personne ne l'avait relancée. tools/cuisine = cujina/cocina/cuisine.kd-mc.com. */
+  { chemin: 'tools/cuisine', quoi: 'cuisine (A Cüjina de Mùnegu)' },
+  /* shops.kd-mc.com = le PORTAIL (shops/index.html + pages légales), pas tout le dossier :
+     chaque boutique a sa propre entrée (dashboard, sourcing, chez-lolo, la-detente). */
+  { chemin: 'shops', quoi: 'portail boutiques', fichiers: ['index.html', 'legal'] },
 ];
+/* Routes servies par un dossier PARENT déjà copié ci-dessus (cpSync est récursif) :
+   les « belles adresses » de kdmc-home. Listées pour la parité avec ROUTES. */
+const COUVERTS_PAR_PARENT = ['kdmc-home/worldmonitor', 'kdmc-home/osint', 'kdmc-home/ia', 'kdmc-home/outils'];
 /* ⚠️ DOSSIERS PARTAGÉS — oubliés au premier jet, et c'était grave.
    Mesuré le 15/08/2026 en ouvrant vraiment les pages dans un navigateur :
    tools/shared est appelé par 83 pages (badge de version, données de planning,
@@ -82,12 +83,6 @@ const PARTAGES = [
 /* Lourds en photos : on peut les remettre dans un second temps. */
 const MEDIAS = [
   { chemin: 'arbre', quoi: 'arbre généalogique' },
-  /* Ajouté le 10/09/2026 par la session arbre : cuisine.kd-mc.com (+ alias
-     cocina/cujina) est routé depuis le 13/08 mais n'avait AUCUNE copie de
-     secours — si GitHub tombe, ces 3 adresses renvoient 404 pendant que les
-     autres tiennent. 136 fichiers, 19 Mo (photos) → ici et pas dans APPS,
-     pour que --leger reste léger. */
-  { chemin: 'tools/cuisine', quoi: 'cuisine / cocina / cujina — le livre de recettes' },
   { chemin: 'shops/chez-lolo', quoi: 'chez-lolo' },
   { chemin: 'la-detente', quoi: 'la-detente' },
 ];
@@ -109,7 +104,7 @@ function filtre(src) {
   if (/\.(test|spec)\.[jt]sx?$/i.test(base)) return false;
   /* Notes internes : SECRETS_TODO.md listait l'architecture des secrets de
      Kevin (les noms, pas les valeurs) — inutile de la laisser en ligne. */
-  if (/^(SECRETS|CLAUDE|NOTES_|MEMO|KEVIN_|FIREBASE_RULES).*\.md$/i.test(base)) return false;
+  if (/^(SECRETS|CLAUDE|NOTES_|MEMO|KEVIN_).*\.md$/i.test(base)) return false;
   /* Scripts internes de fabrication (_gen-boards.mjs, _crosscheck.mjs…) :
      aucune page ne les charge — vérifié, 0 référence — et ils n'ont rien à
      faire sur un site public. */
@@ -151,16 +146,10 @@ for (const a of liste) {
      sous-dossier (c'est ce qu'attend un domaine rattaché directement). */
   const dst = a.racine ? SORTIE : join(SORTIE, a.chemin);
   mkdirSync(dirname(dst), { recursive: true });
-  if (a.fichiersSeuls) {
-    /* fichiersSeuls:true → les fichiers À LA RACINE de ce dossier, sans descendre.
-       Sert aux dossiers qui sont à la fois une page (shops/index.html) ET le parent
-       d'autres applications déjà copiées séparément. */
+  if (a.fichiers) {
+    /* entrée « portail » : seulement les fichiers/dossiers nommés, pas tout le dossier */
     mkdirSync(dst, { recursive: true });
-    for (const e of readdirSync(src, { withFileTypes: true })) {
-      if (e.isDirectory()) continue;
-      const f = join(src, e.name);
-      if (filtre(f)) cpSync(f, join(dst, e.name));
-    }
+    for (const f of a.fichiers) { const s = join(src, f); if (existsSync(s)) cpSync(s, join(dst, f), { recursive: true, filter: filtre }); }
   } else {
     cpSync(src, dst, { recursive: true, filter: filtre });
   }
@@ -175,6 +164,7 @@ for (const f of RACINE_FICHIERS) {
   totalFichiers++; totalOctets += statSync(src).size;
 }
 console.log(`  ${String(RACINE_FICHIERS.filter((f) => existsSync(join(RACINE, f))).length).padStart(5)} fichiers          racine (cmcteams.kd-mc.com)`);
+console.log(`        déjà dedans (dossier parent copié) : ${COUVERTS_PAR_PARENT.join(', ')}`);
 
 console.log('\n────────────────────────────────────────────────');
 console.log(`  TOTAL : ${totalFichiers} fichiers, ${(totalOctets / 1048576).toFixed(1)} Mo`);

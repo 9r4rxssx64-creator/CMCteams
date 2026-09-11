@@ -67,7 +67,7 @@ describe('api-worker — POST /api/auth/send-otp', () => {
 
   it('phone admin Kevin → ok bypass send (pas de vrai SMS)', async () => {
     const r = await worker.fetch(
-      makeRequest({ method: 'POST', path: '/api/auth/send-otp', body: { phone: '+33672280277' } }),
+      makeRequest({ method: 'POST', path: '/api/auth/send-otp', body: { phone: '+33600000001' } }),
       ENV(),
     );
     expect([200, 201, 400, 503]).toContain(r.status);
@@ -78,7 +78,7 @@ describe('api-worker — POST /api/cgu/accept (anonyme accepté)', () => {
   it('sans token → ok (CGU anonyme)', async () => {
     const env = ENV();
     const r = await worker.fetch(
-      makeRequest({ method: 'POST', path: '/api/cgu/accept', body: { phone: '+33672280277', version: 'v1.1.6' } }),
+      makeRequest({ method: 'POST', path: '/api/cgu/accept', body: { phone: '+33600000001', version: 'v1.1.6' } }),
       env,
     );
     expect(r.status).toBe(200);

@@ -105,6 +105,15 @@
       <div class="coins" id="fleet"><div class="sub">Chargement…</div></div>
     </div>
 
+    <!-- Bilan durable : lu dans le journal du domaine (KV), pas dans les logs Railway
+         qui s'effacent au bout de quelques semaines et repartent de zéro à chaque
+         redémarrage d'un bot (Kevin 2026-09-11 « bilan de ce qu'ils ont gagné ou perdu »). -->
+    <div class="card">
+      <h2>🧾 Bilan — depuis le premier relevé</h2>
+      <div class="sub" style="margin:-4px 0 8px">Ce que le domaine a enregistré lui-même, relevé toutes les heures. Survit à l'effacement des journaux et aux redémarrages. Faux argent.</div>
+      <div class="coins" id="bilan"><div class="sub">Chargement…</div></div>
+    </div>
+
     <!-- Analyse expert (calculée serveur sur vraies bougies Binance) -->
     <div class="card">
       <h2>🔬 Analyse expert — avis par crypto</h2>
@@ -176,7 +185,7 @@
         <button class="btn-kill" onclick="botCmd('kill')">🛑 Couper</button>
         <button class="btn-start" onclick="botCmd('start')">▶️ Relancer</button>
       </div>
-      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true);loadFleet();loadAnalysis()">🔄 Actualiser</button></div>
+      <div style="margin-top:10px"><button class="btn-ghost" onclick="refresh(true);loadFleet();loadBilan();loadAnalysis()">🔄 Actualiser</button></div>
       <div id="cmdErr" class="err hid"></div>
     </div>
 
@@ -284,6 +293,37 @@
         box.appendChild(row);
       });
     }).catch(function(){});
+  }
+
+  // ---- Bilan durable (journal KV du domaine) ----
+  window.loadBilan = loadBilan;
+  function loadBilan(){
+    fetch(API+'/__bot/history',{credentials:'include',headers:hdrs()})
+    .then(function(r){ return r.json(); }).then(function(j){
+      var box=document.getElementById('bilan'); if(!box) return;
+      box.innerHTML='';
+      if(!j.ok||!j.bilan||!Object.keys(j.bilan).length){
+        box.innerHTML='<div class="sub">Premier relevé en cours — reviens dans une heure, la ligne apparaîtra ici.</div>';
+        return;
+      }
+      Object.keys(j.bilan).forEach(function(name){
+        var b=j.bilan[name]; if(b.actuel==null) return;
+        var label=FLEET_LABELS[name]||name;
+        var ec=(b.ecart==null)?0:b.ecart;
+        var ecTxt=(ec>0?'+':'')+ec.toLocaleString('fr-FR')+' $';
+        var ecCol=ec>0?'var(--green)':ec<0?'var(--red)':'var(--mut)';
+        var depuis=b.depuis?new Date(b.depuis).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}):'—';
+        var vu=b.vu_le?new Date(b.vu_le):null;
+        var muet=vu?((Date.now()-vu.getTime())>3*3600*1000):false;   // plus de 3 h sans relevé
+        var row=document.createElement('div'); row.className='coin';
+        row.innerHTML='<span class="nm">'+esc(label)+(muet?' 😴':'')+'</span>'
+          +'<span class="px">depuis le '+esc(depuis)+' · '+Number(b.depart).toLocaleString('fr-FR')+' $ → '+Number(b.actuel).toLocaleString('fr-FR')+' $'
+          +(b.reprises?' · '+b.reprises+' redémarrage'+(b.reprises>1?'s':''):'')+'</span>'
+          +'<span class="tag" style="background:rgba(138,148,168,.12);color:'+ecCol+'">'+ecTxt+'</span>';
+        box.appendChild(row);
+      });
+      if(!box.children.length) box.innerHTML='<div class="sub">Premier relevé en cours — reviens dans une heure.</div>';
+    }).catch(function(){ /* le bilan est un bonus : jamais bloquant */ });
   }
 
   // ---- Analyse expert + TradingView ----
@@ -409,10 +449,10 @@
     }).catch(function(e){ var el=document.getElementById('cmdErr'); el.textContent='Réseau : '+e.message; show('cmdErr',true); });
   };
 
-  function boot(){ renderChips(); loadConfig(); refresh(true); loadFleet(); loadAnalysis(); renderTvChips(); }
+  function boot(){ renderChips(); loadConfig(); refresh(true); loadFleet(); loadBilan(); loadAnalysis(); renderTvChips(); }
   boot();
   setInterval(function(){ refresh(false); }, 60000);
-  setInterval(function(){ loadFleet(); }, 120000); // flotte : 6 bots interrogés → toutes les 2 min suffit
+  setInterval(function(){ loadFleet(); loadBilan(); }, 120000); // flotte : 6 bots interrogés → toutes les 2 min suffit
   setInterval(function(){ loadAnalysis(); }, 300000); // analyse expert : toutes les 5 min (bougies 1h+)
 })();
 </script>

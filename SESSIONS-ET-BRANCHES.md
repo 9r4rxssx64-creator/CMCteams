@@ -44,6 +44,10 @@ oubliée du registre ou que deux sessions partagent une branche.
 ## 📋 Les branches, par session
 
 | Session | Branche | État au 2.09 |
+| Lingua — garde sur le parcours | `claude/lingua-parcours-garde` | 🟢 P0 live du m051 fermé · `test:lingua-parcours` 11/11, discriminant (6 échecs sans le correctif) |
+| Lingua — voix rectifiée | `claude/lingua-voix-rectifiee` | 🟢 `test:lingua-voix` 26/26 (était 21/5). Écran blanc sans `prog` corrigé, mot dit une seule fois, voix de secours nommée |
+| Ménage auto-deploy — clôture | `claude/menage-autodeploy-cloture` | ✅ déclenche le 1er passage avec le filtre étendu |
+| Ménage — extension aux `auto-deploy/*` | `claude/menage-auto-deploy` | 🟢 452 branches de build supprimables (453/461 déjà dans main), garde de source 15/15 |
 |---|---|---|
 | Studio créa | `claude/capcut-mini-versions-66tfum` | ✅ **sur GitLab**, 18 commits |
 | CMCteams | `claude/cmcteams-clicking-issue-rmli6m` | ✅ **sur GitLab**, 15 commits |
