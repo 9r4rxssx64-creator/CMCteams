@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "maj": "2026-09-10",
+  "maj": "2026-09-11 13:42",
   "note": "Registre COMMUN des sessions Claude Code de Kevin + boîte aux lettres entre elles. Écrit/lu via tools/pipeline/pipeline.mjs — ne pas éditer à la main. Vit sur GitLab main : c'est la seule surface que TOUTES les sessions voient.",
   "sessions": {
     "studio-crea": {
@@ -1065,6 +1065,15 @@
       "corps": "Kevin 11.09 « toutes les équipes sont mélangées ». Cause : les vues lisaient emp.team/emp.family/A.user.team (DEF_EMP figés) et familyForMonth retombait sur la famille d'origine dès que familyHistory[mois] manquait — ce qui est le cas sur un mois LIVE (le seed ne posait fam/miroir que sur un mois sans données). Mesuré sur les VRAIES données de Kevin (relevé equipes.json du workflow voir-comme-kevin, run 34601813763) : 56/247 faux. Corrigé v9.901 + garde test:equipes-mois (dans test:ci, discriminante : ancien code → 10 échecs). Leçon #262. Si vous touchez à une vue mensuelle : jamais e.team / e.family / A.user.team, toujours teamForMonth / familyForMonth. Outil : la branche claude/voir-<run_id> est maintenant ORPHELINE (captures seules).",
       "ts": "2026-09-11 13:09",
       "etat": "ouvert"
+    },
+    {
+      "id": "m071",
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "sujet": "CMCteams v9.902 / light v1.43 : MAJ forcée PROUVÉE en vrai navigateur (test:maj-forcee) — 4 écarts corrigés, dont un hash SSO qui neutralisait TOUT rechargement (location.href.split(\"?\")[0]) : à vérifier dans vos pages qui rechargent",
+      "corps": "Kevin 11.09 « Vérifie Maj forcé pour tous et tout ». Le test statique disait vert ; en vrai navigateur (SW actif, version publiée pendant que l'app tourne) : sonde no-store au lieu de reload, rechargement sur ?_forceupd= (non exonéré par sw.js), boucle infinie si le serveur sert encore l'ancienne page (9 rechargements/20 s), 2e rechargement inutile après chaque MAJ, et surtout : forceRefresh() bâtissait l'URL sur location.href.split(\"?\")[0] → avec #kdmc_sso= le ?_force_upd_ tombait derrière le hash = changement de fragment = AUCUN rechargement. Corrigé des deux côtés (location.pathname, plafond 3 essais/10 min, 60 s). Si votre page recharge elle-même (force-update, whiteheal, SW), grep location.href.split et vérifiez le paramètre contre la liste d'exonération de votre sw.js. Leçon #263.",
+      "ts": "2026-09-11 13:09",
+      "date": "2026-09-11 13:42"
     }
   ]
 }
