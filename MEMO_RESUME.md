@@ -198,6 +198,26 @@ Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité 
   cette table** au lieu d'en tenir une copie, 8 tests ajoutés (`crypto-core` et `ia-worker`
   revenus à 100 %, contrat des deux fichiers-relais Durable Object prouvé). **1123 / 1123 tests,
   couverture exit 0.** Les chiffres avant/après sont écrits côte à côte dans le dossier d'audit.
+## 11 septembre 2026 — « Toujours pas de son, pas de voix » : la page servie est bien la nouvelle, le suspect n°1 est le bouton silencieux de l'iPhone
+
+- **Vérifié en vrai** (page lue depuis cuisine.kd-mc.com via Zapier, HTTP 200, `x-kdmc-router`
+  présent) : le domaine sert **la version corrigée** (lecture par étapes, bouton `data-tts`,
+  icône). Donc ce n'est plus un problème de déploiement.
+- **Ce qui reste comme cause probable** : sur iPhone, la voix de synthèse passe par la catégorie
+  audio « ambiante », **coupée par l'interrupteur silencieux** (le petit bouton sur le côté) —
+  exactement comme les sons de jeu, alors que la musique passe. Une app en mode silencieux =
+  bouton qui devient rouge, étape surlignée, **mais aucun son**. L'ancienne version avait le
+  même défaut : ça explique un « toujours pas de son » avant/après.
+- **Livré** : (1) iOS 17+ : `navigator.audioSession.type = 'playback'` au moment de l'appui → la
+  page passe en catégorie « lecture » (comme une app de musique), la voix passe **même en mode
+  silencieux** ; (2) repli pour les iPhone plus anciens : un son muet d'un quart de seconde
+  (`<audio>` embarqué, aucun fichier à charger) est joué dans le même appui, ce qui bascule la
+  session audio ; (3) un message « 🔊 Lecture de N phrases… (v2) » à chaque appui — il dit à Kevin
+  (et à moi) que la nouvelle version tourne.
+- **Si toujours rien après ça** : le message affiché donnera la cause exacte ; sinon vérifier le
+  volume (boutons latéraux pendant la lecture) et Réglages → Accessibilité → Contenu énoncé (une
+  voix française doit être installée).
+
 ## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
 
 - **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
