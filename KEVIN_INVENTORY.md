@@ -1,7 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-11** (livre de cuisine : la voix passe même avec l'iPhone en mode silencieux)
+> Dernière mise à jour : **2026-09-11** (robots crypto : les 6 tournent, bilan durable)
+
+### 11 septembre 2026 (17h30) — Robots crypto : les 6 tournent, et le bilan ne s'efface plus
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/crypto-bot-dashboard/index.html` | **Modifié.** Nouvelle carte « 🧾 Bilan — depuis le premier relevé » : pour chaque bot, d'où il part, où il en est, l'écart, le nombre de redémarrages, et 😴 s'il n'a plus donné signe de vie depuis 3 h. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/crypto-bot-dashboard/index.html) |
+| `services/kdmc-router/worker.js` | **Modifié.** Le domaine enregistre lui-même l'état de la flotte dans sa mémoire (KV) — 1 relevé par heure max, 30 jours d'historique, premier relevé jamais écrasé — et le rend par `GET /__bot/history` (admin). Le bilan survit donc à l'effacement des journaux Railway et aux redémarrages des bots. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `services/kdmc-router/bot.test.mjs` | **Modifié + enfin lancé.** 51 contrôles (37 avant) : écriture du relevé, 1 par heure, premier relevé intouchable, accès admin obligatoire, et la flotte reste affichée si la mémoire tombe. `npm run test:bot-dashboard`, **câblé dans `test:ci`** (il n'était lancé nulle part). Prouvé par 4 sabotages. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/bot.test.mjs) |
 
 ### 11 septembre 2026 — la voix du livre de cuisine passe même en mode silencieux
 
