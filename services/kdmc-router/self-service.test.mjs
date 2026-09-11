@@ -119,6 +119,13 @@ const run = async () => {
   }
   r = await mod.fetch(POST('/__sso/issue', { uid: 'u-ok', name: 'U Ok' }, { origin: 'https://kd-mc.com.evil.example' }), env);
   ok(r.status === 403, '/issue depuis kd-mc.com.evil.example (préfixe trompeur) → 403');
+  /* même origine que l'hôte appelé (portail servi en local, test navigateur) → accepté ;
+     un autre port/hôte local n'est pas « même origine » → refusé */
+  const LOCAL = (origin) => new Request('http://127.0.0.1:8788/__sso/issue', { method: 'POST', headers: { 'content-type': 'application/json', origin }, body: JSON.stringify({ uid: 'u-loc', name: 'U Loc' }) });
+  r = await mod.fetch(LOCAL('http://127.0.0.1:8788'), env);
+  ok(r.status === 200 && (await r.json()).ok === true, '/issue en local, Origin = même hôte:port → accepté');
+  r = await mod.fetch(LOCAL('http://127.0.0.1:9999'), env);
+  ok(r.status === 403, '/issue en local, Origin = autre port → 403');
 
   console.log(`Self-service test: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
