@@ -1,5 +1,14 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-11 (13h30) — v9.901 « Toutes les équipes sont mélangées » : corrigé, prouvé, garde
+- **Données justes, affichage faux.** seed = boards = PDF (285/285 sept, 281/281 oct). Sur les VRAIES données de Kevin (relevé `equipes.json`, run voir 34601813763) : 56/247 personnes en équipe affichées sous leur famille d'origine, 0 `familyHistory` du mois, « Mon équipe » vide, cartes avec l'équipe DEF_EMP figée (« Roul. Éq.7 » pour un membre de BJ Éq.3).
+- **Fix index.html v9.901** : `familyForMonth` → famille de l'équipe du mois avant la famille figée ; seed pose fam/école/miroir manquants même sur un mois live à jour ; boards portent leur famille ; `_getMyTeamFirst`, vEmps (sections, cartes, tri), vPlan (puces), vDeparts (dossiers), modale jour, export PDF, vAbsences → équipe/famille DU MOIS. sw.js `cmcteams-v9.901`.
+- **Garde** `test:equipes-mois` (dans test:ci) : appareil de Kevin simulé, 4 vues, 15 contrôles verts ; ancien code → 10 échecs. Autres tests relancés : baccara-chef, kevin-truth, mois-ouverture, vplan, seed, departs-compare, departs-algo, seed-remplace, render-views verts (`runtime-audit-v703-section-family` = test périmé hors CI qui exige APP_VER v9.703 ; `verify-app-as-kevin` exige un serveur :8099 lancé à part).
+- **Outil voir** : « Tout ouvrir » avant capture + `equipes.json` ; branche de relecture ORPHELINE (le jeton du job ne peut pas pousser un historique avec workflow — run 34601407690 refusé).
+- **Reste** : après fusion + déploiement, relancer « voir comme Kevin » sur main et lire captures + `equipes.json` (attendu : familles = équipes pour 247/247, Mon équipe = Éq.3 ; light inchangée).
+- Seed + boards régénérés (seul le champ `parser` change → v9.901, garde `test:seed-remplace` exige parser = APP_VER). Branche `claude/voir-34600331412` : suppression git REFUSÉE par le proxy (send-pack hung up ×5) → inscrite au cliquet `pipeline/branches-orphelines-baseline.json` (elle redevient robot-seule après fusion de la PR #3765). m065 clos.
+- Leçon #262.
+
 ## 2026-09-11 (midi) — « Toutes les équipes sont mélangées » : mesure en cours
 - Mesure locale (appareil neuf, seed seul, `tests/_scratch/mesure-equipes-local.mjs`) : équipes de travail sept 282/285 (3 écarts = groupes d'absence déduits des cellules), oct 249/281 (32 écarts = tous des groupes d'absence sans `teamHistory`, attendu) ; **vue Employés : 55-61 personnes/mois classées sous la MAUVAISE famille** (`_empGroupKey` lit `e.family` figé au lieu de `familyForMonth`) ; juin/juillet : 30 familles cmc→roulettes.
 - `tools/voir/voir.mjs` : « Tout ouvrir » avant chaque capture (planning + employés) + relevé `equipes.json` (équipe/famille de chaque employé, mois affiché + suivant, données Firebase de Kevin) → relance du workflow pour voir les VRAIES données de Kevin avant de corriger.

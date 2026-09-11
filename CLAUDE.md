@@ -1726,6 +1726,7 @@ Implementation : `_cmcDetectTeamsByRestPattern(iy, im)` ligne ~32700 (v9.648).
 - `emp.teamHistory[YYYY-M]` = équipe pour ce mois (écrite par import)
 - Si pas de teamHistory → pas d'équipe ce mois (afficher "❔ Pas de planning")
 - INTERDIT d'utiliser `emp.team` comme fallback pour affichage équipe courante
+- **`emp.family` non plus** (v9.901, leçon #262) : la famille affichée = `familyForMonth` (section du PDF, puis famille de l'équipe du mois) — jamais `e.family` DEF_EMP dans une vue mensuelle (vEmps/vPlan/vDeparts). Garde `test:equipes-mois`.
 
 Voir NOTES_USER.md section "RÈGLE MÉTIER FONDAMENTALE — DÉTECTION ÉQUIPES PAR JOURS REPOS"
 pour détails complets de l'algorithme + safeguards.
