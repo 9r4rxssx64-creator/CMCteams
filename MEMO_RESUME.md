@@ -5,7 +5,7 @@
 - **Fix light v1.44** : équipe du mois = board généré qui contient la personne (par nom), teamHistory Firebase seulement pour les mois non générés, normalisation « 2026-09-3 » → « 3 », absents du PDF non versés dans une équipe. **Fix app v9.903** : sync boards persiste `cmc_e` (admin, 1 écriture par mois corrigé).
 - **Garde** `test:light-firebase` (dans test:ci) : Firebase simulé périmé → light = PDF (36 équipes, membres exacts, Kevin 2026-09-3), app répare Firebase (247/247, 0 cellule, ≤ 8 écritures puis silence). Ancienne light → 4 échecs, ancienne app → 237 faux. Leçon #264.
 - v9.902 fusionnée dans main (MAJ forcée) ; v9.903 poussée ensuite.
-- **Reste** : après fusion + déploiement de v9.903/v1.44, relancer « voir comme Kevin » sur main et lire la light (attendu : ton équipe = BJ Éq.3 (16/22)).
+- **VÉRIFIÉ LIVE** (run voir 34609999429, main déployé 14h16) : light **v1.44** « ton équipe : Septembre 2026 — BJ Éq.3 (16/22) », tableau = MAGARA / ROSSI / ALDRIGHETTI / CASTEL / DESARZENS (les 5 du PDF), 0 erreur JS ; app **v9.903** Kevin `2026-09-3` / bj, 0 erreur JS. Les deux surfaces disent la même chose que le PDF.
 
 ## 2026-09-11 (14h) — « light 42 ? Vérifie Maj forcé pour tous et tout » : v9.902 / light v1.43, prouvé en vrai navigateur
 - **Réponse courte** : light v1.42 ÉTAIT la dernière (v9.901 ne touchait pas la light) ; CMCteams servait v9.900 parce que v9.901 n'était pas encore fusionnée (fusion PR #3773 à 13h24, déploiement run 34604153623 vert à 13h26). L'app n'était pas en retard : la correction n'était pas encore en ligne.
