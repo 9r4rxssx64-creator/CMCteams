@@ -1,7 +1,17 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-11** (robots crypto : les 6 tournent, bilan durable)
+> Dernière mise à jour : **2026-09-11** (robots crypto : stratégie agressive +++, toujours faux argent)
+
+### 11 septembre 2026 (19h55) — Stratégie agressive +++ sur les 6 bots crypto (toujours faux argent)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `crypto-bot/config.py` | **Modifié.** Nouvelle méthode `Config.risk_warnings()` : détecte et signale toujours la combinaison dangereuse « ne vend jamais à perte + aucun frein catastrophe » (trouvée en vrai sur le bot principal en poussant ce changement) et la concentration de position ≥ 50 %. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/config.py) |
+| `crypto-bot/bot.py` | **Modifié.** Affiche les avertissements de `risk_warnings()` au démarrage (console + `audit.jsonl`). | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/bot.py) |
+| `crypto-bot/.env.example` | **Réécrit.** Reflète les valeurs réellement déployées sur les 6 bots (agressif +++), avec les anciennes valeurs prudentes notées en commentaire pour revenir en arrière ; complète les champs qui manquaient depuis toujours (stratégies meanrev/dipup, mode « ne vend jamais à perte », frein catastrophe). | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/.env.example) |
+| `crypto-bot/test_multi.py` | **Modifié.** 49→59 contrôles : le préréglage agressif est validé de bout en bout (jusque dans les objets stratégie), et la nouvelle garde `risk_warnings()` est testée (dont un faux négatif corrigé avant livraison). Prouvé par 4 sabotages. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/test_multi.py) |
+| 6 bots Railway (`crypto-bot`, `crypto-bot-p1` à `p5`) | **Reconfigurés en direct** (variables Railway) : risque par trade 1→4 %, position max 25→60 %, bougies 3 min au lieu de 15/5 min, seuils d'achat relâchés sur les 3 familles de stratégie, plafonds de perte/jour et de baisse élargis mais jamais retirés. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) |
 
 ### 11 septembre 2026 (17h30) — Robots crypto : les 6 tournent, et le bilan ne s'efface plus
 
