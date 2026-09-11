@@ -442,6 +442,25 @@ function ssoCookie(request, name) {
 /* Source du pass de session : header Authorization Bearer EN PRIORITÉ (marche
    même avec les PWA installées sur iOS, où chaque app a un jar de cookies isolé),
    sinon le cookie (Safari même-origine). Rend le compte unique iPhone-proof. */
+/* Origine acceptée pour ÉMETTRE une session (/__sso/issue) : le domaine lui-même (racine ou
+   sous-domaine), une app native (capacitor:// / ionic://), ou AUCUN en-tête Origin (outil,
+   app installée qui ne l'envoie pas : pas de navigateur tiers en jeu). « null » (iframe
+   sandbox, fichier local) et tout autre site → refusé. Strix vuln-0001, 11/09/2026. */
+function ssoOriginOk(origin, selfHost) {
+  if (!origin) return true;
+  const o = String(origin).trim().toLowerCase();
+  if (o === 'null') return false;
+  if (/^(capacitor|ionic):\/\/localhost$/.test(o)) return true;
+  let host = '';
+  try { host = new URL(o).host; } catch { return false; }
+  /* même origine que l'hôte appelé (portail local, test navigateur sur 127.0.0.1:port) :
+     par définition pas un site tiers. Mesuré le 11/09 : sans cette ligne, le test SSO réel
+     (tools/kdmc-sso-e2e) perdait 2 contrôles — le portail servi en local ne pouvait plus
+     émettre de session. */
+  if (selfHost && host === String(selfHost).toLowerCase()) return true;
+  const hn = host.replace(/:\d+$/, '');
+  return hn === 'kd-mc.com' || hn.endsWith('.kd-mc.com');
+}
 function ssoToken(request) {
   const auth = request.headers.get('authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
@@ -1145,6 +1164,14 @@ async function handleSso(request, url, env) {
     return J({ ok: true, uid, name, verified: true, token }, cookie);
   }
   if (path === '/__sso/issue' && request.method === 'POST') {
+    /* SÉCU (Strix vuln-0001, 11/09/2026 — CWE-287/CSRF de connexion) : un site TIERS pouvait
+       POSTer ici depuis le navigateur d'un visiteur (requête « simple » text/plain) et lui
+       POSER un cookie kdmc_sso à un nom choisi par l'attaquant → toutes les apps du domaine
+       l'auraient « reconnu » sous ce nom. L'émission reste auto-déclarée (jamais admin ni
+       verified), mais elle n'est acceptée que depuis le domaine lui-même (portail, apps
+       *.kd-mc.com) ou une app native (capacitor:// / ionic://). Sans en-tête Origin (outil,
+       app installée qui ne l'envoie pas) → inchangé : aucun navigateur tiers n'est en jeu. */
+    if (!ssoOriginOk(request.headers.get('origin'), url.host)) return J({ ok: false, reason: 'origine refusée' }, undefined, 403);
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const uid = String(b.uid || '').slice(0, 80).trim();
     const name = String(b.name || '').slice(0, 80).trim();
@@ -1198,6 +1225,10 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/history' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    /* SÉCU (Strix vuln-0001, 11/09) : un token FAIBLE se fabrique avec n'importe quel uid
+       (/issue est auto-déclaré) → sans cette ligne, quiconque tapait « kdmc_admin » lisait
+       les appareils, apps et connexions de Kevin. Lire SON historique exige Face ID prouvé. */
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour lire ton historique' });
     /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
        d'où vient la session, au lieu de l'historique complet de la personne). */
     const acc = await accGet(env, await canonFor(env, s.uid, s.name));
@@ -1215,6 +1246,10 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/revoke' && request.method === 'POST') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    /* SÉCU (Strix vuln-0001, 11/09) : avec un token FAIBLE forgé sur « kdmc_admin », n'importe
+       qui posait revoked_at sur la fiche de Kevin → TOUTES ses sessions (Face ID comprises)
+       tombaient : déconnexion forcée de l'admin par un inconnu. Révoquer exige Face ID prouvé. */
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour déconnecter tes appareils' });
     const acc = (await accGet(env, s.uid)) || { uid: s.uid, name: s.name };
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     acc.revoked_at = Date.now();

@@ -106,8 +106,12 @@ try {
   ok(adminHidden1, 'Portail : Kevin auto-déclaré (nom+code, SANS Face ID) → Administration CACHÉE (leçon #99 ; admin AVEC Face ID prouvé par multiapp-e2e)');
   const tok = await page.evaluate(() => window.kdmcSSO.token());
   ok(!!tok && tok.indexOf('.') > 0, 'Portail : pass signé stocké en localStorage (canal cross-PWA)');
-  /* le KV doit contenir la fiche Kevin */
-  ok(kv.has('acc:kevin-desarzens'), 'Worker : fiche client enrichie dans le registre KV');
+  /* le KV doit contenir la fiche Kevin — sous son uid CANONIQUE : depuis « un compte par
+     personne » (05/08/2026, CANON_UID = kdmc_admin), « kevin-desarzens » déclaré au portail est
+     fusionné dans la fiche kdmc_admin. Ce contrôle attendait encore l'ancienne clé
+     (acc:kevin-desarzens) → rouge à chaque exécution depuis, sans que personne ne le voie :
+     l'étape d'installation tombait avant (mesuré le 11/09/2026). */
+  ok(kv.has('acc:kdmc_admin') && !kv.has('acc:kevin-desarzens'), 'Worker : fiche client enrichie dans le registre KV (fiche canonique kdmc_admin, pas de doublon)');
   await page.close();
 
   /* ---- TEST 2 : portail — compte CLIENT (non-admin) → zone admin CACHÉE ---- */

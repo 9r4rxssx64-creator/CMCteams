@@ -7,6 +7,70 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 11/09/2026 11:33 UTC
+
+- **Branche** : `claude/apex-chat-suite-2210` · **Commit** : `af3aaa78` · **Run** : `34594043469`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34594043469
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and claude/apex-chat-suite-2210, Head ref must be a branch (createPullRequest)
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Auto-merge Claude branches into main — 11/09/2026 10:21 UTC
+
+- **Branche** : `claude/apex-chat-suite-2210` · **Commit** : `39b2d744` · **Run** : `34588152576`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34588152576
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3767 — merge auto refusé. Cause exacte ci-dessous.
+[claude/apex-chat-suite-2210 632d03018] diag: pourquoi l'auto-merge de claude/apex-chat-suite-2210 est refusé [skip ci]
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Auto-merge Claude branches into main — 10/09/2026 22:22 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `4491f54c` · **Run** : `34535801571`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34535801571
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+pull request create failed: GraphQL: Something went wrong while executing your query on 2026-09-10T22:15:31Z. Please include `3841:3839AF:3FF8C2:CF54E3:6AA32C02` when reporting this issue.
+##[warning]PR #3765 — merge auto refusé. Cause exacte ci-dessous.
+[claude/verify-cmcteams-light-data-rzlvau 2111b6405] diag: pourquoi l'auto-merge de claude/verify-cmcteams-light-data-rzlvau est refusé [skip ci]
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 10/09/2026 20:45 UTC
 
 - **Branche** : `claude/apex-chat-mfa-faceid` · **Commit** : `535f032a` · **Run** : `34527969098`
@@ -395,58 +459,6 @@
 ##[warning]PR #3744 — merge auto refusé. Cause exacte ci-dessous.
 [claude/apex-chat-mfa-faceid feff167fa] diag: pourquoi l'auto-merge de claude/apex-chat-mfa-faceid est refusé [skip ci]
  ! [remote rejected]     HEAD -> claude/apex-chat-mfa-faceid (refusing to allow a GitHub App to create or update workflow `.github/workflows/ai-review-independent.yml` without `workflows` permission)
-error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
-##[error]Process completed with exit code 1.
-```
-
-## ❌ La Détente — Déploie le Worker de commande Printify — 10/09/2026 18:39 UTC
-
-- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `033ace14` · **Run** : `34515315632`
-- **Ce qui a lâché** : deploy › Déploiement + secrets + capture URL
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34515315632
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mif [ -z "$URL" ]; then echo "::error::URL worker introuvable"; exit 1; fi^[[0m
-  Please update to the latest version to prevent critical errors.
-^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mBuild failed with 1 error:^[[0m
-  ^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mExpected string in JSON but found "<<"^[[0m
-##[error]Process completed with exit code 1.
-```
-
-## ❌ La Détente — Déploie le Worker Gemini (autonome) — 10/09/2026 18:37 UTC
-
-- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `033ace14` · **Run** : `34515315340`
-- **Ce qui a lâché** : deploy › Déploiement + secret + capture URL
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34515315340
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mif [ -z "$URL" ]; then echo "::error::URL worker introuvable dans le log"; exit 1; fi^[[0m
-  Please update to the latest version to prevent critical errors.
-^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mBuild failed with 1 error:^[[0m
-  ^[[31m✘ ^[[41;31m[^[[41;97mERROR^[[41;31m]^[[0m ^[[1mExpected string in JSON but found "<<"^[[0m
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 10/09/2026 18:27 UTC
-
-- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `a32595d6` · **Run** : `34513596186`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34513596186
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3731 — merge auto refusé. Cause exacte ci-dessous.
-[claude/verify-cmcteams-light-data-rzlvau 6d6d1c764] diag: pourquoi l'auto-merge de claude/verify-cmcteams-light-data-rzlvau est refusé [skip ci]
 error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
 ##[error]Process completed with exit code 1.
 ```

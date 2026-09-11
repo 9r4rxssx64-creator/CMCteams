@@ -3,6 +3,83 @@
 ## 2026-09-11 (midi) — « Toutes les équipes sont mélangées » : mesure en cours
 - Mesure locale (appareil neuf, seed seul, `tests/_scratch/mesure-equipes-local.mjs`) : équipes de travail sept 282/285 (3 écarts = groupes d'absence déduits des cellules), oct 249/281 (32 écarts = tous des groupes d'absence sans `teamHistory`, attendu) ; **vue Employés : 55-61 personnes/mois classées sous la MAUVAISE famille** (`_empGroupKey` lit `e.family` figé au lieu de `familyForMonth`) ; juin/juillet : 30 familles cmc→roulettes.
 - `tools/voir/voir.mjs` : « Tout ouvrir » avant chaque capture (planning + employés) + relevé `equipes.json` (équipe/famille de chaque employé, mois affiché + suivant, données Firebase de Kevin) → relance du workflow pour voir les VRAIES données de Kevin avant de corriger.
+## 11 septembre 2026 (matin) — « Go » sur les quatre points laissés à ta décision
+
+Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
+
+- **Le fichier le plus critique d'Apex Chat est enfin couvert** : `workers/api-worker.js` (6 045
+  lignes : codes OTP, admin, jetons, premium) avait **64 % de ses fonctions** appelées par un test.
+  108 fonctions ne l'étaient jamais (16 routes nommées + ~90 rappels d'erreur). **118 tests
+  ajoutés** (`tests/unit/api-worker-fonctions-non-appelees.test.js`), chacun passe par le vrai
+  routeur avec la vraie route et la vraie authentification, et exerce au moins une branche
+  d'erreur (code exact + détail). Mesuré vitest 5 : **91,98 % instructions · 81,92 % branches ·
+  100 % fonctions · 94,25 % lignes** (avant : 75,71 / 68,48 / 64,47 / 79,20). Plancher relevé à
+  91 / 81 / 99 / 93,5. **1241 / 1241 tests, 62 fichiers, couverture exit 0**, gate CI simulé OK.
+- **Les deux conseils du scan sécu sont appliqués** : `jq` remplace `python3 -c` dans les 3
+  workflows signalés (la réponse d'API n'était déjà que lue, `jq` lève le doute) ; les **23
+  actions** des 10 workflows d'Apex Chat sont **épinglées sur leur SHA** (`@<sha> # v6`), plus la
+  version en commentaire. Dependabot (déjà en place, hebdo) continue de proposer les montées.
+  Les 4 gardes de workflows restent vertes.
+- **Strix : la cause du rapport illisible est comprise et corrigée.** Lu dans le code de Strix
+  1.6.2 : il écrit dans **`strix_runs/`** (le workflow copiait `agent_runs/`, l'ancien nom) et il
+  **écrit son rapport même quand on le coupe** (SIGTERM → état « interrupted »). Le workflow
+  laisse maintenant 75 min, **borne la dépense** (`--max-budget-usd`, 15 $ par défaut, Strix
+  s'arrête seul et proprement) plutôt que le temps, choisit la profondeur (`quick` / `standard` /
+  `deep`, `standard` par défaut), copie le bon dossier, et pose dans le check-run l'**inventaire
+  des fichiers**, le **rapport final**, les **fiches de vulnérabilité** et le nombre d'erreurs de
+  flux. Relancé sur `https://apex-chat.kd-mc.com/` (voir le run dans le rapport de session).
+- **Lingua « en panne » : c'était la sonde, pas l'app.** Le balayage live relancé ce matin (run
+  `34588152564`, lu dans son nouveau check-run) donnait encore **27 vertes, 1 rouge : Lingua,
+  « `page.fill` Timeout »**, alors que le correctif de l'écran blanc était bien en ligne. Rejoué
+  pas à pas en local sur le code de `main` : la fenêtre « Nouveau compte » s'ouvre, mais depuis le
+  **05/09** elle demande **prénom + nom** (deux champs, pour distinguer les homonymes) et la sonde
+  remplissait toujours l'**ancien champ unique**, qui n'existe plus. Chaque balayage depuis le
+  05/09 échouait donc sur Lingua **pour un défaut de la sonde**. Mesuré après correction de la
+  sonde : fenêtre ouverte, **16 langues, 189 unités, 607 boutons, 0 erreur JS**. La sonde
+  corrigée est poussée ; le balayage live qu'elle déclenche donne le verdict en ligne. Pour que la
+  prochaine alerte se lise sans deviner, `audit-live.yml` pose désormais son **verdict par
+  surface dans un check-run** (`node tools/ci/ci.mjs report <run>`), comme les deux scans de
+  sécurité. À côté : la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26**
+  en local — elle échouait ici pour une raison d'outillage (Playwright absent à la racine, puis
+  version de Chromium différente de celle installée : relié par un lien, sans rien télécharger).
+- **Strix a fini, et cette fois je l'ai lu** (run `34588162278`, 38 min, **14,00 $**, 33,1 M
+  jetons dont 31,8 M en cache, 2 fiches MEDIUM). Les deux sont **vraies**, vérifiées dans le
+  code, **corrigées** dans le même commit avec un test chacune :
+  1. **Une session « nommée » se fabriquait à distance et servait à lire ou couper la tienne.**
+     Le portail accepte qu'une app déclare un nom sans preuve (c'est voulu : « reconnu auto »,
+     jamais admin sans Face ID). Mais deux pages du portail se contentaient de cette session
+     faible : « mon historique » (avec un faux nom `kdmc_admin`, un inconnu lisait tes appareils,
+     tes apps, tes connexions) et « déconnecter mes autres appareils » (le même inconnu **coupait
+     toutes tes sessions**, Face ID comprises). Les deux exigent maintenant Face ID prouvé. Et un
+     site tiers pouvait poser ce cookie **dans le navigateur d'un visiteur** (connexion forcée
+     sous un faux nom) : l'émission n'est plus acceptée que depuis le domaine ou une app native.
+     Tests : `services/kdmc-router/self-service.test.mjs` 23/23 (10 nouveaux), et ces tests
+     tournent enfin avant chaque déploiement du routeur (ils ne tournaient nulle part).
+  2. **Un lien piégé activait un Premium à ton insu.** `?grant_premium=<qui>&plan=<formule>`
+     partait tout seul dès que tu étais connecté en admin, sans rien te demander. Maintenant
+     une fenêtre te dit **qui** et **quelle formule** avant d'envoyer ; « Annuler » ne fait
+     rien. Même chose pour le bouton « Activer » de la notification (un tap de plus, nommé).
+     Apex Chat **v1.1.289**, garde `premium-deep-link-confirm.test.js` (prouvé discriminant).
+  Ce que Strix n'a **pas** trouvé : pas d'injection, pas d'accès aux conversations, pas
+  d'élévation admin. Ce qu'il n'a **pas** testé : les parcours connectés (OTP), le temps réel.
+- **Vu au passage, réparé** : la garde `test:router-secours` (câblée dans `test:ci`) était
+  **rouge sur `main`** avant mon passage : 6 adresses du routeur (cuisine, portail boutiques,
+  les 4 « belles adresses » de l'accueil) n'étaient pas prévues dans la copie de secours
+  (celle qui sert les pages si GitHub Pages tombe). Ajoutées : cuisine et le portail
+  (`index.html` + pages légales seulement, pas tout le dossier), les 4 autres sont déjà
+  dedans par leur dossier parent. Guard 49/49, paquet 40/40, copie légère refaite en vrai.
+- **Vu au passage, réparé (2)** : le test navigateur réel du SSO (`kdmc-sso-e2e.yml`, Face ID
+  + multi-apps sur le vrai domaine) **échouait à l'installation depuis au moins 5 exécutions**
+  (dont celles lancées après chaque fusion) : même cause que l'audit live le 05/09, le
+  `package.json` de la racine fait planter `npm i`. Corrigé de la même façon
+  (`--legacy-peer-deps`), relancé pour prouver le routeur corrigé sur le vrai domaine.
+  **Et ce test, une fois réveillé, a attrapé deux choses** : (a) ma première règle d'origine
+  refusait le portail servi en local (même hôte, port `127.0.0.1:…`) → 2 contrôles perdus ;
+  corrigé : la même origine que l'hôte appelé est toujours acceptée (c'est le contraire d'un
+  site tiers), 25/25 côté routeur ; (b) un contrôle périmé depuis le 05/08 (il attendait la
+  fiche `kevin-desarzens`, fusionnée depuis dans la fiche unique `kdmc_admin`) — vérifié avec
+  le routeur d'avant mes changements : déjà rouge. Corrigé. Les 4 tests navigateur du
+  workflow passent en local (8/8, 15/15, 7/7, 3/3).
 
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 
@@ -142,6 +219,26 @@ Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité 
   cette table** au lieu d'en tenir une copie, 8 tests ajoutés (`crypto-core` et `ia-worker`
   revenus à 100 %, contrat des deux fichiers-relais Durable Object prouvé). **1123 / 1123 tests,
   couverture exit 0.** Les chiffres avant/après sont écrits côte à côte dans le dossier d'audit.
+## 11 septembre 2026 — « Toujours pas de son, pas de voix » : la page servie est bien la nouvelle, le suspect n°1 est le bouton silencieux de l'iPhone
+
+- **Vérifié en vrai** (page lue depuis cuisine.kd-mc.com via Zapier, HTTP 200, `x-kdmc-router`
+  présent) : le domaine sert **la version corrigée** (lecture par étapes, bouton `data-tts`,
+  icône). Donc ce n'est plus un problème de déploiement.
+- **Ce qui reste comme cause probable** : sur iPhone, la voix de synthèse passe par la catégorie
+  audio « ambiante », **coupée par l'interrupteur silencieux** (le petit bouton sur le côté) —
+  exactement comme les sons de jeu, alors que la musique passe. Une app en mode silencieux =
+  bouton qui devient rouge, étape surlignée, **mais aucun son**. L'ancienne version avait le
+  même défaut : ça explique un « toujours pas de son » avant/après.
+- **Livré** : (1) iOS 17+ : `navigator.audioSession.type = 'playback'` au moment de l'appui → la
+  page passe en catégorie « lecture » (comme une app de musique), la voix passe **même en mode
+  silencieux** ; (2) repli pour les iPhone plus anciens : un son muet d'un quart de seconde
+  (`<audio>` embarqué, aucun fichier à charger) est joué dans le même appui, ce qui bascule la
+  session audio ; (3) un message « 🔊 Lecture de N phrases… (v2) » à chaque appui — il dit à Kevin
+  (et à moi) que la nouvelle version tourne.
+- **Si toujours rien après ça** : le message affiché donnera la cause exacte ; sinon vérifier le
+  volume (boutons latéraux pendant la lecture) et Réglages → Accessibilité → Contenu énoncé (une
+  voix française doit être installée).
+
 ## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
 
 - **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une

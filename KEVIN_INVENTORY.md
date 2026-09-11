@@ -1,7 +1,13 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-10** (soir : « Lire les étapes » réparé + icône drapeau de Monaco pour le livre de cuisine)
+> Dernière mise à jour : **2026-09-11** (livre de cuisine : la voix passe même avec l'iPhone en mode silencieux)
+
+### 11 septembre 2026 — la voix du livre de cuisine passe même en mode silencieux
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/cuisine/index.html` | Modifié : à l'appui sur « Lire les étapes », la page passe en catégorie audio « lecture » (iOS 17+) et joue un son muet embarqué (iPhone plus anciens) → la voix n'est plus coupée par l'interrupteur silencieux. Message « Lecture de N phrases… (v2) » à chaque appui. | [🧪 Ouvrir le livre](https://cuisine.kd-mc.com/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html) |
 
 ### 10 septembre 2026 (soir) — « Lire les étapes » du livre de cuisine, réparé et prouvé
 
@@ -169,6 +175,11 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `messaging-app/tests/unit/api-worker-ia-qwen.test.js` | **NOUVEAU** — 8 tests Apex Chat (Qwen répond, action → Anthropic, secours, cause exacte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-ia-qwen.test.js) |
 | `messaging-app/tests/unit/crypto-core-node.test.js` | **NOUVEAU (10/09)** — le chiffrement d'Apex Chat se charge aussi **hors navigateur** (Worker), sans rien accrocher à une fenêtre inexistante ; branche jamais exécutée avant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/crypto-core-node.test.js) |
 | `messaging-app/tests/unit/durable-objects-shims.test.js` | **NOUVEAU (10/09)** — les deux fichiers-relais `BroadcastDO.js` / `PresenceDO.js` (ceux que Cloudflare déploie) exportent bien la vraie classe ; une typo casserait le déploiement, ce test l'attrape avant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/durable-objects-shims.test.js) |
+| `messaging-app/tests/unit/api-worker-fonctions-non-appelees.test.js` | **NOUVEAU (11/09)** — 118 tests pour les 108 fonctions du serveur d'Apex Chat qu'aucun test n'appelait (codes OTP, cercle de confiance, avatar, suppression de conversation, notifications, mise à jour forcée…) ; fonctions couvertes **64 % → 100 %** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-fonctions-non-appelees.test.js) |
+| `.github/workflows/strix-scan.yml` | **MODIFIÉ (11/09)** — le pentest IA copie le bon dossier (`strix_runs/`), borne la **dépense** au lieu du temps (plafond en $ + profondeur au choix), et pose rapport + fiches de vulnérabilité dans le check-run | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/strix-scan.yml) · [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/strix-scan.yml) |
+| `messaging-app/tests/unit/premium-deep-link-confirm.test.js` | **NOUVEAU (11/09)** — un lien ou une notification ne peut plus activer un Premium sans une fenêtre qui te dit qui et quelle formule (Strix vuln-0002) ; lit la page servie, prouvé discriminant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/premium-deep-link-confirm.test.js) |
+| `services/kdmc-router/self-service.test.mjs` | **MODIFIÉ (11/09)** — 10 tests de plus : une session forgée sur ton nom ne lit plus ton historique ni ne coupe tes sessions ; un site tiers ne peut plus poser le cookie du domaine (Strix vuln-0001) ; tournent maintenant avant chaque déploiement du routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/self-service.test.mjs) |
+| `.github/workflows/audit-live.yml` | **MODIFIÉ (11/09)** — le balayage des vraies pages pose son verdict par surface dans un check-run lisible par l'API (plus besoin de deviner « quelle page a cassé ») | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/audit-live.yml) · [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/audit-live.yml) |
 | `messaging-app/vitest.config.js` | **Seuils de couverture par fichier = valeur mesurée** (cliquet, vitest 5) ; le workflow `messaging-app-tests.yml` lit cette table, plus de copie à tenir | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/vitest.config.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/messaging-app-tests.yml) |
 | `services/kdmc-router/worker.js` + `wrangler.toml` | Coach Lingua sur Qwen (multilingue) d'abord ; binding Workers AI ajouté au routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) |
 | `services/kdmc-router/lingua-ia.test.mjs` | **NOUVEAU** — la garde du coach (Qwen nommé, secours, fail-open). `npm run test:lingua-ia` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/lingua-ia.test.mjs) |
