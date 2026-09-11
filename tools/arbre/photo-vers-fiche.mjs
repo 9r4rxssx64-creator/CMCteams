@@ -23,6 +23,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { appEnLigneSaitFusionner, lireAppEnLigne } from './app-en-ligne.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const ARBRE = path.join(ROOT, 'arbre');
@@ -41,6 +42,25 @@ if (path.resolve(sortie).startsWith(ROOT + path.sep)) {
   console.error('❌ Refusé : la sortie tomberait DANS le dépôt (public). Choisis un dossier hors dépôt.');
   process.exit(2);
 }
+
+/* ⛔ CE QUI TOURNE SUR SON TÉLÉPHONE, PAS CE QUI EST SUR MA BRANCHE (vécu le 11.09.2026)
+   ------------------------------------------------------------------------------------
+   J'ai envoyé à Kevin un fichier marqué « fusion » alors que son iPhone tournait en v3.18 :
+   la fusion n'arrive qu'en v3.20, restée sur ma branche. Mesuré depuis, en vrai navigateur
+   sur la page v3.18 : elle ignore « fusion » et REMPLACE la fiche — Gérard serait devenu
+   « (sans nom) », sans dates ni parents, avec la seule photo. L'app déployée, c'est
+   origin/main. On le vérifie donc AVANT d'écrire, et on refuse plutôt que d'expédier un
+   fichier dangereux. Repli ouvert : sans git (archive, clone partiel), on prévient et on
+   continue — mieux vaut un avertissement qu'un outil qui ne marche plus. */
+const deploye = appEnLigneSaitFusionner(() => lireAppEnLigne(ROOT));
+if (deploye.connu && !deploye.ok) {
+  console.error('\n❌ Refusé : l\'app RÉELLEMENT en ligne (origin/main, ' + deploye.ver + ') ne sait pas compléter une fiche.');
+  console.error('   Elle REMPLACERAIT la fiche par la photo seule : plus de prénom, plus de dates, plus de parents.');
+  console.error('   À faire d\'abord : faire passer la version qui fusionne (fusionnerFiche) sur main et la publier,');
+  console.error('   puis relancer cette commande. Aucun fichier n\'a été écrit.\n');
+  process.exit(2);
+}
+if (!deploye.connu) console.log('⚠️  Impossible de lire origin/main : je n\'ai pas pu vérifier la version en ligne. Vérifie qu\'elle sait fusionner avant d\'envoyer le fichier.');
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.svg': 'image/svg+xml' };
 const srv = await new Promise((res) => {

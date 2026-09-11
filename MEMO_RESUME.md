@@ -1,5 +1,35 @@
 # MEMO_RESUME — état de session
 
+## 11 septembre 2026 (22h) — POURQUOI L'IMPORT N'A RIEN FAIT CHEZ KEVIN : son app est en v3.18, ma correction en v3.20 n'était pas déployée
+
+Kevin : *« J'ai dû la mettre moi dedans, il n'y avait rien. »* (capture : **v3.18 · 119 pers.**)
+
+- **Ma faute, mesurée** : j'ai préparé le fichier photo au format « fusion » (compléter la fiche
+  sans l'écraser) — une notion qui n'existe **que** dans ma v3.20, restée sur ma branche. L'app en
+  ligne, c'est `origin/main` = **v3.18**, et la PR #3730 était **bloquée** (`mergeable_state: dirty`,
+  conflits), donc jamais publiée.
+- **Ce que la v3.18 aurait fait** (rejoué dans un vrai Chromium sur la page v3.18, famille
+  synthétique, forme exacte du fichier envoyé) : elle ignore « fusion » et **remplace** la fiche.
+  14 champs → **4** (`fusion, id, photos, updatedAt`), carte « **(sans nom)** », prénom, dates,
+  parents, conjoints **perdus**. Qu'il n'ait rien vu est une chance : l'import aurait effacé la
+  fiche de son père.
+- **Sa photo n'est pas que sur l'iPhone** : enregistrer une fiche appelle `persist(id)` →
+  `cloudPush(id)`, qui envoie la fiche **entière, photos comprises**, au cloud familial (v3.18,
+  `index.html` l.354/362). Réserve honnête : je ne peux pas le **lire** d'ici (il faudrait le code
+  famille, que je ne dois pas connaître) — c'est établi par le code, pas par une lecture du cloud.
+- **Débloqué** : `main` fusionné dans la branche (4 conflits résolus en gardant les deux côtés —
+  `test:ci` uni, registre des messages, et le correctif lingua **repris de leur session**), pour que
+  la v3.20 parte enfin en ligne.
+- **Garde pour que ça ne recommence pas** : `tools/arbre/app-en-ligne.mjs` + `photo-vers-fiche.mjs`
+  refusent désormais d'écrire un fichier que l'app **en ligne** ne sait pas lire (vérifié pour de
+  vrai : refus aujourd'hui, sortie 2, aucun fichier écrit). `test:arbre-photo` devient
+  comportementale (16 contrôles), **prouvée discriminante par 2 sabotages**. Leçon **#265**.
+- Remesuré moi-même après fusion : `test:lingua-voix` **26 OK / 0 FAIL** (la session lingua avait
+  corrigé elle-même — j'ai gardé LEUR version et retiré la mienne), `test:arbre-photo`,
+  `test:arbre-relier`, `test:arbre-prive`, `test:pipeline-sessions`, `test:messages-suivis` verts.
+
+---
+
 ## 11 septembre 2026 — la photo de Gérard, et un défaut qui pouvait effacer TOUTES les photos
 
 Demande de Kevin : *« Intègre la photo de mon père Gérard. »*

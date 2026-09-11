@@ -12,6 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { appEnLigneSaitFusionner } from '../tools/arbre/app-en-ligne.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const argFile = (() => { const i = process.argv.indexOf('--fichier'); return i > 0 ? path.resolve(process.argv[i + 1]) : path.join(ROOT, 'arbre', 'index.html'); })();
@@ -57,6 +58,25 @@ ok(/startsWith\(ROOT \+ path\.sep\)/.test(outil) && /Refusé : la sortie tombera
   'l\'outil REFUSE d\'écrire une photo de famille dans le dépôt (public)');
 ok(/await importPhoto\(f\)/.test(outil),
   'la photo est traitée par la fonction MÊME de l\'app (pas un traitement réinventé)');
+
+/* 7. le fichier doit être lisible par l'app QUI TOURNE SUR SON TÉLÉPHONE, pas par ma branche.
+   Le 11.09.2026 j'ai envoyé à Kevin un fichier « fusion » alors que son app était en v3.18 :
+   mesuré depuis sur la vraie page v3.18, elle aurait REMPLACÉ la fiche de son père par la photo
+   seule (« (sans nom) », sans dates ni parents). L'app en ligne = origin/main. */
+ok(/appEnLigneSaitFusionner\(\(\) => lireAppEnLigne\(ROOT\)\)/.test(outil)
+  && /deploye\.connu && !deploye\.ok/.test(outil) && /process\.exit\(2\)/.test(outil),
+  'l\'outil interroge l\'app EN LIGNE et REFUSE d\'écrire si elle ne sait pas fusionner');
+/* et la réponse est VÉRIFIÉE sur du vrai code, pas seulement lue dans le fichier :
+   une page d'avant la fusion doit être refusée, une page d'après acceptée. */
+const vieux = '<script>var APP_VER="v3.18";function doImport(e){DB.persons[id]=rp;}</script>';
+const neuf = '<script>var APP_VER="v3.20";function fusionnerFiche(lp,rp,fusion){}\nDB.persons[id]=fusionnerFiche(lp,rp,true);</script>';
+const rVieux = appEnLigneSaitFusionner(() => vieux);
+const rNeuf = appEnLigneSaitFusionner(() => neuf);
+const rMuet = appEnLigneSaitFusionner(() => { throw new Error('pas de git'); });
+ok(rVieux.connu && !rVieux.ok && rVieux.ver === 'v3.18',
+  'une app en ligne d\'AVANT la fusion est reconnue comme dangereuse', rVieux.ver);
+ok(rNeuf.connu && rNeuf.ok, 'une app en ligne qui fusionne est acceptée', rNeuf.ver);
+ok(!rMuet.connu, 'sans git : on prévient (connu:false), on ne bloque pas l\'outil');
 
 const appVer = (html.match(/var APP_VER="([^"]+)"/) || [])[1];
 console.log(fails.length ? `\n❌ arbre-photo-fusion : ${fails.length} échec(s)` : `\n✅ arbre-photo-fusion : ${appVer} — une photo s'ajoute sans rien faire perdre`);
