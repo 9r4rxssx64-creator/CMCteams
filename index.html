@@ -5156,6 +5156,11 @@ function familyForMonth(emp,y,m,opts){
   var strict=opts&&opts.strict;
   try{if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];}catch(e){return strict?null:(emp.family==="baccara"?_cmcBaccaraFallback(emp,key):(emp.family||"bj"));}
   if(emp.familyHistory&&emp.familyHistory[key])return emp.familyHistory[key];
+  // v9.901 (Kevin 2026-09-11 « toutes les équipes sont mélangées ») — AVANT la famille DEF_EMP
+  // figée : la famille de l'ÉQUIPE DU MOIS (boards « 2026-09-r5 » → roulettes, DEF_TEAMS). Mesuré
+  // sur l'appareil de Kevin : 56/247 personnes en équipe affichaient la famille d'origine
+  // (un chef BJ Éq.3 sous « Jeux européen »), car familyHistory n'était pas posé sur un mois live.
+  try{ var _thm=emp.teamHistory&&emp.teamHistory[key]; if(_thm){ var _tO=(typeof gt==="function")?gt(_thm):null; if(_tO&&_tO.family&&_tO.family!=="autre"&&_tO.family!=="cadres"&&!/^P\d/.test(String(emp.id||"")))return _tO.family; } }catch(_){}
   // Chercher familyHistory plus récent antérieur (NON, règle Kevin "zéro historique")
   // En strict mode → null (force section "Pas de planning"). Sinon fallback emp.family DEF_EMP.
   if(strict)return null;
@@ -5275,10 +5280,16 @@ function _cmcMirrorTeam(tid,y,m){
 function _getMyTeamFirst(){
   var out={primary:null,mirror:null,others:[]};
   var allIds=(A.teams||[]).map(function(t){return t.id;});
-  var myTid=(A.user&&A.user.team)||null;
-  if(myTid&&gt(myTid)){
+  // v9.901 (Kevin 2026-09-11 « toutes les équipes sont mélangées ») — l'équipe de Kevin est celle
+  // du MOIS AFFICHÉ (teamHistory posé par le seed/boards/import), JAMAIS A.user.team (DEF_EMP figé :
+  // Kevin change d'équipe chaque mois, règle « DÉTECTION ÉQUIPES SBM »). Avec l'ancien code,
+  // « Mon équipe » / « Équipe miroir » de la vue Employés ne matchaient jamais l'équipe réelle.
+  var _myRec=(A.user&&typeof empById==="function"&&empById(A.user.id))||A.user;
+  var myTid=(_myRec&&typeof teamForMonth==="function")?teamForMonth(_myRec,A.year,A.month,{strict:true}):null;
+  if(myTid){
     out.primary=myTid;
-    var mir=gm(myTid);
+    try{if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(myTid);}catch(_){}
+    var mir=(typeof _cmcMirrorTeam==="function")?_cmcMirrorTeam(myTid,A.year,A.month):gm(myTid);
     if(mir&&mir.id){out.mirror=mir.id;}
   }
   out.others=allIds.filter(function(id){return id!==out.primary&&id!==out.mirror;});
@@ -5795,8 +5806,23 @@ function _cmcApplyPlanningSeed(){
       // (l'ancien est archivé V1/V2… restaurable, les édits manuels de Kevin sont ré-appliqués).
       // Un import fait avec un parseur au moins aussi récent garde la priorité (real import wins).
       var replaceInfo=hasLive?_cmcSeedReplaceInfo(key,S,cur):null;
-      if(hasLive&&!replaceInfo)return; // données live à jour = priorité absolue → on ne touche pas
       var byId={}, byName={}; A.employees.forEach(function(e){if(e&&e.id){byId[e.id]=e; if(e.name&&!byName[e.name])byName[e.name]=e;}});
+      if(hasLive&&!replaceInfo){
+        // données live à jour = priorité absolue → on ne touche PAS aux cellules. Mais v9.901
+        // (Kevin 2026-09-11 « toutes les équipes sont mélangées ») : la FAMILLE DU MOIS (section du
+        // PDF), l'école roulette et le miroir sont des métadonnées d'affichage vérifiées (= PDF) :
+        // on les pose si elles MANQUENT (sur l'appareil de Kevin, 0 familyHistory pour septembre →
+        // 56 personnes affichées sous la famille d'origine DEF_EMP). Jamais d'écrasement d'une
+        // valeur déjà posée (un secteur attribué à la main reste).
+        try{
+          var byNameL={}; (m.emps||[]).forEach(function(se){ if(se&&se.id&&se.name)byNameL[se.id]=byId[se.id]||byName[se.name]||null; });
+          var midL=function(id){ var e=byNameL[id]; return e?e.id:id; };
+          if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[midL(id)]; if(e&&!/^P\d/.test(e.id)){ if(!e.familyHistory)e.familyHistory={}; if(!e.familyHistory[key])e.familyHistory[key]=m.fam[id]; } }); }
+          if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[midL(id)]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
+          if(m.mirror&&Object.keys(m.mirror).length&&!localStorage.getItem("cmc_team_mirror_"+key)){ localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror)); }
+        }catch(_){}
+        return;
+      }
       // Correspondance des identifiants : un employé créé par un ancien import (U_TMP_… daté) et
       // présent dans le seed sous un autre identifiant temporaire est retrouvé PAR SON NOM.
       var idMap={};
@@ -5865,7 +5891,9 @@ function _cmcSyncChefsTFromBoards(y,m){
       if(b.kind==="abs")return;
       ct[bkey]=b.people.map(function(p){return p.name;});
       if(!gt(bkey)){ A.teams.push({id:bkey,name:b.label||bkey,color:"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
-      b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=bkey; } });
+      b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=bkey;
+        // v9.901 : la famille du board (= section du PDF) accompagne l'équipe si elle manque
+        if(b.fam&&b.fam!=="cadres"&&!/^P\d/.test(e.id)){ if(!e.familyHistory)e.familyHistory={}; if(!e.familyHistory[key])e.familyHistory[key]=b.fam; } } });
       found++;
     });
     if(found){
@@ -5888,7 +5916,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.900";
+var APP_VER="v9.901";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -22643,7 +22671,7 @@ function exportMyPDF(){
   var days=getDays(A.year,A.month);
   var reg=A.reg[A.user.id]||{};
   var dispName=reg.prenom?(reg.prenom+" "+(reg.nom||A.user.name.split(" ")[0])):A.user.name;
-  var team=gt(A.user.team);
+  var team=gt(((typeof teamForMonth==="function")?teamForMonth((typeof empById==="function"&&empById(A.user.id))||A.user,A.year,A.month,{strict:true}):null)||A.user.team); // v9.901 : équipe du mois
   var html='<html><head><meta charset="UTF-8"><title>Planning '+esc(dispName)+' - '+MFR[A.month]+' '+A.year+'</title>'
     +'<style>body{font-family:Georgia,serif;color:#1a2a1c;margin:20px 30px;font-size:12px}'
     +'h1{font-size:18px;color:#1a3020;border-bottom:2px solid #c9a227;padding-bottom:6px}'
@@ -22840,9 +22868,11 @@ function vMonPlanning(){
       var _isCdp=_code2.endsWith("*");
       var _isConv=_cmcIsConv(_code2);
       var _lieu=_isCdp?"☕ Café de Paris":_isConv?"🎩 Convention":"🏛 Casino Monte-Carlo";
-      var _pos=isWork(_code2)&&CHEFS_T[A.user.team]?calcDepPos(A.user.name,A.user.team,d):null;
+      // v9.901 : équipe DU MOIS (pas A.user.team DEF_EMP figé) pour la position de départ et les collègues
+      var _myTm=(typeof teamForMonth==="function")?teamForMonth((typeof empById==="function"&&empById(A.user.id))||A.user,A.year,A.month,{strict:true}):null;
+      var _pos=isWork(_code2)&&_myTm&&CHEFS_T[_myTm]?calcDepPos(A.user.name,_myTm,d):null;
       // Collègues même jour
-      var _cols=A.employees.filter(function(e){return e.team===A.user.team&&e.id!==A.user.id&&isEmpActive(e,A.year,A.month)&&isWork((_pl2[e.id]||{})[d]||"");});
+      var _cols=A.employees.filter(function(e){return _myTm&&teamForMonth(e,A.year,A.month,{strict:true})===_myTm&&e.id!==A.user.id&&isEmpActive(e,A.year,A.month)&&isWork((_pl2[e.id]||{})[d]||"");});
       var _html='<div onclick="this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px">'
         +'<div onclick="event.stopPropagation()" style="max-width:340px;width:100%;background:rgba(20,40,24,.95);border:2px solid '+_ci6.c+';border-radius:16px;padding:20px;backdrop-filter:blur(20px)">'
         +'<div style="text-align:center;margin-bottom:14px"><div style="font-size:14px;color:#a0cca0">'+_JOURS2[_dow4]+'</div>'
@@ -25164,7 +25194,9 @@ function vPlan(){
   // v9.158 — Ajout filter par code (highlight des cellules)
   if(!A._planFilter)A._planFilter={family:null,code:null};
   if(A._planFilter.code===undefined)A._planFilter.code=null;
-  var _famsCnt=A.employees.reduce(function(acc,e){if(!isEmpActive(e,A.year,A.month))return acc;var f=e.family||"bj";acc[f]=(acc[f]||0)+1;return acc;},{});
+  // v9.901 : puces « Amér./Europ./Ouvert » = famille DU MOIS (familyForMonth, baccara→cartes comme
+  // les sections), plus e.family DEF_EMP figé qui affichait des effectifs faux (ex. Ouvert 131 pour 94).
+  var _famsCnt=A.employees.reduce(function(acc,e){if(!isEmpActive(e,A.year,A.month))return acc;var f=(typeof familyForMonth==="function"?familyForMonth(e,A.year,A.month):null)||e.family||"bj";if(f==="baccara")f="cmc";acc[f]=(acc[f]||0)+1;return acc;},{});
   if(Object.keys(_famsCnt).length>1){
     h+='<div class="chip-row" role="toolbar" aria-label="Filtres de familles">';
     h+='<div class="fchip'+(A._planFilter.family==null?" active":"")+'" role="button" tabindex="0" aria-pressed="'+(A._planFilter.family==null?"true":"false")+'" onclick="A._planFilter.family=null;dc()" title="Afficher toutes les familles">\ud83c\udf10 Toutes</div>';
@@ -25721,10 +25753,19 @@ function vDeparts(){
     window._depFamOpen={bj:false,roulettes:false,baccara:false,cmc:false,cadres:false};
   }
   var _depFamCounts={bj:0,roulettes:0,baccara:0,cmc:0,cadres:0};
+  // v9.901 (Kevin 2026-09-11 « toutes les équipes sont mélangées ») — la famille d'un dossier
+  // d'équipe = la famille de l'ÉQUIPE (boards « 2026-09-r5 » → roulettes, DEF_TEAMS), sinon la
+  // famille du mois majoritaire de ses membres. Avant : e.family DEF_EMP du PREMIER membre trouvé →
+  // une équipe roulettes rangée sous « Jeux américains » dès qu'un membre était bj à l'origine.
+  function _depFamOfTeam(tid){
+    var _t=gt(tid); if(_t&&_t.family&&_t.family!=="autre")return _t.family;
+    var cnt={},best="bj",bn=0;
+    A.employees.forEach(function(e){ if(teamForMonth(e,A.year,A.month)!==tid)return; var f=(typeof familyForMonth==="function"?familyForMonth(e,A.year,A.month):null)||e.family||"bj"; cnt[f]=(cnt[f]||0)+1; if(cnt[f]>bn){bn=cnt[f];best=f;} });
+    return best;
+  }
   show.forEach(function(tid){
     if(_depPri.indexOf(tid)>=0)return; // la section "Ma" est hors filtrage famille
-    var _emp=A.employees.find(function(e){return teamForMonth(e,A.year,A.month)===tid&&e.family;});
-    var _fam=_emp?(_emp.family||"bj"):"bj";
+    var _fam=_depFamOfTeam(tid);
     _depFamCounts[_fam]=(_depFamCounts[_fam]||0)+1;
   });
   // Barre Tout ouvrir / Tout fermer (admin et user flottant uniquement)
@@ -25747,8 +25788,7 @@ function vDeparts(){
         +'</div>';
     }
     var team=A.teams.find(function(t){return t.id===tid;});if(!team)return;
-    var curFamEmp=A.employees.find(function(e){return teamForMonth(e,A.year,A.month)===tid&&e.family;});
-    var curFam=curFamEmp?curFamEmp.family:"bj";
+    var curFam=_depFamOfTeam(tid); // v9.901 : famille de l'équipe du mois
     var _inPri=_depPri.indexOf(tid)>=0;
     // Pour les \u00e9quipes hors "Ma section" : respecter le pliage famille
     if(!_inPri && (isAdm||_isFloating) && !window._depFamOpen[curFam])return;
@@ -33610,12 +33650,23 @@ function vEmps(){
     if(!_hasPresence)return "noteam:nopresence";
     var _et=(typeof teamForMonth==="function"?teamForMonth(e,A.year,A.month,{strict:true}):null);
     if(!_et){
-      // Présence (data ou teamHistory) mais pas de team identifiée → fam fallback
-      return "fam:"+(e.family||"bj");
+      // Présence (data ou teamHistory) mais pas de team identifiée → famille du mois
+      return "fam:"+_empFamMonth(e);
     }
     if(_isAdminUser&&_myT.primary&&_et===_myT.primary)return "primary";
     if(_isAdminUser&&_myT.mirror&&_et===_myT.mirror)return "mirror";
-    return "fam:"+(e.family||"bj");
+    return "fam:"+_empFamMonth(e);
+  }
+  // v9.901 (Kevin 2026-09-11 « toutes les équipes sont mélangées ») — la section d'un employé est sa
+  // famille DU MOIS (section du PDF : familyHistory, puis famille de son équipe du mois), plus jamais
+  // e.family (DEF_EMP figé). Mesuré avant : 55 à 61 personnes par mois rangées sous la mauvaise
+  // famille (un chef BJ du mois listé dans « Groupe ouvert », etc.).
+  function _empFamMonth(e){
+    var f=null;
+    try{ f=(typeof familyForMonth==="function")?familyForMonth(e,A.year,A.month,{strict:true}):null; }catch(_){ f=null; }
+    if(!f){ try{ var _t=(typeof teamForMonth==="function")?teamForMonth(e,A.year,A.month,{strict:true}):null; var _to=_t&&gt(_t); if(_to&&_to.family&&_to.family!=="autre")f=_to.family; }catch(_){} }
+    if(!f){ try{ f=(typeof familyForMonth==="function")?familyForMonth(e,A.year,A.month):null; }catch(_){} }
+    return f||e.family||"bj";
   }
   function _groupOrderIdx(k){
     if(k==="primary")return 0;
@@ -33633,8 +33684,10 @@ function vEmps(){
       // Meme groupe : tri par equipe du mois (numerique) puis nom
       var ate=(typeof teamForMonth==="function"?teamForMonth(a,A.year,A.month):a.team)||a.team||"";
       var bte=(typeof teamForMonth==="function"?teamForMonth(b,A.year,A.month):b.team)||b.team||"";
-      var ta=parseInt(String(ate).replace(/[^0-9]/g,""))||0;
-      var tb=parseInt(String(bte).replace(/[^0-9]/g,""))||0;
+      // v9.901 : les équipes du mois posées par les boards s'appellent « 2026-09-3 » → retirer le
+      // préfixe date avant de lire le numéro, sinon tout tri numérique mélange les équipes.
+      var ta=parseInt(String(ate).replace(/^\d{4}-\d{2}-/,"").replace(/[^0-9]/g,""))||0;
+      var tb=parseInt(String(bte).replace(/^\d{4}-\d{2}-/,"").replace(/[^0-9]/g,""))||0;
       if(ta!==tb)return ta-tb;
       return (a.name||"").localeCompare(b.name||"");
     });
@@ -34023,9 +34076,12 @@ function vEmps(){
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:2px">
             <span style="font-size:13px;color:#a0bca0;font-family:monospace">${esc(emp.id)}</span>
             <span style="color:#2a4020">·</span>
-            <span style="font-size:13px;color:${tcc}">${esc(gt(emp.team)?gt(emp.team).name:"")}</span>
-            <span style="color:#2a4020">·</span>
-            <span style="font-size:13px;color:${getFamColor(emp.family||'bj')}">${getFamIcon(emp.family||'bj')} ${getFamLabel(emp.family||'bj')}</span>
+            ${(function(){/* v9.901 : ÉQUIPE et FAMILLE DU MOIS sur la carte (avant : emp.team / emp.family DEF_EMP figés → « Roul. Éq.7 » affiché pour un membre de BJ Éq.3 = « toutes les équipes sont mélangées ») */
+              var _tmS=(typeof teamForMonth==="function")?teamForMonth(emp,A.year,A.month,{strict:true}):null; var _tO=_tmS?gt(_tmS):null;
+              var _tLbl=_tO?_tO.name:(_tmS?("\u00c9q."+_tmS):"Pas d\u2019\u00e9quipe ce mois"); var _fM=_empFamMonth(emp);
+              return '<span style="font-size:13px;color:'+(_tmS?tcc:'#7a8a68')+'">'+esc(_tLbl)+'</span>'
+                +'<span style="color:#2a4020">\u00b7</span>'
+                +'<span style="font-size:13px;color:'+getFamColor(_fM)+'">'+getFamIcon(_fM)+' '+getFamLabel(_fM)+'</span>';})()}
             ${renderCompBadges(emp.post,true)}
             ${_hasPw?'<span style="color:#3a8a50;font-size:13px">\ud83d\udd12</span>':'<span style="color:#6a5a30;font-size:13px">\u26a0\ufe0f</span>'}
             ${(emp.toMo!==undefined&&emp.toMo!==null)?('<span style="font-size:12px;color:#d08080">· Départ '+moToLabel(emp.toMo)+'</span>'):""}
@@ -48863,7 +48919,7 @@ function vAbsences(){
   var pl=gpl(),days=getDays(A.year,A.month);
   var daysArr=(function(n){var a=[];for(var i=0;i<n;i++)a.push(i+1);return a;})(days);
   var isAdm=A.user&&A.user.id===AID;
-  var myTeam=A.user?A.user.team:null;
+  var myTeam=A.user?(((typeof teamForMonth==="function")?teamForMonth((typeof empById==="function"&&empById(A.user.id))||A.user,A.year,A.month,{strict:true}):null)||A.user.team):null; // v9.901 : équipe du mois
   // Codes d'absence a afficher
   var ABS_CODES={"CP":"#684060","M":"#783840","AF":"#206038","RRT":"#205060","HC":"#506818"};
   var ABS_LBL={"CP":"Cong\u00e9","M":"Maladie","AF":"Formation","RRT":"R\u00e9cup","HC":"H.Comp."};
