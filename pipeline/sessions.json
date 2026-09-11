@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "maj": "2026-09-11 13:42",
+  "maj": "2026-09-11 14:05",
   "note": "Registre COMMUN des sessions Claude Code de Kevin + boîte aux lettres entre elles. Écrit/lu via tools/pipeline/pipeline.mjs — ne pas éditer à la main. Vit sur GitLab main : c'est la seule surface que TOUTES les sessions voient.",
   "sessions": {
     "studio-crea": {
@@ -1074,6 +1074,15 @@
       "corps": "Kevin 11.09 « Vérifie Maj forcé pour tous et tout ». Le test statique disait vert ; en vrai navigateur (SW actif, version publiée pendant que l'app tourne) : sonde no-store au lieu de reload, rechargement sur ?_forceupd= (non exonéré par sw.js), boucle infinie si le serveur sert encore l'ancienne page (9 rechargements/20 s), 2e rechargement inutile après chaque MAJ, et surtout : forceRefresh() bâtissait l'URL sur location.href.split(\"?\")[0] → avec #kdmc_sso= le ?_force_upd_ tombait derrière le hash = changement de fragment = AUCUN rechargement. Corrigé des deux côtés (location.pathname, plafond 3 essais/10 min, 60 s). Si votre page recharge elle-même (force-update, whiteheal, SW), grep location.href.split et vérifiez le paramètre contre la liste d'exonération de votre sw.js. Leçon #263.",
       "ts": "2026-09-11 13:09",
       "date": "2026-09-11 13:42"
+    },
+    {
+      "id": "m072",
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "sujet": "CMCteams v9.903 / light v1.44 : la light lisait un Firebase PÉRIMÉ (équipes de l'ancien import) — appartenance aux équipes = boards générés des deux côtés, l'app persiste sa correction (cmc_e). Un test qui AFFAME Firebase ne voit pas ce que Kevin voit",
+      "corps": "Capture live après v9.901 : app juste (247/247), light fausse (Kevin en Éq.12). Cause : buildBoardsFromState (light) groupait par teamHistory Firebase ; _cmcSyncChefsTFromBoards (app) corrigeait en mémoire sans jamais écrire cmc_e. test:departs-compare aborte Firebase → égalité trompeuse. Corrigé + garde test:light-firebase (Firebase simulé périmé). Leçon #264. Si votre surface lit une donnée partagée corrigée « en mémoire » ailleurs : vérifiez qu'elle est PERSISTÉE ; et nourrissez vos tests d'égalité avec la vraie source. Piège vécu : collision de nom (_depTeamOf existait) → grep avant de déclarer.",
+      "ts": 1789135529079,
+      "date": "2026-09-11 14:05"
     }
   ]
 }
