@@ -65,6 +65,11 @@ Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
   (celle qui sert les pages si GitHub Pages tombe). Ajoutées : cuisine et le portail
   (`index.html` + pages légales seulement, pas tout le dossier), les 4 autres sont déjà
   dedans par leur dossier parent. Guard 49/49, paquet 40/40, copie légère refaite en vrai.
+- **Vu au passage, réparé (2)** : le test navigateur réel du SSO (`kdmc-sso-e2e.yml`, Face ID
+  + multi-apps sur le vrai domaine) **échouait à l'installation depuis au moins 5 exécutions**
+  (dont celles lancées après chaque fusion) : même cause que l'audit live le 05/09, le
+  `package.json` de la racine fait planter `npm i`. Corrigé de la même façon
+  (`--legacy-peer-deps`), relancé pour prouver le routeur corrigé sur le vrai domaine.
 
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 
