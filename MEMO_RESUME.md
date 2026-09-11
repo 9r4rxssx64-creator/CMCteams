@@ -39,6 +39,26 @@ Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
   sécurité. À côté : la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26**
   en local — elle échouait ici pour une raison d'outillage (Playwright absent à la racine, puis
   version de Chromium différente de celle installée : relié par un lien, sans rien télécharger).
+- **Strix a fini, et cette fois je l'ai lu** (run `34588162278`, 38 min, **14,00 $**, 33,1 M
+  jetons dont 31,8 M en cache, 2 fiches MEDIUM). Les deux sont **vraies**, vérifiées dans le
+  code, **corrigées** dans le même commit avec un test chacune :
+  1. **Une session « nommée » se fabriquait à distance et servait à lire ou couper la tienne.**
+     Le portail accepte qu'une app déclare un nom sans preuve (c'est voulu : « reconnu auto »,
+     jamais admin sans Face ID). Mais deux pages du portail se contentaient de cette session
+     faible : « mon historique » (avec un faux nom `kdmc_admin`, un inconnu lisait tes appareils,
+     tes apps, tes connexions) et « déconnecter mes autres appareils » (le même inconnu **coupait
+     toutes tes sessions**, Face ID comprises). Les deux exigent maintenant Face ID prouvé. Et un
+     site tiers pouvait poser ce cookie **dans le navigateur d'un visiteur** (connexion forcée
+     sous un faux nom) : l'émission n'est plus acceptée que depuis le domaine ou une app native.
+     Tests : `services/kdmc-router/self-service.test.mjs` 23/23 (10 nouveaux), et ces tests
+     tournent enfin avant chaque déploiement du routeur (ils ne tournaient nulle part).
+  2. **Un lien piégé activait un Premium à ton insu.** `?grant_premium=<qui>&plan=<formule>`
+     partait tout seul dès que tu étais connecté en admin, sans rien te demander. Maintenant
+     une fenêtre te dit **qui** et **quelle formule** avant d'envoyer ; « Annuler » ne fait
+     rien. Même chose pour le bouton « Activer » de la notification (un tap de plus, nommé).
+     Apex Chat **v1.1.289**, garde `premium-deep-link-confirm.test.js` (prouvé discriminant).
+  Ce que Strix n'a **pas** trouvé : pas d'injection, pas d'accès aux conversations, pas
+  d'élévation admin. Ce qu'il n'a **pas** testé : les parcours connectés (OTP), le temps réel.
 
 ## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
 
