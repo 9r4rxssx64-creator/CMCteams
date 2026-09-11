@@ -60,7 +60,16 @@ const APPS = [
   { chemin: 'lingua', quoi: 'lingua' },
   { chemin: 'shops/dashboard', quoi: 'dashboard' },
   { chemin: 'shops/sourcing', quoi: 'sourcing' },
+  /* 11/09/2026 — la parité avec ROUTES échouait (6 entrées) depuis que ces routes existent :
+     personne ne l'avait relancée. tools/cuisine = cujina/cocina/cuisine.kd-mc.com. */
+  { chemin: 'tools/cuisine', quoi: 'cuisine (A Cüjina de Mùnegu)' },
+  /* shops.kd-mc.com = le PORTAIL (shops/index.html + pages légales), pas tout le dossier :
+     chaque boutique a sa propre entrée (dashboard, sourcing, chez-lolo, la-detente). */
+  { chemin: 'shops', quoi: 'portail boutiques', fichiers: ['index.html', 'legal'] },
 ];
+/* Routes servies par un dossier PARENT déjà copié ci-dessus (cpSync est récursif) :
+   les « belles adresses » de kdmc-home. Listées pour la parité avec ROUTES. */
+const COUVERTS_PAR_PARENT = ['kdmc-home/worldmonitor', 'kdmc-home/osint', 'kdmc-home/ia', 'kdmc-home/outils'];
 /* ⚠️ DOSSIERS PARTAGÉS — oubliés au premier jet, et c'était grave.
    Mesuré le 15/08/2026 en ouvrant vraiment les pages dans un navigateur :
    tools/shared est appelé par 83 pages (badge de version, données de planning,
@@ -137,7 +146,13 @@ for (const a of liste) {
      sous-dossier (c'est ce qu'attend un domaine rattaché directement). */
   const dst = a.racine ? SORTIE : join(SORTIE, a.chemin);
   mkdirSync(dirname(dst), { recursive: true });
-  cpSync(src, dst, { recursive: true, filter: filtre });
+  if (a.fichiers) {
+    /* entrée « portail » : seulement les fichiers/dossiers nommés, pas tout le dossier */
+    mkdirSync(dst, { recursive: true });
+    for (const f of a.fichiers) { const s = join(src, f); if (existsSync(s)) cpSync(s, join(dst, f), { recursive: true, filter: filtre }); }
+  } else {
+    cpSync(src, dst, { recursive: true, filter: filtre });
+  }
   const { n, o } = compte(dst);
   totalFichiers += n; totalOctets += o;
   console.log(`  ${String(n).padStart(5)} fichiers  ${(o / 1048576).toFixed(1).padStart(6)} Mo   ${a.chemin}  (${a.quoi})`);
@@ -149,6 +164,7 @@ for (const f of RACINE_FICHIERS) {
   totalFichiers++; totalOctets += statSync(src).size;
 }
 console.log(`  ${String(RACINE_FICHIERS.filter((f) => existsSync(join(RACINE, f))).length).padStart(5)} fichiers          racine (cmcteams.kd-mc.com)`);
+console.log(`        déjà dedans (dossier parent copié) : ${COUVERTS_PAR_PARENT.join(', ')}`);
 
 console.log('\n────────────────────────────────────────────────');
 console.log(`  TOTAL : ${totalFichiers} fichiers, ${(totalOctets / 1048576).toFixed(1)} Mo`);
