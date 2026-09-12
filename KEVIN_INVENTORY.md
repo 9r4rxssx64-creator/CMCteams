@@ -1,7 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-11** (robots crypto : stratégie agressive +++, toujours faux argent)
+> Dernière mise à jour : **2026-09-12** (scanner de marché Choppiness Index sur le tableau de bord bot.kd-mc.com)
+
+### 12 septembre 2026 — Scanner de marché (Choppiness Index), inspiré d'une pub mais construit honnêtement
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `services/kdmc-router/worker.js` | **Modifié.** Nouveau `taChoppiness()` (indicateur technique standard) + `GET /__bot/scan` (24 cryptos liquides, lecture seule, ne touche aucun bot) — placé AVANT la vérification Railway exprès : marche même si la flotte est en panne. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `tools/crypto-bot-dashboard/index.html` | **Modifié.** Carte « 🔎 Scanner marché » avec bouton « Scanner maintenant », deux catégories honnêtes (🚀 sort du calme / 🌀 comprimé), aucune promesse. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) |
+| `services/kdmc-router/bot.test.mjs` | **Modifié.** 51→61 contrôles, prouvés par 4 sabotages. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/bot.test.mjs) |
 
 ### 11 septembre 2026 (19h55) — Stratégie agressive +++ sur les 6 bots crypto (toujours faux argent)
 

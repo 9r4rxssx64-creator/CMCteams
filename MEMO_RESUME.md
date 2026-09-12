@@ -1,5 +1,14 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-12 — Scanner de marché (Choppiness Index) : une pub Facebook démêlée + une vraie fonction construite
+
+- **Kevin a envoyé une capture** d'une pub Facebook (« Captain Trading ») : « Claude AI filtre automatiquement des centaines d'actifs selon le Choppiness Index pour identifier les paires prêtes à exploser ». Vérifié honnêtement : le Choppiness Index est un **vrai** indicateur technique standard (E.W. Dreiss) — « Claude AI le fait pour toi » est une phrase **publicitaire**, je n'ai aucun accès magique à TradingView ni à un scanner tiers.
+- **Construit la vraie version, honnête** : `services/kdmc-router/worker.js` — `taChoppiness()` (formule standard, validée d'abord en Python sur 2 cas connus : tendance forte → CI≈9, marché choppy → CI≈60) + `SCAN_PAIRS` (24 paires liquides curatées, pas tout le marché — évite de faire remonter des micro-caps illiquides) + nouvel endpoint `GET /__bot/scan`, admin-gated, lecture SEULE (aucun réglage d'aucun bot n'est touché). Deux catégories honnêtes : **🚀 sort du calme** (CI en chute nette = tendance qui démarre déjà) et **🌀 comprimé** (CI ≥ 61,8 = marché sans direction, pourrait partir dans un sens ou l'autre). Aucune promesse de gains, comme `/__bot/analysis` déjà en place.
+- **Trouvé en construisant** : l'endpoint passait par `botCtx()` (2 appels Railway) avant même de router vers `/__bot/scan`, alors que le scan n'a besoin QUE de Binance public — déplacé avant la vérification `RAILWAY_TOKEN`/`botCtx()` : le scan marche même si la flotte de bots ou le jeton Railway sont en panne.
+- **Tableau de bord** : nouvelle carte « 🔎 Scanner marché — Choppiness Index », déclenchée à la demande (pas auto-chargée — 24 requêtes serveur à chaque appel, pas une donnée à streamer en continu).
+- **Tests** : `bot.test.mjs` 51→**61 contrôles**, 0 échec. **Prouvés discriminants par 4 sabotages** : seuil « comprimé » retiré, tri retiré, erreur HTTP avalée, endpoint replacé après `botCtx()` (2 tests tombent, confirmant l'indépendance vis-à-vis de Railway).
+- **Gardes de conformité** relancées vertes (no-conflicts, no-pin-leak, no-secret-in-docs, depot-public-sain, destinations-workflows, actions-conformes, xss-guard).
+
 ## 11 septembre 2026 (23h) — « Centre les images auto à chaque fois » : les photos se cadrent sur le visage, partout (arbre v3.21)
 
 Demande de Kevin : *« Centre les images auto à chaque fois. »*

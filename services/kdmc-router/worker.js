@@ -1543,6 +1543,65 @@ function taRating(h, l, c) {
   const label = score >= 0.5 ? 'Achat fort' : score >= 0.1 ? 'Achat' : score > -0.1 ? 'Neutre' : score > -0.5 ? 'Vente' : 'Vente forte';
   return { price, score: Math.round(score * 100) / 100, label, rsi: rsi == null ? null : Math.round(rsi * 10) / 10, ma_buy: maBuy, ma_sell: maSell, osc_buy: oscBuy, osc_sell: oscSell, macd_up: macd > macdSig };
 }
+/* ===== SCANNER DE MARCHÉ — Choppiness Index (Kevin 2026-09-12, capture pub Facebook
+   « Captain Trading ») =====
+   CE QUI EST VRAI DANS LA PUB, CE QUI NE L'EST PAS : le Choppiness Index (E.W. Dreiss,
+   1990er) est un VRAI indicateur technique standard, formule ci-dessous, aucune
+   invention. « Claude AI scanne le marché pour toi » est une phrase publicitaire — je
+   n'ai aucun accès magique à TradingView ; ce que je peux VRAIMENT faire est calculer
+   ce même indicateur, honnêtement, sur les VRAIES bougies Binance publiques (même
+   source que /__bot/analysis), et te montrer le résultat sans l'habiller de promesses.
+   FORMULE (standard, non modifiée) : CI(n) = 100 · log10( Σ TrueRange(n) / (PlusHaut(n)
+   − PlusBas(n)) ) / log10(n). CI proche de 100 = marché SANS direction (comprimé,
+   "coiled" — pourrait partir dans un sens ou l'autre). CI proche de 0 = tendance
+   FORTE et directionnelle déjà en cours. Ni l'un ni l'autre n'est une prédiction —
+   c'est une PHOTO technique du moment, exactement comme /__bot/analysis le dit déjà.
+   Lecture SEULE : le scan ne modifie AUCUN réglage d'AUCUN bot — Kevin décide. */
+function taChoppiness(h, l, c, p) {
+  if (c.length < p + 1) return null;
+  let trSum = 0;
+  for (let i = c.length - p; i < c.length; i++) {
+    trSum += Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1]));
+  }
+  const hh = Math.max(...h.slice(-p)), ll = Math.min(...l.slice(-p));
+  const rng = hh - ll;
+  if (rng <= 0) return 0;
+  return (100 * Math.log10(trSum / rng)) / Math.log10(p);
+}
+/* Liste CURATÉE (pas l'intégralité du marché — évite les micro-caps illiquides/
+   pump-and-dump qu'un scan "toutes paires" ferait remonter) : 24 paires USDT parmi
+   les plus liquides de Binance, sous la limite de 50 sous-requêtes/appel du Worker
+   Cloudflare (24 fetch en parallèle, marge large). */
+const SCAN_PAIRS = [
+  'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'XRP/USDT', 'ADA/USDT',
+  'DOGE/USDT', 'AVAX/USDT', 'DOT/USDT', 'LINK/USDT', 'LTC/USDT', 'BCH/USDT',
+  'ATOM/USDT', 'UNI/USDT', 'ETC/USDT', 'XLM/USDT', 'NEAR/USDT', 'APT/USDT',
+  'ARB/USDT', 'OP/USDT', 'FIL/USDT', 'ICP/USDT', 'HBAR/USDT', 'SUI/USDT',
+];
+async function taScanPair(sym) {
+  const pair = sym.replace('/', '');
+  try {
+    const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=1h&limit=60`);
+    if (!r.ok) return { symbol: sym, err: 'binance HTTP ' + r.status };
+    const k = await r.json();
+    if (!Array.isArray(k) || k.length < 30) return { symbol: sym, err: 'bougies insuffisantes (' + (k.length || 0) + ')' };
+    const h = k.map((x) => Number(x[2])), l = k.map((x) => Number(x[3])), c = k.map((x) => Number(x[4]));
+    const ciNow = taChoppiness(h, l, c, 14);
+    const ciPrev = taChoppiness(h.slice(0, -10), l.slice(0, -10), c.slice(0, -10), 14);
+    const price = c[c.length - 1];
+    const chg24 = c.length > 24 ? ((price / c[c.length - 25] - 1) * 100) : null;
+    if (ciNow == null) return { symbol: sym, err: 'CI incalculable (pas assez de bougies)' };
+    const delta = ciPrev == null ? null : ciNow - ciPrev;
+    let cat = 'neutre';
+    if (delta != null && delta <= -15) cat = 'sort_du_calme';        // CI chute vite = tendance qui démarre
+    else if (ciNow >= 61.8) cat = 'comprime';                        // seuil usuel du Choppiness Index
+    return {
+      symbol: sym, price, chg24: chg24 == null ? null : Math.round(chg24 * 100) / 100,
+      ci: Math.round(ciNow * 10) / 10, ci_delta: delta == null ? null : Math.round(delta * 10) / 10,
+      cat,
+    };
+  } catch (e) { return { symbol: sym, err: String(e && e.message || e).slice(0, 120) }; }
+}
 /* ===== JOURNAL PERSISTANT DE LA FLOTTE (Kevin 2026-09-11 « bilan de ce qu'ils ont
    pu gagner ou perdre ») =====
    POURQUOI : jusqu'ici le bilan se lisait UNIQUEMENT dans les logs Railway, qui sont
@@ -1759,10 +1818,32 @@ async function handleBot(request, url, env) {
     const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
     return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403);
   }
+  const path = url.pathname;
+
+  /* SCANNER DE MARCHÉ (Choppiness Index, Kevin 2026-09-12) : lecture SEULE, ne
+     touche à AUCUN réglage d'AUCUN bot. Traité AVANT botCtx() exprès : le scan
+     ne parle qu'à Binance (public, sans clé) — il n'a besoin ni de RAILWAY_TOKEN
+     ni de résoudre le service Railway, donc il marcherait même si la flotte de
+     bots était en panne. 24 paires liquides en parallèle, ≤50 sous-requêtes
+     Worker (marge large). Classé : ce qui bouge déjà en premier (sort_du_calme),
+     ce qui est comprimé ensuite (comprime), le reste après — à l'intérieur de
+     chaque groupe, l'écart au seuil décide. */
+  if (path === '/__bot/scan' && request.method === 'GET') {
+    const out = await Promise.all(SCAN_PAIRS.map(taScanPair));
+    const rank = { sort_du_calme: 0, comprime: 1, neutre: 2 };
+    out.sort((a, b) => {
+      const ra = rank[a.cat] != null ? rank[a.cat] : 3, rb = rank[b.cat] != null ? rank[b.cat] : 3;
+      if (ra !== rb) return ra - rb;
+      const da = a.ci_delta != null ? a.ci_delta : 0, db = b.ci_delta != null ? b.ci_delta : 0;
+      if (da !== db) return da - db;                       // chute la plus forte d'abord
+      return (b.ci != null ? b.ci : -1) - (a.ci != null ? a.ci : -1); // plus comprimé d'abord
+    });
+    return J({ ok: true, scanned: SCAN_PAIRS.length, results: out });
+  }
+
   if (!env.RAILWAY_TOKEN) return J({ ok: false, reason: 'railway_token_absent', detail: 'Secret RAILWAY_TOKEN non déployé sur le worker (relancer deploy-kdmc-router).' });
   const ctx = await botCtx(env);
   if (ctx.err) return J({ ok: false, reason: ctx.err, detail: ctx.detail });
-  const path = url.pathname;
 
   if (path === '/__bot/status' && request.method === 'GET') {
     const dp = await railGql(env, `query { deployments(first: 1, input: { projectId: "${ctx.projectId}", serviceId: "${ctx.serviceId}", environmentId: "${ctx.environmentId}" }) { edges { node { id status createdAt } } } }`);
