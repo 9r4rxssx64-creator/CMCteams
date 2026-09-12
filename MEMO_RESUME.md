@@ -8,6 +8,7 @@
 - **Tableau de bord** : nouvelle carte « 🔎 Scanner marché — Choppiness Index », déclenchée à la demande (pas auto-chargée — 24 requêtes serveur à chaque appel, pas une donnée à streamer en continu).
 - **Tests** : `bot.test.mjs` 51→**61 contrôles**, 0 échec. **Prouvés discriminants par 4 sabotages** : seuil « comprimé » retiré, tri retiré, erreur HTTP avalée, endpoint replacé après `botCtx()` (2 tests tombent, confirmant l'indépendance vis-à-vis de Railway).
 - **Gardes de conformité** relancées vertes (no-conflicts, no-pin-leak, no-secret-in-docs, depot-public-sain, destinations-workflows, actions-conformes, xss-guard).
+- **Fusionné sur `main`** (PR #3783, bot auto-merge, 20:00:46 UTC) puis **vérifié EN VRAI, pas déduit** : (1) le workflow `deploy-kdmc-router.yml` s'est redéclenché tout seul sur le commit de fusion et a réussi (run #160, 20:00:51→20:01:42) ; (2) le code SOURCE réellement en ligne sur le Worker Cloudflare `kdmc-router` (lu en direct via l'API Cloudflare, pas supposé depuis le dépôt) contient bien `taChoppiness`, `SCAN_PAIRS` et la route `/__bot/scan` ; (3) `verif-reelle.yml` (navigateur réel, connecté) confirme `bot.kd-mc.com` rendu OK, 0 requête projet bloquée. Honnêteté : ce passage générique ne clique pas le bouton « à la demande » du scanner (il ne l'aurait pas fait charger tout seul par design) — la preuve porte sur le code déployé + la page qui rend, pas sur un clic réel du bouton.
 
 ## 11 septembre 2026 (23h) — « Centre les images auto à chaque fois » : les photos se cadrent sur le visage, partout (arbre v3.21)
 
