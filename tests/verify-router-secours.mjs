@@ -97,9 +97,17 @@ const src = readFileSync(new URL('../services/kdmc-router/worker.js', import.met
 const bloc = src.slice(src.indexOf('const ROUTES'), src.indexOf('// Proxy MÊME ORIGINE'));
 const dossiers = [...bloc.matchAll(/'\/CMCteams\/?([^']*)'/g)].map((m) => m[1]).filter((x, i, a) => a.indexOf(x) === i);
 const prep = readFileSync(new URL('../services/kdmc-router/prepare-secours.mjs', import.meta.url), 'utf8');
+/* La copie est RÉCURSIVE (cpSync recursive:true) : lister « kdmc-home » couvre
+   déjà kdmc-home/osint, /ia, /outils, /worldmonitor. Chercher la chaîne exacte
+   accusait donc 4 sous-dossiers DÉJÀ copiés — un test qui crie au manque là où
+   il n'y en a pas fait perdre du temps et finit par être ignoré (leçon #103 à
+   l'envers : un faux rouge est aussi nuisible qu'un faux vert). On vérifie ce
+   qui compte vraiment : le dossier OU l'un de ses parents est dans la copie. */
+const couvert = (d) => d.split('/').map((_, i, a) => a.slice(0, i + 1).join('/'))
+  .some((prefixe) => prep.includes(`'${prefixe}'`));
 dossiers.forEach((d) => {
   if (!d) { chk(/RACINE_FICHIERS/.test(prep), 'G. la racine (cmcteams) est prévue dans la copie'); return; }
-  chk(prep.includes(`'${d}'`), `G. « ${d} » est prévu dans la copie (aucun sous-domaine oublié)`);
+  chk(couvert(d), `G. « ${d} » est prévu dans la copie (aucun sous-domaine oublié)`);
 });
 
 /* G-bis) et le garde-fou de sécurité est bien dans la config */
