@@ -126,6 +126,17 @@
       <div class="coins" id="analysis"><div class="sub">Chargement…</div></div>
     </div>
 
+    <!-- Scanner de marché (Choppiness Index) : lecture SEULE, ne change RIEN aux bots.
+         Kevin 2026-09-12 — capture d'une pub Facebook « Claude AI scanne le marché » :
+         le Choppiness Index est un vrai indicateur, la phrase "Claude AI le fait pour
+         toi" est du marketing. Voici la vraie version, honnête, sur les VRAIES bougies. -->
+    <div class="card">
+      <h2>🔎 Scanner marché — Choppiness Index</h2>
+      <div class="sub" style="margin:-4px 0 8px">24 cryptos liquides, indicateur technique STANDARD (pas une invention). <b>🚀 sort du calme</b> = tendance qui démarre déjà. <b>🌀 comprimé</b> = marché sans direction, pourrait partir dans un sens ou l'autre. Ne change AUCUN réglage d'aucun bot — juste une photo pour t'aider à choisir. Aucune promesse.</div>
+      <div style="margin:0 0 8px"><button class="btn-ghost" onclick="loadScan()">🔎 Scanner maintenant</button></div>
+      <div class="coins" id="scan"><div class="sub">Appuie sur « Scanner maintenant ».</div></div>
+    </div>
+
     <!-- TradingView officiel (graphique + jauge) -->
     <div class="card">
       <h2>📈 TradingView en direct</h2>
@@ -359,6 +370,27 @@
       });
     }).catch(function(){});
   }
+  // ---- Scanner de marché (Choppiness Index) — lecture seule, déclenché à la demande ----
+  var SCAN_LABEL = { sort_du_calme: '🚀 sort du calme', comprime: '🌀 comprimé', neutre: '⚪ neutre' };
+  var SCAN_COL = { sort_du_calme: 'var(--green)', comprime: 'var(--orange)', neutre: 'var(--mut)' };
+  window.loadScan = function(){
+    var box = document.getElementById('scan'); box.innerHTML = '<div class="sub">Scan en cours (24 cryptos)…</div>';
+    fetch(API+'/__bot/scan',{credentials:'include',headers:hdrs()})
+    .then(function(r){ return r.json(); }).then(function(j){
+      if(!j.ok){ box.innerHTML = '<div class="sub">⚠️ '+esc(j.reason||'erreur')+'</div>'; return; }
+      box.innerHTML = '';
+      (j.results||[]).forEach(function(a){
+        var row = document.createElement('div'); row.className = 'coin';
+        if(a.err){ row.innerHTML = '<span class="nm" style="color:var(--mut)">'+esc(a.symbol)+'</span><span class="px">indisponible : '+esc(a.err)+'</span>'; box.appendChild(row); return; }
+        var lab = SCAN_LABEL[a.cat] || a.cat, col = SCAN_COL[a.cat] || 'var(--mut)';
+        var chg = a.chg24 == null ? '' : (' · 24h '+(a.chg24>0?'+':'')+a.chg24+'%');
+        row.innerHTML = '<span class="nm">'+esc(a.symbol.split('/')[0])+' <span style="color:'+col+'">'+esc(lab)+'</span></span>'
+          +'<span class="px">'+Number(a.price).toLocaleString('fr-FR')+' $'+chg+' · CI '+a.ci+(a.ci_delta!=null?' ('+(a.ci_delta>0?'+':'')+a.ci_delta+')':'')+'</span>';
+        box.appendChild(row);
+      });
+      if(!box.children.length) box.innerHTML = '<div class="sub">Rien à afficher.</div>';
+    }).catch(function(e){ box.innerHTML = '<div class="sub">Réseau : '+esc(e.message)+'</div>'; });
+  };
   function tvUrls(base){
     var sym='BINANCE%3A'+base+'USDT';
     var chart='https://s.tradingview.com/widgetembed/?symbol='+sym+'&interval=60&theme=dark&style=1&locale=fr&hide_side_toolbar=1&allow_symbol_change=0&save_image=0&withdateranges=1';
