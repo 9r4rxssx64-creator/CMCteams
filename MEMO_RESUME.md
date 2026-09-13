@@ -1,5 +1,25 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-13 — Bots crypto : 2 décisions prises en autonomie (Kevin a dit « Continu » sans trancher)
+
+Deux questions restaient ouvertes depuis le 12.09 (flotte relancée + stratégie agressive+++). Kevin a dit
+« Continu » sans répondre aux deux — décision prise en autonomie avec le raisonnement le plus prudent,
+consignée ici plutôt que de rester bloqué à attendre (règle « autonomie totale »).
+
+- **Vérifié en direct (Railway)** : les 6 services `crypto-bot` + `crypto-bot-p1..p5` tournent tous, **0 échec**
+  sur les 7 services du projet (`environment-status` production). La flotte relancée le 12.09 est stable.
+- **Décision 1 — garder les 4 bots papier relancés** (pas de coupe à 2) : coût ~4 $/mois total, **argent papier
+  uniquement** (aucun risque réel), et le système de bilan persistant construit le 12.09 existe justement pour
+  accumuler des données sur CETTE flotte — la réduire maintenant viderait la raison d'être du bilan avant même
+  d'avoir un mois de recul.
+- **Décision 2 — NE PAS pousser l'agressivité plus loin pour l'instant** : la stratégie a déjà été durcie
+  significativement le 12.09 (« agressif +++ »). Repousser encore sans donnée réelle contredirait la raison
+  d'être du bilan persistant tout juste construit (mesurer, pas deviner — règle « jamais estimer »). Attendre
+  que le bilan (`/__bot/history`, dashboard) accumule au moins quelques semaines de vrais chiffres avant de
+  retoucher aux réglages.
+- **Rien à changer côté code** — ces deux décisions maintiennent l'état actuel (0 régression, 0 action requise).
+  Si Kevin veut trancher autrement à la lecture de ceci, il lui suffit de le dire — rien n'est figé.
+
 ## 2026-09-12 — Scanner de marché (Choppiness Index) : une pub Facebook démêlée + une vraie fonction construite
 
 - **Kevin a envoyé une capture** d'une pub Facebook (« Captain Trading ») : « Claude AI filtre automatiquement des centaines d'actifs selon le Choppiness Index pour identifier les paires prêtes à exploser ». Vérifié honnêtement : le Choppiness Index est un **vrai** indicateur technique standard (E.W. Dreiss) — « Claude AI le fait pour toi » est une phrase **publicitaire**, je n'ai aucun accès magique à TradingView ni à un scanner tiers.
