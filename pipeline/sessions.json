@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "maj": "2026-09-11 14:05",
+  "maj": "2026-09-13",
   "note": "Registre COMMUN des sessions Claude Code de Kevin + boîte aux lettres entre elles. Écrit/lu via tools/pipeline/pipeline.mjs — ne pas éditer à la main. Vit sur GitLab main : c'est la seule surface que TOUTES les sessions voient.",
   "sessions": {
     "studio-crea": {
@@ -421,6 +421,16 @@
       "surfaces": [],
       "etat": "actif",
       "maj": "2026-09-10",
+      "attend_kevin": null,
+      "attend_session": null
+    },
+    "crypto-bots": {
+      "titre": "Robots crypto : bilan, agressivité, scanner marché",
+      "branche": "claude/crypto-bots-status-ocgu3i",
+      "sujet": "Bilan bots crypto (bilan persistant), stratégie agressive+++, scanner Choppiness Index",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-13",
       "attend_kevin": null,
       "attend_session": null
     }
