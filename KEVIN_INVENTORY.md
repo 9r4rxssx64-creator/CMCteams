@@ -1,5 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🧅 Tor en clair — 2026-09-15
+
+| Quoi | Ouvrir |
+|---|---|
+| **L'outil (à utiliser)** | [tor.kd-mc.com](https://tor.kd-mc.com) · secours : [github.io/CMCteams/tools/tor/](https://9r4rxssx64-creator.github.io/CMCteams/tools/tor/) |
+| Le code de la page | [tools/tor/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/index.html) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/tor/index.html) |
+| La garde du catalogue (12 contrôles) | [tests/tor-catalogue.test.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/tor-catalogue.test.mjs) |
+| La preuve navigateur (17 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
+
+
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-12** (scanner de marché Choppiness Index sur le tableau de bord bot.kd-mc.com)
 
