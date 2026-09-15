@@ -1,5 +1,24 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 5) — tor.kd-mc.com a vacillé (DNS) : diagnostic, correctif, et quoi faire si ça revient
+
+- **Vécu, mesuré** : `tor.kd-mc.com` ✅ à 18:44 → **❌ `ERR_NAME_NOT_RESOLVED` à 18:57** → ✅ à 19:05.
+  Ce n'est pas la page : c'est le **sous-domaine fraîchement créé** par `wrangler` (route
+  `custom_domain = true`) dont la résolution n'était pas encore stable partout (cache négatif
+  côté résolveurs). **Correctif appliqué** : relancer `deploy-kdmc-router.yml` (run #164, succès),
+  qui ré-applique les routes → résolution rétablie, vérifiée au run suivant.
+- **Si Kevin voit « site introuvable »** : ce n'est pas cassé, c'est le DNS qui met du temps.
+  Deux issues immédiates — l'adresse de secours
+  `9r4rxssx64-creator.github.io/CMCteams/tools/tor/`, ou la copie **hors ligne** (bouton
+  « Garder hors ligne », qui n'a besoin d'aucun réseau).
+- **C'est précisément pour ça que la surface a été ajoutée au balayage** (suite 3) : sans elle,
+  cette panne serait passée totalement inaperçue.
+- **Deuxième échec du même run, PAS le nôtre** : `Chez Lolo` — `HTTP 503` sur
+  `printify-order-config.json` (service tiers). Vert au run suivant sans intervention.
+  Consigné ici pour la session boutiques : à surveiller si ça se répète.
+- **Run vert de référence** : `verif-reelle` #83 — *« AUDIT LIVE OK — toutes les surfaces rendent,
+  0 requête projet bloquée »*, 27 surfaces.
+
 ## 2026-09-15 (suite 4) — « Aucun blocage ? Sécurisé +++ et non traçable » : la trace mesurée, puis supprimée (v1.2)
 
 Question de Kevin : y a-t-il un blocage automatique dans l'app, peut-il tout faire, et est-ce
