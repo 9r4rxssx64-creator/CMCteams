@@ -21,7 +21,7 @@ Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcrip
 | La garde du catalogue (12 contrôles) | [tests/tor-catalogue.test.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/tor-catalogue.test.mjs) |
 | La tuile sur ton portail (privée, Kevin seul) | [kdmc-home/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/index.html) — zone `#tor-zone` |
 | La preuve « qui voit la tuile » (8 contrôles, 5 profils) | [tests/verify-tor-tuile-portail.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-tuile-portail.mjs) |
-| L'outil qui ouvre vraiment les .onion (à la demande) | [tools/tor/verif-onion.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/verif-onion.mjs) — job GitLab `tor-adresses` |
+| L'outil qui ouvre vraiment les .onion | [tools/tor/verif-onion.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/verif-onion.mjs) — **ouvre le Tor Browser, laisse-le ouvert, puis `npm run tor:verif`**. Sans Tor il refuse de répondre (jamais de faux « tout est mort »). Aussi lançable par le job GitLab `tor-adresses`, à la demande |
 | La preuve navigateur (43 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
 
 

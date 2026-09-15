@@ -443,6 +443,16 @@
       "maj": "2026-09-15",
       "attend_kevin": null,
       "attend_session": null
+    },
+    "tor-securite": {
+      "titre": "Tor en clair",
+      "branche": "claude/security-review-4j3mct",
+      "sujet": "outil .onion : apprendre, catalogue verifie, verificateur anti-faux, identite dediee, usage hors ligne",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-15",
+      "attend_kevin": null,
+      "attend_session": null
     }
   },
   "messages": [

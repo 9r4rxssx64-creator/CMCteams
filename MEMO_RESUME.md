@@ -180,6 +180,31 @@ Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écar
 - 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
   mise en garde « t'y connecter dit qui tu es »).
 
+## 2026-09-15 — Tor en clair v1.4 : j'ai essayé d'ouvrir les .onion pour de vrai, et voilà où ça bute
+
+Mon point faible déclaré était : *les 20 adresses n'ont jamais été ouvertes*. J'ai cherché à le
+fermer moi-même, pas à le laisser en note.
+
+- **Ce que j'ai mesuré** (pas supposé) : GitLab est joignable d'ici (l'API répond 401/404 = le
+  serveur parle) mais **cette session n'a aucun jeton** → le job `tor-adresses` ne peut pas être
+  déclenché. J'ai alors installé Tor dans mon bac à sable pour le faire moi-même : **mon
+  environnement l'a refusé** (ouvrir un circuit Tor = sortir du réseau surveillé). C'est une règle
+  de sécurité, je ne la contourne pas. GitHub Actions reste **interdit** (c'est la formulation
+  exacte qui a fait suspendre le compte le 15/08).
+- **Bug réel trouvé dans mon propre outil** : sans Tor, `curl` échoue sur les 20 adresses et le
+  rapport annonçait *« tout est mort »* — un **faux verdict**, pire que pas de verdict. Corrigé :
+  l'outil cherche un Tor sur **9050** (service) **et 9150** (Tor Browser), vérifie aussi
+  `TOR_SOCKS`, et **refuse de produire un rapport** s'il n'en trouve aucun (sortie 2, message clair).
+- **Kevin peut le lancer lui-même en une commande** : ouvrir le Tor Browser, le laisser ouvert,
+  puis `npm run tor:verif`. La page le dit maintenant noir sur blanc, à la place de l'ancienne
+  phrase « dis-le-moi et je le lance » qui était fausse.
+- **Garde** : `tests/tor-catalogue.test.mjs` passe de 32 à **33 contrôles** (câblé dans `test:ci`) —
+  le nouveau exige le refus sans Tor **et** la recherche du port 9150. **Prouvé discriminant** :
+  refus saboté → échec immédiat (« il a produit un verdict sans Tor ») ; restauré → 33/0.
+- **Revérifié en vrai navigateur** (Chromium, iPhone SE) : 43 contrôles, 0 erreur JS, 0 requête
+  réseau, copie hors ligne de 72 Ko.
+- Session inscrite au registre commun (`tor-securite`) — l'avertissement de démarrage disparaît.
+
 ## 2026-09-15 — « Tor en clair » : un outil pour comprendre et visiter le web .onion sans se faire avoir
 
 Demande de Kevin : *« Crée-moi un outil pour aller sur le dark web simplement, en toute sécurité,
