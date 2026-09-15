@@ -1,5 +1,32 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 2) — « Tu l'as intégré à mon domaine admin ? » : la moitié manquait
+
+Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écart était réel.
+
+- **Ce qui était fait** : `tor.kd-mc.com` inscrit dans les 5 endroits du registre (apps.json, ROUTES
+  du worker, wrangler.toml, replis portail + admin). `apps-consistency` 7/7.
+- **Ce qui MANQUAIT** : **aucune tuile sur le portail**. Kevin aurait dû taper l'adresse à la main —
+  c'est exactement la leçon du 2026-08-05 (« une tuile invisible = une fonction qui n'existe pas »).
+- **Piège de mesure évité** : `grep tor.kd-mc.com` renvoyait aussi `kdmc-home/index.html` et
+  `kdmc-uptime/worker.js` — **faux positifs** : `worldmoni**tor.kd-mc.com**` contient la chaîne.
+  Re-mesuré avec une limite de mot (`['"/]tor\.kd-mc\.com`) → 5 fichiers réels, pas 7.
+- **Ajouté** : zone `#tor-zone` dans `kdmc-home/index.html` + règle dans `kdmc-portal.js`. Même
+  logique que la tuile du bot (révélée dès que la session porte le nom, **sans exiger le Face ID** —
+  sinon invisible sur l'iPhone de Kevin), mais **réservée à Kevin seul** (`kevin|desarzens`), pas à
+  Laurence ni aux clients : choix de discrétion, la page ne donne accès à rien de sensible.
+- **Preuve navigateur réel** (`npm run tor:tuile`, nouveau) : portail **servi en HTTP** (il lit
+  `/apps.json` à la racine), 5 profils simulés — Kevin par son nom ✓, Kevin admin ✓, Laurence ✗,
+  client inconnu ✗, non connecté ✗, **et 0 régression** sur la tuile du bot. 8 contrôles, 0 échec.
+- **Deux bancs d'essai faux corrigés avant de conclure** (j'ai failli accuser le code) : (1) le vrai
+  `kdmc-sso.js` **écrase** `window.kdmcSSO` → il faut verrouiller la propriété
+  (`Object.defineProperty`, set no-op) ; (2) le portail ne passe en mode connecté **que si la session
+  porte un `uid`** (`boot` → `_postLogin` → `applyAdminVisibility`) — sans uid, rien ne s'affiche et
+  tout paraît cassé. **Leçon : quand un test dit qu'une fonction éprouvée est cassée (Laurence ne
+  voyait plus le bot), suspecter le banc d'essai AVANT le code.**
+- `test:tor` 19 → **21 contrôles** : inscription dans les 5 fichiers du domaine + tuile présente,
+  masquée par défaut, pointant sur l'outil, et réservée à Kevin dans `kdmc-portal.js`.
+
 ## 2026-09-15 (suite) — Kevin : « intègre quand même ce que tu ne veux pas » + une identité dédiée (v1.1)
 
 - **Ce qu'il demandait** : (a) le catalogue exhaustif incluant les marchés, (b) un compte/identité/mail dédiés.

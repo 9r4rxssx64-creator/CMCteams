@@ -190,4 +190,29 @@ t('les 3 limites non négociables sont toujours écrites', () => {
   }
 });
 
+
+/* ── Intégration au domaine : le registre ET la tuile du portail. Sans tuile, Kevin
+   devrait taper l'adresse à la main = fonction inexistante (leçon du 2026-08-05). ── */
+t('l\'outil est inscrit partout dans le domaine (registre, routeur, replis)', () => {
+  const attendus = ['kdmc-home/apps.json', 'services/kdmc-router/worker.js',
+                    'services/kdmc-router/wrangler.toml', 'kdmc-home/kdmc-portal.js',
+                    'kdmc-home/admin/admin.js'];
+  for (const f of attendus) {
+    const c = readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+    assert(/['"\/]tor\.kd-mc\.com/.test(c), 'tor.kd-mc.com absent de ' + f);
+  }
+});
+
+t('la tuile du portail existe, pointe sur l\'outil, et reste dans une zone privée', () => {
+  const portail = readFileSync(new URL('../kdmc-home/index.html', import.meta.url), 'utf8');
+  const i = portail.indexOf('id="tor-zone"');
+  assert(i > 0, 'la zone #tor-zone a disparu du portail');
+  const zone = portail.slice(i, portail.indexOf('</div>', i));
+  assert(/hidden/.test(portail.slice(i - 40, i + 40)), 'la zone n\'est plus masquée par défaut : tout le monde la verrait');
+  assert(zone.includes('https://tor.kd-mc.com/'), 'la tuile ne pointe plus sur l\'outil');
+  const js = readFileSync(new URL('../kdmc-home/kdmc-portal.js', import.meta.url), 'utf8');
+  assert(js.includes("getElementById('tor-zone')"), 'la règle d\'affichage de la tuile a disparu');
+  assert(/estKevin[\s\S]{0,120}kevin\|desarzens/.test(js), 'la tuile n\'est plus réservée à Kevin');
+});
+
 console.log('\n✅ ' + ok + ' contrôles, 0 échec — ' + fiches.length + ' services au catalogue.');
