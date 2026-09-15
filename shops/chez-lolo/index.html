@@ -264,7 +264,7 @@ input,select,textarea{font-size:16px}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.card:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"CHEZ LOLO","description":"La boutique multi-univers de Lolo : textile, cosmétiques, goodies & accessoires. Livraison Monaco & France.","url":"https://chez-lolo.kd-mc.com/","image":"https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/img/og.png?ignore=crop","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"CHEZ LOLO","description":"La boutique multi-univers de Lolo : textile, cosmétiques, goodies & accessoires. Livraison Monaco & France.","url":"https://chez-lolo.kd-mc.com/","image":"https://chez-lolo.kd-mc.com/img/og.png?ignore=crop","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 <!-- PUB READY — Activer en ajoutant les IDs -->
 <!-- Google Ads: décommenter et ajouter ID -->
@@ -875,7 +875,7 @@ if(typeof ldAdminLogout==="function"){var _o=ldAdminLogout;ldAdminLogout=functio
        var cfg=window._clOrderCfg; if(!cfg||!cfg.worker_url)return;
        var HEXFR={"#15171a":"Noir","#0f1722":"Marine","#1d3a5f":"Marine","#ffffff":"Blanc","#c9c4ba":"Blanc","#2f4538":"Vert","#3a4636":"Kaki","#5a6650":"Kaki","#3a0f12":"Bordeaux","#5b1a1a":"Bordeaux","#7a5c1e":"Sable","#b08d57":"Sable","#8a8d92":"Ardoise"};
        var its=pod.map(function(i){return {name:i.name,garment:i.garment,design_data:i.printImg,size:i.size,color:HEXFR[String(i.color||"").toLowerCase()]||"Noir",placement:i.placement,quantity:i.qty};});
-       fetch(cfg.worker_url.replace(/\/$/,"")+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:r,shop:"chez-lolo",shopName:STORE_NAME,label:STORE_NAME+" "+(r||""),pushUrl:"https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/index.html?ld_admin=1",items:its,address:{name:ck.name||"",addr:ck.addr||"",zip:ck.zip||"",city:ck.city||"",email:ck.email||"",phone:ck.phone||"",country:ck.country||"France"}})})
+       fetch(cfg.worker_url.replace(/\/$/,"")+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:r,shop:"chez-lolo",shopName:STORE_NAME,label:STORE_NAME+" "+(r||""),pushUrl:"https://chez-lolo.kd-mc.com/index.html?ld_admin=1",items:its,address:{name:ck.name||"",addr:ck.addr||"",zip:ck.zip||"",city:ck.city||"",email:ck.email||"",phone:ck.phone||"",country:ck.country||"France"}})})
        .then(function(x){return x.json()}).then(function(j){ if(j&&j.ok&&typeof toast==="function")toast("🚀 Commande envoyée en production Printify"+(j.printify_order_id?" (#"+j.printify_order_id+")":"")+(j.warnings&&j.warnings.length?(" — à vérifier : "+j.warnings.join(", ")):"")); }).catch(function(){});
      })();
      if(LD_ADMIN)setTimeout(clInstallAdminUI,100);

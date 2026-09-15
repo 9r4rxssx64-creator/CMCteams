@@ -58,8 +58,99 @@ const ROUTES = {
   // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
   // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
   'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
+  'rotaplan.kd-mc.com': '/CMCteams/shops/rotaplan', // Rotaplan — planning des équipes en rotation, offre B2B (Kevin 2026-09-15)
   'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PÉRIMÈTRE : « chaque app distincte, mais toutes liées dans le domaine »
+   (Kevin 2026-09-15)
+
+   Ce qu'il a demandé, mot pour mot : « quelqu'un d'extérieur peut s'enregistrer
+   et être seulement dans une app, et d'autres feront partie du domaine entier
+   (sauf partie admin) […] admin possibilité de bloquer dans une app ».
+
+   Une personne a donc une PORTÉE :
+     · 'app'     → elle n'existe que dans les apps listées dans `acces`
+     · 'domaine' → elle circule dans toutes les apps (l'admin reste à part :
+                   il ne s'obtient QUE par Face ID sur un uid admin, jamais ici)
+   Plus une liste `bloque` : l'admin ferme UNE app précise, même en portée domaine.
+
+   OÙ C'EST APPLIQUÉ, ET POURQUOI ICI : au routeur, jamais dans les apps. Le
+   routeur est la seule porte par laquelle passent les 26 adresses ; recopier la
+   règle dans 26 pages, c'est 26 versions qui divergent (leçon #142), et il
+   suffirait d'en oublier une pour que le périmètre ne veuille plus rien dire.
+
+   COMMENT : une personne hors périmètre n'est pas « bloquée », elle n'est pas
+   RECONNUE — `/__sso/whoami` répond `ok:false`. Les apps publiques (boutiques,
+   cuisine) restent donc visitables par tout le monde comme avant : l'inconnu
+   reste un inconnu. Les apps qui exigent une identité (arbre, coffre, CMCteams)
+   refusent d'elles-mêmes. Aucune des 26 apps n'a une ligne à changer, et rien ne
+   peut casser si ce code se trompe : au pire il ne reconnaît personne.
+
+   ALIAS : plusieurs adresses = UNE app (cuisine/cocina/cujina, departs et
+   cmcteams-light). Sinon on bloquerait quelqu'un sur l'alias de l'app qu'on
+   vient de lui ouvrir.
+
+   PARITÉ OBLIGATOIRE avec ROUTES : une adresse servie sans clé d'app ici
+   échapperait au périmètre en SILENCE. La garde `test:perimetre-apps` refuse
+   qu'un sous-domaine existe des deux côtés sans correspondance.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const APPS = {
+  'kd-mc.com': 'portail', 'www.kd-mc.com': 'portail',
+  'cmcteams.kd-mc.com': 'cmcteams',
+  'apex-ai.kd-mc.com': 'apex-ai',
+  'apex-chat.kd-mc.com': 'apex-chat',
+  'la-detente.kd-mc.com': 'la-detente',
+  'chez-lolo.kd-mc.com': 'chez-lolo',
+  'dashboard.kd-mc.com': 'dashboard',
+  'sourcing.kd-mc.com': 'sourcing',
+  'coffre.kd-mc.com': 'coffre',
+  'departs.kd-mc.com': 'departs', 'cmcteams-light.kd-mc.com': 'departs',
+  'bot.kd-mc.com': 'bot',
+  'beatbot.kd-mc.com': 'beatbot',
+  'autorisations.kd-mc.com': 'autorisations',
+  'arbre.kd-mc.com': 'arbre',
+  'lingua.kd-mc.com': 'lingua',
+  'studio.kd-mc.com': 'studio',
+  'cuisine.kd-mc.com': 'cuisine', 'cocina.kd-mc.com': 'cuisine', 'cujina.kd-mc.com': 'cuisine',
+  'worldmonitor.kd-mc.com': 'worldmonitor',
+  'osint.kd-mc.com': 'osint',
+  'ia.kd-mc.com': 'ia',
+  'outils.kd-mc.com': 'outils',
+  'shops.kd-mc.com': 'shops',
+  'tor.kd-mc.com': 'tor',
+};
+function appDe(host) { return APPS[String(host || '').toLowerCase().replace(/:.*$/, '')] || ''; }
+
+/* Décide si CETTE fiche a le droit d'exister dans CETTE app. Fonction PURE :
+   aucune entrée/sortie, testable en vrai (elle est exportée et exécutée par la
+   garde, pas cherchée au texte — un contrôle qui lit une chaîne de caractères
+   ment dans les deux sens, leçon #103).
+
+   FAIL-OPEN VOULU, et c'est le point le plus important de tout ce fichier :
+   sans fiche, ou sur une adresse inconnue, on répond OUI. Les ~191 comptes déjà
+   enregistrés n'ont pas de champ `portee` → ils restent dans TOUT le domaine.
+   Personne ne perd un accès le jour où ce code part en ligne ; la restriction
+   ne s'applique qu'à ceux que l'admin range, et aux NOUVEAUX inscrits. */
+function perimetre(acc, app) {
+  if (!app) return { ok: true, raison: 'adresse_hors_domaine' };
+  /* LE PORTAIL EST LA RÉCEPTION : toujours ouvert, à tout le monde. C'est par lui
+     que CHAQUE app fait passer l'inscription et la connexion (`ensureSession`
+     renvoie sur kd-mc.com/?return=…). Le fermer à quelqu'un = lui interdire de
+     se connecter nulle part, y compris à l'app qu'on vient de lui ouvrir. Trouvé
+     en suivant le VRAI parcours d'un nouvel inscrit, pas par les tests : ils
+     inscrivaient chacun directement sur son app, ce que le domaine ne fait jamais. */
+  if (app === 'portail') return { ok: true, raison: 'portail' };
+  if (!acc) return { ok: true, raison: 'sans_fiche' };
+  const bloque = Array.isArray(acc.bloque) ? acc.bloque : [];
+  if (bloque.indexOf(app) >= 0) return { ok: false, raison: 'bloque_ici' };
+  if (acc.portee !== 'app') return { ok: true, raison: 'domaine' };
+  const acces = Array.isArray(acc.acces) ? acc.acces : [];
+  return acces.indexOf(app) >= 0
+    ? { ok: true, raison: 'app_autorisee' }
+    : { ok: false, raison: 'hors_perimetre' };
+}
 
 // Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
 // lecture seule. L'API matchID ne renvoie PAS d'en-tête CORS → un appel direct
@@ -873,8 +964,11 @@ function ispInfo(cf) {
   return { isp, vpn };
 }
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
-async function enrich(env, request, uid, name, cgu, pre) {
+async function enrich(env, request, uid, name, cgu, pre, opts) {
   if (!env || !env.ACCOUNTS) return;
+  /* opts.origine = l'app d'où vient un NOUVEL inscrit (transmise par le portail).
+     Ne sert qu'à la création de la fiche ; une fiche existante n'en tient pas compte. */
+  const origine = (opts && opts.origine) || '';
   /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
   const inUid = uid;
   uid = await canonFor(env, uid, name);
@@ -898,7 +992,25 @@ async function enrich(env, request, uid, name, cgu, pre) {
      → évite une 2e lecture KV sur le chemin chaud. undefined = on lit nous-même. */
   const prev = pre !== undefined ? pre : await accGet(env, uid);
   const isNew = !prev;
-  const acc = prev || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [] };
+  /* PÉRIMÈTRE — une NOUVELLE fiche naît fermée : elle n'existe que dans l'app où la
+     personne s'est inscrite (Kevin 2026-09-15 : « quelqu'un d'extérieur peut
+     s'enregistrer et être seulement dans une app »). C'est l'admin qui ouvre ensuite
+     au domaine entier. Le sens compte : une inscription n'ouvre JAMAIS toutes les
+     portes toute seule, et un oubli de rangement laisse la personne dehors plutôt que
+     partout (moindre privilège).
+     Les fiches DÉJÀ existantes ne reçoivent rien ici : sans champ `portee`, elles
+     restent en portée domaine — personne ne perd un accès le jour du déploiement. */
+  /* L'app ouverte au nouvel inscrit = celle d'où il VIENT (origine transmise par le
+     portail), sinon l'adresse où il s'inscrit. Jamais « portail » seul : c'est la
+     réception, elle est ouverte à tous — l'y enfermer reviendrait à ne l'ouvrir
+     nulle part. Sans origine connue, la liste reste vide : la personne a le
+     portail (toujours) et Kevin est prévenu pour décider. */
+  const appIci = host ? (APPS[host] || '') : '';
+  const premiere = (origine && origine !== 'portail') ? origine : (appIci && appIci !== 'portail' ? appIci : '');
+  const acc = prev || {
+    uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [],
+    portee: host ? 'app' : 'domaine', acces: premiere ? [premiere] : [], bloque: [],
+  };
   const prevSeen = acc.last_seen || 0;
   const prevCountry = acc.last_country || '';
   /* `structural` = quelque chose de NOUVEAU à persister tout de suite (nouvelle fiche,
@@ -991,6 +1103,16 @@ async function enrich(env, request, uid, name, cgu, pre) {
   if (!structural && now - prevSeen < 120e3) return;
   /* Nouvel appareil sur une fiche EXISTANTE → trace dans le journal admin
      (signal fort avec si peu d'utilisateurs) + alerte push si configurée. */
+  /* NOUVEL INSCRIT fermé à une app → Kevin doit le SAVOIR, sinon la personne
+     attend une ouverture que personne ne sait devoir faire. Journal admin + push
+     (opt-in par config, fail-open : jamais une connexion cassée par une notif). */
+  if (isNew && acc.portee === 'app') {
+    const ouvert = (acc.acces && acc.acces.length) ? acc.acces.join(', ') : 'portail seulement';
+    await audLog(env, { ev: 'nouvel_inscrit', uid, detail: (acc.name || uid) + ' · ouvert à : ' + ouvert });
+    await notifyPush(env, '🆕 KDMC — nouvel inscrit',
+      (acc.name || uid) + ' vient de créer un compte. Ouvert à : ' + ouvert + '. À toi de décider s\'il circule plus loin.',
+      { tag: 'kdmc-nouvel-inscrit', url: 'https://kd-mc.com/admin/#fiche-' + encodeURIComponent(uid) });
+  }
   if (newDevice && !isNew) {
     await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
     await notifyPush(env, '🔐 KDMC — nouvel appareil',
@@ -1072,8 +1194,25 @@ async function handleSso(request, url, env) {
       const acc = await accGet(env, s.uid);
       /* Révocation à distance : token émis avant « Déconnecter partout » → refusé. */
       if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
+      /* PÉRIMÈTRE (Kevin 2026-09-15) : cette personne existe-t-elle dans CETTE app ?
+         Hors périmètre → on ne la RECONNAÎT pas (ok:false), on ne la « bloque » pas :
+         les apps publiques restent visitables comme par n'importe quel inconnu, les
+         apps à identité refusent d'elles-mêmes. Zéro ligne à changer dans les 26 apps.
+         L'admin (uid admin + Face ID prouvé) n'est jamais restreint — sinon une erreur
+         de rangement enfermerait Kevin dehors de son propre domaine. */
+      const estAdmin = ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified;
+      const app = appDe(request.headers.get('host'));
+      const per = perimetre(acc, app);
+      if (!per.ok && !estAdmin) {
+        return J({
+          ok: false, reason: per.raison, hors_perimetre: true, app,
+          message: per.raison === 'bloque_ici'
+            ? 'Ton accès à cette application a été fermé par l\'administrateur.'
+            : 'Ton compte n\'est pas ouvert sur cette application.',
+        });
+      }
       await enrich(env, request, s.uid, s.name, s.cgu, acc);
-      return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified });
+      return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: estAdmin, app, portee: (acc && acc.portee === 'app') ? 'app' : 'domaine' });
     }
     return J({ ok: false });
   }
@@ -1178,7 +1317,31 @@ async function handleSso(request, url, env) {
     const name = String(b.name || '').slice(0, 80).trim();
     const cgu = !!b.cgu;
     if (!uid || !name) return J({ ok: false, reason: 'uid+name requis' });
-    await enrich(env, request, uid, name, cgu);
+    /* PÉRIMÈTRE : inutile de fabriquer une session que `whoami` refusera juste après
+       (sinon la page boucle : « connecte-toi » → connecté → pas reconnu → « connecte-toi »).
+       On répond ici, une fois, avec la raison en clair. La fiche se cherche à son
+       emplacement CANONIQUE : une même personne a un seul dossier, quel que soit
+       l'identifiant que l'app envoie (sinon on contournerait le périmètre en se
+       présentant sous l'uid d'une autre app). */
+    /* `pour` = l'app d'où la personne VIENT (le portail la reçoit avec ?return=…
+       et nous le transmet). C'est cette app-là qu'on ouvre à un nouvel inscrit —
+       pas le portail, qui n'est qu'une réception. Adresse contrôlée : si ce n'est
+       pas un sous-domaine servi, on l'ignore (jamais d'app inventée). */
+    const origine = appDe(String(b.pour || '').replace(/^https?:\/\//, '').split('/')[0]);
+    {
+      const app = appDe(request.headers.get('host'));
+      const accCanon = await accGet(env, await canonFor(env, uid, name));
+      const per = perimetre(accCanon, app);
+      if (!per.ok) {
+        return J({
+          ok: false, reason: per.raison, hors_perimetre: true, app,
+          message: per.raison === 'bloque_ici'
+            ? 'Ton accès à cette application a été fermé par l\'administrateur.'
+            : 'Ton compte n\'est pas ouvert sur cette application.',
+        });
+      }
+    }
+    await enrich(env, request, uid, name, cgu, undefined, { origine });
     const token = await ssoSign(secret, uid, name, cgu);
     const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
     /* token renvoyé dans le corps : le portail le met dans le lien de retour
@@ -1429,6 +1592,53 @@ async function handleAdmin(request, url, env) {
     await accPut(env, acc, true);
     await audLog(env, { ev: 'revoke_sessions', uid });
     return J({ ok: true, uid, revoked_at: acc.revoked_at });
+  }
+  /* ── PÉRIMÈTRE : qui a le droit d'exister dans quelle app (Kevin 2026-09-15) ──
+     GET  ?uid=…                       → l'état de cette personne + la liste des apps
+     POST {uid, portee, acces, bloque} → range la personne
+     Derrière le MÊME portail admin que le reste (`me` = grant du code admin prouvé
+     via /__admin/login, ou session Face ID d'un uid admin). Aucun second mot de
+     passe inventé pour l'occasion : un secret par app est un secret qu'on oublie
+     de changer.  */
+  if (path === '/__admin/acces' && request.method === 'GET') {
+    const uid = url.searchParams.get('uid') || '';
+    const apps = [...new Set(Object.values(APPS))].sort();
+    if (!uid) return J({ ok: true, apps });
+    const a = await accGet(env, uid);
+    if (!a) return J({ ok: false, reason: 'not_found', apps });
+    return J({
+      ok: true, uid, name: a.name || '', apps,
+      portee: a.portee === 'app' ? 'app' : 'domaine',
+      acces: Array.isArray(a.acces) ? a.acces : [],
+      bloque: Array.isArray(a.bloque) ? a.bloque : [],
+      /* Par où elle est réellement passée — pour ouvrir en connaissance de cause
+         au lieu de deviner. */
+      vues: Object.keys(a.apps || {}).map(appDe).filter(Boolean),
+    });
+  }
+  if (path === '/__admin/acces' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* corps vide */ }
+    const uid = String(b.uid || '').slice(0, 80).trim();
+    if (!uid) return J({ ok: false, reason: 'uid requis' });
+    const acc = await accGet(env, uid);
+    if (!acc) return J({ ok: false, reason: 'not_found' });
+    /* On n'accepte QUE des clés d'app connues : une valeur libre créerait un accès
+       vers une app qui n'existe pas (et un « blocage » qui ne bloque rien). */
+    const connues = new Set(Object.values(APPS));
+    const propre = (v) => [...new Set((Array.isArray(v) ? v : []).map((x) => String(x || '').trim()))]
+      .filter((x) => connues.has(x)).slice(0, 40);
+    if (b.portee !== undefined) acc.portee = b.portee === 'app' ? 'app' : 'domaine';
+    if (b.acces !== undefined) acc.acces = propre(b.acces);
+    if (b.bloque !== undefined) acc.bloque = propre(b.bloque);
+    /* Garde-fou : enfermer quelqu'un dans « une app » sans dire LAQUELLE le met
+       dehors de partout, en silence. On refuse plutôt que de le faire à moitié. */
+    if (acc.portee === 'app' && (!acc.acces || !acc.acces.length)) {
+      return J({ ok: false, reason: 'portée « une app » sans aucune app choisie — la personne n\'aurait accès à rien' });
+    }
+    acc.acces_at = Date.now();
+    await accPut(env, acc, true);
+    await audLog(env, { ev: 'perimetre', uid, portee: acc.portee, acces: acc.acces, bloque: acc.bloque });
+    return J({ ok: true, uid, portee: acc.portee, acces: acc.acces || [], bloque: acc.bloque || [] });
   }
   if (path === '/__admin/account' && request.method === 'GET') {
     const uid = url.searchParams.get('uid') || '';
@@ -2479,4 +2689,4 @@ async function tuyaScheduleTick(env) {
 }
 
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean, tuyaHistoryTick };
+export { APPS, ROUTES, appDe, perimetre, ssoSign, enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean, tuyaHistoryTick };

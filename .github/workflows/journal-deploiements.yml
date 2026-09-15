@@ -47,6 +47,12 @@ on:
       - "La Détente — Déploie le Worker de commande Printify"
       - "La Détente — Déploie le Worker Gemini (autonome)"
       - "Sync Apex Secrets to Cloudflare Worker"
+      # ⬇️ La PUBLICATION DU SITE elle-même (Kevin 2026-09-15 : dépôt en privé).
+      #    Depuis que le dépôt peut être privé, GitHub Pages ne sert plus rien :
+      #    c'est CE workflow qui met kd-mc.com en ligne. Sa panne = le site fige
+      #    sur la version précédente, en silence. Il doit donc laisser sa cause
+      #    exacte dans le dépôt comme les autres.
+      - "KDMC — Publie le site sur Cloudflare Pages (pour que le dépôt puisse être PRIVÉ)"
       # ⬇️ PAS un déploiement, mais le maillon dont la panne BLOQUE TOUT.
       #    Vécu le 2026-09-06 → 09-10 : la fusion automatique n'a pas créé de PR
       #    pour mon dernier push, et le travail est resté DEHORS de `main`

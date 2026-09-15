@@ -69,6 +69,33 @@ Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcrip
 | `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
 | `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
 
+### 15 septembre 2026 (suite) — qui a le droit d'aller dans quelle application
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| **La page où tu règles ça** | Fiche de chaque personne → **🔐 Où elle peut aller** : partout dans le domaine, ou seulement les apps que tu coches ; plus « 🚫 Fermer une application précise ». | [👆 Qui se connecte](https://kd-mc.com/admin/) |
+| `services/kdmc-router/worker.js` | Modifié : la table des applications (alias regroupés) et la règle qui décide. C'est le domaine qui tranche, pas chaque app — une règle recopiée 26 fois finit par se contredire. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `kdmc-home/admin/admin.js` + `index.html` | Modifié : le réglage sur chaque fiche, cibles tactiles 44 px, et un garde-fou qui t'empêche d'enfermer quelqu'un « dans une app » sans en choisir aucune. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/admin/admin.js) |
+| `tests/verify-perimetre-apps.mjs` | **Nouveau.** 42 contrôles qui font tourner le vrai domaine : portée, blocage, alias, admin jamais enfermé dehors, comptes existants intacts. 7 sabotages le font rougir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-apps.mjs) |
+| `tests/verify-perimetre-page.mjs` | **Nouveau.** Ouvre ta page admin dans un vrai navigateur (écran iPhone) et vérifie qu'un doigt obtient bien le résultat : 18 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-page.mjs) |
+| `CLAUDE.md` + `LESSONS.md` #252 | La règle écrite noir sur blanc, pour qu'elle ne se perde pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `kdmc-home/kdmc-sso.js` | Modifié (« va plus loin ») : un refus de périmètre ne jette plus ton pass — tu restes connecté à l'app où tu es chez toi, et l'app peut expliquer le refus en français. Transmet aussi l'app d'où vient un nouvel inscrit. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/kdmc-sso.js) |
+| `kdmc-home/kdmc-portal.js` | Modifié : à l'inscription, dit au domaine de quelle app la personne vient, pour que son compte s'ouvre là — pas au portail, qui n'est que la réception. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/kdmc-portal.js) |
+| `tests/verify-sso-client-perimetre.mjs` | **Nouveau.** Fait tourner le vrai client partagé dans Node : 9 contrôles, 2 sabotages rouges. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-sso-client-perimetre.mjs) |
+| `LESSONS.md` #253 | Tester un contrôle d'accès en suivant le VRAI parcours (l'inscription passe par le portail), et ne jamais jeter un pass valide sur un refus. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
+### 15 septembre 2026 — pour que ton dépôt puisse passer en PRIVÉ sans éteindre tes sites
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/workflows/publier-site-prive.yml` | **Nouveau.** Publie tes sites sur Cloudflare Pages à partir d'un paquet **trié** (les applications, rien d'autre) : c'est ce qui remplace GitHub Pages une fois le dépôt privé. Contrôle le paquet **avant** l'envoi et sonde les 26 adresses après. Zéro tâche programmée. | [▶️ Lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/publier-site-prive.yml) |
+| `tools/audit/sonde-site-publie.mjs` | **Nouveau.** Ouvre les **26 adresses** du domaine sur un site publié et exige une vraie page. Les adresses sont lues dans la table du routeur — jamais une liste recopiée à la main qui vieillirait en silence. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/sonde-site-publie.mjs) |
+| `tools/gitlab/publier.sh` | **Réécrit.** Envoyait **tout le dépôt** moins quelques exclusions (2 049 fichiers de code serveur, 37 498 d'Apex…). Envoie maintenant le même paquet trié que GitHub, avec le même contrôle avant envoi. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/publier.sh) |
+| `services/kdmc-router/prepare-secours.mjs` | Modifié : plus aucun document de travail dans le paquet (règle sur tous les `.md` + liste noire explicite), et le livre de cuisine + la page d'accueil des boutiques y entrent enfin. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-documents-travail-parite.mjs` | Modifié : sait lire la **nouvelle forme** du miroir (liste blanche) sans baisser l'exigence, et refuse de valider s'il ne sait plus dire ce qui peut être embarqué. 5 sabotages le font passer au rouge. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-documents-travail-parite.mjs) |
+| `index.html` et 4 pages publiées | Modifié : 27 renvois vers l'ancienne adresse `github.io` remplacés par tes vrais sous-domaines, et le journal de ce qui se construit n'est plus publié. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/index.html) |
+| `LESSONS.md` #251 | La leçon : mettre un dépôt en privé ne sert à rien tant qu'on n'a pas compté **toutes** les portes par lesquelles le code sort. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
 ### 10 septembre 2026 (nuit) — « voir comme toi » : je peux maintenant regarder tes vraies pages
 
 | Fichier | À quoi ça sert | Ouvrir |
