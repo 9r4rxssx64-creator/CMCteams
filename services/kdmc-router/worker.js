@@ -134,6 +134,13 @@ function appDe(host) { return APPS[String(host || '').toLowerCase().replace(/:.*
    ne s'applique qu'à ceux que l'admin range, et aux NOUVEAUX inscrits. */
 function perimetre(acc, app) {
   if (!app) return { ok: true, raison: 'adresse_hors_domaine' };
+  /* LE PORTAIL EST LA RÉCEPTION : toujours ouvert, à tout le monde. C'est par lui
+     que CHAQUE app fait passer l'inscription et la connexion (`ensureSession`
+     renvoie sur kd-mc.com/?return=…). Le fermer à quelqu'un = lui interdire de
+     se connecter nulle part, y compris à l'app qu'on vient de lui ouvrir. Trouvé
+     en suivant le VRAI parcours d'un nouvel inscrit, pas par les tests : ils
+     inscrivaient chacun directement sur son app, ce que le domaine ne fait jamais. */
+  if (app === 'portail') return { ok: true, raison: 'portail' };
   if (!acc) return { ok: true, raison: 'sans_fiche' };
   const bloque = Array.isArray(acc.bloque) ? acc.bloque : [];
   if (bloque.indexOf(app) >= 0) return { ok: false, raison: 'bloque_ici' };
@@ -956,8 +963,11 @@ function ispInfo(cf) {
   return { isp, vpn };
 }
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
-async function enrich(env, request, uid, name, cgu, pre) {
+async function enrich(env, request, uid, name, cgu, pre, opts) {
   if (!env || !env.ACCOUNTS) return;
+  /* opts.origine = l'app d'où vient un NOUVEL inscrit (transmise par le portail).
+     Ne sert qu'à la création de la fiche ; une fiche existante n'en tient pas compte. */
+  const origine = (opts && opts.origine) || '';
   /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
   const inUid = uid;
   uid = await canonFor(env, uid, name);
@@ -989,9 +999,16 @@ async function enrich(env, request, uid, name, cgu, pre) {
      partout (moindre privilège).
      Les fiches DÉJÀ existantes ne reçoivent rien ici : sans champ `portee`, elles
      restent en portée domaine — personne ne perd un accès le jour du déploiement. */
+  /* L'app ouverte au nouvel inscrit = celle d'où il VIENT (origine transmise par le
+     portail), sinon l'adresse où il s'inscrit. Jamais « portail » seul : c'est la
+     réception, elle est ouverte à tous — l'y enfermer reviendrait à ne l'ouvrir
+     nulle part. Sans origine connue, la liste reste vide : la personne a le
+     portail (toujours) et Kevin est prévenu pour décider. */
+  const appIci = host ? (APPS[host] || '') : '';
+  const premiere = (origine && origine !== 'portail') ? origine : (appIci && appIci !== 'portail' ? appIci : '');
   const acc = prev || {
     uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [],
-    portee: host ? 'app' : 'domaine', acces: host && APPS[host] ? [APPS[host]] : [], bloque: [],
+    portee: host ? 'app' : 'domaine', acces: premiere ? [premiere] : [], bloque: [],
   };
   const prevSeen = acc.last_seen || 0;
   const prevCountry = acc.last_country || '';
@@ -1085,6 +1102,16 @@ async function enrich(env, request, uid, name, cgu, pre) {
   if (!structural && now - prevSeen < 120e3) return;
   /* Nouvel appareil sur une fiche EXISTANTE → trace dans le journal admin
      (signal fort avec si peu d'utilisateurs) + alerte push si configurée. */
+  /* NOUVEL INSCRIT fermé à une app → Kevin doit le SAVOIR, sinon la personne
+     attend une ouverture que personne ne sait devoir faire. Journal admin + push
+     (opt-in par config, fail-open : jamais une connexion cassée par une notif). */
+  if (isNew && acc.portee === 'app') {
+    const ouvert = (acc.acces && acc.acces.length) ? acc.acces.join(', ') : 'portail seulement';
+    await audLog(env, { ev: 'nouvel_inscrit', uid, detail: (acc.name || uid) + ' · ouvert à : ' + ouvert });
+    await notifyPush(env, '🆕 KDMC — nouvel inscrit',
+      (acc.name || uid) + ' vient de créer un compte. Ouvert à : ' + ouvert + '. À toi de décider s\'il circule plus loin.',
+      { tag: 'kdmc-nouvel-inscrit', url: 'https://kd-mc.com/admin/#fiche-' + encodeURIComponent(uid) });
+  }
   if (newDevice && !isNew) {
     await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
     await notifyPush(env, '🔐 KDMC — nouvel appareil',
@@ -1295,6 +1322,11 @@ async function handleSso(request, url, env) {
        emplacement CANONIQUE : une même personne a un seul dossier, quel que soit
        l'identifiant que l'app envoie (sinon on contournerait le périmètre en se
        présentant sous l'uid d'une autre app). */
+    /* `pour` = l'app d'où la personne VIENT (le portail la reçoit avec ?return=…
+       et nous le transmet). C'est cette app-là qu'on ouvre à un nouvel inscrit —
+       pas le portail, qui n'est qu'une réception. Adresse contrôlée : si ce n'est
+       pas un sous-domaine servi, on l'ignore (jamais d'app inventée). */
+    const origine = appDe(String(b.pour || '').replace(/^https?:\/\//, '').split('/')[0]);
     {
       const app = appDe(request.headers.get('host'));
       const accCanon = await accGet(env, await canonFor(env, uid, name));
@@ -1308,7 +1340,7 @@ async function handleSso(request, url, env) {
         });
       }
     }
-    await enrich(env, request, uid, name, cgu);
+    await enrich(env, request, uid, name, cgu, undefined, { origine });
     const token = await ssoSign(secret, uid, name, cgu);
     const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
     /* token renvoyé dans le corps : le portail le met dans le lien de retour

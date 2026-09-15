@@ -66,6 +66,10 @@
 | `tests/verify-perimetre-apps.mjs` | **Nouveau.** 42 contrôles qui font tourner le vrai domaine : portée, blocage, alias, admin jamais enfermé dehors, comptes existants intacts. 7 sabotages le font rougir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-apps.mjs) |
 | `tests/verify-perimetre-page.mjs` | **Nouveau.** Ouvre ta page admin dans un vrai navigateur (écran iPhone) et vérifie qu'un doigt obtient bien le résultat : 18 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-page.mjs) |
 | `CLAUDE.md` + `LESSONS.md` #252 | La règle écrite noir sur blanc, pour qu'elle ne se perde pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `kdmc-home/kdmc-sso.js` | Modifié (« va plus loin ») : un refus de périmètre ne jette plus ton pass — tu restes connecté à l'app où tu es chez toi, et l'app peut expliquer le refus en français. Transmet aussi l'app d'où vient un nouvel inscrit. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/kdmc-sso.js) |
+| `kdmc-home/kdmc-portal.js` | Modifié : à l'inscription, dit au domaine de quelle app la personne vient, pour que son compte s'ouvre là — pas au portail, qui n'est que la réception. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/kdmc-portal.js) |
+| `tests/verify-sso-client-perimetre.mjs` | **Nouveau.** Fait tourner le vrai client partagé dans Node : 9 contrôles, 2 sabotages rouges. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-sso-client-perimetre.mjs) |
+| `LESSONS.md` #253 | Tester un contrôle d'accès en suivant le VRAI parcours (l'inscription passe par le portail), et ne jamais jeter un pass valide sur un refus. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
 
 ### 15 septembre 2026 — pour que ton dépôt puisse passer en PRIVÉ sans éteindre tes sites
 

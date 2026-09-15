@@ -56,7 +56,11 @@
   function globalPills(accounts) {
     var withCgu = accounts.filter(function (a) { return a.cgu_at; }).length;
     var hits = accounts.reduce(function (s, a) { return s + (a.hits || 0); }, 0);
+    /* Combien sont limités à une app : c'est la file de ce que Kevin a à décider
+       (chaque nouvel inscrit y entre). Visible d'un coup d'œil, sans dérouler. */
+    var limites = accounts.filter(function (a) { return a.portee === 'app'; }).length;
     return '<div class="pill kdmc-in"><b>' + accounts.length + '</b> comptes clients</div>'
+      + '<div class="pill kdmc-in" id="pill-limites" title="Personnes qui n\'ont accès qu\'aux applications cochées sur leur fiche"><b>' + limites + '</b> limité' + (limites > 1 ? 's' : '') + ' à une app</div>'
       + '<div class="pill kdmc-in"><b>' + withCgu + '</b> CGU acceptées</div>'
       + '<div class="pill kdmc-in"><b>' + hits + '</b> connexions cumulées</div>';
   }
@@ -274,7 +278,8 @@
   /* ---- Journal admin (événements sensibles, tracés côté serveur) ---- */
   var AUD_EV = {
     admin_login_ok: '🔓 Connexion admin réussie', admin_login_fail: '⛔️ Code admin refusé',
-    revoke_sessions: '🚪 Déconnexion forcée', new_device: '📱 Nouvel appareil', fbtoken_mint: '🔥 Jeton Firebase admin émis'
+    revoke_sessions: '🚪 Déconnexion forcée', new_device: '📱 Nouvel appareil', fbtoken_mint: '🔥 Jeton Firebase admin émis',
+    perimetre: '🔐 Périmètre modifié', nouvel_inscrit: '🆕 Nouvel inscrit (limité à une app)'
   };
   function audRow(e) {
     return '<div class="tlrow">' + esc(dt(e.ts)) + ' · <b>' + esc(AUD_EV[e.ev] || e.ev) + '</b>'

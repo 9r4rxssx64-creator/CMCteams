@@ -83,6 +83,48 @@ ok(perimetre({ portee: 'app', acces: ['cuisine'], bloque: ['cuisine'] }, 'cuisin
   'le blocage l\'emporte sur l\'autorisation (l\'admin a le dernier mot)');
 ok(perimetre({ portee: 'app', acces: 'chez-lolo' }, 'chez-lolo').ok === false,
   'une liste d\'accès corrompue (texte au lieu de liste) ferme, elle n\'ouvre pas');
+ok(perimetre({ portee: 'app', acces: ['chez-lolo'] }, 'portail').ok === true
+  && perimetre({ portee: 'domaine', bloque: ['portail'] }, 'portail').ok === true,
+  'le PORTAIL est la réception : toujours ouvert, même « une app », même « bloqué » (sinon plus personne ne peut se connecter nulle part)');
+
+/* ── B bis. LE VRAI PARCOURS D'UN NOUVEL INSCRIT passe par le portail ─────────
+ * Une app sans session renvoie sur kd-mc.com/?return=<app>. Le compte se crée
+ * DONC sur le portail, pas sur l'app. Première version de ce code : le nouveau
+ * naissait fermé à « portail » → de retour sur sa boutique, pas reconnu. Aucun
+ * nouveau client n'aurait jamais pu entrer nulle part. Trouvé en suivant le
+ * parcours réel, pas par ces tests — qui inscrivaient chacun sur son app. */
+console.log('\nB bis. Inscription via le portail (le vrai parcours)');
+{
+  const envP = faireEnv({});
+  const inscrire = (uid, name, pour) => mod.fetch(req('kd-mc.com', '/__sso/issue', {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ uid, name, cgu: true, pour }),
+  }), envP).then((r) => r.json());
+  const voir = (tok, host) => mod.fetch(req(host, '/__sso/whoami', { headers: { authorization: 'Bearer ' + tok } }), envP).then((r) => r.json());
+
+  let jp = await inscrire('cliente_via_portail', 'Nadia Roux', 'https://chez-lolo.kd-mc.com/produits?x=1');
+  ok(jp.ok === true, 'inscription sur le portail, en venant de Chez Lolo → acceptée');
+  let f = JSON.parse(envP._kv.get('acc:cliente_via_portail') || 'null');
+  ok(f && f.portee === 'app' && JSON.stringify(f.acces) === '["chez-lolo"]',
+    'son compte est ouvert à CHEZ LOLO (l\'app d\'où elle vient), pas au portail', f && JSON.stringify(f.acces));
+  ok((await voir(jp.token, 'chez-lolo.kd-mc.com')).ok === true, 'de retour sur la boutique avec son pass : reconnue');
+  ok((await voir(jp.token, 'kd-mc.com')).ok === true, 'et le portail la reconnaît aussi (réception)');
+  ok((await voir(jp.token, 'arbre.kd-mc.com')).ok === false, 'mais pas l\'arbre familial');
+
+  jp = await inscrire('curieux', 'Marc Petit', '');
+  f = JSON.parse(envP._kv.get('acc:curieux') || 'null');
+  ok(f && f.portee === 'app' && Array.isArray(f.acces) && f.acces.length === 0,
+    'inscrit directement sur le portail sans venir d\'une app → aucune app ouverte (Kevin décide)', f && JSON.stringify(f.acces));
+  ok((await voir(jp.token, 'kd-mc.com')).ok === true && (await voir(jp.token, 'cuisine.kd-mc.com')).ok === false,
+    'il a le portail, et rien d\'autre');
+
+  jp = await inscrire('malin', 'Jean Malin', 'https://evil.example.com/');
+  f = JSON.parse(envP._kv.get('acc:malin') || 'null');
+  ok(f && f.acces.length === 0, 'une origine hors domaine est ignorée (jamais d\'app inventée par le client)', f && JSON.stringify(f.acces));
+
+  const journal = [...envP._kv.values()].some((v) => typeof v === 'string' && v.includes('"nouvel_inscrit"'));
+  ok(journal, 'chaque nouvel inscrit limité à une app laisse une trace « nouvel_inscrit » dans le journal admin (Kevin sait qu\'il a une décision à prendre)');
+}
 
 /* ── C. Le comportement réel du SSO ────────────────────────────────────────── */
 console.log('\nC. /__sso/whoami et /__sso/issue en vrai');

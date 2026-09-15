@@ -79,6 +79,9 @@ const blocs = await page.locator('details.acces').count();
 ok(blocs === FICHES.length, `un réglage « Où elle peut aller » sur chacune des ${FICHES.length} fiches`, String(blocs));
 ok(erreurs.length === 0, 'aucune erreur JavaScript à l\'ouverture', erreurs.join(' | '));
 
+const pill = await page.locator('#pill-limites').innerText().catch(() => '');
+ok(/^1\s*limité à une app/.test(pill.trim()), 'la pastille « limité à une app » compte les personnes à décider (1 sur 2 ici)', pill);
+
 const resume = await page.locator('details.acces[data-uid="cliente_lolo"] > summary').innerText();
 ok(/chez-lolo/.test(resume), 'on lit son périmètre sans ouvrir quoi que ce soit', resume);
 const resume2 = await page.locator('details.acces[data-uid="ami_domaine"] > summary').innerText();

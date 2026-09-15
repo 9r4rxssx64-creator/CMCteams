@@ -27,6 +27,26 @@ que d'autres circulent dans **tout le domaine** (sauf la partie admin), et que t
   garde, et ils rougissent), 18 contrôles au navigateur (3 sabotages), et les 128 contrôles
   du routeur qui existaient déjà passent toujours — **zéro régression**. Leçon **#252**.
 
+**« Va plus loin » (même soir)** — en relisant le vrai parcours d'un nouvel inscrit, deux trous
+que mes tests ne pouvaient pas voir, corrigés avant qu'ils n'atteignent quelqu'un :
+- **Le portail est la porte de tout.** Une app sans session renvoie sur kd-mc.com pour
+  s'inscrire : le compte se crée donc **sur le portail**, et mon code le fermait au portail →
+  de retour sur sa boutique, pas reconnu. **Aucun nouveau client n'aurait jamais pu entrer
+  nulle part.** Maintenant : le portail est la réception (toujours ouverte), et l'inscription
+  ouvre l'app **d'où la personne vient**. Sans app d'origine → rien d'ouvert, et **tu reçois une
+  notification** : « nouvel inscrit, à toi de décider ».
+- **Le client partagé jetait le pass sur tout refus.** Une cliente qui ouvre l'arbre par
+  curiosité aurait été **déconnectée de sa propre boutique**. Maintenant le refus de périmètre
+  est un 4ᵉ état : pass gardé, pas de boucle, et l'app peut afficher le message en français.
+- Sur la page admin : une pastille « **N limités à une app** » = ta file de décisions, visible
+  sans dérouler ; et le journal admin nomme « Nouvel inscrit » et « Périmètre modifié ».
+- Preuves : 52 contrôles domaine + 9 sur le vrai `kdmc-sso.js` exécuté dans Node + 19 au
+  navigateur ; 5 nouveaux sabotages, tous rouges ; 8 suites du routeur toujours vertes.
+  Leçon **#253**.
+- **Publication Cloudflare : la sonde est passée** (26 adresses servies sur l'aperçu). Le
+  premier rouge était un délai de propagation, pas le site. La production se fera à la
+  fusion dans `main`.
+
 ## 15 septembre 2026 — « mets tout en privé » : le dépôt était public à DEUX endroits, pas un
 
 **Ta demande** : que ton code, tes liens et tout ce qui se construit ne soient plus visibles ;
