@@ -1,5 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎨 Dette de thème CMCteams — le cliquet — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/audit/theme-signature.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature.mjs) | Compte les couleurs de marque écrites en dur. La dette peut baisser, jamais monter. |
+| [`tools/audit/theme-signature-baseline.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature-baseline.json) | Le chiffre figé : **1 680** au 15.09.2026 |
+
+`npm run test:theme-signature` (dans `test:ci`). Une baisse volontaire se re-fige avec `--maj-baseline`.
+
+---
+
 ## 🎨 Rotaplan — page de vente refaite (système « levels ») — 2026-09-15
 
 **▶️ La page en ligne** : [rotaplan.kd-mc.com](https://rotaplan.kd-mc.com/)

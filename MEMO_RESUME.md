@@ -1,5 +1,46 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 6) — « CMCteams est fait pour Monaco » : la dette de thème, CHIFFRÉE
+
+Kevin : « Il faudra aussi revoir le design et thème des futurs clients. Adapter les thèmes.
+CMCteams actuel est fait pour Monaco le casino. »
+
+**Mesuré, pas estimé** :
+
+| Ce qui est gravé casino | Nombre |
+|---|---|
+| Couleurs de marque **en dur** hors `:root` | **1 680** |
+| dont l'or `#c9a227` | 707 |
+| dont l'or en transparence `rgba(201,162,39,…)` | 728 |
+| `var(--cmc-gold)` réellement utilisé | **6** |
+| Vocabulaire : casino / SBM / roulette / pit boss / baccara | 488 / 419 / 440 / 164 / 134 |
+
+**Le piège qui rend l'automatisme impossible** : sur les 167 or présents dans le JS,
+**24 sont des comparaisons de chaîne** (`=== "#c9a227"`). Un chercher-remplacer aveugle
+les transforme en comparaisons toujours fausses — l'app ne lève aucune erreur, elle se
+comporte juste mal. C'est exactement la classe de bug qu'un test « ça rend » ne voit pas.
+**Donc : pas de sed sur l'app de production.**
+
+**Ce qui aide déjà** : le crochet `body[data-theme="…"]` existe (thèmes nuit/monaco/xmas/jour),
+`:root` porte 36 variables, et `FAMILIES`/`ROLES` sont **déjà des tables de configuration**
+lues par 3 fonctions — le vocabulaire est donc à ~80 % séparable sans toucher à la logique.
+
+**Livré ce soir** : `npm run test:theme-signature` (câblé dans `test:ci`) — un **cliquet**.
+La dette peut baisser, jamais monter : un `#c9a227` écrit à la main demain fait échouer le
+gate avec le message « utilise `var(--cmc-gold)` ». **Prouvé discriminant** : un seul or
+ajouté → `707 → 708` → échec ; retiré → vert. **`index.html` n'a pas été touché.**
+
+**Pas livré, et assumé** : la conversion des 1 680 emplacements. Elle demande une preuve
+par capture des 95 vues avant/après (`vMain()` rend en chaîne pure, donc c'est comparable
+au caractère près) — c'est un chantier à faire éveillé, pas en fin de session sur l'app de
+260 personnes. Tâche #8, avec le plan détaillé et la méthode de preuve.
+
+**Décision qui revient à Kevin** : quel secteur viser en premier (clinique, hôtel, sécurité,
+centre d'appels). Ça détermine le vocabulaire du 2ᵉ profil — et c'est un choix commercial,
+pas technique.
+
+---
+
 ## 2026-09-15 (suite 5) — Rotaplan refait sous un système de design NOMMÉ (`levels`)
 
 Kevin : « Améliore le design total avec tous les outils, liens, connecteurs, le meilleur. »
