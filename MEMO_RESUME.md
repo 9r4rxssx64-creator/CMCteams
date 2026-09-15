@@ -21,6 +21,55 @@ Kevin envoie une capture TikTok (« 13 MINUTES QUI VONT CHANGER TA VIE »), puis
   maintenant dans la **skill `lire-video`** + un workflow-modèle, pour ne pas refaire le chemin.
 - Leçon **#267** écrite (dernier numéro vérifié avant d'écrire : 266, message m015).
 
+## 2026-09-15 (suite 5) — tor.kd-mc.com a vacillé (DNS) : diagnostic, correctif, et quoi faire si ça revient
+
+- **Vécu, mesuré** : `tor.kd-mc.com` ✅ à 18:44 → **❌ `ERR_NAME_NOT_RESOLVED` à 18:57** → ✅ à 19:05.
+  Ce n'est pas la page : c'est le **sous-domaine fraîchement créé** par `wrangler` (route
+  `custom_domain = true`) dont la résolution n'était pas encore stable partout (cache négatif
+  côté résolveurs). **Correctif appliqué** : relancer `deploy-kdmc-router.yml` (run #164, succès),
+  qui ré-applique les routes → résolution rétablie, vérifiée au run suivant.
+- **Si Kevin voit « site introuvable »** : ce n'est pas cassé, c'est le DNS qui met du temps.
+  Deux issues immédiates — l'adresse de secours
+  `9r4rxssx64-creator.github.io/CMCteams/tools/tor/`, ou la copie **hors ligne** (bouton
+  « Garder hors ligne », qui n'a besoin d'aucun réseau).
+- **C'est précisément pour ça que la surface a été ajoutée au balayage** (suite 3) : sans elle,
+  cette panne serait passée totalement inaperçue.
+- **Deuxième échec du même run, PAS le nôtre** : `Chez Lolo` — `HTTP 503` sur
+  `printify-order-config.json` (service tiers). Vert au run suivant sans intervention.
+  Consigné ici pour la session boutiques : à surveiller si ça se répète.
+- **Run vert de référence** : `verif-reelle` #83 — *« AUDIT LIVE OK — toutes les surfaces rendent,
+  0 requête projet bloquée »*, 27 surfaces.
+
+## 2026-09-15 (suite 4) — « Aucun blocage ? Sécurisé +++ et non traçable » : la trace mesurée, puis supprimée (v1.2)
+
+Question de Kevin : y a-t-il un blocage automatique dans l'app, peut-il tout faire, et est-ce
+non traçable.
+
+- **Réponse honnête donnée** : la page n'est PAS un navigateur — elle ne peut rien bloquer,
+  rien filtrer, rien observer de ce qu'il fait dans Tor. Aucun blocage n'existe, aucun n'est
+  possible. Ce qui reste, ce sont des textes, pas des verrous.
+- **Traces MESURÉES dans le code, pas supposées** : (a) un seul élément stocké (`tor_vue`, le
+  dernier onglet) ; (b) 0 requête réseau (CSP `connect-src 'none'` — la balise Cloudflare Insights
+  est d'ailleurs **refusée**, visible dans le journal CI) ; (c) **n'alimente PAS** le journal
+  « Qui se connecte » : la page n'appelle pas `/__sso/*` (vérifié : ni `kdmc-sso.js`, ni fetch).
+- **La trace que je n'avais pas traitée** : ouvrir `tor.kd-mc.com` rend la visite visible de
+  l'opérateur et de l'hébergeur (DNS/SNI + journal de bord Cloudflare). Rien dans l'app ne pouvait
+  l'effacer → **livré le seul vrai correctif** : bouton **« 💾 Garder hors ligne »** qui recopie la
+  page **depuis le document déjà chargé** (`outerHTML`, donc 0 requête) → Kevin l'ouvre depuis
+  Fichiers, sans réseau, sans trace. Plus l'astuce d'ouvrir la page dans Onion Browser.
+- **Bouton « 🧹 Effacer mes traces »** (vide la clé + retire la fiche affichée) et section
+  `#traces` qui dit noir sur blanc ce que la page garde, envoie, et ce qu'elle ne PEUT PAS effacer.
+- **Preuve navigateur** (14 contrôles) : copie hors ligne = **67 Ko, page complète**, s'ouvre seule,
+  affiche les 20 services, **le générateur d'identité marche hors ligne**, et **0 requête** ni à
+  l'enregistrement ni à la réouverture. Effacement vérifié (stockage vide après clic).
+- **`test:tor` 21 → 25 contrôles** : une seule clé de stockage autorisée (une identité écrite sur
+  l'appareil = échec), effacement présent, copie hors ligne sans réseau, 0 mouchard (GA, gtag, GTM,
+  Cloudflare Insights, Plausible, Matomo, Hotjar, Sentry), et l'aveu sur la trace visible obligatoire.
+  **6 sabotages, 6 détectés** (mouchard, cookie, identité stockée, effacement retiré, copie par le
+  réseau, aveu supprimé).
+- **Limite honnête redite dans la page** : aucun outil ne rend « non traçable » ce qui se fait
+  ensuite — ce sont les comportements (connexion à un compte, téléchargement, paiement, style
+  d'écriture) qui trahissent, pas la page.
 
 ## 2026-09-15 (suite 3) — « Fusionne » : c'est en ligne, et la surface est désormais surveillée
 

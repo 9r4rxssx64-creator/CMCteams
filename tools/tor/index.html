@@ -268,6 +268,31 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
 
 <!-- ═══════════════ SÉCURITÉ ═══════════════ -->
 <section id="v-secu" class="hide">
+  <h2>Ce que cette page laisse comme trace</h2>
+  <div class="card" id="traces">
+    <p class="big">Aucun blocage, aucun filtre, aucun journal. Tu fais ce que tu veux : cette page
+    ne voit rien de ce que tu fais dans Tor.</p>
+    <p><b>Ce qu'elle stocke sur ton téléphone :</b> une seule chose — le dernier onglet ouvert.
+    Rien d'autre. Pas de cookie, pas de mouchard, aucune de tes identités générées.</p>
+    <p><b>Ce qu'elle envoie :</b> <b>rien</b>. Elle est verrouillée pour ne parler à aucun serveur —
+    même la balise de suivi que Cloudflare ajoute automatiquement sur les sites est bloquée ici.</p>
+    <p><b>Ce qui reste visible, et que je ne peux pas effacer :</b> quand tu ouvres cette page,
+    ton opérateur et l'hébergeur voient que ton téléphone se connecte à <code>tor.kd-mc.com</code>.
+    Pas ce que tu lis, pas ce que tu copies — juste que tu es venu.</p>
+    <p><b>Les deux façons d'effacer même ça :</b></p>
+    <ol>
+      <li><b>Garde la page hors ligne</b> (bouton ci-dessous) : tu l'ouvres depuis tes Fichiers,
+      sans réseau du tout. Plus aucune connexion, donc plus aucune trace, et elle marche en avion.</li>
+      <li><b>Ou ouvre cette page dans Onion Browser</b> : la visite passe alors par Tor comme le reste.</li>
+    </ol>
+    <div class="acts">
+      <button class="btn prim" type="button" id="hors-ligne">💾 Garder hors ligne</button>
+      <button class="btn" type="button" id="efface">🧹 Effacer mes traces</button>
+    </div>
+    <p class="mut sm" style="margin-top:10px">Sur iPhone, le fichier se range dans Fichiers →
+    Téléchargements. Ouvre-le de là : tout fonctionne à l'identique, catalogue et générateur compris.</p>
+  </div>
+
   <h2>Les 8 règles</h2>
   <p class="mut">Suis-les et il ne peut pratiquement rien t'arriver.</p>
   <div class="card">
@@ -397,7 +422,7 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
   <button role="tab" data-v="secu" aria-selected="false"><span class="ic">🛡</span>Sécurité</button>
   <button role="tab" data-v="quiz" aria-selected="false"><span class="ic">🎓</span>Quiz</button>
 </nav>
-<div id="vbadge">v1.1</div>
+<div id="vbadge">v1.2</div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -691,6 +716,36 @@ document.getElementById("gen").addEventListener("click", function(){
 
   toast("🪪 Identité créée — copie-la dans ton coffre");
 });
+
+
+/* ---------- Garder hors ligne / effacer ses traces ----------
+   « Hors ligne » se fabrique SANS réseau : la page se recopie elle-même depuis le document
+   déjà chargé (outerHTML) → aucun téléchargement, aucune requête, donc aucune trace de plus.
+   C'est le seul moyen d'utiliser l'outil en ne laissant strictement rien derrière soi. */
+(function () {
+  var bhl = document.getElementById("hors-ligne");
+  if (bhl) bhl.addEventListener("click", function () {
+    try {
+      var doc = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      var blob = new Blob([doc], { type: "text/html;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "tor-en-clair.html";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      toast("💾 Enregistré — ouvre-le depuis Fichiers, sans réseau");
+    } catch (e) { toast("Enregistrement impossible sur ce navigateur"); }
+  });
+
+  var bef = document.getElementById("efface");
+  if (bef) bef.addEventListener("click", function () {
+    var n = 0;
+    try { if (localStorage.getItem("tor_vue") !== null) { localStorage.removeItem("tor_vue"); n++; } } catch (e) {}
+    var f = document.getElementById("fiche");
+    if (f && !f.classList.contains("hide")) { f.textContent = ""; f.classList.add("hide"); n++; }
+    toast(n ? "🧹 Effacé (" + n + ") — il ne reste rien de toi ici" : "🧹 Rien à effacer : la page ne gardait rien");
+  });
+})();
 
 /* ---------- Boot ---------- */
 renduChips(); renduListe(); renduQuiz();
