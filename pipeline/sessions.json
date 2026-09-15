@@ -452,7 +452,8 @@
       "etat": "actif",
       "maj": "2026-09-15",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Tor en clair v1.4 fusionné (PR #3804). L'outil de vérif .onion refuse de répondre sans Tor (au lieu d'annoncer « les 20 sont mortes » = faux verdict). Mesuré : GitLab joignable mais aucun jeton dans cette session ; lancer Tor depuis le bac à sable est refusé par l'environnement ; GitHub Actions interdit. Kevin peut lancer : Tor Browser ouvert + npm run tor:verif."
     }
   },
   "messages": [
