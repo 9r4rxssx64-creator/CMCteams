@@ -1,5 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## ⏸ Rotation aux tables — moteur + test (CMCteams v9.904) — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/index.html) (près de `var ROTATION`) | Le moteur : `rotationEtat`, `rotationDebutTour`, `rotationLimiteMin`, `rotationMaxLegalMin`, `rotationDepassements` |
+| [`tests/rotation-tables.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotation-tables.test.mjs) | 22 contrôles dans un vrai navigateur, prouvés discriminants par 4 sabotages |
+
+`npm run test:rotation-tables` (dans `test:ci`).
+
+---
+
 ## 🎨 Dette de thème CMCteams — le cliquet — 2026-09-15
 
 | Fichier | À quoi ça sert |

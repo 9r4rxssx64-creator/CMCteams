@@ -1,5 +1,56 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 7) — ROTATION AUX TABLES terminée et testée (v9.904)
+
+Kevin : « occupe-toi du produit […] il manque encore la rotation aux tables etc à terminer et tester. »
+
+**Le plus grave d'abord** : le « Gardien des pauses » — la sentinelle qui veille au
+respect du temps de table (55+ : 40 min max, convention) — **ne pouvait structurellement
+jamais alerter**. Elle cherchait des événements de type `assign` / `rotation` /
+`rotation_auto` ; l'application n'écrit que `assignEmp` / `rotateNow` / `autoRotation`.
+Intersection vide. **Prouvé en vrai navigateur avant correction** : deux personnes
+collées 3 h à une table, verdict de la sentinelle → « ✅ Pauses respectées ».
+Un feu vert qui ne peut pas passer au rouge est pire que pas de feu du tout.
+
+**Les 7 défauts trouvés, tous mesurés** :
+
+| # | Défaut | Preuve |
+|---|---|---|
+| 1 | La sentinelle ne peut jamais alerter (mauvais noms d'événements) | navigateur : 3 h sans pause → « respectées » |
+| 2 | Elle mesurait l'écart entre deux événements, pas jusqu'à MAINTENANT | quelqu'un garé sans nouvel événement = invisible |
+| 3 | Elle attendait un événement `break` — le journal n'en écrit aucun (c'est `setStatut` s:"break") | 0 occurrence mesurée |
+| 4 | Limites `isSenior?40:60` **en dur** au lieu de lire `ROTATION` | ligne 13002 |
+| 5 | `rotOverrideMin` acceptait **10 à 120 min sans plafond légal** : un 55+ pouvait être réglé sur 120 min | ligne 19348 |
+| 6 | `consentSenior` documenté dans le commentaire, **inexistant** dans le code | 1 seule occurrence : le commentaire |
+| 7 | `ROTATION` ne pilotait rien : 3 usages, **tous du texte d'affichage** | mesuré |
+
+**Livré** : un moteur de temps de table en fonctions **pures** (`rotationEtat`,
+`rotationDebutTour`, `rotationLimiteMin`, `rotationMaxLegalMin`, `rotationDepassements`),
+posé juste à côté de `ROTATION` qui devient sa **source unique**. Il sait que changer de
+table sans pause ne remet pas le compteur à zéro (c'est du travail consécutif — c'est
+précisément ce que la convention limite), qu'une table fermée ne compte personne, et
+qu'une personne déjà en pause n'est pas en table.
+
+**Choix de conception assumé** : si la fiche de la personne est introuvable, le moteur
+applique la limite **la plus stricte** (40 min), pas la plus permissive. Pour une règle de
+protection, mieux vaut rappeler un croupier 20 min trop tôt que laisser un 55+ dépasser.
+
+**Ce qui change pour le pit boss** : la cloche par table sonnait sans dire qui devait
+sortir. Maintenant les personnes au-delà de leur temps sont **prévenues nommément**
+(« ⏸ 47 min de table, maximum 40 · 55+ · pause à prendre ») et le pit boss reçoit la
+liste. Anti-spam : une relance par personne toutes les 10 min. **Ajouté sans rien retirer**
+de l'existant.
+
+**Testé** : `npm run test:rotation-tables` (câblé dans `test:ci`) — **22 contrôles**, vraie
+app dans un vrai navigateur, zéro donnée réelle de personnel. **Prouvé discriminant par
+4 sabotages** (limites en dur → 3 échecs · plafond retiré → 2 · pause qui ne remet plus à
+zéro → 1 · sentinelle aveugle → 1), restauration → 22/22.
+
+**Non régressé** : 95/95 vues rendues, 99 boutons cliqués sans erreur, départs, équipes du
+mois, MAJ forcée, parité app/light, XSS, taille fichier — tous verts.
+
+---
+
 ## 2026-09-15 (suite 6) — « CMCteams est fait pour Monaco » : la dette de thème, CHIFFRÉE
 
 Kevin : « Il faudra aussi revoir le design et thème des futurs clients. Adapter les thèmes.
