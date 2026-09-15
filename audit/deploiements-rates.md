@@ -7,6 +7,28 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 15/09/2026 21:48 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `92a9eae0` · **Run** : `35026665662`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35026665662
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3806 — merge auto refusé. Cause exacte ci-dessous.
+[claude/video-review-wqnqdw 22681c805] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 15/09/2026 21:40 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `247a1f32` · **Run** : `35026225891`
@@ -439,26 +461,5 @@ pull request create failed: GraphQL: Something went wrong while executing your q
 ^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
 ##[warning]PR #3754 — merge auto refusé. Cause exacte ci-dessous.
 [claude/capcut-mini-versions-66tfum 37f3f6aba] diag: pourquoi l'auto-merge de claude/capcut-mini-versions-66tfum est refusé [skip ci]
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 10/09/2026 19:48 UTC
-
-- **Branche** : `claude/sarzance-family-tree-3jxi7i` · **Commit** : `b9edbd92` · **Run** : `34521530102`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34521530102
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3730 — merge auto refusé. Cause exacte ci-dessous.
-[claude/sarzance-family-tree-3jxi7i 7c5344f78] diag: pourquoi l'auto-merge de claude/sarzance-family-tree-3jxi7i est refusé [skip ci]
 ##[error]Process completed with exit code 1.
 ```
