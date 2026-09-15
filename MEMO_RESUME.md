@@ -1,5 +1,27 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 4) — « Regarde cette vidéo » : je l'ai vraiment lue, pas commenté une capture
+
+Kevin envoie une capture TikTok (« 13 MINUTES QUI VONT CHANGER TA VIE »), puis le lien.
+
+- **Je n'ai pas commenté l'image.** Six canaux essayés et mesurés : curl direct **403**,
+  passerelles depuis l'agent **403**, WebFetch **EGRESS_BLOCKED**, Firecrawl **403**,
+  HF Jobs **402 (devenu payant)**. Ce qui marche : **WebSearch** (contexte) et **la CI**.
+- **Sur le runner**, `yt-dlp` en direct échoue aussi : TikTok sert une page de contrôle aux
+  **IP de datacenter**. La passerelle `tikwm.com`, elle, répond au runner → mp4 récupéré.
+- **Piège qui a coûté un aller-retour** : les sous-titres TikTok **ne sont pas dans le fichier**
+  (dessinés par l'app à la lecture). 26 aperçus ne portaient que le titre incrusté. Donc
+  transcription du **son** (ffmpeg → faster-whisper `small`, français) : **13 min horodatées**,
+  00:00 → 12:57, run `35008743938`.
+- **Verdict rendu à Kevin** avec citations horodatées : méthode gratuite correcte, mais tunnel
+  de vente à 3 étages — comptes TikTok tout faits (contraire aux CGU), outil tiers cité 3× sans
+  mention d'affiliation, et l'accompagnement payant **dont le prix n'est jamais dit** en 13 min
+  (`[09:03]` : « écris-moi go sur Instagram »).
+- **Outil temporaire retiré** du dépôt public comme promis (0 fichier suivi). Sa recette vit
+  maintenant dans la **skill `lire-video`** + un workflow-modèle, pour ne pas refaire le chemin.
+- Leçon **#267** écrite (dernier numéro vérifié avant d'écrire : 266, message m015).
+
+
 ## 2026-09-15 (suite 3) — « Fusionne » : c'est en ligne, et la surface est désormais surveillée
 
 - **PR #3788** (bot auto-merge) avait DÉJÀ fusionné les 2 premiers commits à 17:54 — d'où le
