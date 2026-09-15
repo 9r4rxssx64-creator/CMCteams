@@ -1,5 +1,42 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 — « Tor en clair » : un outil pour comprendre et visiter le web .onion sans se faire avoir
+
+Demande de Kevin : *« Crée-moi un outil pour aller sur le dark web simplement, en toute sécurité,
+me balader, avoir un catalogue, et apprendre. »*
+
+- **Livré** : `tools/tor/index.html` (page unique, 100 % autonome, 0 requête réseau — CSP
+  `connect-src 'none'`). 5 onglets : **Comprendre** (c'est quoi, légalité, qui s'en sert, 4 idées
+  fausses) · **Y aller** (4 étapes iPhone avec Onion Browser, Mac/PC avec Tor Browser) ·
+  **Catalogue** (19 services légitimes, recherche + filtres) · **Sécurité** (8 règles, 6 arnaques,
+  quoi faire si ça tourne mal) · **Quiz** (6 questions avec explications).
+- **Ce que j'ai REFUSÉ de faire, et dit clairement à Kevin** : le « catalogue de tous les sites,
+  connus et inconnus » qu'il demandait = un annuaire de marchés illégaux. Non construit. La page
+  l'explique en clair (bloc `#exclus`) et renvoie vers **Ahmia** (moteur qui filtre les contenus
+  criminels) pour explorer au-delà de la liste.
+- **Deux décisions de sécurité qui font tout l'outil** : (1) les adresses .onion **ne sont pas
+  cliquables** — bouton « Copier » à la place, parce qu'un clic depuis Safari ne peut aboutir que
+  sur un « pont web » (tor2web) qui se met au milieu et voit tout ; (2) chaque fiche porte un bouton
+  **« Prouver l'adresse »** vers la page du site officiel **en clair** (bbc.co.uk, torproject.org,
+  proton.me…) qui publie son .onion — la vraie parade au faux site, qui est l'arnaque n°1.
+- **Adresses relevées à leurs sources publiques le 15.09.2026** (liste curatée
+  `alecmuffett/real-world-onion-sites` + pages officielles). Honnêteté écrite dans la page :
+  je ne peux pas ouvrir de .onion depuis le serveur (pas de Tor ici) → je donne la source, pas une promesse.
+- **Garde `npm run test:tor`** (12 contrôles, câblée dans `test:ci`) : format v3 réel (56 caractères
+  base32 — c'est elle qui a **vraiment vérifié** les 19 adresses), source officielle en clair
+  obligatoire par fiche, 0 pont web hors mise en garde, 0 adresse cliquable, 0 annuaire de marchés,
+  règles de sécurité présentes, 0 ressource externe, mobile ≥ 44px.
+  **Prouvée discriminante par 6 sabotages** (adresse tronquée, adresse cliquable, pont web ajouté,
+  source retirée, règle « aucun paiement » supprimée, mise en garde vidée) → 6/6 détectés.
+  ⚠️ Le sabotage « pont web » est passé au 1er essai : ma tolérance regardait 400 caractères en
+  arrière et tombait sur la mise en garde de la section précédente. Resserrée : tolérance **au bloc
+  `#ponts` uniquement**. Leçon : un voisinage flou dans une garde = une garde qui ment.
+- **Preuve navigateur réel** (`npm run tor:verif`, Chromium, iPhone SE 375px) : **17 contrôles, 0 échec**
+  — 0 erreur JS, **0 requête sortante**, 0 défilement horizontal, 19 fiches, recherche, filtre,
+  bouton Copier (presse-papier réellement relu), quiz, mémoire d'onglet.
+- **Câblé dans le domaine** : `tor.kd-mc.com` (apps.json + worker ROUTES + wrangler.toml + les 2
+  copies de repli portail/admin) — `apps-consistency` 7/7.
+
 ## 2026-09-13 — Bots crypto : 2 décisions prises en autonomie (Kevin a dit « Continu » sans trancher)
 
 Deux questions restaient ouvertes depuis le 12.09 (flotte relancée + stratégie agressive+++). Kevin a dit
