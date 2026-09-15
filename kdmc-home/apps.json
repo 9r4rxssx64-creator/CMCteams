@@ -101,6 +101,10 @@
       "icon": "🧰",
       "name": "Mes outils gratuits"
     },
+    "tor.kd-mc.com": {
+      "name": "Tor en clair",
+      "icon": "🧅"
+    },
     "shops.kd-mc.com": {
       "icon": "🏬",
       "name": "Portail boutiques"
