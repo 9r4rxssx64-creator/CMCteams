@@ -1,5 +1,17 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎬 Lire une vidéo (TikTok, Insta, YouTube…) — 2026-09-15
+
+Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcription horodatée).
+
+| Quoi | Ouvrir |
+|---|---|
+| **Le mode d'emploi + la grille de lecture des vidéos de vente** | [.claude/skills/lire-video/SKILL.md](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/lire-video/SKILL.md) |
+| Le modèle de job (à recopier dans `.github/workflows/` puis retirer) | [workflow-modele.yml](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/lire-video/workflow-modele.yml) |
+| La leçon #267 (les 6 canaux mesurés, les pièges) | [LESSONS.md](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+| Le job qui a transcrit les 13 minutes | [run 35008743938](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35008743938) |
+
+
 ## 🧅 Tor en clair — 2026-09-15
 
 | Quoi | Ouvrir |
