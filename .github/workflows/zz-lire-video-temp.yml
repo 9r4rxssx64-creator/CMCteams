@@ -1,0 +1,90 @@
+name: Lire une video (temporaire)
+
+on:
+  push:
+    branches: ['claude/video-review-wqnqdw']
+    paths:
+      - '.github/workflows/zz-lire-video-temp.yml'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL de la video a lire'
+        required: true
+        default: 'https://www.tiktok.com/@pianotutoezz/video/7683540481992592673'
+
+permissions:
+  contents: read
+
+jobs:
+  lire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      URL: ${{ github.event.inputs.url || 'https://www.tiktok.com/@pianotutoezz/video/7683540481992592673' }}
+    steps:
+      - name: Outils
+        run: |
+          set -x
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg tesseract-ocr tesseract-ocr-fra
+          python3 -m pip install -q --upgrade yt-dlp
+          yt-dlp --version; tesseract --version | head -1; ffmpeg -version | head -1
+
+      - name: Metadonnees
+        run: |
+          set -x
+          yt-dlp --no-warnings --dump-json "$URL" > meta.json 2> meta.err || { echo "=== ERREUR yt-dlp (cause exacte) ==="; cat meta.err; }
+          if [ -s meta.json ]; then
+            python3 - <<'PY'
+          import json
+          m = json.load(open('meta.json'))
+          print("=== METADONNEES ===")
+          for k in ('title','description','duration','upload_date','uploader','channel','like_count','comment_count','repost_count','view_count','webpage_url'):
+              if m.get(k) is not None:
+                  print(f"{k}: {m[k]}")
+          PY
+          fi
+
+      - name: Telecharger la video
+        run: |
+          set -x
+          yt-dlp --no-warnings -f 'best[ext=mp4]/best' -o video.mp4 "$URL" 2> dl.err || { echo "=== ERREUR TELECHARGEMENT (cause exacte) ==="; cat dl.err; exit 1; }
+          ls -la video.mp4
+          ffprobe -v error -show_entries format=duration -of csv=p=0 video.mp4
+
+      - name: Extraire les images et lire les sous-titres
+        run: |
+          set -x
+          mkdir -p frames
+          # 1 image toutes les 1.5s, on garde la moitie basse (zone des sous-titres TikTok), agrandie x2 et contrastee
+          ffmpeg -v error -i video.mp4 -vf "fps=2/3,crop=iw:ih*0.45:0:ih*0.42,scale=iw*2:ih*2,eq=contrast=1.6" frames/f_%04d.png
+          echo "images extraites : $(ls frames | wc -l)"
+          for f in frames/*.png; do
+            tesseract "$f" - -l fra --psm 6 2>/dev/null | tr -s ' \n' ' \n'
+            echo "@@$(basename $f)"
+          done > ocr_brut.txt
+          python3 - <<'PY'
+          import re
+          blocs, cur = [], []
+          for line in open('ocr_brut.txt', encoding='utf-8', errors='replace'):
+              if line.startswith('@@'):
+                  blocs.append((line.strip()[2:], ' '.join(cur).strip())); cur = []
+              else:
+                  s = line.strip()
+                  if s: cur.append(s)
+          # deduplication : on ne garde que les textes qui changent
+          sortie, prec = [], ''
+          for nom, txt in blocs:
+              t = re.sub(r'\s+', ' ', txt).strip()
+              if len(t) < 3: continue
+              if t == prec: continue
+              # un sous-titre qui se complete a l'ecran : on garde la version COMPLETE
+              if prec and t in prec: continue
+              if prec and prec in t and sortie:
+                  sortie[-1] = t; prec = t; continue
+              sortie.append(t); prec = t
+          print("=== TRANSCRIPTION (sous-titres incrustes) ===")
+          print(f"[{len(sortie)} segments retenus sur {len(blocs)} images]")
+          for i, t in enumerate(sortie, 1):
+              print(f"{i:03d}. {t}")
+          PY
