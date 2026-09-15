@@ -1,5 +1,19 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎨 Rotaplan — page de vente refaite (système « levels ») — 2026-09-15
+
+**▶️ La page en ligne** : [rotaplan.kd-mc.com](https://rotaplan.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/rotaplan/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/rotaplan/index.html) | La page de vente, refaite sous le système de design `levels` |
+| [`tests/rotaplan-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotaplan-page.test.mjs) | La garde : sécurité, liens, jetons du système, cibles iPhone, sitemap, honnêteté des chiffres |
+| [`vendor/agent-toolkit/awesome-design-skills/skills/levels/`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/vendor/agent-toolkit/awesome-design-skills/skills/levels/DESIGN.md) | Le système de design choisi (67 disponibles) |
+
+Lancer la garde : `npm run test:rotaplan` (elle tourne aussi dans `npm run test:ci`).
+
+---
+
 ## 🎬 Lire une vidéo (TikTok, Insta, YouTube…) — 2026-09-15
 
 Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcription horodatée).

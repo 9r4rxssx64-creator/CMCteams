@@ -1,5 +1,47 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 5) — Rotaplan refait sous un système de design NOMMÉ (`levels`)
+
+Kevin : « Améliore le design total avec tous les outils, liens, connecteurs, le meilleur. »
+
+**Direction choisie et annoncée** : `levels`, pris dans la boîte à outils design vendorisée
+(`vendor/agent-toolkit/awesome-design-skills/skills/levels/`) — décrit comme « design orienté
+conversion : enlever la friction, construire la confiance, guider vers une action ». C'est le
+cahier des charges d'une page de vente. Anti-« design d'IA générique » : je ne pars pas du
+crème/serif par défaut, je pioche une direction précise et je la cite.
+
+**Ce que ça change** : abandon du noir + or (qui disait « casino » alors que Rotaplan se vend
+aussi aux cliniques et aux hôtels) pour fond clair, texte `#111827`, primaire `#27272A`,
+accent violet `#8B5CF6`, Inter + JetBrains Mono, barème 12/14/16/20/24/32, rayons 4/8 px.
+Variante sombre ajoutée (la règle frontend demande le sombre, `levels` est clair → la page suit
+la préférence de l'appareil).
+
+**Ajout le plus utile** : un **schéma de rotation dessiné en HTML/CSS** (5 personnes × 5 jours,
+la vraie suite 1-4-2-3-5 de l'app, diagonale violette). Ce n'est **pas** une fausse capture
+d'écran du produit — c'est étiqueté « schéma — pas une capture », et il n'y a **aucun nom
+d'employé réel**. Il montre le différenciateur en une seconde.
+
+**Défauts réels trouvés et corrigés** (la page précédente passait pour « OK ») :
+1. `/shops/legal/` — dossier **sans** `index.html` → lien légal en **404**. Corrigé vers les 3 pages réelles.
+2. **Aucune CSP** alors que toutes les boutiques voisines en ont une. Ajoutée (`script-src 'none'`).
+3. **Absente du sitemap** → invisible. Ajoutée, à son adresse canonique.
+4. `frame-ancestors` en `<meta>` est **ignoré par le navigateur** (mesuré) → retiré ; la protection
+   existe déjà côté routeur (`X-Frame-Options: SAMEORIGIN`).
+5. Le bouton d'en-tête s'affichait sur téléphone (`.btn{display:inline-flex}` déclaré **après**
+   `.lien-tete{display:none}` = même spécificité, la dernière gagne) → doublon avec la barre fixe.
+6. La marque faisait **32 px** de haut (règle iPhone : 44 px minimum).
+7. Cellule vide du tableau qui héritait du style `<td>` → boîte blanche fantôme.
+
+**Mesuré en vrai navigateur** (Chromium, 3 affichages : iPhone 390 clair, bureau 1280, iPhone 390
+sombre) : 0 erreur JS, 0 blocage CSP, 0 défilement horizontal, 0 cible sous 44 px, Inter et
+JetBrains Mono réellement rendues (`document.fonts.check`), données structurées lisibles
+(SoftwareApplication + FAQPage), 3 liens légaux en HTTP 200, 3 ancres vivantes.
+
+**Garde** : `npm run test:rotaplan` (câblé dans `test:ci`), **prouvé discriminant par sabotage**
+(3 sabotages → 3 échecs distincts, restauration → vert).
+
+---
+
 ## 2026-09-15 (suite 4) — « Regarde cette vidéo » : je l'ai vraiment lue, pas commenté une capture
 
 Kevin envoie une capture TikTok (« 13 MINUTES QUI VONT CHANGER TA VIE »), puis le lien.
