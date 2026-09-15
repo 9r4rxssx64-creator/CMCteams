@@ -98,6 +98,12 @@
          restait invisible sur l'iPhone de Kevin (Face ID non prouvé) = fonction inexistante. */
       var accessZone = document.getElementById('access-zone');
       if (accessZone) accessZone.hidden = !(isPriv || named);
+      /* Tor : même logique que le bot (sinon invisible sur l'iPhone de Kevin, Face ID non
+         prouvé = fonction inexistante). Mais réservé à KEVIN seul : la page n'a rien de
+         sensible, c'est un choix de discrétion, pas une protection. */
+      var torZone = document.getElementById('tor-zone');
+      var estKevin = /kevin|desarzens/.test(norm(s && s.name || ''));
+      if (torZone) torZone.hidden = !(!!(s && s.admin) || estKevin);
       renderSelfService(s); /* « Mes appareils / connexions » — pour TOUT connecté */
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }

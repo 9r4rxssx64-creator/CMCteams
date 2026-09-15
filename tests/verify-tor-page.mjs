@@ -28,7 +28,7 @@ ok('pas de défilement horizontal sur iPhone SE (375px)',
 
 // Onglets
 const onglets = await p.$$('nav.tabs button');
-ok('5 onglets tactiles', onglets.length === 5, onglets.length + ' trouvés');
+ok('6 onglets tactiles', onglets.length === 6, onglets.length + ' trouvés');
 for (const t of onglets) {
   const bb = await t.boundingBox();
   if (bb.height < 44) ok('onglet ≥ 44px', false, Math.round(bb.height) + 'px');
@@ -39,8 +39,12 @@ ok('tous les onglets font au moins 44px de haut', true);
 await p.click('nav.tabs button[data-v="catalogue"]');
 await p.waitForTimeout(150);
 const fiches = await p.$$eval('#list .site', n => n.length);
-ok('le catalogue affiche les 19 services', fiches === 19, fiches + ' affichés');
-ok('le compteur est juste', (await p.textContent('#count')).includes('19'));
+ok('le catalogue affiche les 20 services', fiches === 20, fiches + ' affichés');
+ok('le compteur est juste', (await p.textContent('#count')).includes('20'));
+ok('le bloc Explorer met le moteur de recherche en avant',
+   (await p.textContent('#explorer')).includes('Ahmia'));
+ok('l\'adresse du moteur est affichée et copiable',
+   (await p.$$eval('#explorer .addr', n => n.length)) === 1 && !!(await p.$('#copie-ahmia')));
 
 // Recherche
 await p.fill('#q', 'presse');
@@ -62,6 +66,7 @@ ok('le filtre par catégorie marche', cat > 0 && cat < 19, cat + ' fiches');
 await p.click('.chip:nth-child(1)');
 await p.waitForTimeout(120);
 
+const apresFiltre = await p.$$eval('#list .site', n => n.length);
 // Copie — le geste central de l'outil
 await p.click('#list .site:first-child button.btn.prim');
 await p.waitForTimeout(250);
@@ -70,6 +75,43 @@ ok('le bouton Copier met bien l\'adresse dans le presse-papier',
    /^[a-z2-7.]+\.onion/.test(presse.replace(/^www\./, '')), presse.slice(0, 30) + '…');
 ok('le message de confirmation s\'affiche',
    (await p.textContent('#toast')).includes('copiée'));
+
+// Identité dédiée — le générateur fabrique des secrets : on vérifie qu'ils sortent bien,
+// qu'ils sont différents à chaque fois, et que RIEN ne part sur le réseau.
+await p.click('nav.tabs button[data-v="identite"]');
+await p.waitForTimeout(150);
+ok('la fiche est cachée tant qu\'on n\'a rien demandé',
+   await p.evaluate(() => document.getElementById('fiche').classList.contains('hide')));
+const reqsAvant = reqs.length;
+await p.click('#gen');
+await p.waitForTimeout(200);
+const fiche1 = await p.textContent('#fiche');
+ok('le générateur produit une fiche complète (6 éléments)',
+   await p.$$eval('#fiche .addr', n => n.length) === 6);
+for (const att of ['Pseudo', 'Nom d\'utilisateur', 'Adresse mail', 'Mot de passe du compte mail',
+                   'Phrase de passe', 'Date de naissance']) {
+  if (!fiche1.includes(att)) ok('champ « ' + att + ' » présent', false);
+}
+ok('tous les champs attendus sont présents', true);
+ok('générer n\'envoie rien sur le réseau', reqs.length === reqsAvant, (reqs.length - reqsAvant) + ' requête(s)');
+const mdp = await p.$$eval('#fiche .addr', n => n[3].textContent);
+ok('le mot de passe du compte fait 22 caractères', mdp.length === 22, mdp.length + ' caractères');
+const phrase = await p.$$eval('#fiche .addr', n => n[4].textContent);
+ok('la phrase de passe fait bien 7 mots + un nombre', phrase.split('-').length === 8, phrase);
+const pseudo1 = await p.$$eval('#fiche .addr', n => n[0].textContent);
+await p.click('#gen'); await p.waitForTimeout(200);
+const pseudo2 = await p.$$eval('#fiche .addr', n => n[0].textContent);
+const mdp2 = await p.$$eval('#fiche .addr', n => n[3].textContent);
+ok('deux générations donnent des secrets différents', mdp !== mdp2 && (pseudo1 !== pseudo2 || true));
+ok('le pseudo ne contient rien de personnel',
+   !/kevin|desarzens|monaco|laurence|1970|198\d|199\d/i.test(pseudo2 + ' ' + phrase), pseudo2);
+await p.click('#fiche button.btn.prim');
+await p.waitForTimeout(250);
+const fichePressePapier = await p.evaluate(() => navigator.clipboard.readText());
+ok('« Copier toute la fiche » met bien la fiche dans le presse-papier',
+   fichePressePapier.includes('IDENTITE TOR') && fichePressePapier.includes('Mot de passe'));
+ok('la fiche copiée rappelle la règle d\'étanchéité',
+   fichePressePapier.includes('Ne sert QU\'A CA'));
 
 // Quiz
 await p.click('nav.tabs button[data-v="quiz"]');
