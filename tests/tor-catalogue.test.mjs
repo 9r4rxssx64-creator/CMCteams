@@ -11,7 +11,9 @@
  *      que sur un pont web — d'où le bouton « Copier » à la place).
  * Prouvée discriminante par sabotage (voir le commit).
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const require0 = createRequire(import.meta.url);
 import { strict as assert } from 'node:assert';
 
 const PAGE = 'tools/tor/index.html';
@@ -213,6 +215,102 @@ t('la tuile du portail existe, pointe sur l\'outil, et reste dans une zone priv�
   const js = readFileSync(new URL('../kdmc-home/kdmc-portal.js', import.meta.url), 'utf8');
   assert(js.includes("getElementById('tor-zone')"), 'la règle d\'affichage de la tuile a disparu');
   assert(/estKevin[\s\S]{0,120}kevin\|desarzens/.test(js), 'la tuile n\'est plus réservée à Kevin');
+});
+
+
+/* ── « Non traçable » : ce que la page garde, dit et sait effacer. ── */
+t('la page n\'écrit qu\'UNE clé de stockage, et sait l\'effacer', () => {
+  const cles = [...html.matchAll(/localStorage\.(?:setItem|getItem|removeItem)\("([^"]+)"/g)].map(m => m[1]);
+  const uniques = [...new Set(cles)];
+  assert.deepEqual(uniques, ['tor_vue'], 'clés de stockage inattendues : ' + uniques.join(', '));
+  assert(html.includes('localStorage.removeItem("tor_vue")'), 'plus moyen d\'effacer la trace');
+  assert(!/sessionStorage|indexedDB|document\.cookie/.test(html), 'un autre stockage est apparu');
+});
+
+t('la page explique honnêtement la trace qu\'elle ne peut PAS effacer', () => {
+  const b = blocDe('traces');
+  assert(b.length > 400, 'bloc #traces introuvable');
+  assert(/ton opérateur et l'hébergeur voient/.test(b),
+    'la page ne dit plus que la visite elle-même est visible — ce serait une fausse promesse');
+  assert(/hors-ligne/.test(html) && /efface/.test(html), 'les deux boutons de maîtrise des traces ont disparu');
+});
+
+t('l\'enregistrement hors ligne se fait sans réseau (copie du document, pas un téléchargement)', () => {
+  assert(/document\.documentElement\.outerHTML/.test(html),
+    'la copie hors ligne ne se fabrique plus depuis la page déjà chargée : elle appellerait le réseau');
+});
+
+t('aucun mouchard, aucune mesure d\'audience', () => {
+  const bas = html.toLowerCase();
+  for (const m of ['google-analytics', 'gtag(', 'googletagmanager', 'cloudflareinsights',
+                   'plausible', 'matomo', 'hotjar', 'facebook.net', 'sentry']) {
+    assert(!bas.includes(m), 'mouchard trouvé : ' + m);
+  }
+});
+
+
+/* ── L'outil qui ouvre VRAIMENT les .onion. Il ne peut pas tourner ici (réseau fermé),
+   mais sa logique se prouve hors ligne — sinon il resterait une intention, pas un outil. ── */
+t('le vérificateur réel existe, tourne, et classe les 4 cas', () => {
+  const { execFileSync } = require0('node:child_process');
+  const sortie = execFileSync(process.execPath,
+    [new URL('../tools/tor/verif-onion.mjs', import.meta.url).pathname, '--simule'],
+    { encoding: 'utf8' });
+  for (const etat of ['vivant', 'protégé', 'erreur', 'injoignable']) {
+    assert(sortie.includes(etat), 'le classement « ' + etat + ' » a disparu');
+  }
+  assert(/\d+\/20 adresses répondent/.test(sortie), 'le décompte final a disparu');
+  assert(sortie.includes('ne prouvent RIEN'), 'le mode simulé ne s\'annonce plus comme tel : on croirait à un vrai verdict');
+});
+
+t('le vérificateur lit le catalogue dans la page, sans le recopier', () => {
+  const src = readFileSync(new URL('../tools/tor/verif-onion.mjs', import.meta.url), 'utf8');
+  assert(src.includes("readFileSync(new URL('./index.html'"), 'le catalogue est recopié ailleurs : les deux listes vont diverger');
+  assert(!/\.onion"/.test(src.replace(/\*.*?\*\//gs, '')), 'une adresse en dur traîne dans le vérificateur');
+});
+
+t('sa destination est écrite, et ce n\'est pas GitHub Actions', () => {
+  const src = readFileSync(new URL('../tools/tor/verif-onion.mjs', import.meta.url), 'utf8');
+  assert(/GitHub Actions *: *INTERDIT/.test(src), 'la destination n\'est plus expliquée dans l\'outil');
+  const gl = readFileSync(new URL('../.gitlab-ci.yml', import.meta.url), 'utf8');
+  assert(gl.includes('tor-adresses:'), 'le job GitLab a disparu');
+  assert(/tor-adresses:[\s\S]{0,900}when: manual/.test(gl), 'le job n\'est plus « à la demande »');
+  assert(!/tor-adresses:[\s\S]{0,900}(schedule|cron)/.test(gl), 'une tâche programmée est apparue : interdit');
+  const wf = readdirSync(new URL('../.github/workflows/', import.meta.url))
+    .filter(f => /\.ya?ml$/.test(f));   /* le dossier contient aussi des sous-dossiers */
+  for (const f of wf) {
+    const c = readFileSync(new URL('../.github/workflows/' + f, import.meta.url), 'utf8');
+    assert(!c.includes('verif-onion.mjs'), 'le vérificateur a été câblé dans GitHub Actions (' + f + ') : c\'est exactement ce qui a fait suspendre le compte');
+  }
+});
+
+
+/* ── Le vérificateur d'adresse est la protection la plus forte de l'outil (c'est lui qui
+   voit la fausse adresse). Il doit exister, et surtout garder la comparaison de préfixe :
+   sans elle, il ne détecte plus les imitations, qui sont TOUTE la menace. ── */
+t('le vérificateur d\'adresse existe et est utilisable', () => {
+  assert(html.includes('id="verif"'), 'le bloc de vérification a disparu');
+  assert(html.includes('id="qverif"') && html.includes('id="rverif"'), 'le champ ou le résultat a disparu');
+  assert(/function verifieAdresse/.test(html), 'la fonction de vérification a disparu');
+});
+
+t('il détecte les IMITATIONS (début commun, fin différente)', () => {
+  assert(/function prefixeCommun/.test(html), 'la comparaison de début a disparu : les faux passeraient');
+  assert(/score >= 6/.test(html), 'le seuil de ressemblance a disparu');
+  assert(html.includes('DANGER — imite'), 'l\'alerte d\'imitation a disparu');
+});
+
+t('il refuse les adresses impossibles', () => {
+  assert(/cle\.length === 16/.test(html), 'les vieilles adresses v2 ne sont plus refusées');
+  assert(/cle\.length !== 56/.test(html), 'la longueur réelle n\'est plus contrôlée');
+});
+
+t('le carnet personnel ne s\'écrit pas sur l\'appareil, il voyage dans la copie', () => {
+  assert(html.includes('id="perso"'), 'le carnet personnel a disparu');
+  assert(/window\.__PERSO__/.test(html), 'les adresses perso ne sont plus embarquées dans la copie hors ligne');
+  assert(!/localStorage[^)]*PERSO/i.test(html), 'le carnet personnel s\'écrit sur l\'appareil : c\'est une trace');
+  assert(/replace\(\/<\/g, *"\\\\u003c"\)/.test(html) || html.includes('u003c'),
+    'les adresses perso ne sont plus échappées avant d\'être écrites dans la copie');
 });
 
 console.log('\n✅ ' + ok + ' contrôles, 0 échec — ' + fiches.length + ' services au catalogue.');
