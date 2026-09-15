@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rotaplan — Le planning des équipes qui tournent</title>
+<meta name="description" content="Le logiciel de planning conçu pour les rotations complexes : équipes miroir, cycles variables, ordres de passage, repos légaux. Prix fixe, utilisateurs illimités.">
+<meta name="theme-color" content="#0d0f14">
+<meta property="og:title" content="Rotaplan — Le planning des équipes qui tournent">
+<meta property="og:description" content="Conçu pour les rotations que les autres logiciels ne savent pas gérer. Prix fixe, utilisateurs illimités.">
+<meta property="og:type" content="website">
+<style>
+:root{
+  --fond:#0d0f14; --fond2:#141821; --carte:#1a1f2b; --bord:#2a3142;
+  --texte:#e8ecf4; --gris:#98a2b8; --or:#d9b25f; --or2:#f0cd85;
+  --vert:#3fbf7f; --rouge:#e2554f;
+  --r:14px; --max:1080px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--fond); color:var(--texte); font-size:17px; line-height:1.65;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.2;letter-spacing:-.02em}
+h1{font-size:clamp(30px,6vw,52px);font-weight:800}
+h2{font-size:clamp(23px,4vw,34px);font-weight:750;margin-bottom:14px}
+h3{font-size:19px;font-weight:700}
+p{margin:0 0 14px}
+.gris{color:var(--gris)}
+.or{color:var(--or)}
+section{padding:56px 0;border-top:1px solid var(--bord)}
+section:first-of-type{border-top:0}
+
+/* en-tete */
+header{padding:22px 0 0}
+.marque{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.02em}
+.pastille{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--or),#9c7c34);
+  display:grid;place-items:center;color:#161a22;font-weight:900;font-size:15px}
+
+/* heros */
+.hero{padding:44px 0 56px}
+.hero p.chapo{font-size:clamp(17px,2.4vw,21px);color:var(--gris);max-width:640px;margin-top:18px}
+.etiquette{display:inline-block;font-size:13px;font-weight:650;color:var(--or);
+  border:1px solid rgba(217,178,95,.35);background:rgba(217,178,95,.08);
+  padding:6px 13px;border-radius:999px;margin-bottom:22px}
+
+/* boutons */
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-height:52px;padding:0 26px;border-radius:12px;font-size:16px;font-weight:700;
+  text-decoration:none;border:1px solid transparent;transition:transform .15s,filter .15s}
+.btn:active{transform:translateY(1px)}
+.btn-or{background:linear-gradient(135deg,var(--or2),var(--or));color:#141821}
+.btn-or:hover{filter:brightness(1.07)}
+.btn-vide{border-color:var(--bord);color:var(--texte);background:var(--carte)}
+.btn-vide:hover{border-color:var(--or)}
+
+/* preuve */
+.preuve{background:var(--fond2);border:1px solid var(--bord);border-radius:var(--r);padding:26px}
+.chiffres{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:18px;margin-top:22px}
+.chiffre b{display:block;font-size:30px;font-weight:800;color:var(--or);line-height:1.1}
+.chiffre span{font-size:14px;color:var(--gris)}
+
+/* grille fonctions */
+.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(275px,1fr));gap:16px;margin-top:26px}
+.carte{background:var(--carte);border:1px solid var(--bord);border-radius:var(--r);padding:22px}
+.carte h3{margin-bottom:8px}
+.carte p{font-size:15px;color:var(--gris);margin:0}
+.ico{font-size:24px;display:block;margin-bottom:12px}
+
+/* comparaison */
+.compa{display:grid;grid-template-columns:1fr;gap:14px;margin-top:24px}
+@media(min-width:720px){.compa{grid-template-columns:1fr 1fr}}
+.compa>div{border-radius:var(--r);padding:24px;border:1px solid var(--bord)}
+.compa .eux{background:rgba(226,85,79,.06);border-color:rgba(226,85,79,.3)}
+.compa .nous{background:rgba(63,191,127,.06);border-color:rgba(63,191,127,.3)}
+.gros{font-size:32px;font-weight:800;line-height:1.15;margin:10px 0}
+.eux .gros{color:var(--rouge)} .nous .gros{color:var(--vert)}
+
+/* tarifs */
+.tarifs{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:16px;margin-top:28px}
+.tarif{background:var(--carte);border:1px solid var(--bord);border-radius:var(--r);padding:26px;display:flex;flex-direction:column}
+.tarif.phare{border-color:var(--or);box-shadow:0 0 0 1px var(--or) inset}
+.tarif .prix{font-size:38px;font-weight:800;margin:12px 0 2px}
+.tarif .prix small{font-size:15px;font-weight:600;color:var(--gris)}
+.tarif ul{list-style:none;margin:18px 0 22px;flex:1}
+.tarif li{padding:7px 0 7px 26px;position:relative;font-size:15px;color:var(--gris)}
+.tarif li::before{content:"✓";position:absolute;left:0;color:var(--vert);font-weight:800}
+.badge{display:inline-block;font-size:12px;font-weight:700;color:#141821;background:var(--or);
+  padding:3px 10px;border-radius:999px;margin-bottom:4px}
+
+/* faq */
+details{background:var(--carte);border:1px solid var(--bord);border-radius:12px;padding:18px 20px;margin-bottom:12px}
+details summary{cursor:pointer;font-weight:650;font-size:16px;list-style:none;min-height:30px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";color:var(--or);font-size:22px;font-weight:700;flex-shrink:0}
+details[open] summary::after{content:"−"}
+details p{margin:14px 0 0;color:var(--gris);font-size:15px}
+
+/* fin */
+.final{text-align:center;background:linear-gradient(180deg,var(--fond2),var(--fond));
+  border:1px solid var(--bord);border-radius:20px;padding:44px 24px;margin:20px 0 40px}
+.final .actions{justify-content:center}
+footer{border-top:1px solid var(--bord);padding:28px 0 40px;color:var(--gris);font-size:14px}
+footer a{color:var(--gris)}
+.note{font-size:13px;color:var(--gris);margin-top:18px;line-height:1.55}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="marque"><span class="pastille">R</span> Rotaplan</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <span class="etiquette">Pour les équipes en rotation</span>
+    <h1>Le planning des équipes<br>qui <span class="or">tournent</span>.</h1>
+    <p class="chapo">
+      Équipes miroir, cycles variables, ordres de passage, repos à respecter.
+      Les rotations que les tableurs ne tiennent plus et que les logiciels
+      généralistes gèrent mal.
+    </p>
+    <div class="actions">
+      <a class="btn btn-or" href="#tarifs">Voir les tarifs</a>
+      <a class="btn btn-vide" href="#demander">Demander une démonstration</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="preuve">
+      <h2>Il tourne déjà. Tous les jours.</h2>
+      <p class="gris">
+        Rotaplan n'a pas été imaginé dans un bureau à partir d'un business plan.
+        Il est né d'un besoin réel et il gère aujourd'hui, en production, le planning
+        d'un casino : des centaines de personnes, des dizaines d'équipes, des rotations
+        qui changent chaque mois, et une convention collective à respecter.
+      </p>
+      <div class="chiffres">
+        <div class="chiffre"><b>260</b><span>employés planifiés</span></div>
+        <div class="chiffre"><b>36</b><span>équipes en rotation</span></div>
+        <div class="chiffre"><b>8&nbsp;h/mois</b><span>de saisie évitées*</span></div>
+        <div class="chiffre"><b>0</b><span>ressaisie du planning</span></div>
+      </div>
+      <p class="note">
+        * Temps de ressaisie manuelle supprimé par l'import du planning existant,
+        mesuré sur l'installation d'origine. Votre gain dépend de votre organisation.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Ce qu'il fait, concrètement</h2>
+    <p class="gris">Pas une liste de promesses : ce sont les fonctions qui tournent aujourd'hui.</p>
+    <div class="grille">
+      <div class="carte"><span class="ico">📄</span><h3>Import du planning existant</h3>
+        <p>Votre planning arrive en PDF ou en tableau ? Il est lu et repris tel quel. Aucune ressaisie, aucune invention : ce qui n'est pas dans le document n'est pas inventé.</p></div>
+      <div class="carte"><span class="ico">🔄</span><h3>Rotations et équipes miroir</h3>
+        <p>Les équipes qui se répondent sont reconnues automatiquement à partir des jours de repos. Le changement d'équipe d'un mois sur l'autre est géré.</p></div>
+      <div class="carte"><span class="ico">🎯</span><h3>Ordres de passage calculés</h3>
+        <p>Qui part en premier, qui prend quelle table, qui enchaîne. Chacun son tour, dans l'ordre, sans favoritisme et sans oubli.</p></div>
+      <div class="carte"><span class="ico">🤝</span><h3>Échanges entre collègues</h3>
+        <p>Un employé demande un échange depuis son téléphone. Le responsable valide ou refuse. Fini les échanges perdus dans les messages privés.</p></div>
+      <div class="carte"><span class="ico">⚖️</span><h3>Règles de repos vérifiées</h3>
+        <p>Repos hebdomadaire, jours consécutifs, congés, absences : les règles de votre convention sont contrôlées au moment de la saisie, pas après.</p></div>
+      <div class="carte"><span class="ico">📱</span><h3>Sur le téléphone de chacun</h3>
+        <p>Chaque employé voit son planning, ses départs, ses congés. S'installe comme une application, fonctionne même sans réseau.</p></div>
+      <div class="carte"><span class="ico">📜</span><h3>Historique complet</h3>
+        <p>Toute modification est tracée : qui, quand, quoi. En cas de litige sur un horaire, la réponse est dans l'historique.</p></div>
+      <div class="carte"><span class="ico">🔒</span><h3>Vos données restent les vôtres</h3>
+        <p>Chaque établissement est isolé des autres. Personne ne voit les données d'un autre client. Hébergement européen.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pourquoi un prix fixe</h2>
+    <p class="gris">
+      La plupart des logiciels de planning facturent <strong>par personne</strong>, autour de
+      7 € par employé et par mois. Tant que l'équipe est petite, ça passe. Dès qu'elle grandit,
+      la facture suit — et c'est précisément là que vous avez besoin de l'outil.
+    </p>
+    <div class="compa">
+      <div class="eux">
+        <div class="gris">Facturation par employé (≈ 7 €/personne)</div>
+        <div class="gros">≈ 1 800 €<small style="font-size:16px;font-weight:600"> / mois</small></div>
+        <div class="gris">pour 260 employés</div>
+      </div>
+      <div class="nous">
+        <div class="gris">Rotaplan, forfait illimité</div>
+        <div class="gros">199 €<small style="font-size:16px;font-weight:600"> / mois</small></div>
+        <div class="gris">pour 260 employés — ou 2 600</div>
+      </div>
+    </div>
+    <p class="note">
+      Ordres de grandeur relevés publiquement en septembre 2026 sur les tarifs annoncés
+      par les solutions du marché. Les prix évoluent et certains éditeurs ne les publient pas :
+      vérifiez auprès d'eux. Ce comparatif porte sur le mode de facturation, pas sur un concurrent nommé.
+    </p>
+  </section>
+
+  <section id="tarifs">
+    <h2>Tarifs</h2>
+    <p class="gris">Affichés publiquement. Sans engagement de durée. Sans frais d'installation.</p>
+    <div class="tarifs">
+      <div class="tarif">
+        <h3>Essentiel</h3>
+        <div class="prix">59 €<small> /mois</small></div>
+        <div class="gris" style="font-size:14px">jusqu'à 30 personnes</div>
+        <ul>
+          <li>Toutes les fonctions</li>
+          <li>Application mobile incluse</li>
+          <li>Import de votre planning</li>
+          <li>Assistance par email</li>
+        </ul>
+        <a class="btn btn-vide" href="#demander">Demander une démo</a>
+      </div>
+      <div class="tarif phare">
+        <span class="badge">Le plus courant</span>
+        <h3>Pro</h3>
+        <div class="prix">119 €<small> /mois</small></div>
+        <div class="gris" style="font-size:14px">jusqu'à 100 personnes</div>
+        <ul>
+          <li>Tout Essentiel</li>
+          <li>Plusieurs responsables</li>
+          <li>Règles de convention sur mesure</li>
+          <li>Reprise de l'historique</li>
+        </ul>
+        <a class="btn btn-or" href="#demander">Demander une démo</a>
+      </div>
+      <div class="tarif">
+        <h3>Illimité</h3>
+        <div class="prix">199 €<small> /mois</small></div>
+        <div class="gris" style="font-size:14px">sans limite de personnes</div>
+        <ul>
+          <li>Tout Pro</li>
+          <li>Employés illimités</li>
+          <li>Plusieurs établissements</li>
+          <li>Accompagnement à la mise en route</li>
+        </ul>
+        <a class="btn btn-vide" href="#demander">Demander une démo</a>
+      </div>
+    </div>
+    <p class="note">Prix hors taxes. Premier mois d'essai sans engagement : si l'outil ne vous convient pas, vous arrêtez.</p>
+  </section>
+
+  <section>
+    <h2>Questions fréquentes</h2>
+    <details><summary>Nos rotations sont vraiment particulières. Ça va suivre ?</summary>
+      <p>C'est le point de départ du logiciel. Il est né dans un environnement où les équipes changent chaque mois, où des équipes se répondent en miroir, et où l'ordre de passage se calcule. Si vos rotations sont trop spécifiques, on vous le dira honnêtement lors de la démonstration plutôt que de vous vendre quelque chose d'inadapté.</p></details>
+    <details><summary>Faut-il tout ressaisir pour démarrer ?</summary>
+      <p>Non. Votre planning actuel est importé tel qu'il est. Ce qui ne figure pas dans le document n'est jamais inventé : s'il manque une information, elle est signalée au lieu d'être devinée.</p></details>
+    <details><summary>Nos employés doivent-ils installer quelque chose ?</summary>
+      <p>Non. Ça s'ouvre dans le navigateur du téléphone, et peut s'ajouter à l'écran d'accueil comme une application. Rien à télécharger sur un magasin d'applications.</p></details>
+    <details><summary>Et si on arrête ? On récupère nos données ?</summary>
+      <p>Oui, à tout moment et sans avoir à le demander : vos plannings s'exportent dans un format lisible. Vos données ne sont pas prises en otage.</p></details>
+    <details><summary>Qui a accès à nos données ?</summary>
+      <p>Chaque établissement est techniquement isolé des autres. Les données sont hébergées en Europe. Aucune donnée de planning n'est revendue ni utilisée à d'autres fins.</p></details>
+  </section>
+
+  <section id="demander">
+    <div class="final">
+      <h2>Voir si ça colle à votre organisation</h2>
+      <p class="gris" style="max-width:520px;margin:0 auto 6px">
+        Une démonstration de 20 minutes, avec vos rotations à vous.
+        Si ce n'est pas adapté, on vous le dit — ça vous fera gagner du temps à tous les deux.
+      </p>
+      <div class="actions">
+        <a class="btn btn-or" href="mailto:contact@kd-mc.com?subject=Rotaplan%20%E2%80%94%20demande%20de%20d%C3%A9monstration&body=Bonjour%2C%0A%0AJe%20souhaite%20voir%20Rotaplan.%0A%0A%C3%89tablissement%20%3A%0ANombre%20de%20personnes%20%C3%A0%20planifier%20%3A%0ANos%20rotations%20(en%20deux%20mots)%20%3A%0A%0AMerci.">Demander une démonstration</a>
+      </div>
+      <p class="note">Réponse sous 24 h ouvrées. Aucune carte bancaire demandée.</p>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="marque" style="font-size:16px;margin-bottom:10px"><span class="pastille" style="width:24px;height:24px;font-size:12px">R</span> Rotaplan</div>
+    <p style="margin:0">Le planning des équipes en rotation. Édité depuis Monaco.</p>
+    <p style="margin:8px 0 0"><a href="/shops/legal/">Mentions légales et CGV</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
