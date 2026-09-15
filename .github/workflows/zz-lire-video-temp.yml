@@ -12,111 +12,47 @@ permissions:
 jobs:
   lire:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 50
     env:
       URL: 'https://www.tiktok.com/@pianotutoezz/video/7683540481992592673'
-      VID: '7683540481992592673'
     steps:
       - name: Outils
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg tesseract-ocr tesseract-ocr-fra jq
-          python3 -m pip install -q --upgrade yt-dlp
-          echo "yt-dlp $(yt-dlp --version) | $(tesseract --version | head -1) | $(ffmpeg -version | head -1 | cut -d' ' -f1-3)"
+          sudo apt-get install -y -qq ffmpeg jq
+          python3 -m pip install -q faster-whisper
+          echo "outils ok"
 
-      - name: Recuperer la video (plusieurs strategies)
-        run: |
-          set +e
-          UA='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
-
-          essai() { echo ""; echo "### STRATEGIE $1"; }
-          ok() { [ -s video.mp4 ] && [ "$(stat -c%s video.mp4)" -gt 100000 ]; }
-
-          essai "A - passerelle tikwm"
-          curl -sS -m 40 -A "$UA" "https://www.tikwm.com/api/?url=${URL}&hd=1" -o tikwm.json
-          echo "reponse : $(head -c 300 tikwm.json)"
-          if jq -e '.data.play' tikwm.json >/dev/null 2>&1; then
-            echo "=== METADONNEES (tikwm) ==="
-            jq -r '.data | "titre_complet: \(.title)\nduree_s: \(.duration)\nvues: \(.play_count)\nlikes: \(.digg_count)\ncommentaires: \(.comment_count)\npartages: \(.share_count)\nfavoris: \(.collect_count // "n/a")\ncree_le: \(.create_time)\nauteur: \(.author.unique_id) (\(.author.nickname))"' tikwm.json
-            P=$(jq -r '.data.play' tikwm.json)
-            [ "${P:0:1}" = "/" ] && P="https://www.tikwm.com${P}"
-            curl -sS -m 180 -A "$UA" -L "$P" -o video.mp4
-            echo "taille : $(stat -c%s video.mp4 2>/dev/null || echo 0) octets"
-          else
-            echo "echec A : $(jq -r '.msg // "pas de champ .data.play"' tikwm.json 2>/dev/null)"
-          fi
-
-          if ! ok; then
-            essai "B - passerelle tiklydown"
-            curl -sS -m 40 -A "$UA" "https://api.tiklydown.eu.org/api/download?url=${URL}" -o tikly.json
-            echo "reponse : $(head -c 300 tikly.json)"
-            P=$(jq -r '.video.noWatermark // .video.watermark // empty' tikly.json 2>/dev/null)
-            if [ -n "$P" ]; then
-              curl -sS -m 180 -A "$UA" -L "$P" -o video.mp4
-              echo "taille : $(stat -c%s video.mp4 2>/dev/null || echo 0) octets"
-            fi
-          fi
-
-          if ! ok; then
-            essai "C - yt-dlp avec en-tetes mobiles"
-            yt-dlp --user-agent "$UA" --add-header "Referer:https://www.tiktok.com/" \
-                   -f 'best[ext=mp4]/best' -o video.mp4 "$URL" 2>&1 | tail -5
-          fi
-
-          if ! ok; then
-            essai "D - yt-dlp via l API mobile"
-            yt-dlp --extractor-args "tiktok:api_hostname=api22-normal-c-useast2a.tiktokv.com" \
-                   --user-agent "$UA" -f 'best[ext=mp4]/best' -o video.mp4 "$URL" 2>&1 | tail -5
-          fi
-
-          echo ""
-          if ok; then
-            echo "=== VIDEO RECUPEREE ==="
-            ls -la video.mp4
-            ffprobe -v error -show_entries format=duration,size -of default=nw=1 video.mp4
-          else
-            echo "=== AUCUNE STRATEGIE N A FONCTIONNE ==="
-            exit 1
-          fi
-
-      - name: Lire les sous-titres incrustes
+      - name: Recuperer la video + metadonnees
         run: |
           set -e
-          mkdir -p frames
-          ffmpeg -v error -i video.mp4 -vf "fps=2/3,crop=iw:ih*0.45:0:ih*0.42,scale=iw*2:ih*2,eq=contrast=1.6" frames/f_%04d.png
-          echo "images extraites : $(ls frames | wc -l)"
-          for f in frames/*.png; do
-            tesseract "$f" - -l fra --psm 6 2>/dev/null
-            echo "@@$(basename $f)"
-          done > ocr_brut.txt
-          python3 - <<'PY'
-          import re
-          blocs, cur = [], []
-          for line in open('ocr_brut.txt', encoding='utf-8', errors='replace'):
-              if line.startswith('@@'):
-                  blocs.append(' '.join(cur).strip()); cur = []
-              else:
-                  s = line.strip()
-                  if s: cur.append(s)
-          sortie, prec = [], ''
-          for txt in blocs:
-              t = re.sub(r'\s+', ' ', txt).strip()
-              if len(t) < 3 or t == prec: continue
-              if prec and t in prec: continue
-              if prec and prec in t and sortie:
-                  sortie[-1] = t; prec = t; continue
-              sortie.append(t); prec = t
-          print("=== TRANSCRIPTION (sous-titres incrustes) ===")
-          print(f"[{len(sortie)} segments retenus sur {len(blocs)} images]")
-          for i, t in enumerate(sortie, 1):
-              print(f"{i:03d}. {t}")
-          PY
+          UA='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+          curl -sS -m 40 -A "$UA" "https://www.tikwm.com/api/?url=${URL}&hd=1" -o tikwm.json
+          jq -e '.data.play' tikwm.json >/dev/null || { echo "ECHEC passerelle :"; cat tikwm.json; exit 1; }
+          jq -r '.data | "LEGENDE_COMPLETE: \(.title)\nDUREE_S: \(.duration)\nVUES: \(.play_count)\nLIKES: \(.digg_count)\nCOMMENTAIRES: \(.comment_count)\nPARTAGES: \(.share_count)\nFAVORIS: \(.collect_count // "n/a")\nTELECHARGEMENTS: \(.download_count // "n/a")\nCREE_LE_UNIX: \(.create_time)\nAUTEUR: \(.author.unique_id) / \(.author.nickname)\nMUSIQUE: \(.music_info.title // "n/a") - \(.music_info.author // "n/a")"' tikwm.json > meta.txt
+          cat meta.txt
+          P=$(jq -r '.data.play' tikwm.json); [ "${P:0:1}" = "/" ] && P="https://www.tikwm.com${P}"
+          curl -sS -m 300 -A "$UA" -L "$P" -o video.mp4
+          ffmpeg -v error -i video.mp4 -vn -ar 16000 -ac 1 audio.wav
+          echo "audio : $(stat -c%s audio.wav) octets, $(ffprobe -v error -show_entries format=duration -of csv=p=0 audio.wav) s"
 
-      - name: Image entiere toutes les 30s (contexte visuel)
-        if: always()
+      - name: Transcrire la parole (francais)
         run: |
-          mkdir -p apercu
-          ffmpeg -v error -i video.mp4 -vf "fps=1/30,scale=540:-1" apercu/a_%02d.jpg || true
-          for f in apercu/*.jpg; do
-            echo "--- $f"; tesseract "$f" - -l fra --psm 11 2>/dev/null | tr -s ' \n' ' \n' | head -20
-          done
+          python3 - <<'PY' > transcription.txt
+          from faster_whisper import WhisperModel
+          m = WhisperModel("small", device="cpu", compute_type="int8", cpu_threads=4)
+          segs, info = m.transcribe("audio.wav", language="fr", vad_filter=True,
+                                    vad_parameters=dict(min_silence_duration_ms=400))
+          for s in segs:
+              mm, ss = divmod(int(s.start), 60)
+              print(f"[{mm:02d}:{ss:02d}] {s.text.strip()}")
+          PY
+          echo "lignes transcrites : $(wc -l < transcription.txt)"
+
+      - name: RESULTAT
+        run: |
+          echo "############ METADONNEES ############"
+          cat meta.txt
+          echo ""
+          echo "############ TRANSCRIPTION COMPLETE ############"
+          cat transcription.txt
