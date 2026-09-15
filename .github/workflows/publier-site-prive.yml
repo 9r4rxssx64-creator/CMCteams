@@ -143,9 +143,30 @@ jobs:
       - name: Sonder les 26 adresses sur le site publié
         shell: bash -eo pipefail {0}
         run: |
-          echo "Publication : ${{ steps.publier.outputs.url }}"
-          sleep 10   # laisser la propagation se faire
-          node tools/audit/sonde-site-publie.mjs "${{ steps.publier.outputs.url }}" --racine
+          U='${{ steps.publier.outputs.url }}'
+          echo "Publication : $U"
+          # La propagation d'un déploiement Pages n'est pas instantanée : on RÉESSAIE
+          # au lieu de conclure sur une seule tentative (un « site injoignable » qui
+          # n'est qu'une seconde d'avance ferait accuser à tort la publication).
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$U/" || echo 000)
+            echo "tentative $i : $U → HTTP $code"
+            [ "$code" = "200" ] && break
+            sleep 10
+          done
+          set +e
+          node tools/audit/sonde-site-publie.mjs "$U" --racine 2>&1 | tee sonde.log
+          st=${PIPESTATUS[0]}
+          set -e
+          # LA CAUSE DOIT ME REVENIR. Le stockage des journaux CI est injoignable
+          # depuis l'agent (proxy) : les lignes `::error::` deviennent des ANNOTATIONS,
+          # elles, lisibles par l'API. Sans ça je vois du rouge sans savoir pourquoi
+          # — exactement ce que le journal des déploiements existe pour éviter.
+          if [ "$st" != "0" ]; then
+            echo "::error::sonde sortie $st sur $U (2 = rien n'a pu être mesuré : le site n'a pas répondu du tout)"
+            head -25 sonde.log | while IFS= read -r l; do echo "::error::$l"; done
+          fi
+          exit $st
 
       - name: Récapitulatif
         if: always()
