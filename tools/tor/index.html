@@ -250,6 +250,27 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
     années. Les gens se font attraper à la livraison, pas en ligne.</p>
   </div>
 
+  <h2>Vérifier une adresse avant d'y aller</h2>
+  <div class="card" id="verif">
+    <p>Le piège numéro un du réseau, c'est la <b>fausse adresse</b> : une copie qui commence pareil
+    que la vraie. Colle ici n'importe quelle adresse trouvée ailleurs — je la compare à mon
+    catalogue et je te dis ce qu'elle est. <b>Sans réseau, rien n'est envoyé.</b></p>
+    <input class="search" id="qverif" type="search" placeholder="Colle une adresse .onion" autocomplete="off" autocorrect="off" spellcheck="false">
+    <div id="rverif"></div>
+  </div>
+
+  <h2>Mes adresses</h2>
+  <div class="card" id="perso">
+    <p>Quand tu trouves un endroit qui vaut le coup avec le moteur, garde-le ici. <b>Rien n'est
+    enregistré sur ton téléphone</b> : tes adresses vivent le temps de la page — mais si tu fais
+    « Garder hors ligne », <b>elles partent dans ta copie</b> et te suivent pour toujours.</p>
+    <input class="search" id="pnom" type="text" placeholder="Nom (ex : Forum sécurité)" autocomplete="off">
+    <input class="search" id="padr" type="text" placeholder="Adresse .onion" autocomplete="off" autocorrect="off" spellcheck="false">
+    <input class="search" id="pnote" type="text" placeholder="À quoi ça sert (pour t'en souvenir)" autocomplete="off">
+    <button class="btn prim wide" type="button" id="pajout">➕ Ajouter à mon catalogue</button>
+    <p class="mut sm" id="pinfo" style="margin-top:9px"></p>
+  </div>
+
   <h2>Le catalogue vérifié</h2>
   <p class="mut">Que des services <b>légitimes</b>, chacun avec la preuve de son adresse. Copie, colle dans
   Onion Browser.</p>
@@ -261,8 +282,11 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
     <p><b>Comment je sais que ces adresses sont les bonnes ?</b></p>
     <p>Chaque fiche a un bouton <b>« Prouver l'adresse »</b> : il ouvre la page <b>du site officiel lui-même</b>
     (bbc.co.uk, torproject.org, proton.me…) où l'organisation publie son adresse .onion. Compare, et tu es sûr.</p>
-    <p class="mut sm">Relevées à leurs sources publiques le 15.09.2026. Je ne peux pas ouvrir de .onion depuis ce
-    serveur (pas de Tor ici) : je te donne donc la source, pas une promesse.</p>
+    <p class="mut sm">Relevées à leurs sources publiques le 15.09.2026. Je ne peux pas ouvrir de .onion
+    depuis mes serveurs (pas de Tor là-bas) : je te donne donc la source, pas une promesse.
+    <b>Un outil existe maintenant pour les ouvrir vraiment</b> (job <code>tor-adresses</code>, à la
+    demande) — dis-le-moi et je le lance : tu auras un rapport daté, adresse par adresse.
+    Tant qu'il n'a pas tourné, la règle reste la même : recoupe avec « Prouver l'adresse ».</p>
   </div>
 </section>
 
@@ -422,7 +446,7 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
   <button role="tab" data-v="secu" aria-selected="false"><span class="ic">🛡</span>Sécurité</button>
   <button role="tab" data-v="quiz" aria-selected="false"><span class="ic">🎓</span>Quiz</button>
 </nav>
-<div id="vbadge">v1.2</div>
+<div id="vbadge">v1.3</div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -718,6 +742,115 @@ document.getElementById("gen").addEventListener("click", function(){
 });
 
 
+
+/* ---------- Vérificateur d'adresse (100 % hors ligne) ----------
+   Une fausse adresse .onion est fabriquée pour PARTAGER LE DÉBUT de la vraie (on peut miner
+   un préfixe, pas une adresse entière). D'où le contrôle qui compte vraiment : un début
+   commun avec un site connu MAIS une fin différente = copie frauduleuse, presque à coup sûr. */
+function clefDe(o) {
+  var hote = String(o).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  if (!/\.onion$/.test(hote)) return null;
+  return hote.slice(0, -".onion".length).split(".").pop();
+}
+function prefixeCommun(a, b) { var i = 0; while (i < a.length && i < b.length && a[i] === b[i]) i++; return i; }
+
+function verifieAdresse(saisie) {
+  var brut = String(saisie || "").trim();
+  if (!brut) return null;
+  var hote = brut.toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  if (!/\.onion$/.test(hote)) {
+    return { n: "rouge", t: "Ce n'est pas une adresse .onion",
+             d: "Une adresse du réseau Tor finit toujours par « .onion ». Si on te présente autre chose comme étant « le dark web », ce n'en est pas." };
+  }
+  var cle = clefDe(hote);
+  if (cle.length === 16) {
+    return { n: "rouge", t: "Adresse de l'ancien format, abandonnée en 2021",
+             d: "Ces adresses courtes (16 caractères) ne fonctionnent plus du tout. Quand on t'en propose une aujourd'hui, c'est soit une page morte recopiée, soit un piège." };
+  }
+  if (cle.length !== 56 || !/^[a-z2-7]{56}$/.test(cle)) {
+    return { n: "rouge", t: "Cette adresse ne peut pas exister",
+             d: "Une vraie adresse fait exactement 56 caractères (lettres a-z et chiffres 2 à 7). Celle-ci en a " + cle.length + ". Elle a été tronquée en la recopiant, ou elle est inventée." };
+  }
+  var exact = null;
+  for (var i = 0; i < SITES.length; i++) if (clefDe(SITES[i].o) === cle) { exact = SITES[i]; break; }
+  if (exact) {
+    return { n: "vert", t: "C'est bien " + exact.n, s: exact,
+             d: "Adresse identique à celle de mon catalogue, relevée à la source officielle. Tu peux y aller." };
+  }
+  var meilleur = null, score = 0;
+  for (var j = 0; j < SITES.length; j++) {
+    var k = prefixeCommun(clefDe(SITES[j].o), cle);
+    if (k > score) { score = k; meilleur = SITES[j]; }
+  }
+  if (score >= 6 && meilleur) {
+    return { n: "rouge", t: "DANGER — imite « " + meilleur.n + " » sans être son adresse", s: meilleur,
+             d: "Les " + score + " premiers caractères sont ceux de " + meilleur.n + ", la suite non. C'est exactement ainsi qu'on fabrique une fausse adresse : on mine un début identique pour tromper l'œil. N'y va pas, et surtout n'y tape rien." };
+  }
+  return { n: "jaune", t: "Format correct, mais je ne la connais pas",
+           d: "Ce n'est ni un faux d'un site que je connais, ni une adresse impossible. Je ne peux simplement pas dire à qui elle appartient. Avant d'y aller : recoupe-la à une deuxième source, et ne donne rien dessus." };
+}
+
+(function () {
+  var champ = document.getElementById("qverif"), sortie = document.getElementById("rverif");
+  if (!champ || !sortie) return;
+  champ.addEventListener("input", function () {
+    var r = verifieAdresse(champ.value);
+    sortie.textContent = "";
+    if (!r) return;
+    var d = document.createElement("div");
+    d.className = "card " + (r.n === "vert" ? "good" : r.n === "rouge" ? "bad" : "warn");
+    d.style.margin = "12px 0 0";
+    var t = document.createElement("p"); t.className = "big"; t.style.margin = "0 0 6px";
+    t.textContent = (r.n === "vert" ? "✅ " : r.n === "rouge" ? "🚨 " : "🟡 ") + r.t;
+    var x = document.createElement("p"); x.style.margin = "0"; x.textContent = r.d;
+    d.appendChild(t); d.appendChild(x);
+    if (r.s) {
+      var b = document.createElement("a"); b.className = "btn"; b.style.marginTop = "10px";
+      b.href = r.s.s; b.target = "_blank"; b.rel = "noopener noreferrer";
+      b.textContent = "🔎 Voir l'adresse officielle de " + r.s.n;
+      d.appendChild(b);
+    }
+    sortie.appendChild(d);
+  });
+})();
+
+/* ---------- Mes adresses ----------
+   Volontairement PAS enregistrées sur l'appareil (ce serait une trace). Elles vivent le temps
+   de la page, et sont embarquées dans la copie « hors ligne » — c'est la copie qui devient
+   le carnet personnel de Kevin, sans que rien ne traîne sur le téléphone. */
+var PERSO = [];
+(function () {
+  if (window.__PERSO__ && window.__PERSO__.length) {
+    for (var i = 0; i < window.__PERSO__.length; i++) {
+      var e = window.__PERSO__[i];
+      PERSO.push(e); SITES.push(e);
+    }
+  }
+  var info = document.getElementById("pinfo");
+  function maj() {
+    if (info) info.textContent = PERSO.length
+      ? PERSO.length + (PERSO.length > 1 ? " adresses gardées" : " adresse gardée") + " — fais « Garder hors ligne » (onglet Sécurité) pour les emporter."
+      : "";
+  }
+  maj();
+  var b = document.getElementById("pajout");
+  if (b) b.addEventListener("click", function () {
+    var nom = (document.getElementById("pnom").value || "").trim();
+    var adr = (document.getElementById("padr").value || "").trim();
+    var note = (document.getElementById("pnote").value || "").trim();
+    if (!nom) { toast("Donne-lui un nom"); return; }
+    var v = verifieAdresse(adr);
+    if (!v || v.n === "rouge") { toast(v ? "🚨 " + v.t : "Colle l'adresse"); return; }
+    var e = { c: "Mes adresses", n: nom, d: note || "Ajoutée par toi.",
+              o: adr.toLowerCase().replace(/^https?:\/\//, ""), s: "https://ahmia.fi/" };
+    PERSO.push(e); SITES.push(e);
+    if (CATS.indexOf("Mes adresses") < 0) { CATS.push("Mes adresses"); renduChips(); }
+    renduListe(); maj();
+    document.getElementById("pnom").value = ""; document.getElementById("padr").value = ""; document.getElementById("pnote").value = "";
+    toast("➕ " + nom + " ajouté à ton catalogue");
+  });
+})();
+
 /* ---------- Garder hors ligne / effacer ses traces ----------
    « Hors ligne » se fabrique SANS réseau : la page se recopie elle-même depuis le document
    déjà chargé (outerHTML) → aucun téléchargement, aucune requête, donc aucune trace de plus.
@@ -727,6 +860,13 @@ document.getElementById("gen").addEventListener("click", function(){
   if (bhl) bhl.addEventListener("click", function () {
     try {
       var doc = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      /* On embarque les adresses perso DANS la copie : le carnet voyage avec le fichier,
+         et rien n'est écrit sur le téléphone. `<` échappé pour ne pas casser la balise. */
+      if (PERSO.length) {
+        var inj = "<script>window.__PERSO__=" +
+          JSON.stringify(PERSO).replace(/</g, "\\u003c") + ";<\/script>";
+        doc = doc.replace("</head>", inj + "</head>");
+      }
       var blob = new Blob([doc], { type: "text/html;charset=utf-8" });
       var a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
