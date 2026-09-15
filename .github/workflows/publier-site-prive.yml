@@ -1,0 +1,169 @@
+name: KDMC — Publie le site sur Cloudflare Pages (pour que le dépôt puisse être PRIVÉ)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POURQUOI CE WORKFLOW EXISTE
+#
+# Kevin 2026-09-15 : « passe tout en privé, que personne ne puisse voir mon code,
+# mes liens, tout ce qui se construit. Seulement les sites restent accessibles. »
+#
+# Le blocage, vérifié et non supposé : **GitHub Pages depuis un dépôt PRIVÉ exige
+# un abonnement payant** (Pro/Team/Enterprise). Le compte de Kevin est en gratuit.
+# Donc passer le dépôt en privé ÉTEINT kd-mc.com — sauf si le site est hébergé
+# ailleurs D'ABORD. C'est ce que fait ce workflow.
+#
+#   AVANT            dépôt PUBLIC ──► GitHub Pages ──► routeur ──► kd-mc.com
+#   APRÈS            dépôt PRIVÉ  ──► CE WORKFLOW ──► Cloudflare Pages ──► routeur ──► kd-mc.com
+#
+# Ce qui part sur Pages n'est PAS le dépôt : c'est un paquet TRIÉ fabriqué par
+# `prepare-secours.mjs --pages` — les applications et rien d'autre. Pas de code
+# serveur, pas de tests, pas de scripts de fabrication, pas de cartes de code
+# source, aucun document de travail (garde `test:documents-travail`). Un visiteur
+# voit le SITE ; il ne voit pas comment il est fait.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# CONFORMITÉ AUX RÈGLES DE KEVIN
+#
+# · « Est-ce que ça produit, teste, déploie ou PUBLIE ce dépôt ? » → oui, c'est
+#   exactement la publication de ce dépôt → sa place est sur GitHub Actions
+#   (règle « chaque automatisation a une destination écrite »).
+# · ZÉRO tâche programmée. Pas de `schedule:`, jamais — c'est le VOLUME de crons
+#   qui avait fait suspendre le compte le 15/08. Ici : un push, une publication.
+# · Le paquet est VÉRIFIÉ après publication (sonde réelle sur les 26 adresses).
+#   Un déploiement « réussi » qui sert des pages vides n'est pas une réussite.
+# ─────────────────────────────────────────────────────────────────────────────
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false      # une publication ne se coupe pas en plein vol
+
+on:
+  workflow_dispatch:
+    inputs:
+      complet:
+        description: "Paquet complet (avec les photos : arbre, chez-lolo, la-détente, cuisine)"
+        type: boolean
+        default: true
+  push:
+    branches:
+      - main
+      - 'claude/**'              # une branche de travail publie un APERÇU, jamais la production
+    paths:
+      # Les surfaces réellement servies. Modifier un test ou un document ne
+      # déclenche pas une publication — inutile, et ça consomme des minutes.
+      - 'index.html'
+      - 'sw.js'
+      - 'kdmc-home/**'
+      - 'apex-ai-v13/**'
+      - 'messaging-app/**'
+      - 'coffre-fort/**'
+      - 'lingua/**'
+      - 'arbre/**'
+      - 'la-detente/**'
+      - 'shops/**'
+      - 'tools/**'
+      - 'services/kdmc-router/prepare-secours.mjs'
+      - '.github/workflows/publier-site-prive.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+
+      # ── Le paquet : les applications, et rien d'autre ──────────────────────
+      - name: Fabriquer le paquet du site (applications seules)
+        shell: bash -eo pipefail {0}
+        run: |
+          if [ "${{ inputs.complet }}" = "false" ]; then
+            node services/kdmc-router/prepare-secours.mjs --pages --leger
+          else
+            node services/kdmc-router/prepare-secours.mjs --pages
+          fi
+          D=services/kdmc-router/pages-upload
+          test -d "$D" || { echo "::error::paquet absent"; exit 1; }
+          echo "paquet : $(find $D -type f | wc -l) fichiers, $(du -sh $D | cut -f1)"
+
+      # ── Garde AVANT publication : rien de privé ne doit partir ─────────────
+      # Publier est irréversible : ce qui est parti a été servi. On contrôle
+      # donc le contenu du paquet ICI, pas après.
+      - name: Garde — aucun document de travail, aucun code serveur dans le paquet
+        shell: bash -eo pipefail {0}
+        run: |
+          D=services/kdmc-router/pages-upload
+          fuite=0
+          md=$(find $D -name '*.md' | wc -l)
+          [ "$md" -eq 0 ] || { echo "::error::$md document(s) Markdown dans le paquet"; fuite=1; }
+          for interdit in "$D/services" "$D/tests" "$D/.github" "$D/.git" "$D/pipeline" "$D/audit"; do
+            [ ! -e "$interdit" ] || { echo "::error::$interdit ne doit jamais être publié"; fuite=1; }
+          done
+          maps=$(find $D -name '*.map' | wc -l)
+          [ "$maps" -eq 0 ] || { echo "::error::$maps carte(s) de code source (.map) — elles exposent tout le source"; fuite=1; }
+          exit $fuite
+
+      - name: Installer wrangler
+        run: npm i -g wrangler@3
+
+      # ── Publication ────────────────────────────────────────────────────────
+      # main            → production (c'est ce que le routeur ira chercher)
+      # claude/**       → aperçu à son propre nom, invisible du domaine
+      - name: Publier sur Cloudflare Pages
+        id: publier
+        shell: bash -eo pipefail {0}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            BRANCHE=main
+          else
+            # nom d'aperçu : lettres, chiffres et tirets seulement (exigence Pages)
+            BRANCHE="apercu-$(echo "${GITHUB_REF_NAME}" | tr -c 'a-zA-Z0-9' '-' | cut -c1-24)"
+          fi
+          echo "branche de publication : $BRANCHE"
+          wrangler pages project create kdmc-site --production-branch=main 2>/dev/null \
+            || echo "(le projet kdmc-site existe déjà)"
+          wrangler pages deploy services/kdmc-router/pages-upload \
+            --project-name=kdmc-site --branch="$BRANCHE" --commit-dirty=true 2>&1 | tee deploy.log
+          # L'adresse réellement publiée, lue dans la sortie de wrangler (jamais devinée)
+          URL=$(grep -oE 'https://[a-z0-9.-]+\.pages\.dev' deploy.log | tail -1)
+          [ -n "$URL" ] || { echo "::error::wrangler n'a pas rendu d'adresse — publication non confirmée"; exit 1; }
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "branche=$BRANCHE" >> "$GITHUB_OUTPUT"
+
+      # ── Vérification RÉELLE : les 26 adresses sont-elles servies ? ─────────
+      # Le runner a le réseau ouvert (l'agent, non). C'est ici, et seulement ici,
+      # qu'on peut dire « ça marche » sans mentir.
+      - name: Sonder les 26 adresses sur le site publié
+        shell: bash -eo pipefail {0}
+        run: |
+          echo "Publication : ${{ steps.publier.outputs.url }}"
+          sleep 10   # laisser la propagation se faire
+          node tools/audit/sonde-site-publie.mjs "${{ steps.publier.outputs.url }}" --racine
+
+      - name: Récapitulatif
+        if: always()
+        shell: bash -eo pipefail {0}
+        run: |
+          {
+            echo "### Site publié sur Cloudflare Pages"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| adresse | ${{ steps.publier.outputs.url }} |"
+            echo "| branche | \`${{ steps.publier.outputs.branche }}\` |"
+            echo "| source | \`${GITHUB_REF_NAME}\` |"
+            echo ""
+            if [ "${GITHUB_REF_NAME}" = "main" ]; then
+              echo "C'est la **production**. Pour que kd-mc.com la serve, le routeur doit avoir"
+              echo "\`UPSTREAM_BASE = https://kdmc-site.pages.dev\` et \`UPSTREAM_PREFIX = \"\"\`."
+            else
+              echo "C'est un **aperçu** : kd-mc.com n'y touche pas."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

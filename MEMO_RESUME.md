@@ -1,5 +1,45 @@
 # MEMO_RESUME — état de session
 
+## 15 septembre 2026 — « mets tout en privé » : le dépôt était public à DEUX endroits, pas un
+
+**Ta demande** : que ton code, tes liens et tout ce qui se construit ne soient plus visibles ;
+seuls les **sites** restent accessibles.
+
+- **Le blocage, vérifié et non supposé** : GitHub ne sert un site depuis un dépôt **privé**
+  qu'avec un **abonnement payant**. Ton compte est en gratuit. Donc passer le dépôt en privé
+  **aujourd'hui éteindrait kd-mc.com**. Il faut héberger le site ailleurs **d'abord** — c'est
+  fait, et c'est l'essentiel du travail de cette session.
+- **Ce que j'ai trouvé en le préparant, et qui change tout** : ton code était publié à
+  **DEUX** endroits. Le script du miroir (`kdmc-site.pages.dev`) envoyait **le dépôt entier**
+  moins une douzaine d'exclusions. Mesuré avant de toucher à quoi que ce soit : **2 049**
+  fichiers de code serveur, **37 498** fichiers du source d'Apex, **193** automatisations,
+  **188** tests — en ligne, sur une adresse publique. **Mettre GitHub en privé n'aurait donc
+  rien caché** : on fermait une porte sur deux.
+- **Le correctif** : les deux chemins (GitHub et le miroir) fabriquent maintenant **le même
+  paquet trié** — les applications, et rien d'autre. Avant, c'était « tout le dépôt **moins**
+  ce qu'on pense à exclure » : tout ce qu'on oublie part en ligne. Maintenant c'est
+  « **uniquement** ce qui est nommé » : tout ce qu'on oublie reste à terre. C'est l'inverse, et
+  c'est ce qui compte.
+- **Contrôle avant l'envoi, pas après** : publier est irréversible (ce qui est parti a été
+  servi). Le paquet est donc refusé s'il contient un seul document de travail, du code serveur,
+  des tests ou une carte de code source.
+- **Vérification réelle** : une sonde ouvre les **26 adresses** du domaine sur le site publié et
+  exige une vraie page (les adresses sont lues dans la table du routeur, jamais recopiées à la
+  main). Un « déploiement réussi » qui sert des pages vides n'est pas une réussite.
+- **Le garde n'a pas été affaibli, il a été instruit** : il vérifiait « chaque document retiré
+  a-t-il son exclusion ? ». Cette question n'a plus de sens avec une liste blanche. Il vérifie
+  désormais « ce document peut-il finir dans le paquet ? » — et il refuse de valider s'il ne
+  sait plus répondre. Prouvé par **5 sabotages** : chacun le fait passer au rouge.
+
+**À savoir, et je préfère te le dire franchement** : mettre le dépôt en privé **n'efface pas ce
+qui a déjà été publié**. L'historique reste consultable par qui l'a copié. Les clés et codes qui
+ont circulé doivent être **changés**, pas seulement cachés — la liste t'attend dans
+`KEVIN_ACTIONS_TODO.md`.
+
+**Ordre à respecter** (un seul clic est le tien, et il vient en dernier) : publier sur
+Cloudflare → vérifier les 26 adresses → basculer le routeur → vérifier kd-mc.com → **alors
+seulement** tu passes le dépôt en privé.
+
 ## 10 septembre 2026 — la bouée de secours du domaine : deux adresses sans filet, et 33 documents de travail qu'elle publiait
 
 **Point de départ** : la session « arbre » signale un test rouge (`test:router-secours`,

@@ -7,10 +7,11 @@
  *
  *   1. .github/workflows/deploy.yml   → l'étape qui RETIRE les documents avant
  *                                        de publier sur kd-mc.com (GitHub Pages)
- *   2. tools/gitlab/publier.sh        → les --exclude du miroir Cloudflare
+ *   2. tools/gitlab/publier.sh        → le miroir Cloudflare
  *   3. tools/audit/exposition-publique.mjs → ce que l'audit va SONDER en vrai
- *   4. services/kdmc-router/prepare-secours.mjs → la copie de SECOURS, celle qui
- *                                        sert kd-mc.com quand GitHub est éteint
+ *   4. services/kdmc-router/prepare-secours.mjs → le paquet TRIÉ, qui sert à la
+ *                                        fois la copie de secours (GitHub éteint)
+ *                                        et, depuis le 15.09.2026, le miroir
  *
  * Quatre listes séparées dérivent toujours. Et un test d'égalité entre deux
  * surfaces ne verrait rien si les deux oubliaient le MÊME fichier (leçon #142 :
@@ -20,8 +21,11 @@
  *   A. les DEUX publications retirent TOUS les Markdown (règle mesurée le 5.09 :
  *      aucune page du site ne charge un .md — les renvois sont des adresses
  *      absolues vers github.com, et aucun service worker n'en met en cache) ;
- *   B. tout ce que GitHub retire EN PLUS est aussi exclu du miroir, et SONDÉ
- *      par l'audit — sinon un retrait qui échoue passerait inaperçu ;
+ *   B. tout ce que GitHub retire EN PLUS est aussi tenu à l'écart du miroir, et
+ *      SONDÉ par l'audit — sinon un retrait qui échoue passerait inaperçu.
+ *      « Tenu à l'écart » se contrôle selon la forme du miroir : par ses
+ *      --exclude s'il copie tout le dépôt, par le contenu du paquet (section E)
+ *      s'il délègue à un fabricant de paquet trié ;
  *   C. les documents les plus sensibles restent nommés dans l'audit ;
  *   D. l'audit sort en erreur sur une fuite, casse le cache, et deploy.yml le
  *      lance vraiment après publication ;
@@ -61,11 +65,29 @@ const publierActif = sansCommentaires(publier);
 
 /* ── A. Les deux publications retirent TOUS les Markdown ──────────────────── */
 const deployRetireLesMd = /find \. -name '\*\.md' -type f -delete/.test(deployActif);
-const miroirExclutLesMd = /--exclude='\*\.md'/.test(publierActif);
 if (!deployRetireLesMd) {
   echec(`${DEPLOY} ne retire plus tous les Markdown avant publication — c'est la règle qui se maintient toute seule : sans elle, chaque nouveau document de travail se retrouve en ligne`);
 } else ok('kd-mc.com : tous les Markdown retirés avant publication');
-if (!miroirExclutLesMd) {
+
+/* Le miroir a DEUX formes possibles, et la seconde est meilleure :
+ *   • LISTE NOIRE (ancienne) : `tar` de tout le dépôt moins des --exclude.
+ *     Tout ce qu'on oublie d'exclure part en ligne.
+ *   • LISTE BLANCHE (depuis le 15.09.2026) : il délègue au fabricant de paquet
+ *     `prepare-secours.mjs`, qui n'embarque QUE les applications nommées.
+ *     Tout ce qu'on oublie reste à terre — l'inverse, et c'est plus sûr.
+ * MESURÉ le 15.09 avant de changer : l'ancienne forme publiait 2 049 fichiers de
+ * `services/`, 37 498 d'`apex-ai/`, 193 de `.github/` — c'est-à-dire tout le code,
+ * sur une adresse publique. Passer le dépôt GitHub en privé n'aurait donc rien
+ * caché. On accepte les DEUX formes ici, mais on exige que la liste blanche soit
+ * vraiment une liste blanche (packager + garde avant envoi). */
+const miroirListeBlanche = /prepare-secours\.mjs[^\n]*--pages/.test(publierActif);
+if (miroirListeBlanche) {
+  const gardeAvantEnvoi = /find "\$PAQUET" -name '\*\.md'/.test(publierActif)
+    && /PUBLICATION ANNULÉE|exit 1/.test(publierActif);
+  if (!gardeAvantEnvoi) {
+    echec(`${PUBLIER} fabrique le paquet trié mais ne le CONTRÔLE plus avant de l'envoyer — publier est irréversible, le contrôle doit être avant`);
+  } else ok('miroir Cloudflare : liste blanche (paquet trié) + contrôle avant envoi');
+} else if (!/--exclude='\*\.md'/.test(publierActif)) {
   echec(`${PUBLIER} n'exclut plus tous les Markdown — le miroir Cloudflare publierait ce que kd-mc.com cache`);
 } else ok('miroir Cloudflare : tous les Markdown exclus');
 
@@ -85,6 +107,37 @@ for (const m of bloc.matchAll(/rm -rf ([^\n|&]+)/g)) {
 }
 if (enPlus.size < 4) echec(`seulement ${enPlus.size} entrée(s) non-Markdown retirées dans ${DEPLOY} — la liste a-t-elle été vidée ?`);
 else ok(`${enPlus.size} entrée(s) non-Markdown retirées en plus (dossiers de travail, JSON)`);
+
+/* ── Ce que la copie de secours embarque — lu ICI parce que ça sert DEUX fois ─
+ * Depuis le 15.09.2026, `publier.sh` ne fabrique plus son paquet lui-même : il
+ * appelle `prepare-secours.mjs --pages`, le MÊME fabricant que la copie de
+ * secours. Les deux surfaces ont donc exactement le même contenu, et la seule
+ * question qui vaille pour les deux est : « ce document peut-il finir dans le
+ * paquet ? ». On lit donc la liste une fois, avant d'en avoir besoin. */
+const SECOURS = 'services/kdmc-router/prepare-secours.mjs';
+const secoursPresent = existsSync(SECOURS);
+let secoursActif = '';
+let recopies = [];
+let travail = new Set();
+if (!secoursPresent) {
+  echec(`${SECOURS} introuvable — la copie de secours n'est plus contrôlée`);
+} else {
+  const secours = readFileSync(SECOURS, 'utf8');
+  /* Un commentaire ne protège rien : on retire les blocs de commentaires avant
+     de lire (même piège que la règle A ci-dessus, tombée dedans le 5.09). */
+  secoursActif = secours.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const listeDe = (nom) => {
+    const m = secoursActif.match(new RegExp('const ' + nom + ' = \\[([\\s\\S]*?)\\n\\];'));
+    return m ? [...m[1].matchAll(/chemin:\s*'([^']+)'/g)].map((x) => x[1]) : [];
+  };
+  recopies = [...listeDe('APPS'), ...listeDe('MEDIAS'), ...listeDe('PARTAGES')];
+  travail = new Set([...(secoursActif.match(/const TRAVAIL = new Set\(\[([^\]]*)\]/) || [, ''])[1]
+    .matchAll(/'([^']+)'/g)].map((m) => m[1]));
+}
+/* Un document de travail n'est un problème que s'il peut être EMBARQUÉ, c'est-
+   à-dire s'il vit sous un dossier recopié. Sinon il n'arrive jamais dans le
+   paquet et l'exiger serait du bruit. */
+const embarquable = (nom) => recopies.some((c) => nom === c || nom.startsWith(c + '/'));
 
 /* ── B. Ce que GitHub retire EN PLUS : exclu du miroir, et sondé par l'audit ─ */
 const exclus = new Set([...publierActif.matchAll(/--exclude=(?:'([^']*)'|([^\s\\]+))/g)]
@@ -106,13 +159,33 @@ if (!sondes.length) echec(`aucun chemin marqué docTravail dans ${AUDIT} — l'a
 else ok(`${sondes.length} chemin(s) réellement sondés par l'audit`);
 
 const sondePar = (nom) => sondes.some((s) => s === nom || s.startsWith(nom.replace(/\/$/, '') + '/'));
+
+/* Le miroir se contrôle SELON SA FORME — on ne baisse pas l'exigence, on la pose
+ * au bon endroit :
+ *   • LISTE NOIRE : chaque document retiré doit avoir son `--exclude`.
+ *   • LISTE BLANCHE : il n'y a plus d'exclusions à vérifier — le paquet ne
+ *     contient que les dossiers nommés. La vraie question devient « ce document
+ *     peut-il finir dedans ? », et c'est exactement ce que contrôle la section E
+ *     (règle .md + liste TRAVAIL). Un `--exclude` de plus ne protégerait rien ;
+ *     ce qui protège, c'est que le fabricant refuse de l'embarquer.
+ * Sans le fabricant, plus personne ne contrôle le miroir : on le dit. */
+if (miroirListeBlanche && !secoursPresent) {
+  echec(`${PUBLIER} délègue son paquet à ${SECOURS}, qui est introuvable — le contenu du miroir Cloudflare n'est plus contrôlé par personne`);
+}
+let manquantsMiroir = 0;
 for (const nom of enPlus) {
-  if (!couvertParExclusion(nom)) {
+  if (!miroirListeBlanche && !couvertParExclusion(nom)) {
     echec(`« ${nom} » est retiré de GitHub Pages mais PAS exclu du miroir Cloudflare (${PUBLIER}) — il resterait public d'un côté`);
+    manquantsMiroir++;
   }
   if (!sondePar(nom)) {
     echec(`« ${nom} » est retiré avant publication, mais l'audit ne le sonde jamais — si le retrait échouait, personne ne le saurait. Ajoute-le dans CHEMINS avec docTravail: true (${AUDIT})`);
   }
+}
+if (miroirListeBlanche) {
+  ok(`miroir Cloudflare : même paquet trié que la copie de secours — son contenu est contrôlé en E`);
+} else if (!manquantsMiroir) {
+  ok(`miroir Cloudflare : les ${enPlus.size} entrée(s) retirées de GitHub Pages y sont aussi exclues`);
 }
 
 /* ── C. Les documents les plus sensibles restent SONDÉS ───────────────────── */
@@ -151,42 +224,29 @@ if (!/exposition-publique\.mjs/.test(deploy)) {
  *
  * Même raisonnement qu'en tête de ce fichier : une quatrième liste séparée
  * dérive aussi. On la rattache donc ici.
+ *
+ * DEPUIS LE 15.09.2026, cette section porte DEUX surfaces : la copie de secours
+ * ET le miroir Cloudflare, qui partagent le même fabricant de paquet (cf. B).
+ * Les listes ont été lues plus haut ; on ne fait ici que les contrôler.
  */
-const SECOURS = 'services/kdmc-router/prepare-secours.mjs';
-if (!existsSync(SECOURS)) {
-  echec(`${SECOURS} introuvable — la copie de secours n'est plus contrôlée`);
-} else {
-  const secours = readFileSync(SECOURS, 'utf8');
-  /* Un commentaire ne protège rien : on retire les blocs de commentaires avant
-     de lire (même piège que la règle A ci-dessus, tombée dedans le 5.09). */
-  const secoursActif = secours.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-
+if (secoursPresent) {
   if (!secoursActif.includes('.md$/i.test(base)) return false')) {
     echec(`${SECOURS} ne retire plus tous les Markdown — GitHub éteint, la copie de secours publierait les documents de travail que les deux autres surfaces cachent`);
-  } else ok('copie de secours : tous les Markdown exclus');
+  } else ok('paquet trié (secours + miroir) : tous les Markdown exclus');
 
-  /* Ce que la copie embarque réellement (listes déclarées, pas commentaires). */
-  const listeDe = (nom) => {
-    const m = secoursActif.match(new RegExp('const ' + nom + ' = \\[([\\s\\S]*?)\\n\\];'));
-    return m ? [...m[1].matchAll(/chemin:\s*'([^']+)'/g)].map((x) => x[1]) : [];
-  };
-  const recopies = [...listeDe('APPS'), ...listeDe('MEDIAS'), ...listeDe('PARTAGES')];
-  const travail = new Set([...(secoursActif.match(/const TRAVAIL = new Set\(\[([^\]]*)\]/) || [, ''])[1]
-    .matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  if (!recopies.length) {
+    echec(`${SECOURS} ne déclare plus aucun dossier à recopier (APPS/MEDIAS/PARTAGES) — le garde ne saurait plus dire ce qui peut être embarqué, et validerait tout`);
+  }
 
-  /* Un document de travail n'est un problème ICI que s'il peut être embarqué,
-     c'est-à-dire s'il vit sous un dossier recopié. Sinon il n'y arrive jamais
-     et l'exiger serait du bruit. */
-  const embarquable = (nom) => recopies.some((c) => nom === c || nom.startsWith(c + '/'));
   let manquants = 0;
   for (const nom of enPlus) {
     if (!embarquable(nom)) continue;
     if (!travail.has(nom)) {
-      echec(`« ${nom} » est retiré de GitHub Pages ET du miroir, mais la copie de secours l'embarque encore (il est sous un dossier recopié) — ajoute-le à TRAVAIL dans ${SECOURS}`);
+      echec(`« ${nom} » est retiré de GitHub Pages, mais le paquet trié l'embarque encore (il est sous un dossier recopié) — il partirait sur la copie de secours ET sur le miroir Cloudflare. Ajoute-le à TRAVAIL dans ${SECOURS}`);
       manquants++;
     }
   }
-  if (!manquants) ok(`copie de secours : les documents de travail embarquables (${[...travail].filter(embarquable).length}) sont exclus`);
+  if (!manquants) ok(`paquet trié (secours + miroir) : les documents de travail embarquables (${[...travail].filter(embarquable).length}) sont exclus`);
 }
 
 console.log('');
