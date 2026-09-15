@@ -51,7 +51,21 @@ export function marquesPour(host, { pinHash } = {}) {
     };
   }
   if (/^cmcteams\./.test(h)) {
-    return { local: { cmc_uid: ADMIN.uid, cmc_lastact: String(now) }, note: 'session CMCteams (admin U11804)' };
+    /* Comme sur l'iPhone de Kevin : les écrans « une fois » sont déjà passés (bienvenue v10
+       cmc_seen_v10_678, bandeau cookies cmc_cookies_consent, popup Apex du jour). VU le 10.09
+       (run 34518650078) : sans ces marques, chaque capture montrait la modale de bienvenue par-dessus
+       le planning — on « voyait » un écran que Kevin ne voit plus depuis des mois. Clés relues dans
+       index.html (~23906, ~49920, ~23936). */
+    const today = new Date().toISOString().slice(0, 10); // même calcul que l'app (index.html ~23935)
+    return {
+      local: {
+        cmc_uid: ADMIN.uid, cmc_lastact: String(now),
+        cmc_seen_v10_678: '1',
+        cmc_cookies_consent: JSON.stringify({ ts: now, ver: 'session-kevin' }),
+        ['cmc_apex_pub_seen_' + today]: '1',
+      },
+      note: 'session CMCteams (admin U11804, écrans de bienvenue déjà vus)',
+    };
   }
   if (/^apex-ai\./.test(h)) {
     return {

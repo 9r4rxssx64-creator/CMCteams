@@ -123,7 +123,31 @@ jobs:
           echo "$EXPLICIT"
 
           # Combine + dedupe
-          ALL=$(printf "%s\n%s\n%s\n" "$MERGED_DIRECT" "$MERGED_SQUASH" "$EXPLICIT" | sort -u | grep -E "^claude/" || true)
+          CANDIDATES=$(printf "%s\n%s\n%s\n" "$MERGED_DIRECT" "$MERGED_SQUASH" "$EXPLICIT" | sort -u | grep -E "^claude/" || true)
+
+          # 2026-09-10 — GARDE « UNE PR MERGÉE HIER NE PROUVE PAS QUE LA BRANCHE D'AUJOURD'HUI L'EST ».
+          # La détection [2/3] cherche les NOMS de branches qui ont eu une PR fusionnée. Or une
+          # session réutilise le même nom pendant des jours : `claude/apex-chat-mfa-faceid` a eu
+          # 5 PR fusionnées (#3717 … #3739), puis a reçu de NOUVEAUX commits. Ce job, déclenché
+          # à la fin de CHAQUE auto-merge (le sien ou celui d'une autre session), la supprimait
+          # dans la minute qui suivait le push — mesuré 2× le même soir : run 34525737963
+          # (PR #3744 « dirty », branche disparue) puis 34526845652 (« Rattraper main » en
+          # échec : `git fetch origin <branche>` sur une branche déjà effacée). Le correctif CORS
+          # des iPhone est resté hors de main pendant tout ce temps.
+          # Règle : on ne supprime QUE si la pointe ACTUELLE de la branche est déjà dans main
+          # (`merge-base --is-ancestor`). Une branche absente d'origin est ignorée (rien à faire).
+          ALL=""
+          for b in $CANDIDATES; do
+            if ! git show-ref --verify --quiet "refs/remotes/origin/$b"; then
+              echo "[ABSENTE] $b — déjà supprimée, rien à faire"; continue
+            fi
+            if git merge-base --is-ancestor "origin/$b" origin/main; then
+              ALL="$ALL$b"$'\n'
+            else
+              echo "[GARDÉE] $b — $(git rev-list --count origin/main.."origin/$b") commit(s) pas encore dans main (nom réutilisé après une PR fusionnée)"
+            fi
+          done
+          ALL=$(printf "%s" "$ALL" | sort -u | grep -E "^claude/" || true)
           echo ""
           echo "=== TOTAL UNIQUE branches à delete ==="
           echo "$ALL"

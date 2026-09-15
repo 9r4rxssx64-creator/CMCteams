@@ -15,7 +15,7 @@ function dbWith(value) {
 describe('cercle de confiance (v1.1.216)', () => {
   it('inclut LAURENCE_PHONE_E164 + TRUSTED_CIRCLE_PHONES, exclut Kevin', () => {
     const env = {
-      KEVIN_PHONE_E164: '+33672280277',
+      KEVIN_PHONE_E164: '+33600000001',
       LAURENCE_PHONE_E164: '+33611111111',
       TRUSTED_CIRCLE_PHONES: '+33622222222, +33633333333',
     };
@@ -23,7 +23,7 @@ describe('cercle de confiance (v1.1.216)', () => {
     expect(set.has('+33611111111')).toBe(true);
     expect(set.has('+33622222222')).toBe(true);
     expect(set.has('+33633333333')).toBe(true);
-    expect(set.has('+33672280277')).toBe(false); // Kevin = admin séparé
+    expect(set.has('+33600000001')).toBe(false); // Kevin = admin séparé
   });
 
   it('_isTrustedCircle matche le format national (0X) ↔ international (+33X)', () => {
@@ -40,15 +40,15 @@ describe('cercle de confiance (v1.1.216)', () => {
   });
 
   it('Kevin seul configuré → cercle vide (il a son propre bypass admin)', () => {
-    const set = _trustedCircleSet({ KEVIN_PHONE_E164: '+33672280277' });
+    const set = _trustedCircleSet({ KEVIN_PHONE_E164: '+33600000001' });
     expect(set.size).toBe(0);
   });
 });
 
 describe('cercle de confiance — géré en base / self-service (v1.1.218)', () => {
   it('_dbTrustedCircleList lit + normalise le JSON array de system_config', async () => {
-    const list = await _dbTrustedCircleList(dbWith(JSON.stringify(['+33640616184', '0612000000'])));
-    expect(list).toContain('+33640616184');
+    const list = await _dbTrustedCircleList(dbWith(JSON.stringify(['+33600000010', '0612000000'])));
+    expect(list).toContain('+33600000010');
     expect(list).toContain('+33612000000'); // 0X → +33X normalisé
   });
 
@@ -61,10 +61,10 @@ describe('cercle de confiance — géré en base / self-service (v1.1.218)', () 
   it('_isTrustedCircleAsync : vrai si numéro en ENV OU en base', async () => {
     const env = {
       LAURENCE_PHONE_E164: '+33611111111',
-      APEX_CHAT_DB: { prepare: () => ({ bind() { return this; }, async first() { return { value: JSON.stringify(['+33640616184']) }; } }) },
+      APEX_CHAT_DB: { prepare: () => ({ bind() { return this; }, async first() { return { value: JSON.stringify(['+33600000010']) }; } }) },
     };
     expect(await _isTrustedCircleAsync(env, '+33611111111')).toBe(true);  // env
-    expect(await _isTrustedCircleAsync(env, '0640616184')).toBe(true);    // base (format national)
+    expect(await _isTrustedCircleAsync(env, '0600000010')).toBe(true);    // base (format national)
     expect(await _isTrustedCircleAsync(env, '+33699999999')).toBe(false); // ni l'un ni l'autre
   });
 

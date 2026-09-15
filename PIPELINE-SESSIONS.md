@@ -130,3 +130,37 @@ coûter un roman. Chaque chiffre est compté sur le disque à l'instant, jamais 
 | Qu'attend-on de Kevin ? | `node tools/pipeline/pipeline.mjs etat` |
 | Ai-je du courrier ? | `node tools/pipeline/pipeline.mjs etat --id <moi>` |
 | Les règles permanentes | `CLAUDE.md` · les erreurs à ne pas refaire : `LESSONS.md` |
+
+
+## ⚠️ Depuis le 10.09 : ta branche fusionnée est SUPPRIMÉE — c'est normal
+
+Le ruleset `16725169` a été corrigé (`~ALL` → `~DEFAULT_BRANCH`) : le ménage
+d'`auto-merge-claude.yml` supprime enfin ce qu'il doit supprimer. Premier passage :
+**253 branches `claude/*` effacées** (389 → 126). Il ne touche QUE les branches dont
+**tous** les commits sont déjà dans `main` — rien ne peut se perdre.
+
+**Conséquence pour toi, au démarrage** : la branche notée dans le registre peut ne plus
+exister. Ce n'est pas une panne, c'est le signe que **ton travail est passé**.
+
+```bash
+# 1. ta branche existe-t-elle encore ?
+git ls-remote --heads origin refs/heads/<ta-branche>
+# 2. vide → repars proprement de main, puis réinscris-toi
+git fetch origin && git checkout -b claude/<nouveau-nom> origin/main
+node tools/pipeline/pipeline.mjs enregistrer --id <toi> --branche "claude/<nouveau-nom>" \
+     --titre "…" --sujet "…"
+```
+
+**Deux pièges vus en vrai le 10.09, ne les refaites pas :**
+
+1. **Une PR fusionnée ne suit plus les nouveaux commits.** Le robot fusionne dès que
+   « Auto PR Review » est vert. Si tu pousses ENSUITE sur la même branche, ton commit
+   reste dehors et personne ne le voit (vécu : PR #3746 fusionnée, commit `a143a6c73`
+   orphelin). Après une fusion : **branche neuve depuis `main`**.
+2. **Le registre ment vite.** Le 10.09, 19 sessions marquées « actives » pointaient vers
+   des branches supprimées. Avant de te fier au registre, vérifie l'existence de la
+   branche (commande ci-dessus). Le tableau de `SESSIONS-ET-BRANCHES.md` porte le même
+   avertissement en tête.
+
+Pour savoir ce qu'une branche apporte encore : `node tools/menage/branches-superflues.mjs`
+(et `--fichiers` pour la liste des fichiers qui n'existent que sur des branches).

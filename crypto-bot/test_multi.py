@@ -307,5 +307,54 @@ e2 = Exchange.equity_in_quote(px, {"BTC/USDT": None})   # prix manquant -> derni
 ok(abs(e2 - 1200.0) < 1e-9,
    "equity_in_quote: prix manquant réutilise le dernier prix connu (pas d'effondrement)")
 
+
+# ---- 10) Préréglage AGRESSIF +++ (Kevin 2026-09-11) — valide + valeurs exactes ----
+c10 = cfg_with(
+    STRATEGY="ema", TIMEFRAME="3m", RSI_MAX="85", ATR_STOP_MULT="1.3",
+    RISK_PER_TRADE_PCT="4.0", MAX_POSITION_PCT="60.0",
+    DAILY_LOSS_CAP_PCT="10.0", MAX_DRAWDOWN_PCT="35.0",
+    MR_RSI_BUY="45", MR_RSI_SELL="55", MR_STD_MULT="1.5",
+    DU_RSI_BUY="45", DU_RSI_SELL="55",
+)
+c10.validate()
+ok(c10.rsi_max == 85.0 and c10.atr_stop_mult == 1.3, "agressif+++ : RSI_MAX/ATR_STOP_MULT appliqués")
+ok(c10.risk_per_trade_pct == 4.0 and c10.max_position_pct == 60.0,
+   "agressif+++ : taille de position appliquée")
+ok(c10.daily_loss_cap_pct == 10.0 and c10.max_drawdown_pct == 35.0,
+   "agressif+++ : garde-fous recalibrés, PAS retirés (toujours > 0)")
+
+# ---- 11) Les seuils RSI agressifs sont bien branchés jusque dans la stratégie ----
+from strategy import make_strategy  # noqa: E402
+c_mr = cfg_with(STRATEGY="meanrev", MR_RSI_BUY="45", MR_RSI_SELL="55", MR_STD_MULT="1.5")
+s_mr = make_strategy(c_mr)
+ok(s_mr.rsi_buy == 45.0 and s_mr.rsi_sell == 55.0 and s_mr.std_mult == 1.5,
+   "meanrev agressif : seuils RSI + largeur de bande branchés jusqu'à la stratégie")
+c_du = cfg_with(STRATEGY="dipup", DU_RSI_BUY="45", DU_RSI_SELL="55")
+s_du = make_strategy(c_du)
+ok(s_du.rsi_buy == 45.0 and s_du.rsi_sell == 55.0,
+   "dipup agressif : seuils RSI branchés jusqu'à la stratégie")
+
+# ---- 12) risk_warnings() — le trou trouvé en vrai le 11.09 (HOLD_UNTIL_PROFIT
+#          sans frein catastrophe = perte sans aucune limite) doit être VISIBLE ----
+c_danger = cfg_with(HOLD_UNTIL_PROFIT="true", CATASTROPHE_STOP_PCT="0")
+w = c_danger.risk_warnings()
+ok(any("AUCUNE limite de perte" in x for x in w),
+   "risk_warnings : HOLD_UNTIL_PROFIT + frein catastrophe désactivé -> averti")
+
+c_safe = cfg_with(HOLD_UNTIL_PROFIT="true", CATASTROPHE_STOP_PCT="20")
+ok(not any("AUCUNE limite de perte" in x for x in c_safe.risk_warnings()),
+   "risk_warnings : frein catastrophe réglé -> plus d'avertissement (pas de faux positif)")
+
+c_normal = cfg_with(HOLD_UNTIL_PROFIT="false", CATASTROPHE_STOP_PCT="0")
+ok(not any("AUCUNE limite de perte" in x for x in c_normal.risk_warnings()),
+   "risk_warnings : HOLD_UNTIL_PROFIT=false -> avertissement non pertinent, absent")
+
+c_big = cfg_with(MAX_POSITION_PCT="60", DAILY_LOSS_CAP_PCT="10")
+ok(any("consommer une grosse partie" in x for x in c_big.risk_warnings()),
+   "risk_warnings : grosse position + plafond de perte large -> averti")
+c_small = cfg_with(MAX_POSITION_PCT="25", DAILY_LOSS_CAP_PCT="3")
+ok(not any("consommer une grosse partie" in x for x in c_small.risk_warnings()),
+   "risk_warnings : réglages prudents d'origine -> pas d'avertissement")
+
 print(f"test_multi.py : {P['p']} OK / {P['f']} FAIL")
 sys.exit(1 if P["f"] else 0)

@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.288",
+  "softwareVersion": "v1.1.289",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,7 +458,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.288';
+const __APEX_CHAT_VERSION__ = 'v1.1.289';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
@@ -484,7 +484,9 @@ if('serviceWorker' in navigator){
       }
       /* Semi-auto Premium (Kevin « notif, 1 clic ») : activation depuis la notif admin */
       if(e.data?.type === 'grant-premium' && e.data.userId){
-        if(typeof K !== 'undefined' && K._adminGrantPremium) K._adminGrantPremium(e.data.userId, e.data.plan || 'monthly');
+        /* Même garde que le lien ?grant_premium= (Strix vuln-0002) : un message reçu du
+           service worker n'est pas une preuve d'intention, la confirmation nomme la cible. */
+        if(typeof K !== 'undefined' && K._adminGrantPremium && K._confirmGrantPremium(e.data.userId, e.data.plan || 'monthly')) K._adminGrantPremium(e.data.userId, e.data.plan || 'monthly');
       }
       /* v1.1.87 — Quick reply / open / mark read depuis notif */
       if(e.data?.type === 'open-conv' && e.data.convId){
@@ -537,8 +539,13 @@ if('serviceWorker' in navigator){
         tries++;
         if(typeof K!=='undefined' && K._adminGrantPremium && K.user && K.user.is_admin){
           clearInterval(iv);
-          K._adminGrantPremium(guid, gplan);
           try{history.replaceState(null,'',location.pathname);}catch(_){}
+          /* SÉCU (Strix vuln-0002, 11/09/2026, CWE-352) : cette adresse est PUBLIQUE — un lien
+             piégé ouvert par l'admin activait un Premium (utilisateur + formule choisis par
+             l'auteur du lien) sans rien demander. La notif « ✅ Activer » arrive ici aussi :
+             un tap de plus, qui NOMME ce qui va être activé. Le serveur exige toujours le
+             jeton admin ; ce garde empêche seulement que l'admin le fasse à son insu. */
+          if(K._confirmGrantPremium(guid, gplan)) K._adminGrantPremium(guid, gplan);
         } else if(tries>40){ clearInterval(iv); } /* ~20s max */
       },500);
     }catch(_){}
@@ -643,7 +650,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.288</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.289</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -657,7 +664,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.288</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.289</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -1144,7 +1151,7 @@ K.login = async function(user, token){
   }catch(_){}
   // Préchauffe les credentials TURN en arrière-plan → le 1er appel se connecte vite (v1.1.229)
   try{ if(K._ensureIceServers) K._ensureIceServers(); }catch(_){}
-  // v1.1.288 (audit P2c) : demande le ticket média DÈS la connexion, pour que
+  // v1.1.289 (audit P2c) : demande le ticket média DÈS la connexion, pour que
   // les premières photos affichées portent déjà un ticket et non le jeton.
   try{ if(K._ensureMediaTicket) K._ensureMediaTicket(); }catch(_){}
   // v1.1.285 SÉCU (audit P1) : l'admin vient UNIQUEMENT du serveur (is_admin
@@ -11546,7 +11553,7 @@ K._toggleVoiceRecord = async function(){
 // ============================================================================
 // v1.1.186 — Médias R2 : photos / vidéos / fichiers TOUS FORMATS, toutes tailles
 // (jusqu'à 100 Mo), avec aperçu visuel. URL authentifiée par ?token=.
-// v1.1.288 (audit P2c) — Même défaut que pour le WebSocket : le jeton de
+// v1.1.289 (audit P2c) — Même défaut que pour le WebSocket : le jeton de
 // SESSION partait dans l'attribut `src` de chaque photo/vidéo, donc dans le
 // DOM, l'historique du navigateur et les journaux du serveur. On utilise un
 // TICKET MÉDIA valable 5 min, valable NULLE PART ailleurs que sur cette route.
@@ -12852,6 +12859,14 @@ async function renderAdminPremium(app){
   `;
 }
 
+// v1.1.289 — Confirmation NOMMÉE avant une activation Premium déclenchée par une adresse
+// (?grant_premium=) ou un message du service worker (Strix vuln-0002, CWE-352). L'admin voit
+// QUI et QUELLE formule avant que la demande parte ; « Annuler » ne fait rien.
+K._confirmGrantPremium = function(userId, plan){
+  try{
+    return window.confirm('💎 Activer le Premium « ' + String(plan || 'monthly') + ' » pour l\'utilisateur ' + String(userId || '') + ' ?\n\nCette demande vient d\'un lien ou d\'une notification. Annule si tu ne l\'attendais pas.');
+  }catch(_){ return false; }
+};
 // v1.1.208 — Active manuellement le Premium d'un utilisateur (admin only).
 K._adminGrantPremium = async function(userId, plan){
   if(!userId) return toast('user_id manquant', 'err');

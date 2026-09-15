@@ -7,6 +7,19 @@
 ✅ = un test nommé cible explicitement cette fonction · 🟡 = couverte indirectement (le fichier
 est mesuré par la couverture globale, mais aucun test ne porte son nom) · ❌ = aucun test.
 
+> ⚠️ **Correction du 2026-09-10 (deuxième, et celle-ci est mesurée).** Une première note
+> affirmait ici que les 19 fichiers de `messaging-app/tests/e2e/` n'étaient lancés par aucun
+> workflow. **C'était faux** : `messaging-app-tests.yml` les exécute à chaque push, sur
+> 4 navigateurs (iphone-safari, iphone-se, chromium-desktop, pixel-android). Mon grep cherchait
+> `test:e2e` ; le workflow appelle `npx playwright test` directement. Ce qui est **vrai et
+> mesuré** : ces 19 fichiers (56 tests) passent **56/56** sur Chromium (exécutés ici même), mais
+> les deux voies **iPhone (WebKit)** étaient **rouges à chaque run depuis le 6 septembre**
+> (19 runs sur 60) — cause : l'exception CORS locale n'acceptait que `http://localhost`, les
+> tests se servent en `https://` (finding **P2**, corrigé). Donc : la couverture « e2e » ci-dessous
+> est **réelle sur Chromium/Android**, et **réelle sur iPhone seulement à partir du run vert qui
+> suit le correctif** (consigné dans `02-RESULTATS.md` § 6.4). Les 3 scénarios de `e2e/`
+> (`smoke`, `two-clients`, `push`) sont, eux, joués contre la **production** (20/20 ✅).
+
 **Rappel de couverture mesurée** (`npx vitest run --coverage`, 10/09) : global **89,47 %** des
 lignes · `lib/` **100 %** · Durable Objects **100 %** · `ia`/`push`/`sms`-worker **100 %** ·
 `api-worker.js` **83,42 %**.

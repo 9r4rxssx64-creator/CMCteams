@@ -148,7 +148,17 @@ switch (cmd) {
   case 'message': {
     if (!a.de || !a.a || !a.sujet) { console.error('  --de, --a et --sujet sont obligatoires'); process.exit(1); }
     if (a.a !== 'toutes' && !d.sessions[a.a]) { console.error(`  ❌ destinataire « ${a.a} » inconnu (ou "toutes")`); process.exit(1); }
-    const id = 'm' + String((d.messages || []).length + 1).padStart(3, '0');
+    /* L'identifiant porte le NOM DE L'EXPÉDITEUR, pas seulement un compteur.
+       AVANT : 'm' + (nombre de messages + 1) — chaque branche compte dans SA copie
+       du registre, donc deux sessions qui écrivent le même jour tirent le MÊME
+       numéro. Résultat mesuré le 10.09.2026 : trois collisions en une journée
+       (m039, m055, m064), chacune faisant refuser une fusion automatique, et il
+       fallait renuméroter à la main à chaque fois. APRÈS : « m065-arbre » — deux
+       sessions ne peuvent plus produire le même identifiant, et une fusion se
+       résout en gardant simplement les deux messages. Les anciens identifiants
+       (mNNN) restent valides : rien ne les analyse, seule l'égalité compte. */
+    const expediteur = String(a.de).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 20);
+    const id = 'm' + String((d.messages || []).length + 1).padStart(3, '0') + '-' + expediteur;
     (d.messages = d.messages || []).push({
       id, de: a.de, a: a.a, sujet: a.sujet, corps: a.corps || '',
       ts: new Date().toISOString().slice(0, 16).replace('T', ' '), etat: 'ouvert',
@@ -181,9 +191,15 @@ switch (cmd) {
       if (s.branche) branches[s.branche] = id;
       if (!s.titre) pb.push(`${id} : aucun titre`);
     });
+    /* Identifiants en double : une fusion mal résolue peut faire cohabiter DEUX
+       messages différents sous le même identifiant — et alors le cliquet du suivi
+       en excuse un sans que personne ne le voie (vécu le 10.09 avec m055). */
+    const vus = {};
     (d.messages || []).forEach((m) => {
       if (m.a !== 'toutes' && !d.sessions[m.a]) pb.push(`message ${m.id} adressé à « ${m.a} » qui n'existe pas`);
       if (!d.sessions[m.de]) pb.push(`message ${m.id} envoyé par « ${m.de} » qui n'existe pas`);
+      if (vus[m.id]) pb.push(`identifiant ${m.id} porté par DEUX messages (« ${String(vus[m.id]).slice(0, 40)}… » et « ${String(m.sujet).slice(0, 40)}… ») — renumérote le plus récent`);
+      vus[m.id] = m.sujet;
     });
     pb.forEach((p) => console.log('  ❌ ' + p));
     console.log(pb.length ? `\n${pb.length} problème(s)` : `  ✅ registre cohérent : ${Object.keys(d.sessions).length} sessions, ${(d.messages || []).length} message(s), 0 branche en double`);

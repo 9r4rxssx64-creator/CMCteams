@@ -111,14 +111,20 @@ describe('createVisioSession — init + ICE servers', () => {
     }
   });
 
+  // happy-dom ≥ 20 : `globalThis.navigator` n'a qu'un getter et `mediaDevices` est en
+  // lecture seule → on redéfinit la propriété (configurable) au lieu de l'assigner.
+  function setMediaDevices(md) {
+    if (!globalThis.navigator) Object.defineProperty(globalThis, 'navigator', { value: {}, configurable: true, writable: true });
+    Object.defineProperty(globalThis.navigator, 'mediaDevices', { value: md, configurable: true, writable: true });
+  }
+
   it('fallback getUserMedia via navigator.mediaDevices si pas dans deps', async () => {
     const ws = makeWS();
     const origMD = globalThis.navigator?.mediaDevices;
-    globalThis.navigator = globalThis.navigator || {};
-    globalThis.navigator.mediaDevices = {
+    setMediaDevices({
       getUserMedia: vi.fn(async () => makeMockStream(['audio'])),
       getDisplayMedia: vi.fn(async () => makeMockStream(['video'])),
-    };
+    });
     try {
       const s = createVisioSession({
         convId: 'c', userId: 'u', type: 'audio', ws,
@@ -127,17 +133,16 @@ describe('createVisioSession — init + ICE servers', () => {
       await s.startLocalStream();
       expect(globalThis.navigator.mediaDevices.getUserMedia).toHaveBeenCalled();
     } finally {
-      if (origMD) globalThis.navigator.mediaDevices = origMD;
+      if (origMD) setMediaDevices(origMD);
     }
   });
 
   it('fallback getDisplayMedia via navigator.mediaDevices', async () => {
     const ws = makeWS();
-    globalThis.navigator = globalThis.navigator || {};
-    globalThis.navigator.mediaDevices = {
+    setMediaDevices({
       getUserMedia: vi.fn(async () => makeMockStream(['audio', 'video'])),
       getDisplayMedia: vi.fn(async () => makeMockStream(['video'])),
-    };
+    });
     const s = createVisioSession({
       convId: 'c', userId: 'u', type: 'video', ws,
       deps: { RTCPeerConnection: MockRTCPeerConnection },

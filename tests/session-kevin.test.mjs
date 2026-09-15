@@ -38,6 +38,8 @@ ok(cmc.local.cmc_uid === ADMIN.uid, 'CMCteams : cmc_uid = U11804');
 ok(!!cmc.local.cmc_lastact, 'CMCteams : cmc_lastact posé (sinon la session est jugée expirée)');
 const idx = readFileSync(join(ROOT, 'index.html'), 'utf8');
 ok(idx.includes('cmc_lastact'), 'CMCteams utilise bien cmc_lastact (vérifié dans l\'app)');
+ok(cmc.local.cmc_seen_v10_678 === '1' && !!cmc.local.cmc_cookies_consent, 'CMCteams : bienvenue v10 + cookies déjà vus (comme sur l\'iPhone de Kevin, sinon la modale cache le planning)');
+ok(idx.includes('cmc_seen_v10_678') && idx.includes('cmc_cookies_consent'), 'ces deux clés sont bien celles que l\'app lit (vérifié)');
 ok(idx.includes('"U11804"') || idx.includes("'U11804'"), 'U11804 est bien l\'identifiant admin de CMCteams');
 
 const apex = marquesPour('apex-ai.kd-mc.com');

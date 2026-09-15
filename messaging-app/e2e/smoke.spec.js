@@ -22,9 +22,21 @@ test.describe('Apex Chat prod smoke tests', () => {
 
   test('SEO meta complets (canonical, OG, Twitter, JSON-LD)', async ({ page }) => {
     await page.goto('./', { waitUntil: 'domcontentloaded', timeout: 45000 });
-    // Canonical
+    // Canonical — DOIT être le domaine propre, pas l'URL GitHub Pages.
+    //
+    // ⚠️ Ce test exigeait `toContain('messaging-app')`, c'est-à-dire l'ancienne
+    // adresse `github.io/CMCteams/messaging-app/`. L'app déclare depuis v1.1.287
+    // son domaine canonique `apex-chat.kd-mc.com` (cf. `services/kdmc-router/
+    // worker.js` et le finding CORS de `audit/apex-chat/03-FINDINGS.md`).
+    // Le test échouait donc alors que **l'app avait raison** : un canonical qui
+    // pointe sur l'URL de l'hébergeur au lieu du domaine propre disperse le
+    // référencement entre deux adresses pour une seule et même page.
+    // Corrigé le 2026-09-10 : on encode la règle voulue, on ne rétrograde pas
+    // l'app pour faire verdir un test périmé.
     const canonical = await page.locator('link[rel="canonical"]').getAttribute('href');
-    expect(canonical).toContain('messaging-app');
+    expect(canonical, 'canonical doit être une URL absolue https').toMatch(/^https:\/\//);
+    expect(canonical, 'canonical doit pointer sur le domaine propre apex-chat.kd-mc.com')
+      .toContain('apex-chat.kd-mc.com');
     // robots indexable
     const robots = await page.locator('meta[name="robots"]').getAttribute('content');
     expect(robots).toMatch(/index/);

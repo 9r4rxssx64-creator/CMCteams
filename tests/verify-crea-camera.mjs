@@ -108,19 +108,64 @@ await page.waitForFunction(() => {
   const el = document.getElementById('camView');
   return el && el.srcObject && el.videoWidth > 0 && el.readyState >= 2;
 }, null, { timeout: 15000 });
+// 10.09 — rouge intermittent (« galerie 2 → 2 ») sans aucune cause lisible : on
+// journalise l'enregistreur (démarrage, morceaux, arrêt, ERREUR) pour que le
+// prochain rouge dise POURQUOI au lieu de « pas de vidéo ».
+await page.evaluate(() => {
+  window.__mr = [];
+  const S = MediaRecorder.prototype.start;
+  MediaRecorder.prototype.start = function () {
+    const r = this;
+    r.addEventListener('error', e => __mr.push('ERREUR ' + (e.error && (e.error.name + ' ' + e.error.message))));
+    r.addEventListener('stop', () => __mr.push('stop'));
+    r.addEventListener('dataavailable', e => __mr.push('data ' + e.data.size));
+    __mr.push('start ' + r.mimeType + ' ' + r.stream.getTracks().map(t => t.kind + ':' + t.readyState).join(','));
+    window.__lastRec = r;
+    return S.apply(this, arguments);
+  };
+});
 await page.evaluate(() => window.Cam.startVideo());
 await page.waitForTimeout(1600);
 await page.evaluate(() => window.Cam.stopVideo());
 // on attend que la vidéo soit VRAIMENT écrite (elle l'est en tâche de fond) —
-// une attente fixe rendait ce test instable sans que l'app ait le moindre défaut
-await page.waitForFunction(async (n) => (await window.Mine.list()).length > n, avantV, { timeout: 12000 })
+// une attente fixe rendait ce test instable sans que l'app ait le moindre défaut ;
+// 30 s : sur une machine chargée (barrière complète), l'encodeur peut être lent
+await page.waitForFunction(async (n) => (await window.Mine.list()).length > n, avantV, { timeout: 30000 })
   .catch(() => {});
 const vid = await page.evaluate(async () => {
   const l = await window.Mine.list();
-  return { n: l.length, kind: l[0].kind, size: l[0].blob.size };
+  const v = l.find(o => o.kind === 'video') || l[0];
+  return { n: l.length, kind: v.kind, size: v.blob.size, mr: window.__mr.join(' | '),
+    hint: ((document.querySelector('#cam .hint, #camHint') || {}).textContent || '').slice(0, 90) };
 });
 chk(vid.n > avantV && vid.kind === 'video' && vid.size > 3000,
-  `filmer produit une vraie vidéo rangée (${Math.round(vid.size / 1024)} Ko, galerie ${avantV} → ${vid.n})`);
+  `filmer produit une vraie vidéo rangée (${Math.round(vid.size / 1024)} Ko, galerie ${avantV} → ${vid.n})`
+  + (vid.n > avantV ? '' : ` — DIAGNOSTIC enregistreur : [${vid.mr}] · message affiché : « ${vid.hint} »`));
+
+// 5b) v9.18.2 — une ERREUR d'encodeur ne rend plus le bouton muet pour toujours :
+//     la cause est dite, le bouton est libéré, et ce qui était déjà filmé est rangé.
+const lireHint = () => page.evaluate(() => (document.querySelector('#cam .hint, #camHint') || {}).textContent || '');
+const simulerErreur = (nom, msg) => page.evaluate(({ nom, msg }) => {
+  const ev = new Event('error'); ev.error = new DOMException(msg, nom); window.__lastRec.dispatchEvent(ev);
+}, { nom, msg });
+await page.evaluate(() => window.Cam.startVideo()); await page.waitForTimeout(50);
+await simulerErreur('UnknownError', 'codec cassé (simulé)'); await page.waitForTimeout(300);
+const hintErr = await lireHint();
+const boutonLibre = await page.evaluate(() => !document.getElementById('camShoot').classList.contains('rec'));
+chk(/UnknownError/.test(hintErr) && /simulé/.test(hintErr) && boutonLibre,
+  `erreur d'encodeur AVANT toute image → la cause est affichée (« ${hintErr.slice(0, 60)}… ») et le bouton est libéré`);
+const avantR = await page.evaluate(async () => (await window.Mine.list()).length);
+await page.evaluate(() => window.Cam.startVideo()); await page.waitForTimeout(1500);
+await page.evaluate(() => window.Cam.stopVideo());
+const reprise = await page.waitForFunction(async (n) => (await window.Mine.list()).length > n, avantR, { timeout: 30000 }).then(() => true).catch(() => false);
+chk(reprise, `après l'erreur, un nouvel enregistrement marche (galerie ${avantR} → ${avantR + 1})`);
+const avantQ = await page.evaluate(async () => (await window.Mine.list()).length);
+await page.evaluate(() => window.Cam.startVideo()); await page.waitForTimeout(1200);
+await simulerErreur('QuotaExceededError', 'disque plein (simulé)');
+const sauve = await page.waitForFunction(async (n) => (await window.Mine.list()).length > n, avantQ, { timeout: 30000 }).then(() => true).catch(() => false);
+const hintQ = await lireHint();
+chk(sauve && /interrompu/.test(hintQ) && /QuotaExceededError/.test(hintQ),
+  `erreur d'encodeur APRÈS des images → ce qui était filmé est quand même rangé, et on dit pourquoi (« ${hintQ.slice(0, 50)}… »)`);
 
 // 6) quitter l'écran éteint la caméra
 await fermer();

@@ -159,3 +159,28 @@ class Config:
                 "❌ Clés API manquantes. Copie .env.example en .env et remplis "
                 "BINANCE_API_KEY / BINANCE_API_SECRET."
             )
+
+    def risk_warnings(self) -> list:
+        """Combinaisons de réglages dangereuses — jamais bloquantes (le choix de
+        risque reste à Kevin), mais TOUJOURS visibles au démarrage (règle « détailler
+        les erreurs partout »). Trouvé en vrai le 2026-09-11 : le bot principal tourne
+        en HOLD_UNTIL_PROFIT=true (ne vend jamais à perte) — dans ce mode le stop-loss
+        ATR est désactivé pour la position ; seul CATASTROPHE_STOP_PCT limite encore la
+        perte. Avec CATASTROPHE_STOP_PCT=0 (désactivé), une position tenue peut perdre
+        SANS AUCUNE LIMITE tant qu'elle n'est pas revendue — plus le risque grossit
+        avec MAX_POSITION_PCT/RISK_PER_TRADE_PCT (réglages « agressif »), plus ce trou
+        devient grand. On le détecte ici pour qu'il ne redevienne jamais invisible."""
+        warnings: list = []
+        if self.hold_until_profit and self.catastrophe_stop_pct <= 0:
+            warnings.append(
+                "HOLD_UNTIL_PROFIT=true ET CATASTROPHE_STOP_PCT=0 : une position tenue "
+                "n'a AUCUNE limite de perte (le stop ATR est désactivé dans ce mode). "
+                "Règle un CATASTROPHE_STOP_PCT > 0 pour garder un vrai filet de sécurité."
+            )
+        if self.max_position_pct >= 50:
+            warnings.append(
+                f"MAX_POSITION_PCT={self.max_position_pct:.0f}% : une seule paire peut "
+                "concentrer plus de la moitié du capital — une seule mauvaise paire peut "
+                "à elle seule consommer une grosse partie du plafond journalier."
+            )
+        return warnings

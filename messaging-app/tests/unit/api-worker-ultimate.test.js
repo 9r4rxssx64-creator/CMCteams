@@ -67,13 +67,13 @@ describe('verifyFirebaseIdToken — success bypass signature', () => {
       sub: 'kevin-uid',
       aud: 'apex-chat',
       iss: 'https://securetoken.google.com/apex-chat',
-      phone_number: '+33672280277',
+      phone_number: '+33600000001',
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 3600,
     });
     const r = await verifyFirebaseIdToken(t, env);
     expect(r.sub).toBe('kevin-uid');
-    expect(r.phone_number).toBe('+33672280277');
+    expect(r.phone_number).toBe('+33600000001');
     importKeySpy.mockRestore();
     verifySpy.mockRestore();
   });

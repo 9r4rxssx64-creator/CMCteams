@@ -69,7 +69,7 @@ règle changeait.
 |---|---|---|---|
 | 1 | Le comportement du service **en production** | Egress 403 | Actions → `apex-chat-e2e.yml` |
 | 2 | La **version déployée** du worker | `workers_get_worker` ne renvoie pas `modified_on` | Onglet Actions, dernier `deploy-apex-chat.yml` réussi |
-| 3 | Les **19 scénarios Playwright** | Navigateurs absents de cette session | Actions → `apex-chat-e2e.yml` |
+| 3 | Les **19 scénarios Playwright** | ~~Navigateurs absents de cette session~~ → **fermé le 10/09** : Chromium **était** préinstallé (`/opt/pw-browsers`), 56/56 en local ; en CI, voies iPhone rouges depuis le 06/09 (P2, corrigé) | Lire le premier run vert de `messaging-app-tests.yml` |
 | 4 | Le **second avis indépendant** (non-Claude) | Non déclenché dans cette passe | Actions → `ai-review-independent.yml` |
 | 5 | Le **scan sécu outillé** (gitleaks, Semgrep, OSV, Trivy, zizmor) | Idem | Actions → `security-suite.yml`, `strix-scan.yml` |
 | 6 | La **passe de stabilité** (re-rendus au repos, scintillement) | Pas de navigateur | Mesure `MutationObserver` en CI |
@@ -117,3 +117,36 @@ elle attrape tout ce qui a une adresse ou un nom de rendu. Une fonctionnalité q
 uniquement dans un gestionnaire d'événement anonyme, sans route ni vue, n'apparaîtrait pas.
 Je n'ai pas de moyen de prouver qu'il n'y en a aucune ; je dis donc « 78 fonctions
 identifiées », pas « les 78 fonctions de l'application ».
+
+---
+
+## 2026-09-10 (soir) — le scan sécu est lu ; ce que j'ai décidé
+
+| Décision | Pourquoi |
+|---|---|
+| Trier le scan **par reproduction locale** (npm audit, lecture des fichiers, awk sur les workflows) plutôt qu'attendre le rapport détaillé | Le rapport détaillé est derrière un 403 ; ce qui se reproduit sans réseau se prouve ici, ligne par ligne |
+| Mettre à jour les outils de test (vitest 5, happy-dom 20) au lieu de « noter pour plus tard » | 7 vulnérabilités connues, correctif sans risque pour l'app (paquets de test), prouvé par 1117/1117 |
+| Ne **pas** épingler les actions officielles sur un SHA | La règle du dépôt exige une version publiée, c'est le cas ; le SHA est un durcissement, pas une faille — consigné en recommandation. **11/09 : appliqué** sur le « Go » de Kevin (23 `uses:`, SHA résolus par `git ls-remote`) |
+| Ne **pas** relancer Strix | 13,77 $ l'exécution, tuée par le délai ; relancer sans allonger le délai reproduirait l'échec. Décision de Kevin. **11/09 : « Go »** → avant de relancer, lecture du code de Strix (il écrit dans `strix_runs/`, pas `agent_runs/`, et il écrit à l'interruption) ; workflow corrigé (bon dossier, plafond de dépense 15 $, profondeur `standard`, 75 min, inventaire dans le check-run), puis relancé |
+| Réparer l'environnement de test local par des **liens**, pas en modifiant le test | `verify-lingua-voix.mjs` échouait pour `Cannot find package 'playwright'` puis pour une version de Chromium (1243 attendue, 1194 installée) : deux liens symboliques (paquet de `messaging-app/node_modules`, binaire `headless_shell`), zéro téléchargement, test inchangé → 26/26 |
+| Construire `detail_path` sur `security-suite.yml` | 9 signalements Semgrep impossibles à identifier autrement ; un compte ne se trie pas |
+
+**Hypothèse écrite** : les 9 signalements Semgrep non identifiés de `messaging-app` sont
+probablement de la même famille que les 1 159 du dépôt (balises sans `integrity`, liens `http`,
+`path.join`), donc des recommandations plutôt que des failles — **c'est une hypothèse, pas un
+résultat**, et elle sera remplacée par la lecture du check-run détaillé.
+
+**Non vérifié** : le contenu de la vulnérabilité MEDIUM annoncée par Strix — **11/09 : lu**
+(run `34588162278`) : 2 MEDIUM, les deux vérifiées dans le code et corrigées (voir
+`03-FINDINGS.md`). **Vérifié ensuite** : routeur corrigé déployé (runs `34591858792` puis
+`34593899829`, gate SSO 25/25 avant chaque déploiement) ; page Apex Chat v1.1.289 publiée
+(`deploy.yml` run `34592467330`) et parcours live vert après (`apex-chat-e2e.yml` run
+`34593090073`) ; test navigateur réel du SSO vert sur le vrai routeur (`kdmc-sso-e2e.yml` run
+`34593741155`, après 30 exécutions rouges d'affilée pour une installation cassée).
+**Hypothèse écrite** : le résiduel « passage écrit dans la fiche par un uid forgé » n'a pas
+d'impact au-delà du journal des connexions — non prouvé par un test, consigné comme accepté.
+**Vérifié le 11/09** : le balayage live relancé (run `34588152564`) donnait Lingua rouge avec le
+même message ; cause trouvée en rejouant la sonde pas à pas en local — elle remplissait un champ
+(`#acName`) remplacé le 05/09 par prénom + nom (`#acPrenom`/`#acNom`). **Défaut de la sonde**,
+corrigé dans `tools/smoke/audit-live.mjs`. **Non vérifié depuis la session** : le verdict en
+ligne après cette correction — il est dans le check-run du balayage déclenché par le push.

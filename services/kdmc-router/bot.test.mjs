@@ -30,6 +30,48 @@ globalThis.fetch = async (input, init) => {
   /* Mock bougies Binance pour /__bot/analysis : BTC monte (48h de hausse régulière),
      ETH descend — la notation doit refléter la tendance dans chaque sens. */
   if (u.includes('data-api.binance.vision')) {
+    /* /__bot/scan (Choppiness Index) demande limit=60 — /__bot/analysis demande
+       limit=250 : on distingue sur le paramètre, sinon ETHUSDT/BNBUSDT/etc.
+       collisionnent entre les deux endpoints et cassent l'un des deux. */
+    if (u.includes('limit=60')) {
+      if (u.includes('BNBUSDT')) {
+        /* Choppy 50 bougies, puis casse en forte tendance sur les 10 dernières
+           -> CI chute nettement -> catégorie "sort_du_calme". */
+        const k = [];
+        for (let i = 0; i < 50; i++) {
+          const base = 100 + (i % 2 === 0 ? 1 : -1) * 3;
+          k.push([0, String(base + 1), String(base + 2), String(base - 2), String(base), '1']);
+        }
+        let price = 100;
+        for (let i = 0; i < 10; i++) {
+          price *= 1.05;
+          k.push([0, String(price - 0.1), String(price + 0.2), String(price - 0.3), String(price), '1']);
+        }
+        return new Response(JSON.stringify(k), { headers: { 'content-type': 'application/json' } });
+      }
+      if (u.includes('SOLUSDT')) return new Response('erreur', { status: 500 });
+      if (u.includes('XRPUSDT')) {
+        const k = [];
+        for (let i = 0; i < 10; i++) k.push([0, '1', '1.1', '0.9', '1', '1']);
+        return new Response(JSON.stringify(k), { headers: { 'content-type': 'application/json' } });
+      }
+      if (u.includes('ETHUSDT')) {
+        /* Choppy sur TOUTE la fenêtre -> CI reste haut, delta ~0 -> "comprime". */
+        const k = [];
+        for (let i = 0; i < 60; i++) {
+          const base = 200 + (i % 2 === 0 ? 1 : -1) * 6;
+          k.push([0, String(base + 1), String(base + 2), String(base - 2), String(base), '1']);
+        }
+        return new Response(JSON.stringify(k), { headers: { 'content-type': 'application/json' } });
+      }
+      /* Repli scan : toute autre paire de la liste curatée -> tendance douce, neutre. */
+      const kf = [];
+      for (let i = 0; i < 60; i++) {
+        const base = 50 + i * 0.2;
+        kf.push([0, String(base), String(base + 0.5), String(base - 0.5), String(base + 0.1), '1']);
+      }
+      return new Response(JSON.stringify(kf), { headers: { 'content-type': 'application/json' } });
+    }
     const up = u.includes('BTCUSDT');
     const k = [];
     for (let i = 0; i < 250; i++) {
@@ -192,6 +234,124 @@ ok(btc.ma_buy === 5 && eth.ma_sell === 5, 'votes moyennes mobiles : 5/5 dans le 
 r = await mod.fetch(REQ({ path: '/__bot/analysis?tf=;DROP', headers: H }), env);
 j = await r.json();
 ok(j.ok === true && j.tf === '1h', 'tf invalide → replié sur 1h');
+
+/* ===== 22-29) JOURNAL PERSISTANT DU BILAN (Kevin 2026-09-11)
+   Le bilan ne doit PLUS dépendre des logs Railway (purgés) ni survivre au hasard d'un
+   redéploiement : il vit dans KV. On vérifie l'écriture, le throttle, le premier relevé
+   jamais écrasé, le gate admin, et le fail-open si KV tombe. ===== */
+
+/* 22) /__bot/history est admin-gated comme le reste (fail-closed) */
+r = await mod.fetch(REQ({ path: '/__bot/history' }), env);
+ok(r.status === 403, '/__bot/history sans grant → 403');
+
+/* 23) Consulter la flotte écrit un relevé durable dans KV */
+store.delete('bot:hist'); store.delete('bot:first');
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+ok((await r.json()).ok === true, 'fleet → ok (le relevé ne casse pas la réponse)');
+let hist = JSON.parse(store.get('bot:hist') || '[]');
+ok(hist.length === 1 && hist[0].b['crypto-bot'] && hist[0].b['crypto-bot'].e === 10005, 'fleet → 1 relevé écrit, equity 10005 enregistrée');
+ok(hist[0].b['crypto-bot'].n === 5 && hist[0].b['crypto-bot'].a === 1 && hist[0].b['crypto-bot'].v === 1, 'relevé → net/achats/ventes enregistrés');
+
+/* 24) Throttle : une 2e consultation dans l'heure n'ajoute PAS de relevé */
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+await r.json();
+hist = JSON.parse(store.get('bot:hist') || '[]');
+ok(hist.length === 1, 'deux consultations rapprochées → un seul relevé (throttle 1 h)');
+
+/* 25) Après plus d'une heure, un nouveau relevé s'ajoute */
+hist[0].t = Date.now() - 2 * 60 * 60 * 1000;
+store.set('bot:hist', JSON.stringify(hist));
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+await r.json();
+hist = JSON.parse(store.get('bot:hist') || '[]');
+ok(hist.length === 2, 'plus d\'une heure après → 2e relevé ajouté');
+
+/* 26) Le PREMIER relevé de chaque bot n'est jamais écrasé (c'est le point de départ du bilan) */
+const first = JSON.parse(store.get('bot:first') || '{}');
+ok(first['crypto-bot'] && first['crypto-bot'].e === 10005, 'bot:first → point de départ mémorisé');
+const firstTs = first['crypto-bot'].t;
+/* On fait « vieillir » le dernier relevé pour que le throttle laisse passer un nouveau
+   snapshot : sans ça le test passerait même si bot:first était réécrit (faux vert). */
+const aged = JSON.parse(store.get('bot:hist'));
+aged[aged.length - 1].t = Date.now() - 2 * 60 * 60 * 1000;
+store.set('bot:hist', JSON.stringify(aged));
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: H }), env);
+await r.json();
+ok(JSON.parse(store.get('bot:hist')).length === 3, 'un 3e relevé a bien été écrit (sinon le test suivant serait un faux vert)');
+ok(JSON.parse(store.get('bot:first'))['crypto-bot'].t === firstTs, 'bot:first → jamais réécrit');
+
+/* 27) Le bilan restitue départ, actuel et écart */
+r = await mod.fetch(REQ({ path: '/__bot/history', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && j.bilan && j.bilan['crypto-bot'], 'history → bilan par bot');
+ok(j.bilan['crypto-bot'].depart === 10005 && j.bilan['crypto-bot'].actuel === 10005 && j.bilan['crypto-bot'].ecart === 0, 'bilan → départ/actuel/écart chiffrés');
+ok(j.releves >= 2 && Array.isArray(j.points), 'history → nombre de relevés + série pour la courbe');
+
+/* 28) Un bot « absent » (jamais déployé) n'entre pas dans le journal — pas de faux zéro */
+ok(!hist[0].b['crypto-bot-p5'], 'bot absent → aucun relevé inventé');
+
+/* 29) FAIL-OPEN : si KV tombe, la flotte s'affiche quand même */
+const envKO = { ...env, ACCOUNTS: { get: async () => { throw new Error('KV down'); }, put: async () => { throw new Error('KV down'); }, delete: async () => {} } };
+const grantKO = grant;   /* le grant est signé, il ne dépend pas de KV */
+r = await mod.fetch(REQ({ path: '/__bot/fleet', headers: { 'x-kdmc-admin': grantKO } }), envKO);
+j = await r.json();
+ok(j.ok === true && Array.isArray(j.bots), 'KV en panne → la flotte reste affichée (fail-open)');
+
+/* ===== 30-38) SCANNER DE MARCHÉ — Choppiness Index (Kevin 2026-09-12, capture
+   pub Facebook « Captain Trading ») — lecture seule, ne touche AUCUN réglage. ===== */
+
+/* 30) /__bot/scan sans grant -> 403 (même gate que tout /__bot/*) */
+r = await mod.fetch(REQ({ path: '/__bot/scan' }), env);
+ok(r.status === 403, '/__bot/scan sans grant → 403');
+
+/* 30bis) /__bot/scan ne dépend PAS de Railway : marche même SANS RAILWAY_TOKEN
+   (contrairement à /__bot/status qui exige railway_token_absent — test #2) */
+r = await mod.fetch(REQ({ path: '/__bot/scan', headers: H }), envBase);
+j = await r.json();
+ok(j.ok === true && Array.isArray(j.results), 'scan → marche même sans RAILWAY_TOKEN (Binance seul)');
+
+/* 31) Scan complet : les 24 paires curatées, toutes présentes dans le résultat */
+r = await mod.fetch(REQ({ path: '/__bot/scan', headers: H }), env);
+j = await r.json();
+ok(j.ok === true && j.scanned === 24 && Array.isArray(j.results) && j.results.length === 24,
+   'scan → ok + 24 paires scannées');
+
+/* 32) Choppy 50 bougies puis casse en tendance forte -> CI chute -> "sort_du_calme" */
+const scBnb = j.results.find((x) => x.symbol === 'BNB/USDT');
+ok(scBnb && scBnb.cat === 'sort_du_calme' && scBnb.ci_delta <= -15,
+   'BNB choppy→breakout → catégorie sort_du_calme, CI en chute nette (delta ' + (scBnb && scBnb.ci_delta) + ')');
+
+/* 33) Choppy sur TOUTE la fenêtre -> CI reste haut -> "comprime" (pas de fausse alerte breakout) */
+const scEth = j.results.find((x) => x.symbol === 'ETH/USDT');
+ok(scEth && scEth.cat === 'comprime' && scEth.ci >= 61.8,
+   'ETH choppy stable → catégorie comprime, CI ≥ 61.8 (CI=' + (scEth && scEth.ci) + ')');
+
+/* 34) Tendance douce et stable -> ni comprimé ni en train de sortir -> "neutre" */
+const scBtc = j.results.find((x) => x.symbol === 'BTC/USDT');
+ok(scBtc && scBtc.cat === 'neutre', 'BTC tendance stable → catégorie neutre (pas de faux signal)');
+
+/* 35) Erreur HTTP sur une paire -> cause exacte remontée, le SCAN CONTINUE (les 23 autres) */
+const scSol = j.results.find((x) => x.symbol === 'SOL/USDT');
+ok(scSol && scSol.err === 'binance HTTP 500' && scSol.cat === undefined,
+   'SOL en erreur HTTP → cause exacte, pas de crash du scan entier');
+
+/* 36) Trop peu de bougies -> cause exacte, pas un crash silencieux */
+const scXrp = j.results.find((x) => x.symbol === 'XRP/USDT');
+ok(scXrp && /bougies insuffisantes/.test(scXrp.err || ''), 'XRP peu de bougies → cause exacte lisible');
+
+/* 37) Tri : ce qui bouge déjà (sort_du_calme) avant ce qui est comprimé (comprime),
+   avant le neutre, avant les erreurs (rejetées en fin de liste, pas en tête) */
+const idx = (sym) => j.results.findIndex((x) => x.symbol === sym);
+ok(idx('BNB/USDT') < idx('ETH/USDT') && idx('ETH/USDT') < idx('BTC/USDT') && idx('BTC/USDT') < idx('SOL/USDT'),
+   'tri : sort_du_calme < comprime < neutre < erreur (BNB=' + idx('BNB/USDT') + ' ETH=' + idx('ETH/USDT') +
+   ' BTC=' + idx('BTC/USDT') + ' SOL=' + idx('SOL/USDT') + ')');
+
+/* 38) Lecture SEULE : aucune mutation Railway envoyée pendant un scan (ni variableUpsert
+   ni redeploy) — contrairement à /__bot/config POST ou /__bot/kill. */
+gqlCalls.length = 0;
+r = await mod.fetch(REQ({ path: '/__bot/scan', headers: H }), env);
+await r.json();
+ok(gqlCalls.length === 0, 'scan → 0 appel Railway (lecture seule, aucun réglage de bot touché)');
 
 globalThis.fetch = realFetch;
 console.log(`bot.test.mjs : ${pass} OK / ${fail} FAIL`);

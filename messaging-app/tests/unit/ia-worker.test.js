@@ -576,3 +576,28 @@ describe('ia-worker — coverage individuels providers (chemins de chaque callX)
     expect(r).toBe('pp');
   });
 });
+
+// 10/09 — vu par la mesure de couverture AST (vitest 5) : le minuteur de 8 s qui coupe un
+// provider muet n'avait jamais été déclenché par un test. Un provider qui ne répond jamais
+// doit être abandonné (signal.abort) et la course doit échouer proprement, pas rester suspendue.
+describe('callIAFailover — délai de 8 s par provider', () => {
+  it('un provider muet est coupé à 8 s et la course échoue avec sa raison', async () => {
+    vi.useFakeTimers();
+    try {
+      const env = ENV({
+        OPENROUTER_API_KEY: '', GEMINI_API_KEY: '', GROQ_API_KEY: '', OPENAI_API_KEY: '',
+        OPEN_AI_API_KEY: '', DEEPSEEK_API_KEY: '', PERPLEXITI_API_KEY: '', PERPLEXITY_API_KEY: '',
+      });
+      globalThis.fetch = vi.fn((url, opts) => new Promise((_, reject) => {
+        opts.signal.addEventListener('abort', () => reject(new Error('aborted par le délai')));
+      }));
+      const p = callIAFailover([{ role: 'user', content: 'X' }], 'sys', env);
+      const attente = expect(p).rejects.toThrow(/anthropic: aborted par le délai/);
+      await vi.advanceTimersByTimeAsync(8000);
+      await attente;
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

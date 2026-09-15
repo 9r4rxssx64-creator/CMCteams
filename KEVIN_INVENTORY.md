@@ -1,7 +1,60 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🧅 Tor en clair — 2026-09-15
+
+| Quoi | Ouvrir |
+|---|---|
+| **L'outil (à utiliser)** | [tor.kd-mc.com](https://tor.kd-mc.com) · secours : [github.io/CMCteams/tools/tor/](https://9r4rxssx64-creator.github.io/CMCteams/tools/tor/) |
+| Le code de la page | [tools/tor/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/index.html) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/tor/index.html) |
+| La garde du catalogue (12 contrôles) | [tests/tor-catalogue.test.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/tor-catalogue.test.mjs) |
+| La tuile sur ton portail (privée, Kevin seul) | [kdmc-home/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/index.html) — zone `#tor-zone` |
+| La preuve « qui voit la tuile » (8 contrôles, 5 profils) | [tests/verify-tor-tuile-portail.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-tuile-portail.mjs) |
+| La preuve navigateur (29 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
+
+
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
+> Dernière mise à jour : **2026-09-12** (scanner de marché Choppiness Index sur le tableau de bord bot.kd-mc.com)
+
+### 12 septembre 2026 — Scanner de marché (Choppiness Index), inspiré d'une pub mais construit honnêtement
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `services/kdmc-router/worker.js` | **Modifié.** Nouveau `taChoppiness()` (indicateur technique standard) + `GET /__bot/scan` (24 cryptos liquides, lecture seule, ne touche aucun bot) — placé AVANT la vérification Railway exprès : marche même si la flotte est en panne. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `tools/crypto-bot-dashboard/index.html` | **Modifié.** Carte « 🔎 Scanner marché » avec bouton « Scanner maintenant », deux catégories honnêtes (🚀 sort du calme / 🌀 comprimé), aucune promesse. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) |
+| `services/kdmc-router/bot.test.mjs` | **Modifié.** 51→61 contrôles, prouvés par 4 sabotages. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/bot.test.mjs) |
+
+### 11 septembre 2026 (19h55) — Stratégie agressive +++ sur les 6 bots crypto (toujours faux argent)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `crypto-bot/config.py` | **Modifié.** Nouvelle méthode `Config.risk_warnings()` : détecte et signale toujours la combinaison dangereuse « ne vend jamais à perte + aucun frein catastrophe » (trouvée en vrai sur le bot principal en poussant ce changement) et la concentration de position ≥ 50 %. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/config.py) |
+| `crypto-bot/bot.py` | **Modifié.** Affiche les avertissements de `risk_warnings()` au démarrage (console + `audit.jsonl`). | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/bot.py) |
+| `crypto-bot/.env.example` | **Réécrit.** Reflète les valeurs réellement déployées sur les 6 bots (agressif +++), avec les anciennes valeurs prudentes notées en commentaire pour revenir en arrière ; complète les champs qui manquaient depuis toujours (stratégies meanrev/dipup, mode « ne vend jamais à perte », frein catastrophe). | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/.env.example) |
+| `crypto-bot/test_multi.py` | **Modifié.** 49→59 contrôles : le préréglage agressif est validé de bout en bout (jusque dans les objets stratégie), et la nouvelle garde `risk_warnings()` est testée (dont un faux négatif corrigé avant livraison). Prouvé par 4 sabotages. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/test_multi.py) |
+| 6 bots Railway (`crypto-bot`, `crypto-bot-p1` à `p5`) | **Reconfigurés en direct** (variables Railway) : risque par trade 1→4 %, position max 25→60 %, bougies 3 min au lieu de 15/5 min, seuils d'achat relâchés sur les 3 familles de stratégie, plafonds de perte/jour et de baisse élargis mais jamais retirés. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) |
+
+### 11 septembre 2026 (17h30) — Robots crypto : les 6 tournent, et le bilan ne s'efface plus
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/crypto-bot-dashboard/index.html` | **Modifié.** Nouvelle carte « 🧾 Bilan — depuis le premier relevé » : pour chaque bot, d'où il part, où il en est, l'écart, le nombre de redémarrages, et 😴 s'il n'a plus donné signe de vie depuis 3 h. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/crypto-bot-dashboard/index.html) |
+| `services/kdmc-router/worker.js` | **Modifié.** Le domaine enregistre lui-même l'état de la flotte dans sa mémoire (KV) — 1 relevé par heure max, 30 jours d'historique, premier relevé jamais écrasé — et le rend par `GET /__bot/history` (admin). Le bilan survit donc à l'effacement des journaux Railway et aux redémarrages des bots. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `services/kdmc-router/bot.test.mjs` | **Modifié + enfin lancé.** 51 contrôles (37 avant) : écriture du relevé, 1 par heure, premier relevé intouchable, accès admin obligatoire, et la flotte reste affichée si la mémoire tombe. `npm run test:bot-dashboard`, **câblé dans `test:ci`** (il n'était lancé nulle part). Prouvé par 4 sabotages. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/bot.test.mjs) |
+
+### 11 septembre 2026 — la voix du livre de cuisine passe même en mode silencieux
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/cuisine/index.html` | Modifié : à l'appui sur « Lire les étapes », la page passe en catégorie audio « lecture » (iOS 17+) et joue un son muet embarqué (iPhone plus anciens) → la voix n'est plus coupée par l'interrupteur silencieux. Message « Lecture de N phrases… (v2) » à chaque appui. | [🧪 Ouvrir le livre](https://cuisine.kd-mc.com/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html) |
+
+### 10 septembre 2026 (soir) — « Lire les étapes » du livre de cuisine, réparé et prouvé
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/cuisine/index.html` | **Corrigé.** Le bouton « 🔊 Lire les étapes » lit la recette **une étape à la fois** (phrases courtes, enchaînées, gardées en mémoire), surligne l'étape en cours, devient « ⏹ Arrêter la lecture », et dit la cause exacte si la voix échoue. Plus de `cancel()` collé à `speak()` (le piège iPhone). Encodage déclaré. | [🧪 Ouvrir le livre](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html) |
+| `tools/cuisine/icon.svg` + `icon-32/180/192/512.png` + `manifest.json` | **Nouveau.** Icône d'écran d'accueil du livre de cuisine aux couleurs du drapeau de Monaco (rouge/blanc) avec le blason doré ; manifest « Cüjina » plein écran. **Sur l'iPhone : supprimer l'ancienne icône puis refaire « Sur l'écran d'accueil ».** | [voir l'icône](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg) · [ouvrir le livre](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) |
+| `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
+| `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
 
 ### 15 septembre 2026 (suite) — qui a le droit d'aller dans quelle application
 
@@ -33,6 +86,9 @@
 | `.github/workflows/voir-comme-kevin.yml` | **Nouveau.** Ouvre n'importe quelle page kd-mc.com dans un vrai navigateur (écran iPhone, connecté comme toi), photographie, relève la version et les erreurs, dépose tout sur une branche que je peux lire. Tu peux aussi le lancer toi-même. | [▶️ Lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/voir-comme-kevin.yml) |
 | `tools/voir/voir.mjs` | Le script du workflow (périmètre kd-mc.com, lecture seule, aucun secret). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/voir/voir.mjs) |
 | `tools/voir/rapatrier.sh` | Ramène les captures d'un run dans ma session pour que je les ouvre. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/voir/rapatrier.sh) |
+| `tests/verify-equipes-mois-affichees.mjs` | **Nouveau (v9.901).** Simule ton téléphone (septembre déjà importé, employés sans famille du mois, anciennes équipes) et prouve dans un vrai navigateur que Employés / Départs / Planning montrent l'équipe et la famille DU MOIS pour chacun (« Mon équipe » = tes 5 collègues, 247/247 en équipe, 34 équipes sous le bon dossier). Sabotage → 10 échecs. | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-equipes-mois-affichees.mjs) · [brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tests/verify-equipes-mois-affichees.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-equipes-mois-affichees.mjs) |
+| `tests/verify-maj-forcee-reelle.mjs` | **Nouveau (v9.902 / light v1.43).** Publie une nouvelle version pendant que l'app tourne dans un vrai navigateur (Service Worker actif, pas connecté, cache comme GitHub Pages) et prouve qu'elle arrive toute seule sur les deux surfaces, sans clic, sans boucle, sans rechargement en trop (27 contrôles ; ancien code → 8 échecs). | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-maj-forcee-reelle.mjs) · [brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tests/verify-maj-forcee-reelle.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-maj-forcee-reelle.mjs) |
+| `tests/verify-light-equipes-firebase.mjs` | **Nouveau (v9.903 / light v1.44).** Donne à la page light et à l'app un Firebase PÉRIMÉ (toutes les équipes fausses, comme ce que ton téléphone avait) et prouve que la light montre quand même les équipes du PDF, et que l'app répare Firebase toute seule (17 contrôles ; ancienne light → 4 échecs). | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-light-equipes-firebase.mjs) · [brut](https://raw.githubusercontent.com/9r4rxssx64-creator/cmcteams/main/tests/verify-light-equipes-firebase.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-light-equipes-firebase.mjs) |
 | `tests/verify-background-sync-benin.mjs` | **Nouveau.** Rejoue la panne vue à l'écran (Background Sync refusé) et exige que l'app reste utilisable — v9.899 corrige l'écran d'erreur qui remplaçait toute l'app sur Brave/Chrome. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-background-sync-benin.mjs) |
 | `tools/smoke/session-kevin.mjs` | Modifié : sait aussi « être toi » sur la page Départs/light (elle restait sur l'écran de première connexion). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/smoke/session-kevin.mjs) |
 | `.claude/skills/voir/SKILL.md` | Ma marche à suivre : les canaux qui marchent (Zapier pour le code servi, le workflow pour l'écran) et ceux qui sont bloqués. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/voir/SKILL.md) |
@@ -61,6 +117,15 @@
 <!-- ancienne date -->
 > Précédente mise à jour : **2026-09-10** (le robot d'auto-fusion ne fabrique plus les conflits qu'il diagnostiquait)
 > Dernière mise à jour : **2026-09-10** (dossier d'audit Apex Chat complet : 6 livrables, P0 fermé et prouvé) · **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 🚀 Piloter les vérifications sans toi (2026-09-10)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `tools/ci/ci.mjs` | **Je lance tes vérifications moi-même** — plus besoin que tu cliques. `node tools/ci/ci.mjs run <workflow>` pour lancer, `watch` pour attendre le résultat, `logs` pour la cause exacte d'un échec, `report` pour lire le rapport d'un scan de sécurité (arsenal, pentest IA). C'est ce qui a permis de faire tourner les 4 contrôles restés bloqués depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/ci/ci.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/ci/ci.mjs) |
+| `tests/specs-lances.test.mjs` | **Aucun test d'app ne peut dormir sans qu'on le sache** — vérifie que chaque dossier de tests navigateur du dépôt est vraiment exécuté par un workflow (en suivant ce que le workflow lance, pas un mot-clé). Né d'une erreur du 10/09 où j'avais déclaré 19 tests « dormants » sur un grep trop étroit | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/specs-lances.test.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/specs-lances.test.mjs) |
+| `tests/verify-cleanup-nom-reutilise.mjs` | **Le ménage ne supprime plus une branche vivante parce que son nom a déjà servi** — le 10/09, ma branche a été effacée deux fois dans la minute qui suivait mon push (son nom avait eu 5 PR fusionnées avant) ; ce test rejoue la boucle du workflow sur un faux dépôt et prouve qu'une branche avec de nouveaux commits est gardée | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cleanup-nom-reutilise.mjs) · [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-cleanup-nom-reutilise.mjs) |
+| `.github/workflows/ai-review-independent.yml` | **Le deuxième avis, réparé.** Il n'avait jamais rendu un seul avis (0 réussite sur 100). Maintenant lançable à la demande sur la demande de ton choix | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/ai-review-independent.yml) · [lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/ai-review-independent.yml) |
 
 ## 🔍 Audit Apex Chat — dossier complet (2026-09-10, branche `claude/apex-chat-mfa-faceid`)
 
@@ -111,6 +176,46 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tests/vercel-config.test.mjs` | Empêche les deux erreurs qui t'envoyaient un mail « Preview deployment failed » à chaque push (clé interdite dans `vercel.json`, `ignoreCommand` > 256 caractères) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/vercel-config.test.mjs) |
 | `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 📷 Arbre — la photo de Gérard, et l'import qui ne fait plus perdre de photos — session 2026-09-11
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-photo-gerard.json` *(envoyé dans la conversation, **hors dépôt**)* | La photo de ton père, prête à importer : **Réglages → Importer**. Marquée « complément » : elle s'ajoute à sa fiche **sans rien remplacer**. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (v3.20, `fusionnerFiche`) | L'import **complète** une fiche au lieu de la remplacer, et garde toujours photos, documents et commentaires de l'appareil — même quand on réimporte un export texte (qui, lui, n'emporte jamais les photos). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/photo-vers-fiche.mjs` | Prépare **n'importe quelle photo** pour **n'importe qui** : `--photo <image> --id <identifiant>`. Elle est traitée par la fonction même de l'app (2200 px, qualité 0,9), le fichier est écrit **hors du dépôt** — et depuis le 11.09 l'outil **refuse** d'écrire si l'app **en ligne** ne sait pas encore compléter une fiche (elle l'écraserait). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/photo-vers-fiche.mjs) |
+| `tools/arbre/app-en-ligne.mjs` | Répond à une seule question avant d'envoyer quoi que ce soit à l'iPhone : **quelle version tourne vraiment en ligne, et sait-elle compléter une fiche ?** (lit `origin/main`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/app-en-ligne.mjs) |
+| `tools/arbre/verify-cadrage.mjs` | **Preuve en vrai navigateur du cadrage automatique** : des photos au sujet connu (visage en haut, personne en pied, photo détourée) et la mesure avant/après, affiche imprimée comprise. `npm run arbre:verif-cadrage`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-cadrage.mjs) |
+| `tests/arbre-cadrage.test.mjs` | Garde permanente : les photos se cadrent sur le sujet **partout** (carte, fiche, miniatures, affiche) et à chaque affichage. `npm run test:arbre-cadrage`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-cadrage.test.mjs) |
+| `tools/arbre/verify-photo-fusion.mjs` | Vérifie en **vrai navigateur** qu'ajouter une photo ne fait rien perdre, que la carte l'affiche, et qu'un export texte réimporté n'efface plus les photos. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-photo-fusion.mjs) |
+| `tests/arbre-photo-fusion.test.mjs` | La garde hors ligne (dans `test:ci`) : la fusion existe, elle est **câblée**, les listes sont protégées, un champ vide n'efface pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-photo-fusion.test.mjs) |
+
+## 👨‍👩‍👧 Arbre — ajouter la famille de Marie-France (Kim, Déborah, sa fille) — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-ajout-marie-france.json` *(envoyé dans la conversation, **hors dépôt** — aucun nom réel dans le code public)* | Le petit fichier à importer sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Il ajoute Kim LORENZI (époux), Déborah (leur fille) et la fille de Déborah. Il ne contient **que** ces trois personnes : la fiche de Marie-France n'est pas touchée, donc ses photos et ses actes sont conservés. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (`normaliserConjoints`) | Un couple noté d'un **seul** côté s'affichait comme deux personnes séparées. Réparé à chaque sauvegarde : le lien manquant est **ajouté** en miroir, jamais effacé (une fiche pas encore synchronisée n'est pas supprimée). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-ajout-famille.mjs` | Vérifie en **vrai navigateur** sur la famille synthétique (0 donnée réelle) que l'import ajoute sans rien écraser, que le couple s'affiche, que l'enfant est sous ses deux parents et la petite-fille sous sa mère. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-ajout-famille.mjs) |
+| `tools/arbre/mesure-couples.mjs` | Mesure (pas un avis) l'écart réel entre les cartes d'un foyer, y compris avec **deux** conjointes : 222 px de pas pour une carte de 158 px → **64 px de blanc**, aucun chevauchement. Vérifie aussi qu'un enfant ajouté n'est pas rattaché d'office au mauvais parent. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/mesure-couples.mjs) |
+
+## 🔗 Arbre v3.19 — « à relier » : les branches qui flottent enfin nommées — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.19) | Un bloc séparé du tronc s'appelle « 🔗 Branche à rattacher · Famille … (N) » et dit **qui** rattacher. Les personnes seules sont groupées **par cause** (fiche du parent introuvable · relié dans l'autre arbre · couple sans parents ni enfants · aucun lien renseigné) puis par lignée. Panneau « 🔗 À relier » dans Réglages : le compte des **deux** arbres, chaque nom ouvre sa fiche. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-relier.mjs` | Vérifie en **vrai navigateur**, sur les deux arbres : personne ne disparaît, chaque détaché est rangé sous sa cause, le panneau liste les mêmes personnes que l'arbre, un nom ouvre bien sa fiche. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-relier.mjs) |
+| `tests/arbre-relier.test.mjs` | La garde hors ligne (dans `test:ci`) : le classement existe, il est **câblé**, les 4 causes sont distinctes, le compteur est écrit après la mise en page. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-relier.test.mjs) |
+
+## 📣 Prévenir ne suffit pas : faire rectifier, puis vérifier — session 2026-09-10 (branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `CLAUDE.md` (règle en tête) | La règle absolue en 4 temps : **prévenir** → **réveiller** la session vivante → **faire rectifier** → **vérifier soi-même** en refaisant la mesure. Vaut pour toutes les sessions, tous projets présents et futurs. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `tests/messages-suivis.test.mjs` | La garde qui rend la règle impossible à oublier : tout message **ouvert** de plus de **2 jours** sans suivi daté fait **échouer** `test:ci`. `npm run test:messages-suivis` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis.test.mjs) |
+| `tests/messages-suivis-baseline.json` | Le cliquet : 42 anciens messages figés pour ne pas bloquer sur la dette existante — toute **nouvelle** négligence, elle, est refusée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis-baseline.json) |
+| `services/kdmc-router/prepare-secours.mjs` | La bouée de secours du domaine copiait **cuisine.kd-mc.com** et **shops.kd-mc.com** nulle part depuis le 13.08 : si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent. Bouché. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-router-secours.mjs` | Le contrôle accusait 4 dossiers d'être « oubliés » alors qu'ils sont copiés avec leur parent. Un faux rouge coûte aussi cher qu'un faux vert. **43/6 → 49/0**. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-router-secours.mjs) |
 
 ## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
 
@@ -172,6 +277,14 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tests/verify-cmc-ia-gratuite.mjs` | **NOUVEAU** — la garde CMCteams (26 contrôles : la fonction de décision est extraite du vrai fichier et exécutée). `npm run test:cmc-ia-gratuite` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-cmc-ia-gratuite.mjs) |
 | `messaging-app/workers/api-worker.js` (Apex Chat v1.1.284) | Qwen pour le chat, résumés, traductions, reformulations ; Anthropic pour agir et chercher | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) |
 | `messaging-app/tests/unit/api-worker-ia-qwen.test.js` | **NOUVEAU** — 8 tests Apex Chat (Qwen répond, action → Anthropic, secours, cause exacte) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-ia-qwen.test.js) |
+| `messaging-app/tests/unit/crypto-core-node.test.js` | **NOUVEAU (10/09)** — le chiffrement d'Apex Chat se charge aussi **hors navigateur** (Worker), sans rien accrocher à une fenêtre inexistante ; branche jamais exécutée avant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/crypto-core-node.test.js) |
+| `messaging-app/tests/unit/durable-objects-shims.test.js` | **NOUVEAU (10/09)** — les deux fichiers-relais `BroadcastDO.js` / `PresenceDO.js` (ceux que Cloudflare déploie) exportent bien la vraie classe ; une typo casserait le déploiement, ce test l'attrape avant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/durable-objects-shims.test.js) |
+| `messaging-app/tests/unit/api-worker-fonctions-non-appelees.test.js` | **NOUVEAU (11/09)** — 118 tests pour les 108 fonctions du serveur d'Apex Chat qu'aucun test n'appelait (codes OTP, cercle de confiance, avatar, suppression de conversation, notifications, mise à jour forcée…) ; fonctions couvertes **64 % → 100 %** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-fonctions-non-appelees.test.js) |
+| `.github/workflows/strix-scan.yml` | **MODIFIÉ (11/09)** — le pentest IA copie le bon dossier (`strix_runs/`), borne la **dépense** au lieu du temps (plafond en $ + profondeur au choix), et pose rapport + fiches de vulnérabilité dans le check-run | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/strix-scan.yml) · [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/strix-scan.yml) |
+| `messaging-app/tests/unit/premium-deep-link-confirm.test.js` | **NOUVEAU (11/09)** — un lien ou une notification ne peut plus activer un Premium sans une fenêtre qui te dit qui et quelle formule (Strix vuln-0002) ; lit la page servie, prouvé discriminant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/premium-deep-link-confirm.test.js) |
+| `services/kdmc-router/self-service.test.mjs` | **MODIFIÉ (11/09)** — 10 tests de plus : une session forgée sur ton nom ne lit plus ton historique ni ne coupe tes sessions ; un site tiers ne peut plus poser le cookie du domaine (Strix vuln-0001) ; tournent maintenant avant chaque déploiement du routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/self-service.test.mjs) |
+| `.github/workflows/audit-live.yml` | **MODIFIÉ (11/09)** — le balayage des vraies pages pose son verdict par surface dans un check-run lisible par l'API (plus besoin de deviner « quelle page a cassé ») | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/audit-live.yml) · [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/audit-live.yml) |
+| `messaging-app/vitest.config.js` | **Seuils de couverture par fichier = valeur mesurée** (cliquet, vitest 5) ; le workflow `messaging-app-tests.yml` lit cette table, plus de copie à tenir | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/vitest.config.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/messaging-app-tests.yml) |
 | `services/kdmc-router/worker.js` + `wrangler.toml` | Coach Lingua sur Qwen (multilingue) d'abord ; binding Workers AI ajouté au routeur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-kdmc-router.yml) |
 | `services/kdmc-router/lingua-ia.test.mjs` | **NOUVEAU** — la garde du coach (Qwen nommé, secours, fail-open). `npm run test:lingua-ia` | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/lingua-ia.test.mjs) |
 | `tools/cloudflare/wm-brief/worker.js` | Synthèse World Monitor par Qwen, Anthropic en secours (clé devenue optionnelle) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/cloudflare/wm-brief/worker.js) · [Runs](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-wm-brief.yml) |
@@ -314,7 +427,7 @@ Les 6 dernières recettes incomplètes sur 128 ont été écrites. **128/128 com
 | `tests/verify-bascule-une-ligne.mjs` | Preuve (réécrite 10.09) : la bascule d'hébergeur du routeur tient avec le code réellement en ligne (`origin/main`, importé tel quel) par 2 variables `UPSTREAM_BASE` + `UPSTREAM_PREFIX`, 0 ligne à toucher — 8 sous-domaines × 2 rangements + 3 discriminants. Nom historique (époque « une ligne ») | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-bascule-une-ligne.mjs) |
 | `tests/verify-consigne-reelle.mjs` | Garde (réécrite 10.09) : la consigne de `REMETTRE_EN_LIGNE.md` est d'accord avec le code en ligne — variables citées vraiment lues, plus de « change la ligne N » invérifiable, `UPSTREAM_PREFIX` vide pour un paquet à la racine, générateur et test cités existent | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-consigne-reelle.mjs) |
 | `.github/workflows/ai-review-independent.yml` | La revue IA indépendante — **épinglée** et **réservée au propriétaire** depuis le 5.09 | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/ai-review-independent.yml) |
-| `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
+| `.github/workflows/security-suite.yml` | L'arsenal sur l'historique : gitleaks, TruffleHog, OSV, Trivy, Semgrep, zizmor. Depuis le 10/09 : le rapport est aussi **posé sur le commit** (lisible par `node tools/ci/ci.mjs report <run>`), et l'entrée `detail_path` (ex. `messaging-app`) liste **chaque signalement avec sa ligne** au lieu d'un simple compte | [▶️ lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/security-suite.yml) |
 
 ## 🚨 Le site ne publie plus tes documents de travail — session 2026-09-05
 
@@ -2136,6 +2249,7 @@ Les 6 dépôts : [skills](https://github.com/anthropics/skills) (Ingénieur) · 
 | `tools/crea-studio/index.html` | L'app (Photo, Vidéo, Cartoon, Danse IA, Magie, **Mes créas**, **Studio musique**) | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/crea-studio/index.html) |
 | `services/kdmc-crea-ai/worker.js` | Le moteur IA (images, voix, paroles, partition) + **2ᵉ IA gratuite en secours** | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-crea-ai/worker.js) |
 | `tests/verify-crea-song.mjs` | Preuve : le morceau est un vrai fichier audio, la voix est bien mixée | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-song.mjs) |
+| `tests/verify-crea-camera.mjs` | Preuve (16 contrôles) : caméra, 16 filtres distincts, photo et film rangés dans « Mes créas », formats iPhone ; depuis v9.18.2 une erreur d'encodeur est **dite** et ne bloque plus le bouton, le film déjà tourné est rangé | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-camera.mjs) |
 | `tests/verify-crea-gallery.mjs` | Preuve : « Mes créas » garde tout, même après rechargement | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-gallery.mjs) |
 | `tests/verify-crea-ai-fallback.mjs` | Preuve : l'app marche même si l'IA principale tombe | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-crea-ai-fallback.mjs) |
 | `tests/no-conflict-markers.test.mjs` | Garde : aucun conflit de fusion ne peut plus entrer dans le dépôt | [ouvrir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/no-conflict-markers.test.mjs) |

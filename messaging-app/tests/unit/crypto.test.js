@@ -239,6 +239,23 @@ describe('ApexCrypto — Sessions par conversation', () => {
       expect(api.ratchetImport(b, snapB)).toBe(true);
       expect(await api.ratchetDecrypt(b, m0.n, m0.ct)).toBe('avant reload');
     });
+    // 10/09 — vu par la mesure de couverture AST (vitest 5) : les clés SAUTÉES n'étaient
+    // jamais exportées/importées dans un test → un reload entre « message 2 reçu » et
+    // « message 1 arrivé en retard » aurait pu perdre la clé sans qu'aucun test le voie.
+    it('export/import : les clés des messages sautés survivent aussi au reload', async () => {
+      const { a, b } = await pair('persist-skip-' + Math.random());
+      const m0 = await api.ratchetEncrypt(a, 'un');
+      const m1 = await api.ratchetEncrypt(a, 'deux');
+      const m2 = await api.ratchetEncrypt(a, 'trois');
+      expect(await api.ratchetDecrypt(b, m0.n, m0.ct)).toBe('un');
+      expect(await api.ratchetDecrypt(b, m2.n, m2.ct)).toBe('trois'); // n=1 sauté → clé mémorisée
+      const snap = api.ratchetExport(b);
+      expect(JSON.parse(snap).skipped).toHaveLength(1);
+      api.resetRatchet(b);
+      expect(api.ratchetImport(b, snap)).toBe(true);
+      expect(await api.ratchetDecrypt(b, m1.n, m1.ct)).toBe('deux'); // la clé sautée a survécu
+      expect(JSON.parse(api.ratchetExport(b)).skipped).toHaveLength(0); // consommée puis jetée
+    });
     it('ratchetEncrypt/Decrypt sans init → throw', async () => {
       await expect(api.ratchetEncrypt('absent-' + Math.random(), 'x')).rejects.toThrow();
       await expect(api.ratchetDecrypt('absent-' + Math.random(), 0, 'x')).rejects.toThrow();

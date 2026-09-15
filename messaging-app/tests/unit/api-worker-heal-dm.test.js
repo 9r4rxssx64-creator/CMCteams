@@ -346,11 +346,11 @@ describe('POST /api/admin/heal-dm', () => {
       users: [
         { id: 'kevin', pseudo: 'kevin', real_name: 'Kevin DESARZENS', phone: '+33111', source: 'core_pair', is_admin: 1, last_seen: now, status: 'active' },
         // le VRAI : 8 messages, vrai numéro, vu récemment
-        { id: 'lolo', pseudo: 'lolo', real_name: 'Laurence SAINT-POLIT', phone: '+33640616184', source: 'direct-signup', is_admin: 0, last_seen: now, status: 'active' },
+        { id: 'lolo', pseudo: 'lolo', real_name: 'Laurence SAINT-POLIT', phone: '+33600000010', source: 'direct-signup', is_admin: 0, last_seen: now, status: 'active' },
         // stub SSO : 0 msg, faux numéro, jamais vu — membre du DM "kevin↔laurence"
         { id: 'user_laurence', pseudo: 'laurence', real_name: 'Laurence SAINT-POLIT', phone: 'user_laurence', source: 'apex-sso', is_admin: 0, last_seen: 0, status: 'active' },
         // stub invitation : 0 msg, MÊME numéro que le vrai — membre d'un autre DM de Kevin
-        { id: 'inv', pseudo: 'laurence_5467', real_name: 'Laurence', phone: '+33640616184', source: 'user-invitation', is_admin: 0, last_seen: 0, status: 'active' },
+        { id: 'inv', pseudo: 'laurence_5467', real_name: 'Laurence', phone: '+33600000010', source: 'user-invitation', is_admin: 0, last_seen: 0, status: 'active' },
       ],
       conversations: [
         { id: 'c_solo', type: 'dm', created_at: 1, archived_at: null },        // lolo seule, 8 msg

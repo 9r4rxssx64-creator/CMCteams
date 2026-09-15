@@ -37,6 +37,12 @@ describe('CORS : liste d\'origines au lieu de « tout le monde » (v1.1.287)', (
     expect(isAllowedOrigin('http://localhost:8080')).toBe(true);
     expect(isAllowedOrigin('http://127.0.0.1:54321')).toBe(true);
     expect(isAllowedOrigin('http://localhost')).toBe(true);
+    // 2026-09-10 — les tests navigateur se servent en HTTPS (tests/serve-https.sh,
+    // exigé par WebKit) : `https://localhost:4173` DOIT passer, sinon les deux
+    // voies iPhone de la CI sont rouges à chaque exécution (vécu, run 34519030133).
+    expect(isAllowedOrigin('https://localhost:4173')).toBe(true);
+    expect(isAllowedOrigin('https://127.0.0.1:4173')).toBe(true);
+    expect(isAllowedOrigin('https://localhost.evil.example')).toBe(false);
     expect(isAllowedOrigin('https://evil.example')).toBe(false);
     expect(isAllowedOrigin('https://apex-chat.kd-mc.com.evil.example')).toBe(false);
     expect(isAllowedOrigin('http://localhost.evil.example')).toBe(false);

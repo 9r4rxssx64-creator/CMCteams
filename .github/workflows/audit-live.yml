@@ -34,9 +34,12 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: write     # le verdict par surface est posé dans un check-run (lisible par l'API, voir dernière étape)
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: '22' }
       - name: Install Playwright Chromium
         run: |
@@ -47,6 +50,7 @@ jobs:
           npm i --no-save --no-audit --no-fund --legacy-peer-deps playwright@1.56.0
           npx playwright install --with-deps chromium
       - name: Balayage LIVE de toutes les surfaces
+        id: live
         shell: bash -eo pipefail {0}
         env:
           # OPTIONNEL : empreinte SHA-256 du code famille de l'arbre (jamais le code). Absent →
@@ -62,11 +66,45 @@ jobs:
           # le verdict par surface en ::notice::.
           { grep -E 'BLOQUANT|❌|FAIL|pageerror|ERR_FAILED' /tmp/live.log || true; } | head -10 | while IFS= read -r L; do echo "::error::live ▸ $L"; done
           { grep -E '^(✅|🟢|OK|\[OK\])|surfaces? OK|/[0-9]+ OK' /tmp/live.log || true; } | tail -10 | while IFS= read -r L; do echo "::notice::live ▸ $L"; done
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
           exit "$RC"
       - name: Captures d'écran + rapport (toujours, même en échec)
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: audit-live-${{ github.run_id }}
           path: audit-live-shots/
           retention-days: 30
+      # 11/09/2026 — même raison que security-suite.yml et strix-scan.yml : depuis une session
+      # d'agent, l'artifact (blob) et le journal du job sont inatteignables (proxy 403), seule
+      # `api.github.com` passe. Le run 34517173393 disait « Lingua : page.fill Timeout » et il a
+      # fallu deviner le reste. Le journal complet du balayage (verdict par surface, lignes
+      # bloquantes) est donc AUSSI posé dans un check-run → `node tools/ci/ci.mjs report <run_id>`.
+      # Contenu identique au journal du job — rien de plus, aucun secret (le balayage n'en a pas).
+      - name: Verdict → check-run (lisible par l'API depuis une session d'agent)
+        if: always()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          RUN_ID: ${{ github.run_id }}
+          RC: ${{ steps.live.outputs.rc }}
+        with:
+          script: |
+            const fs = require('fs');
+            const rd = p => { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } };
+            const log = rd('/tmp/live.log');
+            const lines = log.split('\n');
+            const ko = lines.filter(l => /BLOQUANT|❌|FAIL|pageerror|ERR_FAILED/.test(l)).slice(0, 40);
+            const ok = lines.filter(l => /^(✅|🟢|OK|\[OK\])|surfaces? OK|\/[0-9]+ OK/.test(l)).slice(-40);
+            const { RC, RUN_ID } = process.env;
+            let summary = `rc=${RC || '?'} · ${ko.length} ligne(s) bloquante(s) · ${ok.length} ligne(s) OK`;
+            if (ko.length) summary += '\n\n### ❌ Bloquant\n```\n' + ko.join('\n').slice(0, 20000) + '\n```';
+            if (ok.length) summary += '\n\n### ✅ OK\n```\n' + ok.join('\n').slice(0, 20000) + '\n```';
+            await github.rest.checks.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              name: `audit-live — verdict (run ${RUN_ID})`,
+              head_sha: context.sha,
+              status: 'completed', conclusion: 'neutral',   // rapport, pas un gate : le job porte déjà le rouge/vert
+              output: { title: 'Audit LIVE — vraies pages kd-mc.com', summary: summary.slice(0, 60000),
+                        text: ('===== journal du balayage (65000 derniers caractères) =====\n' + log.slice(-65000)).slice(0, 65000) },
+            });
+            core.info(`check-run créé (${ko.length} bloquant(s), ${ok.length} OK)`);

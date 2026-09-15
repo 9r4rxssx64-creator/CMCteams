@@ -60,33 +60,33 @@ function makeDB(state) {
 }
 
 describe('local_+numéro → vrai compte', () => {
-  it('_canonicalId résout local_+33640616184 vers le compte au même numéro', async () => {
-    const db = makeDB({ users: [{ id: 'lolo', phone: '+33640616184', status: 'active', last_seen: 1 }], members: [], messages: [] });
-    const id = await _canonicalId(db, 'local_+33640616184');
+  it('_canonicalId résout local_+33600000010 vers le compte au même numéro', async () => {
+    const db = makeDB({ users: [{ id: 'lolo', phone: '+33600000010', status: 'active', last_seen: 1 }], members: [], messages: [] });
+    const id = await _canonicalId(db, 'local_+33600000010');
     expect(id).toBe('lolo');
   });
 
   it('_canonicalId suit aussi merged_into après résolution', async () => {
     const db = makeDB({ users: [
-      { id: 'stub', phone: '+33640616184', status: 'active', merged_into: 'lolo', last_seen: 2 },
-      { id: 'lolo', phone: '+33640616184b', status: 'active', merged_into: null },
+      { id: 'stub', phone: '+33600000010', status: 'active', merged_into: 'lolo', last_seen: 2 },
+      { id: 'lolo', phone: '+33600000010b', status: 'active', merged_into: null },
     ], members: [], messages: [] });
     // local résout vers le 1er match (stub, vu le + récemment) puis suit merged_into → lolo
-    const id = await _canonicalId(db, 'local_+33640616184');
+    const id = await _canonicalId(db, 'local_+33600000010');
     expect(id).toBe('lolo');
   });
 
   it('_healLocalConvMembers re-pointe le membre bidon + ses messages vers le vrai compte', async () => {
     const state = {
       users: [
-        { id: 'kdmc_admin', phone: '+33672280277', status: 'active', last_seen: 9 },
-        { id: 'lolo', phone: '+33640616184', status: 'active', last_seen: 8 },
+        { id: 'kdmc_admin', phone: '+33600000001', status: 'active', last_seen: 9 },
+        { id: 'lolo', phone: '+33600000010', status: 'active', last_seen: 8 },
       ],
       members: [
         { conv_id: 'c1', user_id: 'lolo', role: 'owner' },
-        { conv_id: 'c1', user_id: 'local_+33672280277', role: 'member' }, // bidon = Kevin
+        { conv_id: 'c1', user_id: 'local_+33600000001', role: 'member' }, // bidon = Kevin
       ],
-      messages: [{ conv_id: 'c1', sender_id: 'local_+33672280277' }],
+      messages: [{ conv_id: 'c1', sender_id: 'local_+33600000001' }],
     };
     const fixed = await _healLocalConvMembers(makeDB(state));
     expect(fixed).toBe(1);

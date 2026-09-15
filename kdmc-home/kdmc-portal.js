@@ -98,6 +98,12 @@
          restait invisible sur l'iPhone de Kevin (Face ID non prouvé) = fonction inexistante. */
       var accessZone = document.getElementById('access-zone');
       if (accessZone) accessZone.hidden = !(isPriv || named);
+      /* Tor : même logique que le bot (sinon invisible sur l'iPhone de Kevin, Face ID non
+         prouvé = fonction inexistante). Mais réservé à KEVIN seul : la page n'a rien de
+         sensible, c'est un choix de discrétion, pas une protection. */
+      var torZone = document.getElementById('tor-zone');
+      var estKevin = /kevin|desarzens/.test(norm(s && s.name || ''));
+      if (torZone) torZone.hidden = !(!!(s && s.admin) || estKevin);
       renderSelfService(s); /* « Mes appareils / connexions » — pour TOUT connecté */
     };
     if (window.kdmcSSO) { window.kdmcSSO.whoami().then(done).catch(function () { done(null); }); } else { done(null); }
@@ -125,7 +131,7 @@
     'cmcteams.kd-mc.com': '📅 CMCteams', 'apex-ai.kd-mc.com': '🤖 Apex AI', 'apex-chat.kd-mc.com': '💬 Apex Chat',
     'dashboard.kd-mc.com': '📊 Dashboard', 'sourcing.kd-mc.com': '📦 Sourcing', 'coffre.kd-mc.com': '🔐 Coffre',
     'kd-mc.com': '🏠 Portail', 'www.kd-mc.com': '🏠 Portail', 'la-detente.kd-mc.com': '🌿 La Détente',
-    'chez-lolo.kd-mc.com': '🎨 Chez Lolo', 'departs.kd-mc.com': '🎯 CMCteams light', 'cmcteams-light.kd-mc.com': '🎯 CMCteams light', 'bot.kd-mc.com': '🤖 Bot Crypto', 'beatbot.kd-mc.com': '🌊 PoolPilot', 'autorisations.kd-mc.com': '🆔 Autorisations', 'arbre.kd-mc.com': '🌳 Arbre', 'lingua.kd-mc.com': '🐝 Lingua', 'studio.kd-mc.com': '🎬 Créa Studio', 'cuisine.kd-mc.com': '🍽️ A Cüjina de Mùnegu', 'cocina.kd-mc.com': '🍽️ A Cüjina de Mùnegu', 'cujina.kd-mc.com': '🍽️ A Cüjina de Mùnegu', 'worldmonitor.kd-mc.com': '🌍 World Monitor', 'osint.kd-mc.com': '🔎 OSINT', 'ia.kd-mc.com': '🧠 Outils IA', 'outils.kd-mc.com': '🧰 Mes outils gratuits', 'shops.kd-mc.com': '🏬 Portail boutiques'
+    'chez-lolo.kd-mc.com': '🎨 Chez Lolo', 'departs.kd-mc.com': '🎯 CMCteams light', 'cmcteams-light.kd-mc.com': '🎯 CMCteams light', 'bot.kd-mc.com': '🤖 Bot Crypto', 'beatbot.kd-mc.com': '🌊 PoolPilot', 'autorisations.kd-mc.com': '🆔 Autorisations', 'arbre.kd-mc.com': '🌳 Arbre', 'lingua.kd-mc.com': '🐝 Lingua', 'studio.kd-mc.com': '🎬 Créa Studio', 'cuisine.kd-mc.com': '🍽️ A Cüjina de Mùnegu', 'cocina.kd-mc.com': '🍽️ A Cüjina de Mùnegu', 'cujina.kd-mc.com': '🍽️ A Cüjina de Mùnegu', 'worldmonitor.kd-mc.com': '🌍 World Monitor', 'osint.kd-mc.com': '🔎 OSINT', 'ia.kd-mc.com': '🧠 Outils IA', 'outils.kd-mc.com': '🧰 Mes outils gratuits', 'tor.kd-mc.com': '🧅 Tor en clair', 'shops.kd-mc.com': '🏬 Portail boutiques'
   };
   try {
     fetch('/apps.json', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {

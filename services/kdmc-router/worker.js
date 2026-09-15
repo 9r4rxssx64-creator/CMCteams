@@ -57,6 +57,7 @@ const ROUTES = {
   'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
   // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
   // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
   'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
 
@@ -117,6 +118,7 @@ const APPS = {
   'ia.kd-mc.com': 'ia',
   'outils.kd-mc.com': 'outils',
   'shops.kd-mc.com': 'shops',
+  'tor.kd-mc.com': 'tor',
 };
 function appDe(host) { return APPS[String(host || '').toLowerCase().replace(/:.*$/, '')] || ''; }
 
@@ -524,6 +526,25 @@ function ssoCookie(request, name) {
 /* Source du pass de session : header Authorization Bearer EN PRIORITÉ (marche
    même avec les PWA installées sur iOS, où chaque app a un jar de cookies isolé),
    sinon le cookie (Safari même-origine). Rend le compte unique iPhone-proof. */
+/* Origine acceptée pour ÉMETTRE une session (/__sso/issue) : le domaine lui-même (racine ou
+   sous-domaine), une app native (capacitor:// / ionic://), ou AUCUN en-tête Origin (outil,
+   app installée qui ne l'envoie pas : pas de navigateur tiers en jeu). « null » (iframe
+   sandbox, fichier local) et tout autre site → refusé. Strix vuln-0001, 11/09/2026. */
+function ssoOriginOk(origin, selfHost) {
+  if (!origin) return true;
+  const o = String(origin).trim().toLowerCase();
+  if (o === 'null') return false;
+  if (/^(capacitor|ionic):\/\/localhost$/.test(o)) return true;
+  let host = '';
+  try { host = new URL(o).host; } catch { return false; }
+  /* même origine que l'hôte appelé (portail local, test navigateur sur 127.0.0.1:port) :
+     par définition pas un site tiers. Mesuré le 11/09 : sans cette ligne, le test SSO réel
+     (tools/kdmc-sso-e2e) perdait 2 contrôles — le portail servi en local ne pouvait plus
+     émettre de session. */
+  if (selfHost && host === String(selfHost).toLowerCase()) return true;
+  const hn = host.replace(/:\d+$/, '');
+  return hn === 'kd-mc.com' || hn.endsWith('.kd-mc.com');
+}
 function ssoToken(request) {
   const auth = request.headers.get('authorization') || '';
   const m = auth.match(/^Bearer\s+(.+)$/i);
@@ -1255,6 +1276,14 @@ async function handleSso(request, url, env) {
     return J({ ok: true, uid, name, verified: true, token }, cookie);
   }
   if (path === '/__sso/issue' && request.method === 'POST') {
+    /* SÉCU (Strix vuln-0001, 11/09/2026 — CWE-287/CSRF de connexion) : un site TIERS pouvait
+       POSTer ici depuis le navigateur d'un visiteur (requête « simple » text/plain) et lui
+       POSER un cookie kdmc_sso à un nom choisi par l'attaquant → toutes les apps du domaine
+       l'auraient « reconnu » sous ce nom. L'émission reste auto-déclarée (jamais admin ni
+       verified), mais elle n'est acceptée que depuis le domaine lui-même (portail, apps
+       *.kd-mc.com) ou une app native (capacitor:// / ionic://). Sans en-tête Origin (outil,
+       app installée qui ne l'envoie pas) → inchangé : aucun navigateur tiers n'est en jeu. */
+    if (!ssoOriginOk(request.headers.get('origin'), url.host)) return J({ ok: false, reason: 'origine refusée' }, undefined, 403);
     let b = {}; try { b = await request.json(); } catch { /* ignore */ }
     const uid = String(b.uid || '').slice(0, 80).trim();
     const name = String(b.name || '').slice(0, 80).trim();
@@ -1327,6 +1356,10 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/history' && request.method === 'GET') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    /* SÉCU (Strix vuln-0001, 11/09) : un token FAIBLE se fabrique avec n'importe quel uid
+       (/issue est auto-déclaré) → sans cette ligne, quiconque tapait « kdmc_admin » lisait
+       les appareils, apps et connexions de Kevin. Lire SON historique exige Face ID prouvé. */
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour lire ton historique' });
     /* Lire le dossier CANONIQUE (sinon on afficherait la fiche partielle de l'app
        d'où vient la session, au lieu de l'historique complet de la personne). */
     const acc = await accGet(env, await canonFor(env, s.uid, s.name));
@@ -1344,6 +1377,10 @@ async function handleSso(request, url, env) {
   if (path === '/__sso/me/revoke' && request.method === 'POST') {
     const s = await ssoVerify(secret, ssoToken(request));
     if (!s) return J({ ok: false, reason: 'session requise' });
+    /* SÉCU (Strix vuln-0001, 11/09) : avec un token FAIBLE forgé sur « kdmc_admin », n'importe
+       qui posait revoked_at sur la fiche de Kevin → TOUTES ses sessions (Face ID comprises)
+       tombaient : déconnexion forcée de l'admin par un inconnu. Révoquer exige Face ID prouvé. */
+    if (!s.verified) return J({ ok: false, reason: 'Face ID requis pour déconnecter tes appareils' });
     const acc = (await accGet(env, s.uid)) || { uid: s.uid, name: s.name };
     if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
     acc.revoked_at = Date.now();
@@ -1684,6 +1721,136 @@ function taRating(h, l, c) {
   const label = score >= 0.5 ? 'Achat fort' : score >= 0.1 ? 'Achat' : score > -0.1 ? 'Neutre' : score > -0.5 ? 'Vente' : 'Vente forte';
   return { price, score: Math.round(score * 100) / 100, label, rsi: rsi == null ? null : Math.round(rsi * 10) / 10, ma_buy: maBuy, ma_sell: maSell, osc_buy: oscBuy, osc_sell: oscSell, macd_up: macd > macdSig };
 }
+/* ===== SCANNER DE MARCHÉ — Choppiness Index (Kevin 2026-09-12, capture pub Facebook
+   « Captain Trading ») =====
+   CE QUI EST VRAI DANS LA PUB, CE QUI NE L'EST PAS : le Choppiness Index (E.W. Dreiss,
+   1990er) est un VRAI indicateur technique standard, formule ci-dessous, aucune
+   invention. « Claude AI scanne le marché pour toi » est une phrase publicitaire — je
+   n'ai aucun accès magique à TradingView ; ce que je peux VRAIMENT faire est calculer
+   ce même indicateur, honnêtement, sur les VRAIES bougies Binance publiques (même
+   source que /__bot/analysis), et te montrer le résultat sans l'habiller de promesses.
+   FORMULE (standard, non modifiée) : CI(n) = 100 · log10( Σ TrueRange(n) / (PlusHaut(n)
+   − PlusBas(n)) ) / log10(n). CI proche de 100 = marché SANS direction (comprimé,
+   "coiled" — pourrait partir dans un sens ou l'autre). CI proche de 0 = tendance
+   FORTE et directionnelle déjà en cours. Ni l'un ni l'autre n'est une prédiction —
+   c'est une PHOTO technique du moment, exactement comme /__bot/analysis le dit déjà.
+   Lecture SEULE : le scan ne modifie AUCUN réglage d'AUCUN bot — Kevin décide. */
+function taChoppiness(h, l, c, p) {
+  if (c.length < p + 1) return null;
+  let trSum = 0;
+  for (let i = c.length - p; i < c.length; i++) {
+    trSum += Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1]));
+  }
+  const hh = Math.max(...h.slice(-p)), ll = Math.min(...l.slice(-p));
+  const rng = hh - ll;
+  if (rng <= 0) return 0;
+  return (100 * Math.log10(trSum / rng)) / Math.log10(p);
+}
+/* Liste CURATÉE (pas l'intégralité du marché — évite les micro-caps illiquides/
+   pump-and-dump qu'un scan "toutes paires" ferait remonter) : 24 paires USDT parmi
+   les plus liquides de Binance, sous la limite de 50 sous-requêtes/appel du Worker
+   Cloudflare (24 fetch en parallèle, marge large). */
+const SCAN_PAIRS = [
+  'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'XRP/USDT', 'ADA/USDT',
+  'DOGE/USDT', 'AVAX/USDT', 'DOT/USDT', 'LINK/USDT', 'LTC/USDT', 'BCH/USDT',
+  'ATOM/USDT', 'UNI/USDT', 'ETC/USDT', 'XLM/USDT', 'NEAR/USDT', 'APT/USDT',
+  'ARB/USDT', 'OP/USDT', 'FIL/USDT', 'ICP/USDT', 'HBAR/USDT', 'SUI/USDT',
+];
+async function taScanPair(sym) {
+  const pair = sym.replace('/', '');
+  try {
+    const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=1h&limit=60`);
+    if (!r.ok) return { symbol: sym, err: 'binance HTTP ' + r.status };
+    const k = await r.json();
+    if (!Array.isArray(k) || k.length < 30) return { symbol: sym, err: 'bougies insuffisantes (' + (k.length || 0) + ')' };
+    const h = k.map((x) => Number(x[2])), l = k.map((x) => Number(x[3])), c = k.map((x) => Number(x[4]));
+    const ciNow = taChoppiness(h, l, c, 14);
+    const ciPrev = taChoppiness(h.slice(0, -10), l.slice(0, -10), c.slice(0, -10), 14);
+    const price = c[c.length - 1];
+    const chg24 = c.length > 24 ? ((price / c[c.length - 25] - 1) * 100) : null;
+    if (ciNow == null) return { symbol: sym, err: 'CI incalculable (pas assez de bougies)' };
+    const delta = ciPrev == null ? null : ciNow - ciPrev;
+    let cat = 'neutre';
+    if (delta != null && delta <= -15) cat = 'sort_du_calme';        // CI chute vite = tendance qui démarre
+    else if (ciNow >= 61.8) cat = 'comprime';                        // seuil usuel du Choppiness Index
+    return {
+      symbol: sym, price, chg24: chg24 == null ? null : Math.round(chg24 * 100) / 100,
+      ci: Math.round(ciNow * 10) / 10, ci_delta: delta == null ? null : Math.round(delta * 10) / 10,
+      cat,
+    };
+  } catch (e) { return { symbol: sym, err: String(e && e.message || e).slice(0, 120) }; }
+}
+/* ===== JOURNAL PERSISTANT DE LA FLOTTE (Kevin 2026-09-11 « bilan de ce qu'ils ont
+   pu gagner ou perdre ») =====
+   POURQUOI : jusqu'ici le bilan se lisait UNIQUEMENT dans les logs Railway, qui sont
+   PURGÉS (mesuré le 11.09 : plus rien avant le 19 août) et qui repartent de zéro à
+   chaque redéploiement (un bot papier relancé réaffiche equity=10000). Résultat :
+   impossible de répondre à « combien ont-ils gagné depuis le début ». Le journal
+   ci-dessous garde la trace DANS KV, donc elle survit aux deux.
+   COMMENT : à chaque consultation de la flotte, on enregistre un relevé — au plus un
+   par heure (BOT_SNAP_MS) pour ne pas marteler KV. `bot:hist` garde les 720 derniers
+   relevés (~30 jours d'historique horaire), `bot:first` garde le TOUT PREMIER relevé
+   de chaque bot et n'est JAMAIS écrasé : c'est lui qui permet de dire « depuis le
+   (date), ce bot est passé de X à Y », même bien au-delà des 30 jours.
+   Fail-open total : une panne KV ne doit jamais casser l'affichage de la flotte. */
+const BOT_SNAP_MS = 60 * 60 * 1000;   /* au plus 1 relevé par heure */
+const BOT_HIST_CAP = 720;             /* ~30 jours en horaire */
+async function botSnapshot(env, bots, now) {
+  if (!env || !env.ACCOUNTS || !Array.isArray(bots)) return;
+  const t = Number(now) || Date.now();
+  try {
+    const hist = JSON.parse((await env.ACCOUNTS.get('bot:hist')) || '[]');
+    const last = hist.length ? hist[hist.length - 1] : null;
+    if (last && t - Number(last.t || 0) < BOT_SNAP_MS) return;   /* déjà relevé il y a moins d'une heure */
+    const b = {};
+    for (const x of bots) {
+      if (!x || !x.name || x.equity == null || !isFinite(Number(x.equity))) continue;
+      b[x.name] = { e: Math.round(Number(x.equity) * 100) / 100, n: Number(x.net) || 0, a: Number(x.buys) || 0, v: Number(x.sells) || 0 };
+    }
+    if (!Object.keys(b).length) return;   /* rien de chiffré à enregistrer */
+    hist.push({ t, b });
+    await env.ACCOUNTS.put('bot:hist', JSON.stringify(hist.slice(-BOT_HIST_CAP)));
+    /* Premier relevé par bot : écrit UNE fois, jamais modifié ensuite. */
+    const first = JSON.parse((await env.ACCOUNTS.get('bot:first')) || '{}');
+    let addedFirst = false;
+    for (const [name, v] of Object.entries(b)) {
+      if (!first[name]) { first[name] = { t, e: v.e }; addedFirst = true; }
+    }
+    if (addedFirst) await env.ACCOUNTS.put('bot:first', JSON.stringify(first));
+  } catch { /* fail-open : le bilan est un bonus, jamais un blocage */ }
+}
+/* Bilan lisible : pour chaque bot, d'où il part, où il en est, et l'écart.
+   `reprises` compte les remises à zéro visibles (un bot papier redéployé repart à
+   son capital de départ) — sans ça, un écart nul cacherait un redémarrage. */
+function botBilan(hist, first) {
+  const out = {};
+  const names = new Set();
+  (hist || []).forEach((p) => Object.keys(p.b || {}).forEach((n) => names.add(n)));
+  Object.keys(first || {}).forEach((n) => names.add(n));
+  for (const name of names) {
+    const pts = (hist || []).filter((p) => p.b && p.b[name] != null).map((p) => ({ t: p.t, ...p.b[name] }));
+    const f = (first || {})[name] || (pts[0] ? { t: pts[0].t, e: pts[0].e } : null);
+    const l = pts.length ? pts[pts.length - 1] : null;
+    let reprises = 0;
+    for (let i = 1; i < pts.length; i++) {
+      /* une chute de plus de 1 % pile sur la valeur ronde de départ = redémarrage */
+      if (pts[i].a === 0 && pts[i].v === 0 && pts[i - 1].a + pts[i - 1].v > 0) reprises++;
+    }
+    out[name] = {
+      depuis: f ? f.t : null,
+      depart: f ? f.e : null,
+      actuel: l ? l.e : null,
+      ecart: (f && l) ? Math.round((l.e - f.e) * 100) / 100 : null,
+      achats: l ? l.a : null,
+      ventes: l ? l.v : null,
+      net_realise: l ? l.n : null,
+      releves: pts.length,
+      vu_le: l ? l.t : null,
+      reprises,
+    };
+  }
+  return out;
+}
 function fleetTradeStats(logs) {
   const fifo = {}; let buys = 0, sells = 0, wins = 0, losses = 0, net = 0;
   for (const l of logs) {
@@ -1829,10 +1996,32 @@ async function handleBot(request, url, env) {
     const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
     return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403);
   }
+  const path = url.pathname;
+
+  /* SCANNER DE MARCHÉ (Choppiness Index, Kevin 2026-09-12) : lecture SEULE, ne
+     touche à AUCUN réglage d'AUCUN bot. Traité AVANT botCtx() exprès : le scan
+     ne parle qu'à Binance (public, sans clé) — il n'a besoin ni de RAILWAY_TOKEN
+     ni de résoudre le service Railway, donc il marcherait même si la flotte de
+     bots était en panne. 24 paires liquides en parallèle, ≤50 sous-requêtes
+     Worker (marge large). Classé : ce qui bouge déjà en premier (sort_du_calme),
+     ce qui est comprimé ensuite (comprime), le reste après — à l'intérieur de
+     chaque groupe, l'écart au seuil décide. */
+  if (path === '/__bot/scan' && request.method === 'GET') {
+    const out = await Promise.all(SCAN_PAIRS.map(taScanPair));
+    const rank = { sort_du_calme: 0, comprime: 1, neutre: 2 };
+    out.sort((a, b) => {
+      const ra = rank[a.cat] != null ? rank[a.cat] : 3, rb = rank[b.cat] != null ? rank[b.cat] : 3;
+      if (ra !== rb) return ra - rb;
+      const da = a.ci_delta != null ? a.ci_delta : 0, db = b.ci_delta != null ? b.ci_delta : 0;
+      if (da !== db) return da - db;                       // chute la plus forte d'abord
+      return (b.ci != null ? b.ci : -1) - (a.ci != null ? a.ci : -1); // plus comprimé d'abord
+    });
+    return J({ ok: true, scanned: SCAN_PAIRS.length, results: out });
+  }
+
   if (!env.RAILWAY_TOKEN) return J({ ok: false, reason: 'railway_token_absent', detail: 'Secret RAILWAY_TOKEN non déployé sur le worker (relancer deploy-kdmc-router).' });
   const ctx = await botCtx(env);
   if (ctx.err) return J({ ok: false, reason: ctx.err, detail: ctx.detail });
-  const path = url.pathname;
 
   if (path === '/__bot/status' && request.method === 'GET') {
     const dp = await railGql(env, `query { deployments(first: 1, input: { projectId: "${ctx.projectId}", serviceId: "${ctx.serviceId}", environmentId: "${ctx.environmentId}" }) { edges { node { id status createdAt } } } }`);
@@ -1867,7 +2056,20 @@ async function handleBot(request, url, env) {
     }));
     /* Tri par net réalisé décroissant ; les bots absents/sans logs en dernier. */
     bots.sort((a, b) => (((b.net == null) ? -1e9 : b.net) - ((a.net == null) ? -1e9 : a.net)));
+    /* Trace durable (survit à la purge des logs Railway et aux redéploiements). */
+    await botSnapshot(env, bots, Date.now());
     return J({ ok: true, bots });
+  }
+
+  /* Bilan DURABLE (Kevin 2026-09-11) : ce que le journal KV a vu, pas ce que les logs
+     Railway veulent bien garder. Renvoie le résumé par bot + la série pour la courbe. */
+  if (path === '/__bot/history' && request.method === 'GET') {
+    let hist = [], first = {};
+    try { hist = JSON.parse((await env.ACCOUNTS.get('bot:hist')) || '[]'); } catch { hist = []; }
+    try { first = JSON.parse((await env.ACCOUNTS.get('bot:first')) || '{}'); } catch { first = {}; }
+    const bilan = botBilan(hist, first);
+    /* La série complète peut peser : on rend au plus 200 points, les plus récents. */
+    return J({ ok: true, bilan, points: hist.slice(-200), releves: hist.length });
   }
 
   /* ANALYSE EXPERT (Kevin 2026-07-10 « qu'il serve à faire des analyses ») :

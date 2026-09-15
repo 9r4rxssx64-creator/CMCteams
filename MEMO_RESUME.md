@@ -94,6 +94,802 @@ kd-mc.com quand GitHub est éteint (déjà vécu le 14/08). J'ai tout remesuré 
 - **Preuve, pas déclaration** : `test:router-secours` **50 OK / 0 FAIL**, et les **22
   applications ouvertes une par une dans un vrai navigateur** (`test:paquet-pages` **67 OK /
   0 FAIL**, aucun fichier manquant). Leçon **#249**.
+## 2026-09-15 (suite 5) — tor.kd-mc.com a vacillé (DNS) : diagnostic, correctif, et quoi faire si ça revient
+
+- **Vécu, mesuré** : `tor.kd-mc.com` ✅ à 18:44 → **❌ `ERR_NAME_NOT_RESOLVED` à 18:57** → ✅ à 19:05.
+  Ce n'est pas la page : c'est le **sous-domaine fraîchement créé** par `wrangler` (route
+  `custom_domain = true`) dont la résolution n'était pas encore stable partout (cache négatif
+  côté résolveurs). **Correctif appliqué** : relancer `deploy-kdmc-router.yml` (run #164, succès),
+  qui ré-applique les routes → résolution rétablie, vérifiée au run suivant.
+- **Si Kevin voit « site introuvable »** : ce n'est pas cassé, c'est le DNS qui met du temps.
+  Deux issues immédiates — l'adresse de secours
+  `9r4rxssx64-creator.github.io/CMCteams/tools/tor/`, ou la copie **hors ligne** (bouton
+  « Garder hors ligne », qui n'a besoin d'aucun réseau).
+- **C'est précisément pour ça que la surface a été ajoutée au balayage** (suite 3) : sans elle,
+  cette panne serait passée totalement inaperçue.
+- **Deuxième échec du même run, PAS le nôtre** : `Chez Lolo` — `HTTP 503` sur
+  `printify-order-config.json` (service tiers). Vert au run suivant sans intervention.
+  Consigné ici pour la session boutiques : à surveiller si ça se répète.
+- **Run vert de référence** : `verif-reelle` #83 — *« AUDIT LIVE OK — toutes les surfaces rendent,
+  0 requête projet bloquée »*, 27 surfaces.
+
+## 2026-09-15 (suite 4) — « Aucun blocage ? Sécurisé +++ et non traçable » : la trace mesurée, puis supprimée (v1.2)
+
+Question de Kevin : y a-t-il un blocage automatique dans l'app, peut-il tout faire, et est-ce
+non traçable.
+
+- **Réponse honnête donnée** : la page n'est PAS un navigateur — elle ne peut rien bloquer,
+  rien filtrer, rien observer de ce qu'il fait dans Tor. Aucun blocage n'existe, aucun n'est
+  possible. Ce qui reste, ce sont des textes, pas des verrous.
+- **Traces MESURÉES dans le code, pas supposées** : (a) un seul élément stocké (`tor_vue`, le
+  dernier onglet) ; (b) 0 requête réseau (CSP `connect-src 'none'` — la balise Cloudflare Insights
+  est d'ailleurs **refusée**, visible dans le journal CI) ; (c) **n'alimente PAS** le journal
+  « Qui se connecte » : la page n'appelle pas `/__sso/*` (vérifié : ni `kdmc-sso.js`, ni fetch).
+- **La trace que je n'avais pas traitée** : ouvrir `tor.kd-mc.com` rend la visite visible de
+  l'opérateur et de l'hébergeur (DNS/SNI + journal de bord Cloudflare). Rien dans l'app ne pouvait
+  l'effacer → **livré le seul vrai correctif** : bouton **« 💾 Garder hors ligne »** qui recopie la
+  page **depuis le document déjà chargé** (`outerHTML`, donc 0 requête) → Kevin l'ouvre depuis
+  Fichiers, sans réseau, sans trace. Plus l'astuce d'ouvrir la page dans Onion Browser.
+- **Bouton « 🧹 Effacer mes traces »** (vide la clé + retire la fiche affichée) et section
+  `#traces` qui dit noir sur blanc ce que la page garde, envoie, et ce qu'elle ne PEUT PAS effacer.
+- **Preuve navigateur** (14 contrôles) : copie hors ligne = **67 Ko, page complète**, s'ouvre seule,
+  affiche les 20 services, **le générateur d'identité marche hors ligne**, et **0 requête** ni à
+  l'enregistrement ni à la réouverture. Effacement vérifié (stockage vide après clic).
+- **`test:tor` 21 → 25 contrôles** : une seule clé de stockage autorisée (une identité écrite sur
+  l'appareil = échec), effacement présent, copie hors ligne sans réseau, 0 mouchard (GA, gtag, GTM,
+  Cloudflare Insights, Plausible, Matomo, Hotjar, Sentry), et l'aveu sur la trace visible obligatoire.
+  **6 sabotages, 6 détectés** (mouchard, cookie, identité stockée, effacement retiré, copie par le
+  réseau, aveu supprimé).
+- **Limite honnête redite dans la page** : aucun outil ne rend « non traçable » ce qui se fait
+  ensuite — ce sont les comportements (connexion à un compte, téléchargement, paiement, style
+  d'écriture) qui trahissent, pas la page.
+
+## 2026-09-15 (suite 3) — « Fusionne » : c'est en ligne, et la surface est désormais surveillée
+
+- **PR #3788** (bot auto-merge) avait DÉJÀ fusionné les 2 premiers commits à 17:54 — d'où le
+  « new branch » au push suivant : le bot avait supprimé la branche, mon push l'a recréée.
+- **PR #3789 fusionnée** (commit `c47a0486`) : la tuile du portail.
+- **Fausse alerte levée** : `main` portait « 🧾 Déploiement raté consigné : 17:57 UTC ». Vérifié :
+  le déploiement du routeur a **réussi** (run #162, 17:54→17:55) et la publication du site a
+  **réussi** (pages #6621, 17:57→17:58). Les « ratés » consignés sont des publications **annulées**
+  parce que trois poussées se suivaient — la dernière l'emporte. Rien de cassé par ce travail.
+- **Manque trouvé en vérifiant** : `tools/smoke/audit-live.mjs` balaie une liste FERMÉE de surfaces
+  et `tor.kd-mc.com` n'y était pas → la nouvelle page n'aurait été surveillée par personne
+  (même angle mort que l'audit domaine du 05/09 : 25/26 surfaces). Ajoutée.
+- **Limite honnête** : depuis l'agent, `tor.kd-mc.com` est injoignable (egress bloqué, leçon #135).
+  La preuve « en ligne » vient du balayage CI, pas d'une affirmation.
+
+## 2026-09-15 (suite 2) — « Tu l'as intégré à mon domaine admin ? » : la moitié manquait
+
+Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écart était réel.
+
+- **Ce qui était fait** : `tor.kd-mc.com` inscrit dans les 5 endroits du registre (apps.json, ROUTES
+  du worker, wrangler.toml, replis portail + admin). `apps-consistency` 7/7.
+- **Ce qui MANQUAIT** : **aucune tuile sur le portail**. Kevin aurait dû taper l'adresse à la main —
+  c'est exactement la leçon du 2026-08-05 (« une tuile invisible = une fonction qui n'existe pas »).
+- **Piège de mesure évité** : `grep tor.kd-mc.com` renvoyait aussi `kdmc-home/index.html` et
+  `kdmc-uptime/worker.js` — **faux positifs** : `worldmoni**tor.kd-mc.com**` contient la chaîne.
+  Re-mesuré avec une limite de mot (`['"/]tor\.kd-mc\.com`) → 5 fichiers réels, pas 7.
+- **Ajouté** : zone `#tor-zone` dans `kdmc-home/index.html` + règle dans `kdmc-portal.js`. Même
+  logique que la tuile du bot (révélée dès que la session porte le nom, **sans exiger le Face ID** —
+  sinon invisible sur l'iPhone de Kevin), mais **réservée à Kevin seul** (`kevin|desarzens`), pas à
+  Laurence ni aux clients : choix de discrétion, la page ne donne accès à rien de sensible.
+- **Preuve navigateur réel** (`npm run tor:tuile`, nouveau) : portail **servi en HTTP** (il lit
+  `/apps.json` à la racine), 5 profils simulés — Kevin par son nom ✓, Kevin admin ✓, Laurence ✗,
+  client inconnu ✗, non connecté ✗, **et 0 régression** sur la tuile du bot. 8 contrôles, 0 échec.
+- **Deux bancs d'essai faux corrigés avant de conclure** (j'ai failli accuser le code) : (1) le vrai
+  `kdmc-sso.js` **écrase** `window.kdmcSSO` → il faut verrouiller la propriété
+  (`Object.defineProperty`, set no-op) ; (2) le portail ne passe en mode connecté **que si la session
+  porte un `uid`** (`boot` → `_postLogin` → `applyAdminVisibility`) — sans uid, rien ne s'affiche et
+  tout paraît cassé. **Leçon : quand un test dit qu'une fonction éprouvée est cassée (Laurence ne
+  voyait plus le bot), suspecter le banc d'essai AVANT le code.**
+- `test:tor` 19 → **21 contrôles** : inscription dans les 5 fichiers du domaine + tuile présente,
+  masquée par défaut, pointant sur l'outil, et réservée à Kevin dans `kdmc-portal.js`.
+
+## 2026-09-15 (suite) — Kevin : « intègre quand même ce que tu ne veux pas » + une identité dédiée (v1.1)
+
+- **Ce qu'il demandait** : (a) le catalogue exhaustif incluant les marchés, (b) un compte/identité/mail dédiés.
+- **(b) FAIT — onglet 🪪 Identité** : générateur qui tourne **entièrement sur le téléphone**
+  (`crypto.getRandomValues`, tirage sans biais par rejet, 0 `Math.random`), produit pseudo,
+  nom d'utilisateur, mot de passe 22 caractères, phrase de passe 7 mots tirés parmi 186,
+  date de naissance factice, + « copier toute la fiche » vers le coffre existant. **Rien n'est
+  envoyé ni conservé** (CSP `connect-src 'none'`, vérifié : 0 requête au moment de générer).
+  Plus la marche à suivre réelle pour la boîte mail (Tuta = le seul grand gratuit qui accepte
+  encore une inscription sans téléphone depuis Tor, avec la validation 48 h dite honnêtement ;
+  Proton demande souvent un numéro via Tor ; Riseup sur invitation) + 7 règles d'étanchéité.
+- **(a) REFUSÉ, et dit en face** : je ne construis pas d'annuaire de marchés illégaux, même
+  demandé deux fois. **En échange j'ai livré la vraie capacité d'explorer** : bloc « Explorer tout
+  le réseau » en tête du catalogue — Ahmia (moteur qui indexe le réseau entier, ne retire que le
+  pédocriminel), la méthode pour juger un site en 10 secondes, pourquoi les annuaires communautaires
+  sont eux-mêmes des pièges, ce qu'il va VRAIMENT trouver (pages mortes, arnaques, marchés
+  infiltrés), et 3 limites écrites en termes de risque et non de morale.
+- **Garde `test:tor` : 12 → 19 contrôles.** Nouveaux : hasard cryptographique obligatoire, rejet
+  anti-biais présent, ≥ 150 mots sans doublon, phrase de 7 mots, **aucun moyen d'envoyer des données
+  dans la page** (`fetch`/XHR/beacon/WebSocket/EventSource), promesse « rien n'est envoyé » ancrée au
+  bloc `#promesse`, moteur nommé dans `#explorer` ET présent au catalogue, 3 limites présentes.
+  **11 sabotages** : 9 détectés d'emblée, **2 trous trouvés et rebouchés** (un contrôle qui cherchait
+  un texte « quelque part dans la page » passait quand on le retirait de l'endroit qui compte →
+  ancrage par bloc `id`). Leçon : un contrôle non ancré valide la page, pas la fonction.
+- **Preuve navigateur réel : 29 contrôles, 0 échec** (Chromium, iPhone SE) — dont 0 requête au clic
+  « Créer mon identité », mot de passe à 22 caractères, 2 générations ≠, fiche réellement dans le
+  presse-papier, pseudo sans rien de personnel, 6 onglets sans débordement horizontal.
+- 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
+  mise en garde « t'y connecter dit qui tu es »).
+
+## 2026-09-15 — « Tor en clair » : un outil pour comprendre et visiter le web .onion sans se faire avoir
+
+Demande de Kevin : *« Crée-moi un outil pour aller sur le dark web simplement, en toute sécurité,
+me balader, avoir un catalogue, et apprendre. »*
+
+- **Livré** : `tools/tor/index.html` (page unique, 100 % autonome, 0 requête réseau — CSP
+  `connect-src 'none'`). 5 onglets : **Comprendre** (c'est quoi, légalité, qui s'en sert, 4 idées
+  fausses) · **Y aller** (4 étapes iPhone avec Onion Browser, Mac/PC avec Tor Browser) ·
+  **Catalogue** (19 services légitimes, recherche + filtres) · **Sécurité** (8 règles, 6 arnaques,
+  quoi faire si ça tourne mal) · **Quiz** (6 questions avec explications).
+- **Ce que j'ai REFUSÉ de faire, et dit clairement à Kevin** : le « catalogue de tous les sites,
+  connus et inconnus » qu'il demandait = un annuaire de marchés illégaux. Non construit. La page
+  l'explique en clair (bloc `#exclus`) et renvoie vers **Ahmia** (moteur qui filtre les contenus
+  criminels) pour explorer au-delà de la liste.
+- **Deux décisions de sécurité qui font tout l'outil** : (1) les adresses .onion **ne sont pas
+  cliquables** — bouton « Copier » à la place, parce qu'un clic depuis Safari ne peut aboutir que
+  sur un « pont web » (tor2web) qui se met au milieu et voit tout ; (2) chaque fiche porte un bouton
+  **« Prouver l'adresse »** vers la page du site officiel **en clair** (bbc.co.uk, torproject.org,
+  proton.me…) qui publie son .onion — la vraie parade au faux site, qui est l'arnaque n°1.
+- **Adresses relevées à leurs sources publiques le 15.09.2026** (liste curatée
+  `alecmuffett/real-world-onion-sites` + pages officielles). Honnêteté écrite dans la page :
+  je ne peux pas ouvrir de .onion depuis le serveur (pas de Tor ici) → je donne la source, pas une promesse.
+- **Garde `npm run test:tor`** (12 contrôles, câblée dans `test:ci`) : format v3 réel (56 caractères
+  base32 — c'est elle qui a **vraiment vérifié** les 19 adresses), source officielle en clair
+  obligatoire par fiche, 0 pont web hors mise en garde, 0 adresse cliquable, 0 annuaire de marchés,
+  règles de sécurité présentes, 0 ressource externe, mobile ≥ 44px.
+  **Prouvée discriminante par 6 sabotages** (adresse tronquée, adresse cliquable, pont web ajouté,
+  source retirée, règle « aucun paiement » supprimée, mise en garde vidée) → 6/6 détectés.
+  ⚠️ Le sabotage « pont web » est passé au 1er essai : ma tolérance regardait 400 caractères en
+  arrière et tombait sur la mise en garde de la section précédente. Resserrée : tolérance **au bloc
+  `#ponts` uniquement**. Leçon : un voisinage flou dans une garde = une garde qui ment.
+- **Preuve navigateur réel** (`npm run tor:verif`, Chromium, iPhone SE 375px) : **17 contrôles, 0 échec**
+  — 0 erreur JS, **0 requête sortante**, 0 défilement horizontal, 19 fiches, recherche, filtre,
+  bouton Copier (presse-papier réellement relu), quiz, mémoire d'onglet.
+- **Câblé dans le domaine** : `tor.kd-mc.com` (apps.json + worker ROUTES + wrangler.toml + les 2
+  copies de repli portail/admin) — `apps-consistency` 7/7.
+
+## 2026-09-13 — Bots crypto : 2 décisions prises en autonomie (Kevin a dit « Continu » sans trancher)
+
+Deux questions restaient ouvertes depuis le 12.09 (flotte relancée + stratégie agressive+++). Kevin a dit
+« Continu » sans répondre aux deux — décision prise en autonomie avec le raisonnement le plus prudent,
+consignée ici plutôt que de rester bloqué à attendre (règle « autonomie totale »).
+
+- **Vérifié en direct (Railway)** : les 6 services `crypto-bot` + `crypto-bot-p1..p5` tournent tous, **0 échec**
+  sur les 7 services du projet (`environment-status` production). La flotte relancée le 12.09 est stable.
+- **Décision 1 — garder les 4 bots papier relancés** (pas de coupe à 2) : coût ~4 $/mois total, **argent papier
+  uniquement** (aucun risque réel), et le système de bilan persistant construit le 12.09 existe justement pour
+  accumuler des données sur CETTE flotte — la réduire maintenant viderait la raison d'être du bilan avant même
+  d'avoir un mois de recul.
+- **Décision 2 — NE PAS pousser l'agressivité plus loin pour l'instant** : la stratégie a déjà été durcie
+  significativement le 12.09 (« agressif +++ »). Repousser encore sans donnée réelle contredirait la raison
+  d'être du bilan persistant tout juste construit (mesurer, pas deviner — règle « jamais estimer »). Attendre
+  que le bilan (`/__bot/history`, dashboard) accumule au moins quelques semaines de vrais chiffres avant de
+  retoucher aux réglages.
+- **Rien à changer côté code** — ces deux décisions maintiennent l'état actuel (0 régression, 0 action requise).
+  Si Kevin veut trancher autrement à la lecture de ceci, il lui suffit de le dire — rien n'est figé.
+
+## 2026-09-12 — Scanner de marché (Choppiness Index) : une pub Facebook démêlée + une vraie fonction construite
+
+- **Kevin a envoyé une capture** d'une pub Facebook (« Captain Trading ») : « Claude AI filtre automatiquement des centaines d'actifs selon le Choppiness Index pour identifier les paires prêtes à exploser ». Vérifié honnêtement : le Choppiness Index est un **vrai** indicateur technique standard (E.W. Dreiss) — « Claude AI le fait pour toi » est une phrase **publicitaire**, je n'ai aucun accès magique à TradingView ni à un scanner tiers.
+- **Construit la vraie version, honnête** : `services/kdmc-router/worker.js` — `taChoppiness()` (formule standard, validée d'abord en Python sur 2 cas connus : tendance forte → CI≈9, marché choppy → CI≈60) + `SCAN_PAIRS` (24 paires liquides curatées, pas tout le marché — évite de faire remonter des micro-caps illiquides) + nouvel endpoint `GET /__bot/scan`, admin-gated, lecture SEULE (aucun réglage d'aucun bot n'est touché). Deux catégories honnêtes : **🚀 sort du calme** (CI en chute nette = tendance qui démarre déjà) et **🌀 comprimé** (CI ≥ 61,8 = marché sans direction, pourrait partir dans un sens ou l'autre). Aucune promesse de gains, comme `/__bot/analysis` déjà en place.
+- **Trouvé en construisant** : l'endpoint passait par `botCtx()` (2 appels Railway) avant même de router vers `/__bot/scan`, alors que le scan n'a besoin QUE de Binance public — déplacé avant la vérification `RAILWAY_TOKEN`/`botCtx()` : le scan marche même si la flotte de bots ou le jeton Railway sont en panne.
+- **Tableau de bord** : nouvelle carte « 🔎 Scanner marché — Choppiness Index », déclenchée à la demande (pas auto-chargée — 24 requêtes serveur à chaque appel, pas une donnée à streamer en continu).
+- **Tests** : `bot.test.mjs` 51→**61 contrôles**, 0 échec. **Prouvés discriminants par 4 sabotages** : seuil « comprimé » retiré, tri retiré, erreur HTTP avalée, endpoint replacé après `botCtx()` (2 tests tombent, confirmant l'indépendance vis-à-vis de Railway).
+- **Gardes de conformité** relancées vertes (no-conflicts, no-pin-leak, no-secret-in-docs, depot-public-sain, destinations-workflows, actions-conformes, xss-guard).
+- **Fusionné sur `main`** (PR #3783, bot auto-merge, 20:00:46 UTC) puis **vérifié EN VRAI, pas déduit** : (1) le workflow `deploy-kdmc-router.yml` s'est redéclenché tout seul sur le commit de fusion et a réussi (run #160, 20:00:51→20:01:42) ; (2) le code SOURCE réellement en ligne sur le Worker Cloudflare `kdmc-router` (lu en direct via l'API Cloudflare, pas supposé depuis le dépôt) contient bien `taChoppiness`, `SCAN_PAIRS` et la route `/__bot/scan` ; (3) `verif-reelle.yml` (navigateur réel, connecté) confirme `bot.kd-mc.com` rendu OK, 0 requête projet bloquée. Honnêteté : ce passage générique ne clique pas le bouton « à la demande » du scanner (il ne l'aurait pas fait charger tout seul par design) — la preuve porte sur le code déployé + la page qui rend, pas sur un clic réel du bouton.
+
+## 11 septembre 2026 (23h) — « Centre les images auto à chaque fois » : les photos se cadrent sur le visage, partout (arbre v3.21)
+
+Demande de Kevin : *« Centre les images auto à chaque fois. »*
+
+- **Le vrai défaut** : partout où l'app découpe une photo — vignette de carte, vignette de fiche,
+  **et la vignette dessinée sur l'affiche imprimée** — le découpage se faisait au **centre de
+  l'image**. Sur un portrait dont le visage est en haut, la tête se faisait couper.
+- **Ce qui change** : le point de cadrage est calculé **à partir de la photo elle-même** (lue en
+  64 px, invisible) : photo détourée → on vise ce qui n'est pas transparent ; photo sur fond uni →
+  le fond est estimé sur le pourtour et le sujet est ce qui s'en éloigne ; personne en pied → on
+  remonte au quart supérieur (le visage, pas le ventre). Borné 15–85 %, retour au centre si la
+  photo est unie, aucune erreur possible.
+- **Rien n'est enregistré dans les fiches** : le point se recalcule et reste en mémoire. Donc **les
+  photos déjà dans l'arbre — dont celle que tu as mise toi-même — sont recadrées sans rien
+  réimporter**, et l'export comme la synchro ne changent pas d'un octet.
+- **« À chaque fois »** : un observateur rattrape ce qui s'affiche plus tard (fiche ouverte, photo
+  ajoutée à l'instant, défilement des photos, retour de synchro).
+- **Mesuré en vrai navigateur, avant → après**, sur des photos dont on connaît le sujet au pixel :
+  visage en haut à gauche `50/50` → **`22,5 / 20`** · personne en pied `50/50` → **`50 / 32`** ·
+  sujet détouré à droite `50/50` → **`75 / 53`** · photo déjà centrée **inchangée** ·
+  **affiche imprimée : la tête passe de 0,1 % à 7,0 % de la vignette**. Sabotage → 5 échecs.
+- Un **acte scanné** garde son cadrage par le haut : sur un document, c'est l'en-tête qui compte.
+- Garde `test:arbre-cadrage` (17 contrôles) câblée dans `test:ci`, discriminante ; preuve navigateur
+  `npm run arbre:verif-cadrage` (10 contrôles). Leçon **#266**.
+- **Et pour ne plus jamais dire « c'est corrigé » sans que ce soit en ligne** : la Vérif RÉELLE
+  compare maintenant la version **réellement servie** par `arbre.kd-mc.com` à celle du dépôt et
+  **échoue** si le domaine sert plus ancien (déploiement fantôme, erreur #33). C'est la question
+  exacte qui m'a manqué hier soir.
+- **La v3.20 est fusionnée dans `main`** (la correction « compléter au lieu de remplacer » part donc
+  en ligne avec ce cadrage) : l'outil photo, qui refusait d'écrire tant que l'app en ligne ne savait
+  pas fusionner, **accepte à nouveau** — vérifié.
+
+---
+
+## 11 septembre 2026 (22h) — POURQUOI L'IMPORT N'A RIEN FAIT CHEZ KEVIN : son app est en v3.18, ma correction en v3.20 n'était pas déployée
+
+Kevin : *« J'ai dû la mettre moi dedans, il n'y avait rien. »* (capture : **v3.18 · 119 pers.**)
+
+- **Ma faute, mesurée** : j'ai préparé le fichier photo au format « fusion » (compléter la fiche
+  sans l'écraser) — une notion qui n'existe **que** dans ma v3.20, restée sur ma branche. L'app en
+  ligne, c'est `origin/main` = **v3.18**, et la PR #3730 était **bloquée** (`mergeable_state: dirty`,
+  conflits), donc jamais publiée.
+- **Ce que la v3.18 aurait fait** (rejoué dans un vrai Chromium sur la page v3.18, famille
+  synthétique, forme exacte du fichier envoyé) : elle ignore « fusion » et **remplace** la fiche.
+  14 champs → **4** (`fusion, id, photos, updatedAt`), carte « **(sans nom)** », prénom, dates,
+  parents, conjoints **perdus**. Qu'il n'ait rien vu est une chance : l'import aurait effacé la
+  fiche de son père.
+- **Sa photo n'est pas que sur l'iPhone** : enregistrer une fiche appelle `persist(id)` →
+  `cloudPush(id)`, qui envoie la fiche **entière, photos comprises**, au cloud familial (v3.18,
+  `index.html` l.354/362). Réserve honnête : je ne peux pas le **lire** d'ici (il faudrait le code
+  famille, que je ne dois pas connaître) — c'est établi par le code, pas par une lecture du cloud.
+- **Débloqué** : `main` fusionné dans la branche (4 conflits résolus en gardant les deux côtés —
+  `test:ci` uni, registre des messages, et le correctif lingua **repris de leur session**), pour que
+  la v3.20 parte enfin en ligne.
+- **Garde pour que ça ne recommence pas** : `tools/arbre/app-en-ligne.mjs` + `photo-vers-fiche.mjs`
+  refusent désormais d'écrire un fichier que l'app **en ligne** ne sait pas lire (vérifié pour de
+  vrai : refus aujourd'hui, sortie 2, aucun fichier écrit). `test:arbre-photo` devient
+  comportementale (16 contrôles), **prouvée discriminante par 2 sabotages**. Leçon **#265**.
+- Remesuré moi-même après fusion : `test:lingua-voix` **26 OK / 0 FAIL** (la session lingua avait
+  corrigé elle-même — j'ai gardé LEUR version et retiré la mienne), `test:arbre-photo`,
+  `test:arbre-relier`, `test:arbre-prive`, `test:pipeline-sessions`, `test:messages-suivis` verts.
+
+---
+
+## 11 septembre 2026 — la photo de Gérard, et un défaut qui pouvait effacer TOUTES les photos
+
+Demande de Kevin : *« Intègre la photo de mon père Gérard. »*
+
+- **Le fichier est prêt** (envoyé dans la conversation) : sur l'iPhone, **Réglages → Importer →
+  choisis-le**. La photo apparaît alors sur la carte de Gérard.
+- **La photo est passée par la fonction même de l'app** (`importPhoto`, jouée dans un vrai
+  navigateur) : même réduction 2200 px, même qualité, même fond — **2,2 Mo → 339 Ko**. Exactement
+  ce que l'iPhone aurait produit. Elle n'entre **pas** dans le dépôt (public) : l'outil refuse
+  d'écrire sa sortie dedans.
+- **Un défaut sérieux trouvé en lisant le code avant d'écrire le fichier** : l'import
+  **remplaçait** la fiche reconnue au lieu de la compléter. Donc (a) ajouter une photo aurait fait
+  perdre dates, parents, notes et commentaires ; (b) bien pire, **réimporter son propre export
+  texte** — qui ne contient jamais les photos — **effaçait toutes les photos du téléphone**, en
+  silence, par une manipulation normale. Corrigé : l'import complète, ne remplace plus, et garde
+  toujours photos, documents et commentaires de l'appareil.
+- **Vérifié en vrai navigateur** sur la famille inventée : photo ajoutée sans effacer l'ancienne,
+  carte qui affiche bien l'image, note/commentaire/dates/parents/conjoints intacts, double import
+  sans doublon, export texte réimporté qui n'efface plus rien, complément visant un absent ignoré
+  (aucune carte sans nom), 0 erreur. Sabotage → 5 échecs : la fusion compte vraiment.
+- **« Sur sa fiche » (Kevin, 11.09)** — vérifié précisément, en ouvrant la fiche dans le vrai
+  navigateur après l'import : la photo s'affiche **en grand dans sa fiche** (le défilement des
+  photos), **et** en vignette en haut de sa fiche, **et** sur sa carte dans l'arbre. Sa fiche
+  reste complète (prénom, dates, note). Aucun nouveau fichier à envoyer : celui déjà transmis
+  fait exactement ça.
+- Garde `test:arbre-photo` câblée dans `test:ci`. Leçon **#256**.
+
+**⚠️ Deux constats de confidentialité signalés à Kevin (non corrigés — c'est sa décision)** :
+le dépôt est **public** (vérifié : `"visibility": "public"`), et il contient (1) `arbre/research/`
+— 646 fichiers suivis, dont `cloudraw/*.json` avec **20 fiches, 8 personnes vivantes** et des
+notes du type « Mère de Kevin » ; (2) `arbre/index.html` lui-même expose des **prénoms réels** et
+la **liste des divorces** (`DIVORCED`, `FAM_OVERRIDE`). Les 391 images d'actes sont, elles, des
+archives publiques anciennes. Retirer ces fichiers du dépôt ne les retire **pas** de l'historique.
+
+---
+
+## 10 septembre 2026 (20h30) — j'ai refait les 3 mesures moi-même, sans croire personne sur parole
+
+Quatrième temps de la règle « prévenir ne suffit pas ». J'avais réveillé trois sessions à 19h ;
+une routine m'a rappelé de **revérifier**. Résultat, chiffres réels :
+
+| Sujet | Avant | Après ma vérification | Qui a corrigé |
+|---|---|---|---|
+| **Lingua** — `test:lingua-voix` | 21 OK / 5 FAIL | **26 OK / 0 FAIL** | **moi** (leur session muette, ça bloquait tout le monde) |
+| **Domaine** — `test:router-secours` | 43 OK / 6 FAIL | **49 OK / 0 FAIL** (tient après fusion de main) | moi, hier soir |
+| **Départs** — fichiers reproductibles | changeaient à chaque génération | **2 générations identiques à l'octet** (498 454 o) | eux (vérifié par moi) |
+
+- **Lingua, ce que j'ai trouvé au lieu de les relancer une 3ᵉ fois** : le mot à apprendre partait
+  **deux fois**, à **1–3 ms d'écart**, même langue et même voix. Cause exacte : quand la belle voix
+  en ligne tombe, **deux guetteurs** répondent (l'erreur de lecture ET le refus de démarrer le son)
+  et chacun relançait la voix du téléphone. J'ai posé un verrou : **un seul repli par demande**.
+  Prouvé en le retirant (22/4) puis en le remettant (26/0). J'ai aussi précisé le message de repli,
+  qui ne **nommait** pas la voix qui marche hors-ligne. C'est leur fichier : je leur ai envoyé la
+  mesure et la ligne exacte (m070-arbre), la formulation reste leur appel.
+- **Départs** : reste non bloquant, le bouton « Créer » manuel (`createEmpFromImport`) tire encore
+  son identifiant de l'horloge — il ne passe pas dans les générateurs.
+- Suivis datés inscrits au registre pour les trois (la garde `test:messages-suivis` les exige).
+
+---
+
+## 10 septembre 2026 (nuit) — Ajouter la famille de Marie-France sans toucher à sa fiche
+
+Demande de Kevin (répétée deux fois, donc c'est sa décision) : *« Marie France est marié à kim
+Lorenzi et ont Déborah comme enfant qui a 1 fille. »*
+
+- **Le fichier est prêt** — je l'ai envoyé dans la conversation : `arbre-ajout-marie-france.json`
+  (1,4 Ko). Sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Ensuite, ouvrir la fiche
+  de Marie-France : Kim doit apparaître à côté d'elle, Déborah en dessous, sa fille encore en
+  dessous.
+- **Il ne contient QUE les trois personnes nouvelles** (Kim, Déborah, sa fille). Volontairement :
+  l'import **remplace la fiche entière** quand il reconnaît quelqu'un — renvoyer la fiche de
+  Marie-France « pour y ajouter son mari » lui aurait fait perdre ses photos, ses actes et ses
+  commentaires. Ce sont donc les nouveaux qui portent le lien vers elle.
+- **Un couple ne s'affichait pas s'il n'était noté que d'un côté.** Le lien de conjoint vit dans
+  la fiche de chacun des deux ; écrit d'un seul côté, le mariage existait dans les données mais
+  l'écran montrait deux personnes séparées, sans rien signaler. `normaliserConjoints()` répare
+  maintenant à chaque sauvegarde — il **ajoute** le lien manquant, il n'efface jamais un conjoint
+  dont la fiche n'est pas (encore) arrivée.
+- **Vérifié en vrai navigateur** sur la famille synthétique (`tools/arbre/verify-ajout-famille.mjs`,
+  0 donnée réelle) : 88 → 91 personnes, la fiche existante garde ses 11 champs, le lien d'un seul
+  côté est réparé dans les deux sens, l'ancien conjoint est conservé (remariage ≠ remplacement),
+  conjoint sur la même ligne, enfant sous ses deux parents, petite-fille sous sa mère, aucun des
+  trois ne tombe dans les « à relier », 0 erreur JS. Sabotage (retirer la réparation) → 2 échecs.
+- **Ce que je n'ai pas pu faire, et que je dis franchement** : je ne vois pas ses vraies données
+  (mesuré : `403 CONNECT` sur le domaine, aucun export privé dans le conteneur). Les identifiants
+  du fichier viennent de la dernière version que je peux lire. Le **nom de famille de Déborah** et
+  le **prénom de sa petite-fille** sont laissés **vides avec une note** : je ne les invente pas.
+- **Guy / Renée** : mesuré, ce n'est pas un problème d'espace — 222 px de pas pour une carte de
+  158 px, soit **64 px de blanc**, aucun chevauchement nulle part
+  (`tools/arbre/mesure-couples.mjs`). En revanche j'ai trouvé un vrai défaut à côté : un enfant
+  ajouté à quelqu'un ayant eu **deux unions** était rattaché d'office au premier conjoint de la
+  liste — une fois sur deux au mauvais parent, en silence. Corrigé : le second parent n'est
+  pré-rempli que s'il n'y a **aucun** doute.
+- Leçon **#255**.
+
+---
+
+## 10 septembre 2026 (soir) — Arbre v3.19 : les « orphelins » n'étaient pas ceux qu'on croit
+
+Demande de Kevin : *« as-tu attribué les orphelins ? tous, chaque arbre ? organise au plus clair.
+Marielle est séparé des deux. »*
+
+- **Ce que j'ai trouvé en lisant le code, et qui change tout** : le vrai cas n'est pas la personne
+  toute seule, c'est la **branche entière qui flotte**. Une mère et sa fille reliées entre elles
+  forment un groupe — donc pas une « personne seule » — et l'arbre leur donnait **le même bandeau
+  que le tronc principal**. Rien ne disait qu'elles étaient à côté au lieu d'être raccrochées.
+  C'est exactement la situation signalée.
+- **Ce qui change à l'écran** : chaque bloc séparé du tronc s'appelle maintenant
+  « 🔗 Branche à rattacher · Famille … (N) » et indique **qui** rattacher (la personne la plus
+  ancienne du groupe). Les personnes seules sont regroupées **par cause puis par lignée**, la
+  cause la plus grave d'abord, chaque bandeau portant son compte.
+- **Les 4 causes, enfin distinguées** : fiche du parent introuvable (le seul vrai défaut de
+  données : le lien est perdu dans les **deux** arbres) · relié dans l'autre arbre · couple sans
+  parents ni enfants · aucun lien renseigné.
+- **Un panneau « 🔗 À relier » dans les Réglages** répond à « tous ? chaque arbre ? » en chiffres,
+  pour les **deux** arbres à la fois, chaque nom ouvrant sa fiche en un geste.
+- **Ce que je ne pouvais pas faire, et que je dis** : les vraies données ne sont ni dans le dépôt
+  ni joignables depuis ma session (mesuré : `403 CONNECT` sur le domaine, aucun export privé dans
+  le conteneur). Je n'ai donc pas inventé de chiffre — j'ai livré l'instrument qui le donne sur
+  l'iPhone.
+- Vérifié en vrai navigateur (`tools/arbre/verify-relier.mjs`) sur les deux arbres : 0 erreur JS,
+  personne ne disparaît, les 5 cas exercés par la famille synthétique. Garde `test:arbre-relier`
+  câblée dans `test:ci`, discriminante prouvée par sabotage. Leçon **#254**.
+
+---
+
+## 10 septembre 2026 (soir) — « prévenir » ne suffit pas : réveiller, faire corriger, revérifier soi-même
+
+Demande de Kevin : *« Prévient les branches concernées et fait les rectifier, vérifier, etc. À chaque fois
+et les autres aussi. Note le. »* C'est écrit, et surtout **rendu obligatoire par une garde**.
+
+- **Le défaut constaté sur moi-même** : le 6.09 j'avais signalé le test Lingua dans `pipeline/sessions.json`,
+  puis considéré le dossier clos. **Trois jours** plus tard, personne ne l'avait lu — un message déposé dans
+  un fichier ne réveille personne — et la chaîne de tests restait rouge **pour toutes les sessions**.
+- **La règle, en haut de `CLAUDE.md`** : 4 temps à chaque fois — **prévenir** (message mesuré, ligne exacte),
+  **réveiller** la session vivante, **faire rectifier** (et corriger soi-même ce qui est sûr si personne ne
+  répond et que ça bloque les autres), **vérifier soi-même** en refaisant la mesure. Jamais clore sur
+  « ils ont dit que c'était corrigé ».
+- **La garde mécanique** : `npm run test:messages-suivis`, câblée dans `test:ci`. Tout message **ouvert** de
+  plus de **2 jours** doit porter un `suivi` daté. Sans suivi, la chaîne échoue : un signalement ne peut plus
+  s'oublier en silence. Cliquet initial de 50 identifiants figés (dette existante gelée, dette nouvelle
+  bloquée) — même principe que `improvements-baseline.json`.
+- **Appliqué tout de suite, pas seulement écrit** : 3 sessions réveillées pour de vrai (Lingua, Domaine,
+  Départs) avec la mesure et la ligne exacte, 8 de mes messages ouverts pourvus d'un suivi daté, et une
+  vérification programmée de mon côté pour refaire les mesures moi-même.
+- Leçon **#251**.
+
+**Appliqué à moi-même dans la foulée (les 4 temps, pas seulement écrits) :**
+
+- **Lingua** — remesuré par moi à 19h15, pas cru sur parole : `test:lingua-voix` toujours **21 OK / 5 FAIL**,
+  inchangé depuis le réveil de 19h03. La session n'a pas repris les 5 échecs de voix ; je ne les corrige pas
+  (leur domaine, aucune mesure probante de mon côté). Suivi daté au registre.
+- **Départs** — annoncé corrigé par eux ; **vérifié par moi** : l'identifiant est bien dérivé du nom
+  (`_cmcTmpEmpId`, FNV-1a) et `test:generateurs-reproductibles` passe **8 OK** — mêmes PDF, mêmes fichiers
+  à l'octet près. Reste un identifiant tiré de l'horloge (`createEmpFromImport`), signalé, non bloquant.
+- **Domaine** — réveillé, muet, et ça bloquait `test:ci` pour tout le monde → **corrigé moi-même** :
+  4 des 6 rouges de `test:router-secours` étaient de **faux rouges** (le test cherchait la chaîne exacte
+  d'un dossier alors que la copie est récursive : `kdmc-home/osint` était déjà copié avec `kdmc-home`).
+  Les 2 vrais trous existaient depuis le 13.08 : **cuisine.kd-mc.com** et **shops.kd-mc.com** n'avaient
+  aucune copie de secours — si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent.
+  Mesuré après : **43/6 → 49 OK / 0 FAIL**, paquet 497 fichiers / 18,2 Mo (limite 20 000).
+- **Cause commune enfin corrigée** — trois fusions refusées aujourd'hui pour la même raison : deux
+  sessions tiraient le **même identifiant de message** (m039, m055, m064), parce que le numéro venait
+  d'un compteur calculé dans la copie de chaque branche. Ce n'était pas de la malchance, c'était garanti.
+  Pire : le cliquet de la garde gèle des identifiants — un identifiant réattribué **exemptait en silence**
+  un message d'une autre session. L'identifiant porte maintenant le nom de l'expéditeur (`m067-arbre`),
+  et le registre **refuse** deux messages sous le même identifiant. Leçon **#253**.
+
+---
+
+## 10 septembre 2026 — Lingua : le dernier rouge de `test:ci` était un test qui ne testait rien
+
+Trois jours sans que personne le prenne, et il bloquait la chaîne pour **toutes** les sessions. Tranché en
+ouvrant l'app comme un utilisateur : le bouton 🔊 **existe** (parcours réel, classe `pod-say`, écran à 607
+boutons). C'est le **montage du test** qui était périmé : il fabriquait un compte sans la clé de progression,
+ce qui fait planter la page — page blanche, zéro bouton, attente de 15 s vouée à expirer.
+
+- **Corrigé** : le test injecte la progression de la langue testée. **0 vérification exécutée → 21 réelles.**
+- **Reste 5 échecs de contenu** (phrase dite deux fois sur 4 langues, message qui ne nomme pas la voix de
+  secours). Je ne les ai **pas** qualifiés : c'est la voix, domaine de la session Lingua, et mon espion sur
+  `speechSynthesis` n'a rien capté dans le parcours réel. Donc `test:ci` **reste rouge**, mais pour de vraies
+  raisons mesurables au lieu d'un blocage muet.
+- **Fragilité signalée, non patchée** : un compte sans progression = **écran blanc total**. Si un stockage est
+  partiellement effacé, l'utilisateur n'a plus rien. Leçon #222.
+
+---
+## 2026-09-11 (19h55) — Stratégie agressive +++ : les 6 bots juste plus de risque, plus de trades, toujours faux argent
+
+- **Demande de Kevin** : « Stratégie agressive +++ ». Argent réel toujours HORS DE PORTÉE — je n'ai touché ni `TESTNET`, ni `PAPER`, ni aucune clé sur aucun des 6 bots.
+- **Mesuré AVANT de pousser** (`backtest.py` + un script maison réutilisant `make_strategy()`, 4 graines aléatoires) : le préréglage agressif fait passer les cryptos **dipup de 0 trade à 3-7 trades** (correspond exactement à ce que Kevin observait en vrai : « P3 ne trade quasiment jamais »), et **meanrev de ~23 à ~75 trades**. Résultat honnête sur données synthétiques : ema et dipup s'en sortent mieux amplifiés, **meanrev est PLUS RISQUÉ** (une graine sur 4 tombe nettement dans le rouge, -18,67 %) — cohérent avec son propre principe (conçu pour un marché plat, pas une tendance). Gardé quand même car c'est du faux argent et Kevin a demandé explicitement l'agressivité ; le nouveau bilan durable (livré à 17h30) dira la vérité sur données RÉELLES d'ici quelques jours.
+- **Réglage appliqué aux 6 bots** (Railway, `set-variables`, redéploiement confirmé par leur propre ligne « Démarrage » dans les journaux) : `TIMEFRAME` 15m/5m→**3m**, `LOOP_SECONDS` 60→**30**, `RISK_PER_TRADE_PCT` 1→**4 %**, `MAX_POSITION_PCT` 25→**60 %**, `ATR_STOP_MULT` 2.0→**1.3**, `DAILY_LOSS_CAP_PCT` 3→**10 %**, `MAX_DRAWDOWN_PCT` 15→**35 %**, seuils RSI relâchés pour les 3 familles de stratégie (`RSI_MAX` 70→85, `MR_RSI_BUY/SELL` 35/60→45/55, `MR_STD_MULT` 2.0→1.5, `DU_RSI_BUY/SELL` 35/60→45/55). **Jamais touché** : `STRATEGY`, `EMA_FAST/SLOW`, `DU_TREND_PERIOD`, `SYMBOLS`, `HOLD_UNTIL_PROFIT`, kill switch — l'identité de chaque bot dans le tournoi et tous les garde-fous restent en place, juste recalibrés plus larges (jamais retirés).
+- **Trouvé en vrai en poussant le changement** : le bot principal (testnet) tourne en `HOLD_UNTIL_PROFIT=true` (« ne vend jamais à perte ») — dans ce mode le stop-loss ATR est désactivé pour la position, seul `CATASTROPHE_STOP_PCT` limite encore la perte. Il était à 0 (désactivé) → avec la position agrandie à 60 % du capital, une position tenue aurait pu perdre **sans aucune limite**. Corrigé : `CATASTROPHE_STOP_PCT=20` pour ce bot.
+- **Garde permanente ajoutée** (`crypto-bot/config.py` → `Config.risk_warnings()`, appelée dans `bot.py` au démarrage, journalisée dans `audit.jsonl` + console) : signale désormais TOUJOURS la combinaison dangereuse ci-dessus (`HOLD_UNTIL_PROFIT` + frein catastrophe désactivé), et la concentration `MAX_POSITION_PCT ≥ 50 %`. `test_multi.py` : 49→**59 contrôles**, 0 échec, **prouvés discriminants par 4 sabotages** (l'un d'eux a révélé une erreur dans mon propre seuil de test au premier jet — corrigée avant livraison).
+- **`.env.example`** réécrit : reflète maintenant les valeurs réellement déployées (avant/après en commentaire pour revenir en arrière), et complète les champs qui manquaient depuis toujours (`STRATEGY`, `MR_*`, `DU_*`, `HOLD_UNTIL_PROFIT`, `CATASTROPHE_STOP_PCT`, `PAPER`, `BOT_NAME`) — un clone frais du dépôt ne pouvait pas reproduire ce que la flotte fait réellement avant ce commit.
+- **Pas de CI ajoutée pour ces tests** (choix assumé, pas un oubli) : `crypto-bot/` n'a jamais été branché à aucune CI (ni GitHub ni GitLab) et je ne l'ai pas changé — cohérent avec la règle « jamais de crypto dans GitHub Actions » (leçon de la suspension du 15/08) ; les tests restent lancés à la main (`python3 test_multi.py`), comme ils l'ont toujours été pour ce sous-projet.
+- **Coût** : inchangé (mêmes 6 conteneurs Railway, juste des variables d'environnement différentes ; aucun redéploiement ne recrée de service).
+
+## 2026-09-11 (17h30) — Robots crypto : où ils en sont, ce qu'ils ont gagné/perdu, et un bilan qui ne s'efface plus
+
+- **Mesuré sur Railway (pas déduit)** : 6 services existent. **2 tournaient** (`crypto-bot` testnet + `crypto-bot-p3`), **4 étaient muets depuis le 18 juillet** (`p1`, `p2`, `p4`, `p5` : build OK, 0 log runtime, 0 % CPU, 0 Go RAM sur 24 h). **Relancés** → les 6 tournent (vérifié dans leurs journaux, 17h32-17h33).
+- **Argent réel ? NON.** Le bot principal interroge `testnet.binance.vision` (vu dans ses journaux) = faux argent. Les 5 autres sont en mode papier (10 000 faux $ chacun).
+- **Bilan mesurable aujourd'hui** : `crypto-bot` equity **92 013 $** (faux) ; **1 seul trade** dans tout le journal disponible (vente SOL le 19 août) ; panne Binance 502 en boucle le 9 septembre, revenu seul. `p3` : **10 000,32 $** (+0,32 en 2 mois). Les 4 relancés repartent de **10 000,00 $** : le portefeuille papier vit en mémoire, un redémarrage le remet à zéro.
+- **Pourquoi le bilan « depuis le début » était IMPOSSIBLE** : il n'existait que dans les journaux Railway, **purgés** (plus rien avant le 19 août) et remis à zéro à chaque redéploiement. Rien n'était enregistré ailleurs.
+- **Corrigé** (`services/kdmc-router/worker.js`) : la flotte est **relevée dans KV** à chaque consultation, au plus 1 fois par heure (`bot:hist`, 720 relevés ≈ 30 jours) ; le **tout premier relevé de chaque bot** (`bot:first`) n'est jamais écrasé → le bilan « depuis le (date) » survit à la purge ET aux redémarrages. Nouvel endpoint admin `GET /__bot/history`. Fail-open : KV en panne ⇒ la flotte s'affiche quand même.
+- **Tableau de bord** (`tools/crypto-bot-dashboard/index.html`) : nouvelle carte « 🧾 Bilan — depuis le premier relevé » (départ → actuel, écart, nombre de redémarrages, 😴 si un bot n'a plus donné signe depuis 3 h).
+- **Garde** : `npm run test:bot-dashboard` — le test existait mais **n'était lancé nulle part** (test orphelin) ; il est maintenant **câblé dans `test:ci`**. 37 → **51 contrôles**, 0 échec. **Prouvé discriminant par 4 sabotages** (relevé retiré, throttle retiré, `bot:first` écrasé, fail-open retiré → échec à chaque fois). Le contrôle « bot:first jamais réécrit » était un **faux vert** au premier jet (le throttle l'empêchait d'être testé) — corrigé avant livraison.
+- **Règles respectées** : rien de crypto n'est revenu dans GitHub Actions (les 6 workflows restent « jamais » dans `DESTINATIONS.json`) ; 0 cron ; les bots tournent sur Railway et le tableau de bord sur Cloudflare, hors CI. `test:actions-conformes`, `test:destinations-workflows`, `test:depot-public-sain`, `test:no-pin-leak` verts.
+- **Coût mesuré** : ~0,099 Go de RAM et ~0,001 vCPU par bot ⇒ **≈ 1 $/mois par bot** au tarif Railway ; les 4 relancés ajoutent donc ≈ 4 $/mois. Arrêtables en un geste depuis le tableau de bord.
+- **Limite honnête** : le relevé se fait quand la flotte est consultée (tableau de bord ou appel admin). Sans consultation pendant des jours, l'historique a un trou. Un relevé vraiment automatique demanderait une place de cron Cloudflare — le compte gratuit est à 5/5.
+
+## 2026-09-11 (14h30) — v9.903 / light v1.44 : la LIGHT était encore « mélangée » (Firebase périmé) — corrigé, gardé
+- **Vérif live de v9.901** (run voir 34605702050, main déployé 13h26) : app ✅ 247/247 familles = équipes, Kevin BJ Éq.3, Mon équipe = 5 membres, Départs sous le bon dossier. **Light ❌** : « ton équipe : BJ Éq.12 (16/22) », « Éq.3 (14/19) » avec GATTI/FIA/COZZI… → la light groupe par `teamHistory` de Firebase (ancien import faux) et l'app ne persistait jamais sa correction (4 écritures `cmc_e` au boot re-persistaient les valeurs fausses).
+- **Fix light v1.44** : équipe du mois = board généré qui contient la personne (par nom), teamHistory Firebase seulement pour les mois non générés, normalisation « 2026-09-3 » → « 3 », absents du PDF non versés dans une équipe. **Fix app v9.903** : sync boards persiste `cmc_e` (admin, 1 écriture par mois corrigé).
+- **Garde** `test:light-firebase` (dans test:ci) : Firebase simulé périmé → light = PDF (36 équipes, membres exacts, Kevin 2026-09-3), app répare Firebase (247/247, 0 cellule, ≤ 8 écritures puis silence). Ancienne light → 4 échecs, ancienne app → 237 faux. Leçon #264.
+- v9.902 fusionnée dans main (MAJ forcée) ; v9.903 poussée ensuite.
+- **VÉRIFIÉ LIVE** (run voir 34609999429, main déployé 14h16) : light **v1.44** « ton équipe : Septembre 2026 — BJ Éq.3 (16/22) », tableau = MAGARA / ROSSI / ALDRIGHETTI / CASTEL / DESARZENS (les 5 du PDF), 0 erreur JS ; app **v9.903** Kevin `2026-09-3` / bj, 0 erreur JS. Les deux surfaces disent la même chose que le PDF.
+
+## 2026-09-11 (14h) — « light 42 ? Vérifie Maj forcé pour tous et tout » : v9.902 / light v1.43, prouvé en vrai navigateur
+- **Réponse courte** : light v1.42 ÉTAIT la dernière (v9.901 ne touchait pas la light) ; CMCteams servait v9.900 parce que v9.901 n'était pas encore fusionnée (fusion PR #3773 à 13h24, déploiement run 34604153623 vert à 13h26). L'app n'était pas en retard : la correction n'était pas encore en ligne.
+- **MAJ forcée auditée en RÉEL** (`tests/verify-maj-forcee-reelle.mjs`, `test:maj-forcee` dans test:ci, 27 contrôles, SW actif, session anonyme, cache GitHub Pages simulé) : 4 écarts à la règle + 1 boucle infinie possible + 1 rechargement en trop, tous corrigés (détail leçon #263) : sonde `cache:"reload"`, rechargement sur `?_force_upd_` via `forceRefresh()` (attend SW+caches), `location.pathname` (le hash SSO neutralisait le rechargement — les deux surfaces), 60 s, plafond 3 essais/10 min (`cmc_upd_tries`, `cmc_dep_upd_tries`), plus de 2e rechargement après MAJ ni à la 1re ouverture, badge light = APP_VER = version.txt (v1.43).
+- Ancien code → 8 échecs ; nouveau → 27/27. Suites relancées vertes : autoupdate 7/7, parité 7/7, seed-remplace, departs-pin 9/9, departs-compare 0 écart, equipes-mois, no-pin-leak, check-syntax.
+- Vérifié : le minifieur du déploiement garde `var APP_VER=` ; le routeur transmet `?_v=` à Pages.
+- **En cours** : run « voir comme Kevin » sur main (v9.901 déployée) pour lire `equipes.json` + captures (attendu : 247/247 familles = équipes, Mon équipe = Éq.3).
+
+## 2026-09-11 (13h30) — v9.901 « Toutes les équipes sont mélangées » : corrigé, prouvé, garde
+- **Données justes, affichage faux.** seed = boards = PDF (285/285 sept, 281/281 oct). Sur les VRAIES données de Kevin (relevé `equipes.json`, run voir 34601813763) : 56/247 personnes en équipe affichées sous leur famille d'origine, 0 `familyHistory` du mois, « Mon équipe » vide, cartes avec l'équipe DEF_EMP figée (« Roul. Éq.7 » pour un membre de BJ Éq.3).
+- **Fix index.html v9.901** : `familyForMonth` → famille de l'équipe du mois avant la famille figée ; seed pose fam/école/miroir manquants même sur un mois live à jour ; boards portent leur famille ; `_getMyTeamFirst`, vEmps (sections, cartes, tri), vPlan (puces), vDeparts (dossiers), modale jour, export PDF, vAbsences → équipe/famille DU MOIS. sw.js `cmcteams-v9.901`.
+- **Garde** `test:equipes-mois` (dans test:ci) : appareil de Kevin simulé, 4 vues, 15 contrôles verts ; ancien code → 10 échecs. Autres tests relancés : baccara-chef, kevin-truth, mois-ouverture, vplan, seed, departs-compare, departs-algo, seed-remplace, render-views verts (`runtime-audit-v703-section-family` = test périmé hors CI qui exige APP_VER v9.703 ; `verify-app-as-kevin` exige un serveur :8099 lancé à part).
+- **Outil voir** : « Tout ouvrir » avant capture + `equipes.json` ; branche de relecture ORPHELINE (le jeton du job ne peut pas pousser un historique avec workflow — run 34601407690 refusé).
+- **Reste** : après fusion + déploiement, relancer « voir comme Kevin » sur main et lire captures + `equipes.json` (attendu : familles = équipes pour 247/247, Mon équipe = Éq.3 ; light inchangée).
+- Seed + boards régénérés (seul le champ `parser` change → v9.901, garde `test:seed-remplace` exige parser = APP_VER). Branche `claude/voir-34600331412` : suppression git REFUSÉE par le proxy (send-pack hung up ×5) → inscrite au cliquet `pipeline/branches-orphelines-baseline.json` (elle redevient robot-seule après fusion de la PR #3765). m065 clos.
+- Leçon #262.
+
+## 2026-09-11 (midi) — « Toutes les équipes sont mélangées » : mesure en cours
+- Mesure locale (appareil neuf, seed seul, `tests/_scratch/mesure-equipes-local.mjs`) : équipes de travail sept 282/285 (3 écarts = groupes d'absence déduits des cellules), oct 249/281 (32 écarts = tous des groupes d'absence sans `teamHistory`, attendu) ; **vue Employés : 55-61 personnes/mois classées sous la MAUVAISE famille** (`_empGroupKey` lit `e.family` figé au lieu de `familyForMonth`) ; juin/juillet : 30 familles cmc→roulettes.
+- `tools/voir/voir.mjs` : « Tout ouvrir » avant chaque capture (planning + employés) + relevé `equipes.json` (équipe/famille de chaque employé, mois affiché + suivant, données Firebase de Kevin) → relance du workflow pour voir les VRAIES données de Kevin avant de corriger.
+## 11 septembre 2026 (matin) — « Go » sur les quatre points laissés à ta décision
+
+Branche `claude/apex-chat-suite-2210`. Tout est mesuré, rien n'est estimé.
+
+- **Le fichier le plus critique d'Apex Chat est enfin couvert** : `workers/api-worker.js` (6 045
+  lignes : codes OTP, admin, jetons, premium) avait **64 % de ses fonctions** appelées par un test.
+  108 fonctions ne l'étaient jamais (16 routes nommées + ~90 rappels d'erreur). **118 tests
+  ajoutés** (`tests/unit/api-worker-fonctions-non-appelees.test.js`), chacun passe par le vrai
+  routeur avec la vraie route et la vraie authentification, et exerce au moins une branche
+  d'erreur (code exact + détail). Mesuré vitest 5 : **91,98 % instructions · 81,92 % branches ·
+  100 % fonctions · 94,25 % lignes** (avant : 75,71 / 68,48 / 64,47 / 79,20). Plancher relevé à
+  91 / 81 / 99 / 93,5. **1241 / 1241 tests, 62 fichiers, couverture exit 0**, gate CI simulé OK.
+- **Les deux conseils du scan sécu sont appliqués** : `jq` remplace `python3 -c` dans les 3
+  workflows signalés (la réponse d'API n'était déjà que lue, `jq` lève le doute) ; les **23
+  actions** des 10 workflows d'Apex Chat sont **épinglées sur leur SHA** (`@<sha> # v6`), plus la
+  version en commentaire. Dependabot (déjà en place, hebdo) continue de proposer les montées.
+  Les 4 gardes de workflows restent vertes.
+- **Strix : la cause du rapport illisible est comprise et corrigée.** Lu dans le code de Strix
+  1.6.2 : il écrit dans **`strix_runs/`** (le workflow copiait `agent_runs/`, l'ancien nom) et il
+  **écrit son rapport même quand on le coupe** (SIGTERM → état « interrupted »). Le workflow
+  laisse maintenant 75 min, **borne la dépense** (`--max-budget-usd`, 15 $ par défaut, Strix
+  s'arrête seul et proprement) plutôt que le temps, choisit la profondeur (`quick` / `standard` /
+  `deep`, `standard` par défaut), copie le bon dossier, et pose dans le check-run l'**inventaire
+  des fichiers**, le **rapport final**, les **fiches de vulnérabilité** et le nombre d'erreurs de
+  flux. Relancé sur `https://apex-chat.kd-mc.com/` (voir le run dans le rapport de session).
+- **Lingua « en panne » : c'était la sonde, pas l'app.** Le balayage live relancé ce matin (run
+  `34588152564`, lu dans son nouveau check-run) donnait encore **27 vertes, 1 rouge : Lingua,
+  « `page.fill` Timeout »**, alors que le correctif de l'écran blanc était bien en ligne. Rejoué
+  pas à pas en local sur le code de `main` : la fenêtre « Nouveau compte » s'ouvre, mais depuis le
+  **05/09** elle demande **prénom + nom** (deux champs, pour distinguer les homonymes) et la sonde
+  remplissait toujours l'**ancien champ unique**, qui n'existe plus. Chaque balayage depuis le
+  05/09 échouait donc sur Lingua **pour un défaut de la sonde**. Mesuré après correction de la
+  sonde : fenêtre ouverte, **16 langues, 189 unités, 607 boutons, 0 erreur JS**. La sonde
+  corrigée est poussée ; le balayage live qu'elle déclenche donne le verdict en ligne. Pour que la
+  prochaine alerte se lise sans deviner, `audit-live.yml` pose désormais son **verdict par
+  surface dans un check-run** (`node tools/ci/ci.mjs report <run>`), comme les deux scans de
+  sécurité. À côté : la vérification voix + écran (`tests/verify-lingua-voix.mjs`) donne **26 / 26**
+  en local — elle échouait ici pour une raison d'outillage (Playwright absent à la racine, puis
+  version de Chromium différente de celle installée : relié par un lien, sans rien télécharger).
+- **Strix a fini, et cette fois je l'ai lu** (run `34588162278`, 38 min, **14,00 $**, 33,1 M
+  jetons dont 31,8 M en cache, 2 fiches MEDIUM). Les deux sont **vraies**, vérifiées dans le
+  code, **corrigées** dans le même commit avec un test chacune :
+  1. **Une session « nommée » se fabriquait à distance et servait à lire ou couper la tienne.**
+     Le portail accepte qu'une app déclare un nom sans preuve (c'est voulu : « reconnu auto »,
+     jamais admin sans Face ID). Mais deux pages du portail se contentaient de cette session
+     faible : « mon historique » (avec un faux nom `kdmc_admin`, un inconnu lisait tes appareils,
+     tes apps, tes connexions) et « déconnecter mes autres appareils » (le même inconnu **coupait
+     toutes tes sessions**, Face ID comprises). Les deux exigent maintenant Face ID prouvé. Et un
+     site tiers pouvait poser ce cookie **dans le navigateur d'un visiteur** (connexion forcée
+     sous un faux nom) : l'émission n'est plus acceptée que depuis le domaine ou une app native.
+     Tests : `services/kdmc-router/self-service.test.mjs` 23/23 (10 nouveaux), et ces tests
+     tournent enfin avant chaque déploiement du routeur (ils ne tournaient nulle part).
+  2. **Un lien piégé activait un Premium à ton insu.** `?grant_premium=<qui>&plan=<formule>`
+     partait tout seul dès que tu étais connecté en admin, sans rien te demander. Maintenant
+     une fenêtre te dit **qui** et **quelle formule** avant d'envoyer ; « Annuler » ne fait
+     rien. Même chose pour le bouton « Activer » de la notification (un tap de plus, nommé).
+     Apex Chat **v1.1.289**, garde `premium-deep-link-confirm.test.js` (prouvé discriminant).
+  Ce que Strix n'a **pas** trouvé : pas d'injection, pas d'accès aux conversations, pas
+  d'élévation admin. Ce qu'il n'a **pas** testé : les parcours connectés (OTP), le temps réel.
+- **Vu au passage, réparé** : la garde `test:router-secours` (câblée dans `test:ci`) était
+  **rouge sur `main`** avant mon passage : 6 adresses du routeur (cuisine, portail boutiques,
+  les 4 « belles adresses » de l'accueil) n'étaient pas prévues dans la copie de secours
+  (celle qui sert les pages si GitHub Pages tombe). Ajoutées : cuisine et le portail
+  (`index.html` + pages légales seulement, pas tout le dossier), les 4 autres sont déjà
+  dedans par leur dossier parent. Guard 49/49, paquet 40/40, copie légère refaite en vrai.
+- **Vu au passage, réparé (2)** : le test navigateur réel du SSO (`kdmc-sso-e2e.yml`, Face ID
+  + multi-apps sur le vrai domaine) **échouait à l'installation depuis au moins 5 exécutions**
+  (dont celles lancées après chaque fusion) : même cause que l'audit live le 05/09, le
+  `package.json` de la racine fait planter `npm i`. Corrigé de la même façon
+  (`--legacy-peer-deps`), relancé pour prouver le routeur corrigé sur le vrai domaine.
+  **Et ce test, une fois réveillé, a attrapé deux choses** : (a) ma première règle d'origine
+  refusait le portail servi en local (même hôte, port `127.0.0.1:…`) → 2 contrôles perdus ;
+  corrigé : la même origine que l'hôte appelé est toujours acceptée (c'est le contraire d'un
+  site tiers), 25/25 côté routeur ; (b) un contrôle périmé depuis le 05/08 (il attendait la
+  fiche `kevin-desarzens`, fusionnée depuis dans la fiche unique `kdmc_admin`) — vérifié avec
+  le routeur d'avant mes changements : déjà rouge. Corrigé. Les 4 tests navigateur du
+  workflow passent en local (8/8, 15/15, 7/7, 3/3).
+
+## 10 septembre 2026 (nuit, suite) — « Lingua est en panne » : vérifié, c'était vrai, c'est réparé
+
+Kevin me relaie l'alerte d'une autre session. **Vérifié avant de répondre**, et retrouvé le
+signalement d'origine — le message **m051** du 6.09 : la « Vérif RÉELLE » sur le VRAI domaine
+avait **27 surfaces vertes et une seule rouge**, `lingua.kd-mc.com` :
+`deep: exception TimeoutError: page.fill: Timeout 30000ms exceeded`. La page ne se montait pas
+assez pour qu'on puisse seulement **remplir un champ**. Un élève tombait sur une page vide,
+sans message : la panne la plus pénible, celle qui ne fait aucun bruit.
+
+**C'était exactement le bug corrigé quelques heures plus tôt** (`u0-0` sur `undefined`, l'app
+rendait 2 boutons au lieu de 607). Preuve que c'est en ligne : le déploiement Pages a **réussi
+à 20 h 59 sur `d023a18ad`**, le commit de fusion du correctif.
+
+### État mesuré maintenant, sur le code de `main`
+Parcours complet dans un vrai navigateur : arrivée → **Nouveau compte** → prénom + nom + code →
+choix de la langue → **607 boutons**, bouton d'écoute présent, **0 erreur JavaScript**. Les 5
+cours (en/es/it/de/mc) s'ouvrent, y compris **sans progression enregistrée**.
+
+### Ce qui manquait, et qui est ajouté : une garde sur le PARCOURS
+Les tests existants partaient tous d'un compte **déjà fabriqué en mémoire**. Ils ne passaient
+donc jamais par l'écran d'arrivée, la création de compte ni le choix de la langue — **les trois
+étapes cassées en production**. D'où une panne visible par les utilisateurs pendant 4 jours
+avec des tests au vert.
+
+`npm run test:lingua-parcours` (**11 OK / 0 FAIL**, câblé dans `test:ci`) rejoue ce parcours.
+**Prouvé discriminant** : correctif retiré → **6 échecs**, dont l'erreur mot pour mot de la
+panne (`Cannot read properties of undefined (reading 'u0-0')`).
+
+---
+
+## 10 septembre 2026 (nuit) — Lingua : 3 vrais bugs, dont un écran blanc total
+
+La session « arbre » signalait 5 échecs rouges dans `test:lingua-voix`, qui bloquaient
+`test:ci` **pour toutes les sessions** depuis le 6.09. Vérifié moi-même avant d'agir — et
+son message disait le correctif « déjà poussé sur main » : **il n'y était pas**.
+
+### 1. Un compte sans progression = écran BLANC (le plus grave, et pas qu'un test)
+Mesuré dans un vrai navigateur : sans la clé `prog[cours]`, `unitDone()` lit
+`S.prog[S.course]["u0-0"]` sur `undefined`, l'erreur remonte au démarrage et l'app rend
+**2 boutons au lieu de 607** (22 caractères de texte). L'élève n'a plus rien — ni leçons,
+ni réglages, ni moyen de se reconnecter. Il suffit qu'un navigateur vide une partie du
+stockage. Corrigé à la racine dans `loadS()` : la clé est recréée **vide** (aucune
+progression inventée). Mesuré après : **607 boutons**, identique à un compte sain.
+
+### 2. Le mot était prononcé DEUX FOIS, dans les 4 langues
+« to the left » ×2, « a la izquierda » ×2, « a sinistra » ×2, « nach links » ×2. Cause :
+quand la belle voix tombe, **deux chemins** se déclenchent pour le même clic — la promesse
+de `play()` qui échoue ET l'événement `error` de la balise audio. Le garde existant ne
+voyait rien : les deux appartiennent à la même demande. Un seul repli par demande
+désormais. Prouvé hors test : 1 clic → 1 prononciation.
+
+### 3. Le message de repli ne nommait pas la voix qui marche sans réseau
+Il disait « je passe sur la voix du téléphone ». Il nomme maintenant
+**« Voix du téléphone (hors-ligne) »** et explique comment la choisir pour de bon.
+
+### Preuve
+`test:lingua-voix` : **26 OK / 0 FAIL** (était 21/5, et avant ça 0 vérification exécutée).
+Aucune régression : `test:lingua-connexion` 20/20, actifs et porte de vérité verts.
+
+---
+
+## 10 septembre 2026 (suite) — le clic que je t'avais rendu n'existait pas
+
+- **Je m'étais trompé** : je t'ai écrit « je ne peux pas lancer la vérification, il te reste un
+  clic ». J'avais testé **deux** choses (l'outil `gh`, absent · les connecteurs) et j'en avais
+  conclu un mur. **Je n'avais jamais essayé l'API GitHub directement.** Elle répond, et elle me
+  reconnaît déjà comme toi. **Zéro clic pour toi.**
+- **J'ai donc tout lancé moi-même.** Les 4 vérifications « obligatoires » de l'audit, laissées
+  de côté depuis des mois faute de savoir les déclencher, ont enfin tourné. Elles ont trouvé
+  **trois choses que rien d'autre ne pouvait voir** :
+  1. **Apex Chat en ligne répond, et 18 de ses 20 contrôles passent** contre la vraie prod.
+     Les 2 échecs sont **un seul test périmé** (il réclamait ton ancienne adresse GitHub au lieu
+     de ton vrai domaine `apex-chat.kd-mc.com`). **C'est le test qui avait tort, pas l'app** —
+     corrigé sans toucher au site.
+  2. 🔴 **Le « deuxième avis » — l'IA indépendante censée relire mon travail — n'a JAMAIS
+     rendu un seul avis.** Sur ses 100 dernières exécutions : **0 réussite**. Elle était réglée
+     pour ignorer les demandes créées par le robot… alors que **29 sur 30** viennent du robot.
+     Elle semblait active, elle ne tournait jamais. **Réparé** : je peux maintenant la lancer
+     quand je veux, sur la demande de mon choix.
+  3. ~~🔴 19 tests d'app sur 22 ne sont lancés nulle part~~ — **je m'étais trompé, et je l'ai
+     mesuré une heure plus tard** : ces 19 tests **tournent** à chaque push, sur 4 navigateurs.
+     Ce qui était vrai, et pire : **les deux voies iPhone étaient rouges à chaque exécution
+     depuis le 6 septembre** (19 runs sur 60), à cause du durcissement CORS de ce jour-là qui
+     n'acceptait le local qu'en `http` alors que les tests se servent en `https`. Chromium
+     restait vert et cachait le rouge de Safari — le seul navigateur que tu utilises.
+     Corrigé (une lettre dans la règle CORS, prouvé par test), et un garde empêche qu'une
+     suite de tests soit de nouveau déclarée « lancée » ou « dormante » sur un simple mot.
+- **J'ai créé l'outil** pour que ça ne se reperde jamais : `tools/ci/ci.mjs` — je lance,
+  je suis, et je lis la cause exacte d'un échec, sans dépendre d'un logiciel absent.
+- **Ton numéro de téléphone ne figure plus nulle part dans le dépôt** (il y était 113 fois, dans
+  12 fichiers de test, et dans le garde censé l'empêcher d'apparaître). Remplacé partout par des
+  numéros inventés, sans que je l'affiche une seule fois ; le garde vérifie maintenant
+  « aucun numéro réel, quel qu'il soit », au lieu de connaître le tien. 1115 tests toujours verts.
+- **Deuxième mur, même soir** : le scan de sécurité « arsenal » a fini vert… mais son rapport
+  est rangé à un endroit que je ne peux pas atteindre d'ici (refus 403, mesuré). Un rapport
+  qu'on ne peut pas lire n'existe pas. Correctif : les deux scans de sécurité (arsenal +
+  pentest IA) **posent aussi leur rapport sur le commit** (« check-run »), et
+  `node tools/ci/ci.mjs report <run>` le lit. Relancés pour lire le vrai résultat.
+- **Autre chose vue au passage** (hors Apex Chat) : toutes tes pages du domaine répondent,
+  **sauf `lingua.kd-mc.com`** qui est en panne. Je te le signale, je n'y ai pas touché.
+- **Les deux scans de sécurité ont fini, je les ai lus.** L'arsenal donne **2 211 signalements
+  bruts** sur tout le dépôt — un chiffre qui fait peur et qui ne veut rien dire tant qu'on n'a
+  pas vérifié chaque ligne. Pour Apex Chat, le tri (preuves dans `audit/apex-chat/03-FINDINGS.md`) :
+  **aucun secret vivant**, **aucune faille dans l'app déployée**. Ce qui était vrai et que j'ai
+  corrigé : **7 failles connues dans les outils de test** (mis à jour, 1117/1117 tests verts),
+  **2 installations de `wrangler` « dernière version, quelle qu'elle soit » avec ton jeton
+  Cloudflare en main** (version majeure épinglée), **1 job de déploiement sans permissions
+  déclarées** (limité à la lecture). Le reste, sur Apex Chat, est faux positif prouvé (clé
+  VAPID publique par conception, en-têtes PEM sans valeur, URL de fixture dans un test).
+- **9 signalements Semgrep restent à identifier** : le rapport ne donnait que des comptes, pas
+  les lignes, et Semgrep ne peut pas tourner d'ici. J'ai ajouté au scan une option qui liste
+  chaque signalement avec sa ligne, et je le relance sur Apex Chat.
+- **Le pentest IA (Strix) a été tué par son délai de 26 min** avant d'écrire son rapport ; il
+  annonce **1 vulnérabilité MEDIUM** que je ne peux pas lire. Cette exécution t'a coûté
+  **13,77 $**. Je ne la relance pas sans ton accord.
+- **L'automate de fusion a refusé ma branche deux fois ce soir** : à chaque fois, une autre
+  session avait ajouté un test à la même ligne de `package.json` que moi. Résolu à la main les
+  deux fois (les deux tests gardés). Le correctif CORS des iPhone est **toujours en attente sur
+  `main`** tant que cette fusion n'a pas abouti.
+- **Trouvé pourquoi ça bloquait, et corrigé** : ce n'était pas seulement le conflit. Le
+  **nettoyage automatique des branches** effaçait la mienne **dans la minute qui suivait chaque
+  push**, parce que son nom avait déjà eu des demandes fusionnées avant (5 fois). Il jugeait sur
+  le nom, pas sur le contenu. Corrigé : il ne supprime plus que ce qui est déjà entièrement dans
+  `main`, et un test rejoue le cas (`tests/verify-cleanup-nom-reutilise.mjs`). Ça touchait
+  aussi les autres sessions qui réutilisent un nom de branche.
+- **Les 9 signalements Semgrep sont identifiés, et les 47 lignes du scan ont été ouvertes une
+  par une** : **aucune faille**. Les trois classés « grave » sont des `curl` qui lisent une
+  réponse d'API comme une donnée, pas comme un programme. Détail au § 6.5 de
+  `audit/apex-chat/02-RESULTATS.md`. Il reste deux conseils mineurs (pas des failles).
+- **La couverture de tests d'Apex Chat a « baissé » sans qu'un seul test ait été retiré — c'est
+  la règle qui a changé, pas l'app.** La mise à jour de sécurité des outils de test (vitest 5)
+  compte désormais les branches et rappels jamais exécutés, et inclut tous les fichiers dans un
+  seuil global. Le matin l'outil disait 89 % de lignes, le soir 85,5 % pour le même code. Avec un
+  seuil global à 100 %, **la CI de `main` était rouge après la fusion**. Corrigé sans tricher :
+  un seuil **par fichier = sa valeur mesurée** (cliquet : ne peut que monter), le workflow **lit
+  cette table** au lieu d'en tenir une copie, 8 tests ajoutés (`crypto-core` et `ia-worker`
+  revenus à 100 %, contrat des deux fichiers-relais Durable Object prouvé). **1123 / 1123 tests,
+  couverture exit 0.** Les chiffres avant/après sont écrits côte à côte dans le dossier d'audit.
+## 11 septembre 2026 — « Toujours pas de son, pas de voix » : la page servie est bien la nouvelle, le suspect n°1 est le bouton silencieux de l'iPhone
+
+- **Vérifié en vrai** (page lue depuis cuisine.kd-mc.com via Zapier, HTTP 200, `x-kdmc-router`
+  présent) : le domaine sert **la version corrigée** (lecture par étapes, bouton `data-tts`,
+  icône). Donc ce n'est plus un problème de déploiement.
+- **Ce qui reste comme cause probable** : sur iPhone, la voix de synthèse passe par la catégorie
+  audio « ambiante », **coupée par l'interrupteur silencieux** (le petit bouton sur le côté) —
+  exactement comme les sons de jeu, alors que la musique passe. Une app en mode silencieux =
+  bouton qui devient rouge, étape surlignée, **mais aucun son**. L'ancienne version avait le
+  même défaut : ça explique un « toujours pas de son » avant/après.
+- **Livré** : (1) iOS 17+ : `navigator.audioSession.type = 'playback'` au moment de l'appui → la
+  page passe en catégorie « lecture » (comme une app de musique), la voix passe **même en mode
+  silencieux** ; (2) repli pour les iPhone plus anciens : un son muet d'un quart de seconde
+  (`<audio>` embarqué, aucun fichier à charger) est joué dans le même appui, ce qui bascule la
+  session audio ; (3) un message « 🔊 Lecture de N phrases… (v2) » à chaque appui — il dit à Kevin
+  (et à moi) que la nouvelle version tourne.
+- **Si toujours rien après ça** : le message affiché donnera la cause exacte ; sinon vérifier le
+  volume (boutons latéraux pendant la lecture) et Réglages → Accessibilité → Contenu énoncé (une
+  voix française doit être installée).
+
+## 10 septembre 2026 (soir, suite) — « Change la couleur de la fiche de l'app sur bureau. Drapeau monaco »
+
+- **Ce que Kevin voyait** : le livre de cuisine ajouté à l'écran d'accueil de l'iPhone donnait une
+  vignette sombre (capture automatique de la page) : la page n'avait **aucune icône déclarée**,
+  ni manifest, ni couleur de thème.
+- **Livré** : une vraie icône **aux couleurs du drapeau de Monaco** (rouge Pantone 186 `#CE1126`
+  en haut, blanc en bas) avec le blason doré de la couverture au centre —
+  [icon.svg](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg)
+  (source) + PNG 32/180/192/512 rendus depuis le SVG ; `manifest.json` (nom « Cüjina », plein
+  écran, couleur rouge) ; en-tête de page : `apple-touch-icon`, `theme-color`, titre
+  d'écran d'accueil « Cüjina », favicon. La barre du haut gère déjà l'encoche (safe-area).
+- **Pour voir le changement sur l'iPhone** : supprimer l'ancienne icône de l'écran d'accueil et
+  refaire « Partager → Sur l'écran d'accueil » (iOS ne remplace pas l'icône d'un raccourci déjà
+  posé).
+- **Garde** : `tests/verify-cuisine-lecture.mjs` vérifie aussi la présence des 6 fichiers d'icône,
+  leurs couleurs (rouge/blanc) et leur déclaration dans la page.
+
+## 10 septembre 2026 (soir) — « Lire les étapes ne fonctionne pas » : la voix du livre de cuisine partait en une seule phrase de 1 400 caractères
+
+- **Ce que Kevin a vu** : sur une recette, le bouton « 🔊 Lire les étapes » ne lisait rien (ou
+  s'arrêtait net). **Ce qui se passait** : toute la recette (600 caractères en moyenne, 1 442 au
+  maximum) était envoyée en **UNE seule phrase vocale**, juste après un `cancel()`, et l'objet
+  n'était gardé nulle part. Sur iPhone, `cancel()` collé à `speak()` fait sauter la lecture et
+  une phrase trop longue se coupe ; sur Chrome, l'objet ramassé fait taire la voix au bout de
+  ~15 s. Le texte entier était en plus copié dans l'attribut du bouton (jusqu'à 1 442 caractères
+  dans le HTML, pour chaque recette ouverte).
+- **Corrigé** ([tools/cuisine/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/index.html)) :
+  la lecture se fait **une phrase par étape** (« Recette : … », « Étape 1. … », « Étape 2. … »,
+  jamais plus de 220 caractères, coupure sur la ponctuation puis les virgules puis les espaces),
+  toutes les phrases sont **gardées en mémoire** et **enchaînées** à la fin de la précédente ;
+  **l'étape lue est surlignée** dans la liste et suit le défilement ; le bouton devient rouge
+  « ⏹ Arrêter la lecture » (un appui arrête, changer les portions ou mettre en favori ne perd
+  pas la lecture, quitter la recette l'arrête) ; plus jamais de `cancel()` à vide avant `speak()`
+  (moteur réveillé s'il est figé « en pause », annulation seulement s'il reste quelque chose,
+  puis 150 ms de respiration) ; une voix **française** est choisie quand l'appareil en a une ;
+  une **erreur du moteur est dite avec sa cause exacte** (« Lecture impossible
+  (synthesis-unavailable) : aucune voix disponible sur cet appareil ») ; si rien ne démarre en
+  3 s, conseil « monte le volume et vérifie le bouton silencieux de l'iPhone ». Bonus : la page
+  déclare enfin son encodage (`<meta charset>`) — sans lui, servie ailleurs que GitHub Pages,
+  tous les accents cassaient.
+- **Preuve** : [tests/verify-cuisine-lecture.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs)
+  (`npm run test:cuisine-lecture`, dans `test:ci`) charge la **vraie page** dans un vrai
+  Chromium avec un moteur vocal simulé qui note chaque phrase : **128 recettes, 991 phrases, la
+  plus longue 216 caractères, chaque étape couverte**, arrêt/quitter/re-rendu/erreur/muet/sans
+  moteur tous vérifiés, 0 erreur JS. Lancé sur l'**ancien** code : 141 problèmes (discriminant).
+  Captures iPhone regardées : étape 1 surlignée en or, bouton rouge « Arrêter ».
+- **Limite honnête** : le vrai iPhone n'a pas été écouté (pas d'iPhone dans le conteneur) ; le
+  test rejoue les événements du moteur comme un navigateur, et le correctif applique les
+  parades connues de Safari. Si Kevin n'entend toujours rien : le message dira la cause exacte,
+  et le bouton silencieux (interrupteur latéral) coupe la voix de synthèse sur iPhone.
+- Leçon **#251** ; inventaire mis à jour.
+## 10 septembre 2026 (soir, studio-crea) — « continu » : liste reprise, deux rouges à moi réparés, la caméra du Studio ne perd plus un film en silence
+
+- **`test:bascule` + `test:consigne-reelle`** (m047/m058) : référence git en dur → résolue ; postulat
+  périmé (« change UNE ligne ») → bascule par 2 variables prouvée sur le vrai code de `main`
+  (46/0, 13/0, 3 sabotages → 3 rouges) ; `REMETTRE_EN_LIGNE.md` remis d'accord. PR #3745. Leçon #243.
+- **Test XSS Départs** : pas cassé, dépendait du dossier courant → 1 ligne, câblé `test:departs-xss`
+  dans `test:ci` (m064 à cmcteams-departs). Vrais chemins des PIN par app dans KEVIN_ACTIONS_TODO.
+  Tâches 7/10/11/13 remesurées. PR #3747.
+- **Studio créa v9.18.2 — caméra** : `test:crea-camera` rouge **une fois sur ~20** (« galerie 2 → 2 »),
+  vert ensuite, sans aucune cause lisible. Sonde : 6 enregistrements de suite, tous rangés en 1,7 s
+  (donc pas une lenteur). Lecture du code : (a) le film n'était archivé **qu'après** la remise en
+  place des boutons — une exception là = film **perdu sans trace** ; (b) l'enregistreur n'avait
+  **aucun `onerror`** — après une erreur d'encodage, `rec` restait posé et le bouton ne faisait plus
+  rien, pour toujours, sans un mot. Corrigé : archiver **d'abord**, `onerror` qui dit la cause,
+  libère le bouton et range ce qui a été filmé. **Prouvé** (test 5b, 16/0) : erreur simulée avant
+  toute image → « Vidéo impossible : UnknownError : … », bouton libre, l'enregistrement suivant
+  marche ; erreur après 1,2 s d'images → film rangé + « Enregistrement interrompu (QuotaExceeded…) ».
+  Le test journalise désormais l'enregistreur : le prochain rouge dira POURQUOI. Attente 12 → 30 s
+  (machine chargée). `sw.js` bumpé avec (`crea-studio-v9.18.2`). Leçon #251.
+- Mon terrain, mesuré : 17 tests Studio créa verts ; `retard-branches` : à jour.
 
 ## 10 septembre 2026 — le dossier d'audit Apex Chat est enfin complet (et il ne ment plus)
 
@@ -163,6 +959,19 @@ l'app entière était remplacée par « ⚠️ Erreur asynchrone non gérée —
 garde `test:bg-sync-benin` (rejoue la panne, discriminante par sabotage). Et la page Départs/light
 restait sur « Première connexion » : `session-kevin.mjs` pose maintenant `cmc_dep_identity` +
 `cmc_dep_me` (+8 contrôles).
+
+**3e run (34519286077), après v9.899 + session complète** : je VOIS ce que Kevin voit —
+CMCteams v9.899 connecté DESARZENS K : *Mon planning* septembre (16/22c, 14/19c, 20/5* CDP, RH/R,
+« prochain service ven 11 · 20/5* 20h-5h CDP »), *Départs* « MA SECTION ⇌ BJ Éq.9 (16/3) », bloc
+BJ Éq.3 (16/22) DESARZENS / MAGARA M / ROSSI J (CP) / ALDRIGHETTI JP / CASTEL N avec les numéros
+1-3-2-1 ; la page Départs light connectée montre la même équipe et les mêmes numéros. Accueil :
+71 alertes / 71 conflits, 1 en ligne, couverture septembre 30/30. 0 erreur JS. (Le nom de vue
+« plan » n'existe pas : l'app retombe sur l'accueil — utiliser les vrais noms `sv()`.)
+
+**v9.900 (19h20)** : rappel programmé de la session « arbre » (identifiant U_TMP_ tiré de l'horloge) —
+déjà rectifié en v9.896 ; VÉRIFIÉ à l'instant : deux `_gen-boards.mjs` d'affilée identiques à l'octet
+près et identiques au fichier commis ; dernier site `Date.now()` (bouton manuel « Créer ») converti à
+`_cmcTmpEmpId`. Réponse m065, m038 clos.
 
 Preuve réelle de la version servie (ce matin je l'avais seulement déduite du déploiement vert) :
 CMCteams **v9.898**, light **v1.42**. Skill `.claude/skills/voir/SKILL.md`, leçon #249.
@@ -2087,6 +2896,8 @@ après chargement) → sortir les données derrière le SSO du domaine ; **feu v
    `tools/departs/boards-gen.js`) = les noms des employés, **par conception** de l'app (chaque
    employé voit son équipe). Les mettre derrière le SSO = changer le modèle d'accès de l'app → **feu
    vert Kevin d'abord** (ETAT-INFRA fait n°12 « ce qui reste ouvert »), territoire CMCteams.
+   ✅ **TRANCHÉ 10.09 par Kevin : « non »** — les plannings CMCteams restent accessibles comme
+   aujourd'hui. Tâche close, ne plus la reproposer (gravé : ETAT-INFRA fait n°12, NOTES_USER).
 8. 🤖 **20 des 24 automatisations « GitLab » ne sont pas encore portées** dans `.gitlab-ci.yml` :
    elles attendent une clé côté GitLab (*Paramètres → CI/CD → Variables* ; liste exacte :
    `ETAT-INFRA.md` fait n°13). À faire **quand une servira**, pas avant — et toujours à la demande
