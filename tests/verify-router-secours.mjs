@@ -92,22 +92,43 @@ amont({ code: 404 });
 r = await appel('kd-mc.com', '/', {});
 chk(r.status === 404, 'F. sans copie, rien ne change : on renvoie le 404 comme avant');
 
-/* G) aucun sous-domaine oublié dans la copie */
+/* G) aucun sous-domaine oublié dans la copie
+ *
+ * CORRIGÉ LE 10.09.2026 — ce contrôle cherchait le texte `'<dossier>'` N'IMPORTE OÙ
+ * dans prepare-secours.mjs. Il mentait des deux côtés :
+ *   • FAUX ROUGE — `kdmc-home/worldmonitor` était signalé « oublié » alors qu'il est
+ *     DANS `kdmc-home`, recopié récursivement : le fichier arrive bien dans la copie.
+ *     Idem osint / ia / outils. Quatre rouges pour un travail déjà fait.
+ *   • FAUX VERT — une simple mention en COMMENTAIRE suffisait à rassurer le contrôle
+ *     (même piège que la règle 1 de verify-actions-conformes, leçon #103).
+ * On lit maintenant les VRAIES listes déclarées, et on demande la seule chose qui
+ * compte : ce dossier finit-il dans la copie, par lui-même ou par un parent ?
+ */
 const src = readFileSync(new URL('../services/kdmc-router/worker.js', import.meta.url), 'utf8');
 const bloc = src.slice(src.indexOf('const ROUTES'), src.indexOf('// Proxy MÊME ORIGINE'));
 const dossiers = [...bloc.matchAll(/'\/CMCteams\/?([^']*)'/g)].map((m) => m[1]).filter((x, i, a) => a.indexOf(x) === i);
 const prep = readFileSync(new URL('../services/kdmc-router/prepare-secours.mjs', import.meta.url), 'utf8');
-/* La copie est RÉCURSIVE (cpSync recursive:true) : lister « kdmc-home » couvre
-   déjà kdmc-home/osint, /ia, /outils, /worldmonitor. Chercher la chaîne exacte
-   accusait donc 4 sous-dossiers DÉJÀ copiés — un test qui crie au manque là où
-   il n'y en a pas fait perdre du temps et finit par être ignoré (leçon #103 à
-   l'envers : un faux rouge est aussi nuisible qu'un faux vert). On vérifie ce
-   qui compte vraiment : le dossier OU l'un de ses parents est dans la copie. */
-const couvert = (d) => d.split('/').map((_, i, a) => a.slice(0, i + 1).join('/'))
-  .some((prefixe) => prep.includes(`'${prefixe}'`));
+
+/* Les chemins DÉCLARÉS dans une liste — pas ceux cités dans une phrase. */
+function cheminsDe(nom) {
+  const m = prep.match(new RegExp('const ' + nom + ' = \\[([\\s\\S]*?)\\n\\];'));
+  if (!m) return [];
+  return [...m[1].matchAll(/chemin:\s*'([^']+)'/g)].map((x) => x[1]);
+}
+/* Recopiés AVEC leurs sous-dossiers → ils couvrent aussi leurs descendants. */
+const RECURSIFS = [...cheminsDe('APPS'), ...cheminsDe('MEDIAS'), ...cheminsDe('PARTAGES')];
+/* Portail : SEULE sa page d'accueil est recopiée → il ne couvre que LUI-MÊME. */
+const PORTAILS = cheminsDe('PORTAILS');
+chk(RECURSIFS.length >= 12,
+  `G. les listes de la copie sont lisibles (${RECURSIFS.length} dossiers récursifs, ${PORTAILS.length} portail(s))`);
+
 dossiers.forEach((d) => {
   if (!d) { chk(/RACINE_FICHIERS/.test(prep), 'G. la racine (cmcteams) est prévue dans la copie'); return; }
-  chk(couvert(d), `G. « ${d} » est prévu dans la copie (aucun sous-domaine oublié)`);
+  const parent = RECURSIFS.find((c) => d === c || d.startsWith(c + '/'));
+  const portail = PORTAILS.includes(d);
+  chk(!!parent || portail, (parent || portail)
+    ? `G. « ${d} » est dans la copie (${portail ? 'page d\'accueil du portail' : parent === d ? 'recopié tel quel' : 'contenu dans « ' + parent + ' »'})`
+    : `G. « ${d} » n'est dans AUCUNE liste de prepare-secours.mjs — GitHub éteint, ce sous-domaine reste en 404`);
 });
 
 /* G-bis) et le garde-fou de sécurité est bien dans la config */

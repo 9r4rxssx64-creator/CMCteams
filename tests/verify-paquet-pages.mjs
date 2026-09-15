@@ -56,6 +56,15 @@ const APPS = [
   { sous: 'lingua', chemin: '/lingua/index.html' },
   { sous: 'dashboard', chemin: '/shops/dashboard/index.html' },
   { sous: 'sourcing', chemin: '/shops/sourcing/index.html' },
+  /* Ajoutés le 10/09/2026 : six sous-domaines de la table ROUTES n'étaient
+     ouverts par AUCUN test — deux manquaient carrément du paquet (cuisine,
+     portail boutiques), quatre y étaient sans que rien ne le prouve. */
+  { sous: 'shops', chemin: '/shops/index.html' },
+  { sous: 'worldmonitor', chemin: '/kdmc-home/worldmonitor/index.html' },
+  { sous: 'osint', chemin: '/kdmc-home/osint/index.html' },
+  { sous: 'ia', chemin: '/kdmc-home/ia/index.html' },
+  { sous: 'outils', chemin: '/kdmc-home/outils/index.html' },
+  { sous: 'cuisine', chemin: '/tools/cuisine/index.html' },
   { sous: 'arbre', chemin: '/arbre/index.html' },
   { sous: 'chez-lolo', chemin: '/shops/chez-lolo/index.html' },
   { sous: 'la-detente', chemin: '/la-detente/index.html' },

@@ -1,5 +1,119 @@
 # MEMO_RESUME — état de session
 
+## 15 septembre 2026 (suite) — chaque app distincte, toutes liées : qui a le droit d'aller où
+
+**Ta demande** : qu'une personne de l'extérieur puisse s'inscrire **dans une seule app**,
+que d'autres circulent dans **tout le domaine** (sauf la partie admin), et que tu puisses
+**fermer une app** à quelqu'un.
+
+- **Une seule porte décide, et c'est le routeur.** Chaque app garde son code à elle, mais
+  c'est le domaine qui dit « cette personne existe ici » ou non. Recopier la règle dans les
+  26 apps, c'est 26 versions qui finissent par se contredire — et il suffirait d'en oublier
+  une pour que le périmètre ne veuille plus rien dire.
+- **Hors périmètre = pas reconnu, pas « bloqué ».** La personne n'est pas mise dehors avec un
+  panneau : elle est simplement une inconnue sur cette app. Tes boutiques et le livre de
+  cuisine restent donc visitables par tout le monde comme avant, et l'arbre ou le coffre
+  refusent d'eux-mêmes. **Aucune de tes 26 apps n'a une ligne à changer.**
+- **Personne ne perd rien au démarrage.** Les ~191 comptes déjà enregistrés n'ont pas de
+  périmètre écrit → ils gardent tout le domaine. Seuls les **nouveaux** inscrits naissent
+  fermés à l'app où ils se sont inscrits, et c'est toi qui ouvres.
+- **Tu ne peux pas t'enfermer dehors.** Même si une fiche te range par erreur dans une seule
+  app, ton Face ID te fait passer partout. C'est vérifié, pas supposé.
+- **Le bouton existe vraiment** : sur la fiche de chaque personne, dans « Qui se connecte »,
+  un réglage « 🔐 Où elle peut aller » — partout / seulement les apps cochées, plus un repli
+  « 🚫 Fermer une application précise ». Testé dans un **vrai navigateur**, écran iPhone,
+  cibles tactiles mesurées à 44 px.
+- **Preuves** : 42 contrôles côté domaine (dont 7 sabotages qui doivent faire rougir le
+  garde, et ils rougissent), 18 contrôles au navigateur (3 sabotages), et les 128 contrôles
+  du routeur qui existaient déjà passent toujours — **zéro régression**. Leçon **#252**.
+
+**« Va plus loin » (même soir)** — en relisant le vrai parcours d'un nouvel inscrit, deux trous
+que mes tests ne pouvaient pas voir, corrigés avant qu'ils n'atteignent quelqu'un :
+- **Le portail est la porte de tout.** Une app sans session renvoie sur kd-mc.com pour
+  s'inscrire : le compte se crée donc **sur le portail**, et mon code le fermait au portail →
+  de retour sur sa boutique, pas reconnu. **Aucun nouveau client n'aurait jamais pu entrer
+  nulle part.** Maintenant : le portail est la réception (toujours ouverte), et l'inscription
+  ouvre l'app **d'où la personne vient**. Sans app d'origine → rien d'ouvert, et **tu reçois une
+  notification** : « nouvel inscrit, à toi de décider ».
+- **Le client partagé jetait le pass sur tout refus.** Une cliente qui ouvre l'arbre par
+  curiosité aurait été **déconnectée de sa propre boutique**. Maintenant le refus de périmètre
+  est un 4ᵉ état : pass gardé, pas de boucle, et l'app peut afficher le message en français.
+- Sur la page admin : une pastille « **N limités à une app** » = ta file de décisions, visible
+  sans dérouler ; et le journal admin nomme « Nouvel inscrit » et « Périmètre modifié ».
+- Preuves : 52 contrôles domaine + 9 sur le vrai `kdmc-sso.js` exécuté dans Node + 19 au
+  navigateur ; 5 nouveaux sabotages, tous rouges ; 8 suites du routeur toujours vertes.
+  Leçon **#253**.
+- **Publication Cloudflare : la sonde est passée** (26 adresses servies sur l'aperçu). Le
+  premier rouge était un délai de propagation, pas le site. La production se fera à la
+  fusion dans `main`.
+
+## 15 septembre 2026 — « mets tout en privé » : le dépôt était public à DEUX endroits, pas un
+
+**Ta demande** : que ton code, tes liens et tout ce qui se construit ne soient plus visibles ;
+seuls les **sites** restent accessibles.
+
+- **Le blocage, vérifié et non supposé** : GitHub ne sert un site depuis un dépôt **privé**
+  qu'avec un **abonnement payant**. Ton compte est en gratuit. Donc passer le dépôt en privé
+  **aujourd'hui éteindrait kd-mc.com**. Il faut héberger le site ailleurs **d'abord** — c'est
+  fait, et c'est l'essentiel du travail de cette session.
+- **Ce que j'ai trouvé en le préparant, et qui change tout** : ton code était publié à
+  **DEUX** endroits. Le script du miroir (`kdmc-site.pages.dev`) envoyait **le dépôt entier**
+  moins une douzaine d'exclusions. Mesuré avant de toucher à quoi que ce soit : **2 049**
+  fichiers de code serveur, **37 498** fichiers du source d'Apex, **193** automatisations,
+  **188** tests — en ligne, sur une adresse publique. **Mettre GitHub en privé n'aurait donc
+  rien caché** : on fermait une porte sur deux.
+- **Le correctif** : les deux chemins (GitHub et le miroir) fabriquent maintenant **le même
+  paquet trié** — les applications, et rien d'autre. Avant, c'était « tout le dépôt **moins**
+  ce qu'on pense à exclure » : tout ce qu'on oublie part en ligne. Maintenant c'est
+  « **uniquement** ce qui est nommé » : tout ce qu'on oublie reste à terre. C'est l'inverse, et
+  c'est ce qui compte.
+- **Contrôle avant l'envoi, pas après** : publier est irréversible (ce qui est parti a été
+  servi). Le paquet est donc refusé s'il contient un seul document de travail, du code serveur,
+  des tests ou une carte de code source.
+- **Vérification réelle** : une sonde ouvre les **26 adresses** du domaine sur le site publié et
+  exige une vraie page (les adresses sont lues dans la table du routeur, jamais recopiées à la
+  main). Un « déploiement réussi » qui sert des pages vides n'est pas une réussite.
+- **Le garde n'a pas été affaibli, il a été instruit** : il vérifiait « chaque document retiré
+  a-t-il son exclusion ? ». Cette question n'a plus de sens avec une liste blanche. Il vérifie
+  désormais « ce document peut-il finir dans le paquet ? » — et il refuse de valider s'il ne
+  sait plus répondre. Prouvé par **5 sabotages** : chacun le fait passer au rouge.
+
+**À savoir, et je préfère te le dire franchement** : mettre le dépôt en privé **n'efface pas ce
+qui a déjà été publié**. L'historique reste consultable par qui l'a copié. Les clés et codes qui
+ont circulé doivent être **changés**, pas seulement cachés — la liste t'attend dans
+`KEVIN_ACTIONS_TODO.md`.
+
+**Ordre à respecter** (un seul clic est le tien, et il vient en dernier) : publier sur
+Cloudflare → vérifier les 26 adresses → basculer le routeur → vérifier kd-mc.com → **alors
+seulement** tu passes le dépôt en privé.
+
+## 10 septembre 2026 — la bouée de secours du domaine : deux adresses sans filet, et 33 documents de travail qu'elle publiait
+
+**Point de départ** : la session « arbre » signale un test rouge (`test:router-secours`,
+**43 OK / 6 FAIL**) — six sous-domaines « oubliés » dans la copie de secours, celle qui sert
+kd-mc.com quand GitHub est éteint (déjà vécu le 14/08). J'ai tout remesuré avant d'agir.
+
+- **Les six ne disaient pas la même chose.** Quatre étaient de **faux rouges** :
+  worldmonitor, osint, ia et outils sont **dans** `kdmc-home`, recopié avec ses sous-dossiers —
+  les fichiers arrivaient déjà. Le contrôle cherchait un **texte** dans le script au lieu de
+  regarder la copie ; il criait sur du travail fait, et **une simple mention en commentaire
+  suffisait à le rassurer**. Réécrit, puis prouvé par sabotage.
+- **Deux étaient de vrais trous** : le livre de cuisine (`cuisine`, `cocina`, `cujina`) n'était
+  recopié **nulle part** depuis son ouverture le 13/08, et la **page d'accueil des boutiques**
+  non plus (seules ses vitrines l'étaient). GitHub éteint = **quatre adresses en 404**, sans
+  secours. Corrigé.
+- **Le plus grave, trouvé en passant** : cette copie est une **publication** comme les deux
+  autres, et elle n'en suivait **aucune règle**. Elle embarquait **33 documents de travail**,
+  dont les **21 fiches de recherche généalogique** qui nomment la famille, et le fichier
+  d'actes d'état civil — tous retirés du site normal depuis le 5/09. Autrement dit : **la panne
+  publiait ce que le fonctionnement normal cache.** Aligné sur les autres surfaces (les images
+  d'actes restent : l'app s'en sert vraiment).
+- **Pour que ça ne reparte pas** : le garde qui vérifiait que « les trois listes disent la même
+  chose » en surveille maintenant **quatre**. Il se disait complet alors qu'une quatrième
+  existait depuis le 14/08.
+- **Preuve, pas déclaration** : `test:router-secours` **50 OK / 0 FAIL**, et les **22
+  applications ouvertes une par une dans un vrai navigateur** (`test:paquet-pages` **67 OK /
+  0 FAIL**, aucun fichier manquant). Leçon **#249**.
 ## 2026-09-15 (suite 6) — « Va plus loin » : le piège n°1 détecté hors ligne, un carnet sans trace, et l'outil qui ouvre VRAIMENT les .onion (v1.3)
 
 Trois manques traités, dont **le point faible que j'avais moi-même écrit dans la page**.
