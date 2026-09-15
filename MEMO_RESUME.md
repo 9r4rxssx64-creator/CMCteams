@@ -1,5 +1,42 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 6) — « Va plus loin » : le piège n°1 détecté hors ligne, un carnet sans trace, et l'outil qui ouvre VRAIMENT les .onion (v1.3)
+
+Trois manques traités, dont **le point faible que j'avais moi-même écrit dans la page**.
+
+- **Vérificateur d'adresse (100 % hors ligne)** — le vrai danger du réseau n'est pas « aller au
+  mauvais endroit », c'est la **fausse adresse** : on peut miner un DÉBUT d'adresse identique à
+  celui d'un vrai site, jamais l'adresse entière. Le contrôle qui compte est donc **préfixe commun
+  ≥ 6 avec un site connu + fin différente ⇒ imitation**. Kevin colle n'importe quelle adresse
+  trouvée ailleurs → verdict immédiat, sans réseau : officielle ✅ · imitation 🚨 (avec le nom du
+  site imité et le nombre de caractères communs) · v2 de 16 car. (abandonnée en 2021) 🚨 · longueur
+  impossible 🚨 · valide mais inconnue 🟡 (« recoupe à une 2ᵉ source »).
+  **Prouvé en navigateur sur une vraie fausse adresse BBC** : « DANGER — imite « BBC News » sans
+  être son adresse. Les 11 premiers caractères sont ceux de BBC ».
+- **Carnet personnel SANS trace** — il peut garder ce qu'il trouve avec Ahmia. Volontairement
+  **rien dans le stockage de l'appareil** : les adresses vivent le temps de la page et sont
+  **embarquées dans la copie hors ligne** (`window.__PERSO__`, `<` échappé) → la copie devient son
+  carnet, et le téléphone reste vierge. Une adresse que le vérificateur juge piégée **ne peut pas**
+  être ajoutée.
+- **`tools/tor/verif-onion.mjs` — l'outil qui ouvre VRAIMENT les .onion** (curl à travers Tor,
+  `--socks5-hostname`). Il ferme le point faible déclaré (« adresses relevées, jamais ouvertes »).
+  Classement honnête : 2xx/3xx **vivant** · 401/403 **protégé** (pas mort) · 4xx/5xx le serveur
+  répond donc l'adresse vit · 000 **injoignable** = le seul vrai mort. Échoue seulement si plus
+  d'un tiers est injoignable (un .onion qui tombe est la vie normale du réseau).
+  **Destination écrite, par élimination** : agent = réseau fermé ; **GitHub Actions = INTERDIT**
+  (« utiliser Actions uniquement pour interagir avec des sites tiers » est la phrase qui a
+  suspendu le compte le 15/08) ; donc **GitLab, job `tor-adresses`, à la demande**, 0 cron.
+  **Honnêteté** : il n'a **jamais tourné** — la page le dit et garde « Prouver l'adresse » comme règle.
+  Sa logique est néanmoins prouvée hors ligne (`--simule` couvre les 4 classements).
+- **`test:tor` 25 → 32 contrôles** : existence et seuil du vérificateur d'imitation, refus v2 et
+  longueur, carnet jamais écrit sur l'appareil + échappement, et pour le vérificateur réel :
+  il tourne, il lit le catalogue **dans la page** (jamais recopié), sa destination est écrite, il
+  n'est **pas** câblé dans GitHub Actions, et le mode simulé s'annonce comme tel.
+- **9 sabotages, 9 détectés** — dont **un trou trouvé au passage** : la fonctionnalité la plus
+  protectrice (le vérificateur) n'était gardée par **rien** ; le retirer passait au vert. Refermé.
+  Leçon : la garde suit trop souvent le code *ancien* ; écrire la garde de la feature **la plus
+  importante en premier**, pas en dernier.
+- **Preuve navigateur : 43 contrôles, 0 échec** (copie hors ligne 72 Ko contenant le carnet).
 ## 2026-09-15 (suite 4) — « Regarde cette vidéo » : je l'ai vraiment lue, pas commenté une capture
 
 Kevin envoie une capture TikTok (« 13 MINUTES QUI VONT CHANGER TA VIE »), puis le lien.

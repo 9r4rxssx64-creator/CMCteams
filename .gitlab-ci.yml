@@ -459,3 +459,28 @@ lingua-lsf:
     when: always
     expire_in: 7 days
     paths: [lingua/]
+
+# Vérifie EN VRAI que les adresses .onion du catalogue « Tor en clair » répondent, en passant
+# par le réseau Tor. Ici et pas ailleurs, par élimination (règle « destination écrite ») :
+# l'agent Claude a le réseau fermé, et GitHub Actions interdit d'utiliser la CI « uniquement
+# pour interagir avec des sites tiers » — c'est la phrase exacte qui a suspendu le compte le
+# 15/08/2026. Donc GitLab, À LA DEMANDE : aucune tâche programmée, aucune minute brûlée tant
+# que personne ne le lance. Le verdict ne vaut que pour l'instant du run (les .onion vont et
+# viennent) — d'où l'artifact daté plutôt qu'une promesse gravée dans la page.
+tor-adresses:
+  <<: *veille-base
+  image: node:20-bookworm
+  rules:
+    - *pas-sur-nouvelle-branche
+    - if: '$TOR_ADRESSES'
+    - when: manual
+      allow_failure: true
+  script:
+    - 'apt-get update -qq && apt-get install -y -qq tor curl'
+    - 'tor --SocksPort 9050 --Log "notice stdout" & sleep 45'
+    - 'curl -sS --socks5-hostname 127.0.0.1:9050 --max-time 30 -o /dev/null -w "sortie Tor : %{http_code}\n" https://check.torproject.org/ || echo "Tor pas encore prêt — le rapport le dira"'
+    - 'node tools/tor/verif-onion.mjs --json tor-adresses.json'
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [tor-adresses.json]
