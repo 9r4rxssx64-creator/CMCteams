@@ -1,5 +1,32 @@
 # MEMO_RESUME — état de session
 
+## 15 septembre 2026 (suite) — chaque app distincte, toutes liées : qui a le droit d'aller où
+
+**Ta demande** : qu'une personne de l'extérieur puisse s'inscrire **dans une seule app**,
+que d'autres circulent dans **tout le domaine** (sauf la partie admin), et que tu puisses
+**fermer une app** à quelqu'un.
+
+- **Une seule porte décide, et c'est le routeur.** Chaque app garde son code à elle, mais
+  c'est le domaine qui dit « cette personne existe ici » ou non. Recopier la règle dans les
+  26 apps, c'est 26 versions qui finissent par se contredire — et il suffirait d'en oublier
+  une pour que le périmètre ne veuille plus rien dire.
+- **Hors périmètre = pas reconnu, pas « bloqué ».** La personne n'est pas mise dehors avec un
+  panneau : elle est simplement une inconnue sur cette app. Tes boutiques et le livre de
+  cuisine restent donc visitables par tout le monde comme avant, et l'arbre ou le coffre
+  refusent d'eux-mêmes. **Aucune de tes 26 apps n'a une ligne à changer.**
+- **Personne ne perd rien au démarrage.** Les ~191 comptes déjà enregistrés n'ont pas de
+  périmètre écrit → ils gardent tout le domaine. Seuls les **nouveaux** inscrits naissent
+  fermés à l'app où ils se sont inscrits, et c'est toi qui ouvres.
+- **Tu ne peux pas t'enfermer dehors.** Même si une fiche te range par erreur dans une seule
+  app, ton Face ID te fait passer partout. C'est vérifié, pas supposé.
+- **Le bouton existe vraiment** : sur la fiche de chaque personne, dans « Qui se connecte »,
+  un réglage « 🔐 Où elle peut aller » — partout / seulement les apps cochées, plus un repli
+  « 🚫 Fermer une application précise ». Testé dans un **vrai navigateur**, écran iPhone,
+  cibles tactiles mesurées à 44 px.
+- **Preuves** : 42 contrôles côté domaine (dont 7 sabotages qui doivent faire rougir le
+  garde, et ils rougissent), 18 contrôles au navigateur (3 sabotages), et les 128 contrôles
+  du routeur qui existaient déjà passent toujours — **zéro régression**. Leçon **#252**.
+
 ## 15 septembre 2026 — « mets tout en privé » : le dépôt était public à DEUX endroits, pas un
 
 **Ta demande** : que ton code, tes liens et tout ce qui se construit ne soient plus visibles ;

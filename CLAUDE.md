@@ -10007,6 +10007,48 @@ S'applique : tout le domaine kd-mc.com (priorité absolue), tous projets futurs.
 
 ---
 
+## 🧩 RÈGLE ABSOLUE — CHAQUE APP DISTINCTE, TOUTES LIÉES DANS LE DOMAINE, PÉRIMÈTRE DÉCIDÉ PAR L'ADMIN (Kevin 2026-09-15, ABSOLUE)
+
+> **« Je veux que chaque app soit bien distincte en code etc mais toutes liées aussi dans mon domaine. C'est-à-dire quelqu'un d'extérieur peut s'enregistrer et être seulement dans une app, et d'autres feront partie du domaine entier (sauf partie admin), et changer d'app du domaine déjà inscrit au domaine donc peut naviguer dans les app. Seulement dans une app alors admin possibilité de bloquer dans une app. »** — Kevin 2026-09-15
+
+**Règle absolue, NON-NÉGOCIABLE** — les 26 adresses de kd-mc.com, toutes apps présentes et futures.
+
+### 1. Trois niveaux, et un seul endroit qui décide
+
+| Niveau | Qui | Où il circule |
+|---|---|---|
+| **une app** (`portee:'app'` + `acces:[…]`) | un inscrit venu de l'extérieur | seulement les apps listées |
+| **domaine** (`portee:'domaine'`) | les proches, les employés, les habitués | toutes les apps — **jamais la partie admin** |
+| **admin** | Kevin, et seulement avec Face ID prouvé | tout, y compris `/__admin/*` |
+
+Plus `bloque:[…]` : l'admin ferme **une app précise**, même à quelqu'un qui a tout le domaine.
+
+### 2. La décision se prend au ROUTEUR, jamais dans les apps
+
+`services/kdmc-router/worker.js` : table `APPS` (adresse → app, alias regroupés) + fonction **pure** `perimetre(acc, app)`, appliquée dans `/__sso/whoami` et `/__sso/issue`. Recopier la règle dans 26 pages = 26 versions qui divergent (leçon #142), et **une seule oubliée suffit à vider le périmètre de son sens**.
+
+### 3. Hors périmètre = PAS RECONNU, pas « bloqué »
+
+`whoami` répond `ok:false` + `hors_perimetre:true` + un message en français. Conséquences voulues : les apps publiques (boutiques, cuisine) restent visitables comme par n'importe quel inconnu ; les apps à identité refusent d'elles-mêmes ; **aucune des 26 apps n'a une ligne à changer**.
+
+### 4. Trois garde-fous qui ne se négocient pas
+
+- **Fail-open** : sans fiche, sans champ `portee`, ou sur une adresse inconnue → **autorisé**. Les comptes déjà existants gardent tout le domaine le jour du déploiement. Un périmètre qui casse l'existant est un bug, pas une sécurité.
+- **Nouvelle inscription = fermée à son app** (moindre privilège). C'est l'admin qui ouvre.
+- **L'admin n'est jamais enfermé dehors** : une session Face ID sur un uid admin passe outre le périmètre, partout. Sinon une erreur de rangement met Kevin dehors de son propre domaine.
+
+### 5. Parité obligatoire `ROUTES` ⇄ `APPS`
+
+Un sous-domaine servi sans clé d'app **échappe au périmètre en silence** — pire que pas de périmètre. `npm run test:perimetre-apps` (dans `test:ci`) le refuse, et `test:perimetre-page` prouve dans un **vrai navigateur** que Kevin peut le régler au doigt.
+
+### 6. Test mental avant d'ajouter une app ou une adresse
+
+> *« Cette nouvelle adresse est-elle dans `APPS` autant que dans `ROUTES` ? Un inscrit d'une autre app peut-il y entrer ? Et si je me trompe, est-ce que ça ferme (bien) ou est-ce que ça ouvre (grave) ? »*
+
+S'applique : kd-mc.com (référence), tous projets multi-apps présents et futurs.
+
+---
+
 ## 🆔 RÈGLE ABSOLUE — FACEID/TOUCHID DANS TOUS LES PROJETS (Kevin 2026-05-22, ABSOLUE)
 
 > **"FaceID dans tous les projets note le et fais le un après l'autre."** — Kevin 2026-05-22

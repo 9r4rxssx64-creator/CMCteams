@@ -3,6 +3,17 @@
 > Mis à jour automatiquement par Claude à chaque commit important.
 > Dernière mise à jour : **2026-09-10** (ton ancien septembre est remplacé par la version vérifiée ; horaires des chefs conservés au redémarrage)
 
+### 15 septembre 2026 (suite) — qui a le droit d'aller dans quelle application
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| **La page où tu règles ça** | Fiche de chaque personne → **🔐 Où elle peut aller** : partout dans le domaine, ou seulement les apps que tu coches ; plus « 🚫 Fermer une application précise ». | [👆 Qui se connecte](https://kd-mc.com/admin/) |
+| `services/kdmc-router/worker.js` | Modifié : la table des applications (alias regroupés) et la règle qui décide. C'est le domaine qui tranche, pas chaque app — une règle recopiée 26 fois finit par se contredire. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `kdmc-home/admin/admin.js` + `index.html` | Modifié : le réglage sur chaque fiche, cibles tactiles 44 px, et un garde-fou qui t'empêche d'enfermer quelqu'un « dans une app » sans en choisir aucune. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/admin/admin.js) |
+| `tests/verify-perimetre-apps.mjs` | **Nouveau.** 42 contrôles qui font tourner le vrai domaine : portée, blocage, alias, admin jamais enfermé dehors, comptes existants intacts. 7 sabotages le font rougir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-apps.mjs) |
+| `tests/verify-perimetre-page.mjs` | **Nouveau.** Ouvre ta page admin dans un vrai navigateur (écran iPhone) et vérifie qu'un doigt obtient bien le résultat : 18 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-page.mjs) |
+| `CLAUDE.md` + `LESSONS.md` #252 | La règle écrite noir sur blanc, pour qu'elle ne se perde pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+
 ### 15 septembre 2026 — pour que ton dépôt puisse passer en PRIVÉ sans éteindre tes sites
 
 | Fichier | À quoi ça sert | Ouvrir |
