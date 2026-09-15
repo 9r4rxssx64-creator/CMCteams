@@ -1,5 +1,20 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 3) — « Fusionne » : c'est en ligne, et la surface est désormais surveillée
+
+- **PR #3788** (bot auto-merge) avait DÉJÀ fusionné les 2 premiers commits à 17:54 — d'où le
+  « new branch » au push suivant : le bot avait supprimé la branche, mon push l'a recréée.
+- **PR #3789 fusionnée** (commit `c47a0486`) : la tuile du portail.
+- **Fausse alerte levée** : `main` portait « 🧾 Déploiement raté consigné : 17:57 UTC ». Vérifié :
+  le déploiement du routeur a **réussi** (run #162, 17:54→17:55) et la publication du site a
+  **réussi** (pages #6621, 17:57→17:58). Les « ratés » consignés sont des publications **annulées**
+  parce que trois poussées se suivaient — la dernière l'emporte. Rien de cassé par ce travail.
+- **Manque trouvé en vérifiant** : `tools/smoke/audit-live.mjs` balaie une liste FERMÉE de surfaces
+  et `tor.kd-mc.com` n'y était pas → la nouvelle page n'aurait été surveillée par personne
+  (même angle mort que l'audit domaine du 05/09 : 25/26 surfaces). Ajoutée.
+- **Limite honnête** : depuis l'agent, `tor.kd-mc.com` est injoignable (egress bloqué, leçon #135).
+  La preuve « en ligne » vient du balayage CI, pas d'une affirmation.
+
 ## 2026-09-15 (suite 2) — « Tu l'as intégré à mon domaine admin ? » : la moitié manquait
 
 Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écart était réel.

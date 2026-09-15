@@ -53,6 +53,10 @@ const SURFACES = [
   { url: 'https://bot.' + ROOT + '/', name: 'Bot crypto (tableau de bord)', selKey: 'body' },
   { url: 'https://beatbot.' + ROOT + '/', name: 'Beatbot (robot piscine, admin)', selKey: 'body' },
   { url: 'https://autorisations.' + ROOT + '/', name: 'Autorisations (admin)', selKey: 'body' },
+  // « Tor en clair » (15.09.2026) : page publique, sans connexion — un simple balayage
+  // suffit. Ajoutée ici dès sa mise en ligne : une surface absente de cette liste est une
+  // surface que personne ne surveille (audit domaine 05/09, 25/26 → 26/26).
+  { url: 'https://tor.' + ROOT + '/', name: 'Tor en clair', selKey: 'body' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
       // code famille se vérifie sur le domaine (POST /__arbre/unlock) et n'existe NULLE PART
