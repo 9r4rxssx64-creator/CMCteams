@@ -132,6 +132,35 @@ ok('l\'app rouvre sur le dernier onglet consulté',
    await p.evaluate(() => document.querySelector('#v-secu').classList.contains('hide') === false));
 
 
+
+/* ── Vérificateur d'adresse : la protection la plus forte de l'outil. On lui présente une
+   VRAIE fausse adresse (même début que la BBC, fin différente — c'est exactement ainsi
+   qu'un piège se fabrique) et on exige qu'il la reconnaisse. ── */
+await p.click('nav.tabs button[data-v="catalogue"]');
+await p.waitForTimeout(200);
+const BBC = 'bbcnewsd73hkzno2ini43t4gblxvycyac5aw4gnv7t2rccijh7745uqd';
+const FAUX = (BBC.slice(0, 11) + 'q7x4m2vt6kbz3ndsw5yhj2plc4rtg6vqx3mzka7bnd2wu5yzzzzzzzz').slice(0, 56);
+const INCONNU = 'abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopqrstuvwx';
+async function verifAdr(a) { await p.fill('#qverif', a); await p.waitForTimeout(160);
+  return (await p.textContent('#rverif')).replace(/\s+/g, ' ').trim(); }
+ok('adresse officielle → reconnue', (await verifAdr('http://www.' + BBC + '.onion/')).includes('C\'est bien BBC'));
+const alerte = await verifAdr(FAUX + '.onion');
+ok('FAUSSE adresse imitant la BBC → alerte', alerte.includes('DANGER') && alerte.includes('BBC'), alerte.slice(0, 70));
+ok('ancienne adresse v2 → refusée', (await verifAdr('expyuzz4wqqyqhjn.onion')).includes('2021'));
+ok('adresse tronquée → refusée', (await verifAdr(BBC.slice(0, 40) + '.onion')).includes('56'));
+ok('ce qui n\'est pas du .onion → refusé', (await verifAdr('exemple.com')).includes('.onion'));
+ok('inconnue mais valide → prudence, pas d\'alarme', (await verifAdr(INCONNU + '.onion')).includes('deuxième source'));
+await p.fill('#qverif', '');
+
+/* ── Carnet personnel : entre au catalogue, refuse un piège, et voyage dans la copie. ── */
+await p.fill('#pnom', 'Forum test'); await p.fill('#padr', INCONNU + '.onion');
+await p.click('#pajout'); await p.waitForTimeout(250);
+ok('une adresse gardée rejoint le catalogue', await p.$$eval('#list .site', n => n.length) === 21);
+await p.fill('#pnom', 'X'); await p.fill('#padr', FAUX + '.onion');
+await p.click('#pajout'); await p.waitForTimeout(200);
+ok('une adresse piégée ne peut PAS être gardée',
+   await p.$$eval('#list .site', n => n.length) === 21 && (await p.textContent('#toast')).includes('🚨'));
+
 /* ── Traces : la promesse « non traçable » se prouve, elle ne se déclare pas.
    On vérifie ce que la page garde, qu'elle sait tout effacer, et que la copie hors
    ligne est COMPLÈTE et n'appelle personne (c'est le seul usage qui ne laisse rien). ── */
@@ -162,8 +191,9 @@ p2.on('request', r => { if (!r.url().startsWith('file://')) req2.push(r.url()); 
 await p2.goto('file://' + horsLigne, { waitUntil: 'networkidle' });
 await p2.click('nav.tabs button[data-v="catalogue"]');
 await p2.waitForTimeout(200);
-ok('la copie hors ligne s\'ouvre et montre tout le catalogue',
-   err2.length === 0 && (await p2.$$eval('#list .site', n => n.length)) === 20);
+ok('la copie hors ligne montre tout le catalogue ET mon adresse gardée',
+   err2.length === 0 && (await p2.$$eval('#list .site', n => n.length)) === 21);
+ok('mon adresse est nommée dans la copie', (await p2.textContent('#list')).includes('Forum test'));
 await p2.click('nav.tabs button[data-v="identite"]');
 await p2.click('#gen');
 await p2.waitForTimeout(200);

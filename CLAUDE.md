@@ -2852,6 +2852,13 @@ d'honnêteté.
 
 Un vrai mur (rare) se déclare en listant **les 4 canaux essayés**, jamais un « je ne peux pas » sec.
 
+**Cas « regarde cette vidéo » (mesuré 2026-09-15, leçon #267)** : une vidéo se REGARDE, on ne
+commente jamais une capture d'écran. TikTok est bloqué sur curl / WebFetch / Firecrawl, et
+HF Jobs est devenu payant (402) → la voie est la **CI** (passerelle `tikwm` + `faster-whisper`
+en français). Recette complète : skill **`lire-video`**. Et ne jamais supposer que ce qu'on
+voit à l'écran est dans le fichier : les sous-titres TikTok sont dessinés par l'app, pas
+incrustés — c'est le SON qu'il faut transcrire.
+
 ### 2. Outil câblé (la règle devient mécanique, pas un vœu)
 
 ```bash
