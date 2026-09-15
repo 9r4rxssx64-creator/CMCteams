@@ -121,7 +121,7 @@ t('la page n\'appelle aucun serveur (CSP connect-src \'none\', 0 ressource exter
   assert(html.includes("connect-src 'none'"), "CSP : connect-src 'none' absent");
   const ext = [...html.matchAll(/(?:href|src)\s*=\s*"(https?:\/\/[^"]+)"/gi)]
     .map(m => m[1])
-    .filter(u => !/^https:\/\/(apps\.apple\.com|www\.torproject\.org|www\.internet-signalement\.gouv\.fr)/.test(u));
+    .filter(u => !/^https:\/\/(apps\.apple\.com|www\.torproject\.org|www\.internet-signalement\.gouv\.fr|app\.tuta\.com|coffre\.kd-mc\.com|ahmia\.fi)/.test(u));
   const fichesSrc = new Set(fiches.map(f => f.s));
   const inattendus = ext.filter(u => !fichesSrc.has(u));
   assert.equal(inattendus.length, 0, 'lien externe inattendu : ' + inattendus.join(', '));
@@ -133,6 +133,86 @@ t('page mobile-first : viewport, safe-area et cibles tactiles ≥ 44px', () => {
   const tailles = [...html.matchAll(/min-height:(\d+)px/g)].map(m => +m[1]);
   assert(tailles.length >= 3, 'aucune hauteur de bouton déclarée');
   assert(tailles.every(v => v >= 40), 'cible tactile trop petite : ' + Math.min(...tailles) + 'px');
+});
+
+
+/* ── Générateur d'identité : il fabrique des SECRETS. S'il les envoyait quelque part,
+   ou s'il utilisait un hasard faible (Math.random), l'outil deviendrait dangereux. ── */
+t('l\'identité est fabriquée sur le téléphone, jamais envoyée', () => {
+  assert(html.includes('crypto.getRandomValues'), 'le générateur n\'utilise pas le hasard cryptographique');
+  const script = html.slice(html.indexOf('<script>'));
+  assert(!/\bfetch\s*\(/.test(script), 'un fetch() traîne dans la page');
+  assert(!/XMLHttpRequest|navigator\.sendBeacon|new WebSocket|EventSource/.test(script),
+    'un moyen d\'envoyer des données traîne dans la page');
+});
+
+t('le hasard du générateur est sans biais et sans Math.random', () => {
+  const script = html.slice(html.indexOf('<script>'));
+  assert(!/Math\.random/.test(script), 'Math.random utilisé pour fabriquer un secret');
+  assert(/Math\.floor\(4294967296 \/ n\) \* n/.test(script), 'le rejet anti-biais du tirage a disparu');
+});
+
+t('le vocabulaire du générateur reste assez large pour un vrai secret', () => {
+  const m = html.match(/var MOTS = \("([^"]+)"\)/);
+  assert(m, 'liste de mots introuvable');
+  const mots = m[1].split(',');
+  assert(mots.length >= 150, 'seulement ' + mots.length + ' mots — phrase de passe trop faible');
+  assert(new Set(mots).size === mots.length, 'doublons dans la liste de mots (réduit le hasard réel)');
+  assert(/for \(var i = 0; i < 7; i\+\+\)/.test(html), 'la phrase de passe ne fait plus 7 mots');
+});
+
+t('les règles d\'étanchéité de l\'identité sont là', () => {
+  for (const r of ['Cette identité ne sert QU\'À ÇA', 'Jamais ton vrai mail en secours', 'Seulement dans Tor.']) {
+    assert(html.includes(r), 'règle d\'étanchéité manquante : « ' + r + ' »');
+  }
+});
+
+t('la promesse « rien n\'est envoyé, rien n\'est enregistré » est sur le générateur lui-même', () => {
+  const b = blocDe('promesse');
+  assert(b.length > 100, 'bloc #promesse introuvable — la promesse a été déplacée ou retirée');
+  assert(/rien n'est envoyé/i.test(b) && /rien n'est enregistré/i.test(b),
+    'la promesse n\'est plus affichée à côté du bouton qui fabrique les secrets');
+});
+
+/* ── Exploration : Kevin veut pouvoir tout voir. Le moteur qui le permet doit rester
+   en tête du catalogue, et les 3 limites doivent rester écrites. ── */
+t('le bloc Explorer met un moteur de recherche en avant', () => {
+  const b = blocDe('explorer');
+  assert(b.length > 200, 'bloc #explorer introuvable');
+  assert(b.includes('<b>Ahmia</b>'), 'le moteur n\'est plus nommé dans le texte du bloc Explorer');
+  assert(/copie-ahmia/.test(html), 'le bouton de copie du moteur a disparu');
+  assert(fiches.some(f => f.n === 'Ahmia'), 'le moteur n\'est plus dans le catalogue : le bouton copierait du vide');
+});
+
+t('les 3 limites non négociables sont toujours écrites', () => {
+  for (const r of ['pédocriminels', 'Commander une violence', 'Acheter quoi que ce soit']) {
+    assert(html.includes(r), 'limite manquante : « ' + r + ' »');
+  }
+});
+
+
+/* ── Intégration au domaine : le registre ET la tuile du portail. Sans tuile, Kevin
+   devrait taper l'adresse à la main = fonction inexistante (leçon du 2026-08-05). ── */
+t('l\'outil est inscrit partout dans le domaine (registre, routeur, replis)', () => {
+  const attendus = ['kdmc-home/apps.json', 'services/kdmc-router/worker.js',
+                    'services/kdmc-router/wrangler.toml', 'kdmc-home/kdmc-portal.js',
+                    'kdmc-home/admin/admin.js'];
+  for (const f of attendus) {
+    const c = readFileSync(new URL('../' + f, import.meta.url), 'utf8');
+    assert(/['"\/]tor\.kd-mc\.com/.test(c), 'tor.kd-mc.com absent de ' + f);
+  }
+});
+
+t('la tuile du portail existe, pointe sur l\'outil, et reste dans une zone privée', () => {
+  const portail = readFileSync(new URL('../kdmc-home/index.html', import.meta.url), 'utf8');
+  const i = portail.indexOf('id="tor-zone"');
+  assert(i > 0, 'la zone #tor-zone a disparu du portail');
+  const zone = portail.slice(i, portail.indexOf('</div>', i));
+  assert(/hidden/.test(portail.slice(i - 40, i + 40)), 'la zone n\'est plus masquée par défaut : tout le monde la verrait');
+  assert(zone.includes('https://tor.kd-mc.com/'), 'la tuile ne pointe plus sur l\'outil');
+  const js = readFileSync(new URL('../kdmc-home/kdmc-portal.js', import.meta.url), 'utf8');
+  assert(js.includes("getElementById('tor-zone')"), 'la règle d\'affichage de la tuile a disparu');
+  assert(/estKevin[\s\S]{0,120}kevin\|desarzens/.test(js), 'la tuile n\'est plus réservée à Kevin');
 });
 
 console.log('\n✅ ' + ok + ' contrôles, 0 échec — ' + fiches.length + ' services au catalogue.');

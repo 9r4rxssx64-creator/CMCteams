@@ -194,7 +194,8 @@
     "test:arbre-cadrage": "node tests/arbre-cadrage.test.mjs",
     "arbre:verif-cadrage": "node tools/arbre/verify-cadrage.mjs",
     "test:tor": "node tests/tor-catalogue.test.mjs",
-    "tor:verif": "node tests/verify-tor-page.mjs"
+    "tor:verif": "node tests/verify-tor-page.mjs",
+    "tor:tuile": "node tests/verify-tor-tuile-portail.mjs"
   },
   "repository": {
     "type": "git",
