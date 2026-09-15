@@ -1,5 +1,36 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 4) — « Aucun blocage ? Sécurisé +++ et non traçable » : la trace mesurée, puis supprimée (v1.2)
+
+Question de Kevin : y a-t-il un blocage automatique dans l'app, peut-il tout faire, et est-ce
+non traçable.
+
+- **Réponse honnête donnée** : la page n'est PAS un navigateur — elle ne peut rien bloquer,
+  rien filtrer, rien observer de ce qu'il fait dans Tor. Aucun blocage n'existe, aucun n'est
+  possible. Ce qui reste, ce sont des textes, pas des verrous.
+- **Traces MESURÉES dans le code, pas supposées** : (a) un seul élément stocké (`tor_vue`, le
+  dernier onglet) ; (b) 0 requête réseau (CSP `connect-src 'none'` — la balise Cloudflare Insights
+  est d'ailleurs **refusée**, visible dans le journal CI) ; (c) **n'alimente PAS** le journal
+  « Qui se connecte » : la page n'appelle pas `/__sso/*` (vérifié : ni `kdmc-sso.js`, ni fetch).
+- **La trace que je n'avais pas traitée** : ouvrir `tor.kd-mc.com` rend la visite visible de
+  l'opérateur et de l'hébergeur (DNS/SNI + journal de bord Cloudflare). Rien dans l'app ne pouvait
+  l'effacer → **livré le seul vrai correctif** : bouton **« 💾 Garder hors ligne »** qui recopie la
+  page **depuis le document déjà chargé** (`outerHTML`, donc 0 requête) → Kevin l'ouvre depuis
+  Fichiers, sans réseau, sans trace. Plus l'astuce d'ouvrir la page dans Onion Browser.
+- **Bouton « 🧹 Effacer mes traces »** (vide la clé + retire la fiche affichée) et section
+  `#traces` qui dit noir sur blanc ce que la page garde, envoie, et ce qu'elle ne PEUT PAS effacer.
+- **Preuve navigateur** (14 contrôles) : copie hors ligne = **67 Ko, page complète**, s'ouvre seule,
+  affiche les 20 services, **le générateur d'identité marche hors ligne**, et **0 requête** ni à
+  l'enregistrement ni à la réouverture. Effacement vérifié (stockage vide après clic).
+- **`test:tor` 21 → 25 contrôles** : une seule clé de stockage autorisée (une identité écrite sur
+  l'appareil = échec), effacement présent, copie hors ligne sans réseau, 0 mouchard (GA, gtag, GTM,
+  Cloudflare Insights, Plausible, Matomo, Hotjar, Sentry), et l'aveu sur la trace visible obligatoire.
+  **6 sabotages, 6 détectés** (mouchard, cookie, identité stockée, effacement retiré, copie par le
+  réseau, aveu supprimé).
+- **Limite honnête redite dans la page** : aucun outil ne rend « non traçable » ce qui se fait
+  ensuite — ce sont les comportements (connexion à un compte, téléchargement, paiement, style
+  d'écriture) qui trahissent, pas la page.
+
 ## 2026-09-15 (suite 3) — « Fusionne » : c'est en ligne, et la surface est désormais surveillée
 
 - **PR #3788** (bot auto-merge) avait DÉJÀ fusionné les 2 premiers commits à 17:54 — d'où le

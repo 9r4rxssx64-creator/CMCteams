@@ -215,4 +215,35 @@ t('la tuile du portail existe, pointe sur l\'outil, et reste dans une zone priv�
   assert(/estKevin[\s\S]{0,120}kevin\|desarzens/.test(js), 'la tuile n\'est plus réservée à Kevin');
 });
 
+
+/* ── « Non traçable » : ce que la page garde, dit et sait effacer. ── */
+t('la page n\'écrit qu\'UNE clé de stockage, et sait l\'effacer', () => {
+  const cles = [...html.matchAll(/localStorage\.(?:setItem|getItem|removeItem)\("([^"]+)"/g)].map(m => m[1]);
+  const uniques = [...new Set(cles)];
+  assert.deepEqual(uniques, ['tor_vue'], 'clés de stockage inattendues : ' + uniques.join(', '));
+  assert(html.includes('localStorage.removeItem("tor_vue")'), 'plus moyen d\'effacer la trace');
+  assert(!/sessionStorage|indexedDB|document\.cookie/.test(html), 'un autre stockage est apparu');
+});
+
+t('la page explique honnêtement la trace qu\'elle ne peut PAS effacer', () => {
+  const b = blocDe('traces');
+  assert(b.length > 400, 'bloc #traces introuvable');
+  assert(/ton opérateur et l'hébergeur voient/.test(b),
+    'la page ne dit plus que la visite elle-même est visible — ce serait une fausse promesse');
+  assert(/hors-ligne/.test(html) && /efface/.test(html), 'les deux boutons de maîtrise des traces ont disparu');
+});
+
+t('l\'enregistrement hors ligne se fait sans réseau (copie du document, pas un téléchargement)', () => {
+  assert(/document\.documentElement\.outerHTML/.test(html),
+    'la copie hors ligne ne se fabrique plus depuis la page déjà chargée : elle appellerait le réseau');
+});
+
+t('aucun mouchard, aucune mesure d\'audience', () => {
+  const bas = html.toLowerCase();
+  for (const m of ['google-analytics', 'gtag(', 'googletagmanager', 'cloudflareinsights',
+                   'plausible', 'matomo', 'hotjar', 'facebook.net', 'sentry']) {
+    assert(!bas.includes(m), 'mouchard trouvé : ' + m);
+  }
+});
+
 console.log('\n✅ ' + ok + ' contrôles, 0 échec — ' + fiches.length + ' services au catalogue.');
