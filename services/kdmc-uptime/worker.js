@@ -81,6 +81,8 @@ const SITES = [
   'chez-lolo.kd-mc.com',
   'bot.kd-mc.com',
   'beatbot.kd-mc.com',
+  'rotaplan.kd-mc.com',   /* offre B2B Rotaplan (page de vente) — ajoutée 15.09.2026 */
+  'tor.kd-mc.com',        /* « Tor en clair » — routée le 15.09 sans être surveillée */
   'autorisations.kd-mc.com',
   'arbre.kd-mc.com',
   'lingua.kd-mc.com',
