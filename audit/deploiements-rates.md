@@ -7,6 +7,19 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 15/09/2026 19:25 UTC
+
+- **Branche** : `claude/security-review-4j3mct` · **Commit** : `6ad7b582` · **Run** : `35013165489`
+- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35013165489
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+##[error]Process completed with exit code 128.
+```
+
 ## ❌ Auto-merge Claude branches into main — 15/09/2026 19:24 UTC
 
 - **Branche** : `claude/security-review-4j3mct` · **Commit** : `4ee4daa9` · **Run** : `35013095722`
@@ -447,17 +460,4 @@ pull request create failed: GraphQL: Something went wrong while executing your q
 ##[warning]PR #3730 — merge auto refusé. Cause exacte ci-dessous.
 [claude/sarzance-family-tree-3jxi7i b9783fa49] diag: pourquoi l'auto-merge de claude/sarzance-family-tree-3jxi7i est refusé [skip ci]
 ##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 10/09/2026 19:30 UTC
-
-- **Branche** : `claude/apex-chat-mfa-faceid` · **Commit** : `732bf446` · **Run** : `34520637731`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34520637731
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
 ```
