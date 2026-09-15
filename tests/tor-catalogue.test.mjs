@@ -263,6 +263,22 @@ t('le vérificateur réel existe, tourne, et classe les 4 cas', () => {
   assert(sortie.includes('ne prouvent RIEN'), 'le mode simulé ne s\'annonce plus comme tel : on croirait à un vrai verdict');
 });
 
+t('sans Tor, il REFUSE au lieu d\'annoncer « tout est mort »', () => {
+  /* Le piège : sans Tor, curl échoue sur les 20 adresses et le rapport dirait que le
+     catalogue entier est mort — un faux verdict, pire que pas de verdict. On pointe donc
+     TOR_SOCKS sur un port fermé, et on exige un refus net (sortie 2, aucun rapport). */
+  const { spawnSync } = require0('node:child_process');
+  const r = spawnSync(process.execPath,
+    [new URL('../tools/tor/verif-onion.mjs', import.meta.url).pathname],
+    { encoding: 'utf8', env: { ...process.env, TOR_SOCKS: '127.0.0.1:1' } });
+  assert(r.status === 2, 'le vérificateur n\'a pas refusé (sortie ' + r.status + ') : il a produit un verdict sans Tor');
+  const sortie = (r.stderr || '') + (r.stdout || '');
+  assert(/faux verdict/.test(sortie), 'le refus n\'explique plus pourquoi');
+  assert(!/adresses répondent/.test(sortie), 'un décompte a quand même été produit sans Tor');
+  const src = readFileSync(new URL('../tools/tor/verif-onion.mjs', import.meta.url), 'utf8');
+  assert(/9150/.test(src), 'le port du Tor Browser (9150) n\'est plus cherché : Kevin ne pourrait pas lancer la vérification lui-même');
+});
+
 t('le vérificateur lit le catalogue dans la page, sans le recopier', () => {
   const src = readFileSync(new URL('../tools/tor/verif-onion.mjs', import.meta.url), 'utf8');
   assert(src.includes("readFileSync(new URL('./index.html'"), 'le catalogue est recopié ailleurs : les deux listes vont diverger');

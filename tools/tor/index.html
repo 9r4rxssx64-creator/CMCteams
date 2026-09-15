@@ -282,11 +282,15 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
     <p><b>Comment je sais que ces adresses sont les bonnes ?</b></p>
     <p>Chaque fiche a un bouton <b>« Prouver l'adresse »</b> : il ouvre la page <b>du site officiel lui-même</b>
     (bbc.co.uk, torproject.org, proton.me…) où l'organisation publie son adresse .onion. Compare, et tu es sûr.</p>
-    <p class="mut sm">Relevées à leurs sources publiques le 15.09.2026. Je ne peux pas ouvrir de .onion
-    depuis mes serveurs (pas de Tor là-bas) : je te donne donc la source, pas une promesse.
-    <b>Un outil existe maintenant pour les ouvrir vraiment</b> (job <code>tor-adresses</code>, à la
-    demande) — dis-le-moi et je le lance : tu auras un rapport daté, adresse par adresse.
-    Tant qu'il n'a pas tourné, la règle reste la même : recoupe avec « Prouver l'adresse ».</p>
+    <p class="mut sm">Relevées à leurs sources publiques le 15.09.2026. <b>Elles n'ont pas encore été
+    ouvertes pour de vrai</b> : je te donne la source, pas une promesse.</p>
+    <p class="mut sm"><b>Pour les ouvrir vraiment, en une commande</b> — l'outil est prêt, il lui faut
+    juste un Tor qui tourne sur la machine : ouvre le <b>Tor Browser</b> et laisse-le ouvert, puis
+    lance <code>npm run tor:verif</code>. Il te sort un rapport daté, adresse par adresse (vivante,
+    protégée, ou morte). <b>Je ne peux pas le lancer d'ici</b> : mon environnement m'interdit d'ouvrir
+    un circuit Tor, et le runner qui aurait pu le faire demande un accès que cette session n'a pas.
+    S'il ne trouve aucun Tor, l'outil <b>refuse de répondre</b> plutôt que de te dire à tort que tout
+    est mort. Tant qu'il n'a pas tourné, la règle reste la même : recoupe avec « Prouver l'adresse ».</p>
   </div>
 </section>
 
@@ -446,7 +450,7 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
   <button role="tab" data-v="secu" aria-selected="false"><span class="ic">🛡</span>Sécurité</button>
   <button role="tab" data-v="quiz" aria-selected="false"><span class="ic">🎓</span>Quiz</button>
 </nav>
-<div id="vbadge">v1.3</div>
+<div id="vbadge">v1.4</div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>

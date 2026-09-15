@@ -12,19 +12,61 @@
  *     par un push du fichier-signal `veille-demande.txt` ou à la main. Aucune tâche programmée.
  *
  * USAGE
- *   node tools/tor/verif-onion.mjs            # exige un Tor local sur 127.0.0.1:9050
+ *   node tools/tor/verif-onion.mjs            # exige un Tor local (9050 = service tor, 9150 = Tor Browser)
  *   node tools/tor/verif-onion.mjs --simule   # sans Tor : prouve la logique (tests)
  *   node tools/tor/verif-onion.mjs --json rapport.json
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import net from 'node:net';
 
 const execFileP = promisify(execFile);
 const args = process.argv.slice(2);
 const SIMULE = args.includes('--simule');
 const SORTIE = args.includes('--json') ? args[args.indexOf('--json') + 1] : null;
-const PROXY = process.env.TOR_SOCKS || '127.0.0.1:9050';
+/* Quel Tor écoute ? 9050 = le service `tor` ; 9150 = le Tor Browser ouvert sur le bureau.
+   TOR_SOCKS force la valeur si besoin. */
+function ecoute(hote, port) {
+  return new Promise(ok => {
+    const s = net.connect({ host: hote, port, timeout: 1500 });
+    s.on('connect', () => { s.destroy(); ok(true); });
+    s.on('error', () => ok(false));
+    s.on('timeout', () => { s.destroy(); ok(false); });
+  });
+}
+async function trouveProxy() {
+  /* TOR_SOCKS est vérifié comme le reste : un port forcé mais mort donnerait « tout est
+     mort » — le faux verdict qu'on veut justement éviter. */
+  const candidats = process.env.TOR_SOCKS ? [process.env.TOR_SOCKS] : ['127.0.0.1:9050', '127.0.0.1:9150'];
+  for (const adr of candidats) {
+    const [h, p] = adr.split(':');
+    if (await ecoute(h || '127.0.0.1', Number(p))) return adr;
+  }
+  return null;
+}
+const PROXY = SIMULE ? '(simulé)' : await trouveProxy();
+
+/* SANS Tor, curl échoue sur les 20 adresses et le rapport dirait « tout est mort » : un
+   verdict FAUX, pire que pas de verdict. On refuse de produire un rapport dans ce cas. */
+if (!SIMULE && !PROXY) {
+  console.error([
+    process.env.TOR_SOCKS
+      ? 'Rien n\'écoute sur ' + process.env.TOR_SOCKS + ' (TOR_SOCKS).'
+      : 'Aucun Tor ne répond en local (ni 127.0.0.1:9050, ni 127.0.0.1:9150).',
+    '',
+    'Sans Tor, les 20 adresses paraîtraient toutes mortes : ce serait un faux verdict.',
+    'Donc je ne produis aucun rapport.',
+    '',
+    'Pour lancer la vérification pour de vrai, au choix :',
+    '  · ouvrir le Tor Browser et le laisser ouvert (il écoute sur 9150), puis relancer ;',
+    '  · ou installer le service : sudo apt install tor  (ou  brew install tor) puis  tor ;',
+    '  · ou pointer un autre Tor :  TOR_SOCKS=127.0.0.1:9150 node tools/tor/verif-onion.mjs',
+    '',
+    'Pour juste vérifier que l\'outil fonctionne, sans réseau :  --simule'
+  ].join('\n'));
+  process.exit(2);
+}
 
 /* Le catalogue est lu DANS la page : une seule source de vérité, jamais recopiée. */
 const page = readFileSync(new URL('./index.html', import.meta.url), 'utf8');
