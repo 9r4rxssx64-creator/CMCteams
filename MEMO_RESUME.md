@@ -1,5 +1,62 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 2) — « Tu l'as intégré à mon domaine admin ? » : la moitié manquait
+
+Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écart était réel.
+
+- **Ce qui était fait** : `tor.kd-mc.com` inscrit dans les 5 endroits du registre (apps.json, ROUTES
+  du worker, wrangler.toml, replis portail + admin). `apps-consistency` 7/7.
+- **Ce qui MANQUAIT** : **aucune tuile sur le portail**. Kevin aurait dû taper l'adresse à la main —
+  c'est exactement la leçon du 2026-08-05 (« une tuile invisible = une fonction qui n'existe pas »).
+- **Piège de mesure évité** : `grep tor.kd-mc.com` renvoyait aussi `kdmc-home/index.html` et
+  `kdmc-uptime/worker.js` — **faux positifs** : `worldmoni**tor.kd-mc.com**` contient la chaîne.
+  Re-mesuré avec une limite de mot (`['"/]tor\.kd-mc\.com`) → 5 fichiers réels, pas 7.
+- **Ajouté** : zone `#tor-zone` dans `kdmc-home/index.html` + règle dans `kdmc-portal.js`. Même
+  logique que la tuile du bot (révélée dès que la session porte le nom, **sans exiger le Face ID** —
+  sinon invisible sur l'iPhone de Kevin), mais **réservée à Kevin seul** (`kevin|desarzens`), pas à
+  Laurence ni aux clients : choix de discrétion, la page ne donne accès à rien de sensible.
+- **Preuve navigateur réel** (`npm run tor:tuile`, nouveau) : portail **servi en HTTP** (il lit
+  `/apps.json` à la racine), 5 profils simulés — Kevin par son nom ✓, Kevin admin ✓, Laurence ✗,
+  client inconnu ✗, non connecté ✗, **et 0 régression** sur la tuile du bot. 8 contrôles, 0 échec.
+- **Deux bancs d'essai faux corrigés avant de conclure** (j'ai failli accuser le code) : (1) le vrai
+  `kdmc-sso.js` **écrase** `window.kdmcSSO` → il faut verrouiller la propriété
+  (`Object.defineProperty`, set no-op) ; (2) le portail ne passe en mode connecté **que si la session
+  porte un `uid`** (`boot` → `_postLogin` → `applyAdminVisibility`) — sans uid, rien ne s'affiche et
+  tout paraît cassé. **Leçon : quand un test dit qu'une fonction éprouvée est cassée (Laurence ne
+  voyait plus le bot), suspecter le banc d'essai AVANT le code.**
+- `test:tor` 19 → **21 contrôles** : inscription dans les 5 fichiers du domaine + tuile présente,
+  masquée par défaut, pointant sur l'outil, et réservée à Kevin dans `kdmc-portal.js`.
+
+## 2026-09-15 (suite) — Kevin : « intègre quand même ce que tu ne veux pas » + une identité dédiée (v1.1)
+
+- **Ce qu'il demandait** : (a) le catalogue exhaustif incluant les marchés, (b) un compte/identité/mail dédiés.
+- **(b) FAIT — onglet 🪪 Identité** : générateur qui tourne **entièrement sur le téléphone**
+  (`crypto.getRandomValues`, tirage sans biais par rejet, 0 `Math.random`), produit pseudo,
+  nom d'utilisateur, mot de passe 22 caractères, phrase de passe 7 mots tirés parmi 186,
+  date de naissance factice, + « copier toute la fiche » vers le coffre existant. **Rien n'est
+  envoyé ni conservé** (CSP `connect-src 'none'`, vérifié : 0 requête au moment de générer).
+  Plus la marche à suivre réelle pour la boîte mail (Tuta = le seul grand gratuit qui accepte
+  encore une inscription sans téléphone depuis Tor, avec la validation 48 h dite honnêtement ;
+  Proton demande souvent un numéro via Tor ; Riseup sur invitation) + 7 règles d'étanchéité.
+- **(a) REFUSÉ, et dit en face** : je ne construis pas d'annuaire de marchés illégaux, même
+  demandé deux fois. **En échange j'ai livré la vraie capacité d'explorer** : bloc « Explorer tout
+  le réseau » en tête du catalogue — Ahmia (moteur qui indexe le réseau entier, ne retire que le
+  pédocriminel), la méthode pour juger un site en 10 secondes, pourquoi les annuaires communautaires
+  sont eux-mêmes des pièges, ce qu'il va VRAIMENT trouver (pages mortes, arnaques, marchés
+  infiltrés), et 3 limites écrites en termes de risque et non de morale.
+- **Garde `test:tor` : 12 → 19 contrôles.** Nouveaux : hasard cryptographique obligatoire, rejet
+  anti-biais présent, ≥ 150 mots sans doublon, phrase de 7 mots, **aucun moyen d'envoyer des données
+  dans la page** (`fetch`/XHR/beacon/WebSocket/EventSource), promesse « rien n'est envoyé » ancrée au
+  bloc `#promesse`, moteur nommé dans `#explorer` ET présent au catalogue, 3 limites présentes.
+  **11 sabotages** : 9 détectés d'emblée, **2 trous trouvés et rebouchés** (un contrôle qui cherchait
+  un texte « quelque part dans la page » passait quand on le retirait de l'endroit qui compte →
+  ancrage par bloc `id`). Leçon : un contrôle non ancré valide la page, pas la fonction.
+- **Preuve navigateur réel : 29 contrôles, 0 échec** (Chromium, iPhone SE) — dont 0 requête au clic
+  « Créer mon identité », mot de passe à 22 caractères, 2 générations ≠, fiche réellement dans le
+  presse-papier, pseudo sans rien de personnel, 6 onglets sans débordement horizontal.
+- 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
+  mise en garde « t'y connecter dit qui tu es »).
+
 ## 2026-09-15 — « Tor en clair » : un outil pour comprendre et visiter le web .onion sans se faire avoir
 
 Demande de Kevin : *« Crée-moi un outil pour aller sur le dark web simplement, en toute sécurité,

@@ -7,7 +7,9 @@
 | **L'outil (à utiliser)** | [tor.kd-mc.com](https://tor.kd-mc.com) · secours : [github.io/CMCteams/tools/tor/](https://9r4rxssx64-creator.github.io/CMCteams/tools/tor/) |
 | Le code de la page | [tools/tor/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/index.html) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/tor/index.html) |
 | La garde du catalogue (12 contrôles) | [tests/tor-catalogue.test.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/tor-catalogue.test.mjs) |
-| La preuve navigateur (17 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
+| La tuile sur ton portail (privée, Kevin seul) | [kdmc-home/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/index.html) — zone `#tor-zone` |
+| La preuve « qui voit la tuile » (8 contrôles, 5 profils) | [tests/verify-tor-tuile-portail.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-tuile-portail.mjs) |
+| La preuve navigateur (29 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
 
 
 > Mis à jour automatiquement par Claude à chaque commit important.
