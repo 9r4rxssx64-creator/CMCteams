@@ -131,6 +131,52 @@ await p.waitForTimeout(200);
 ok('l\'app rouvre sur le dernier onglet consulté',
    await p.evaluate(() => document.querySelector('#v-secu').classList.contains('hide') === false));
 
+
+/* ── Traces : la promesse « non traçable » se prouve, elle ne se déclare pas.
+   On vérifie ce que la page garde, qu'elle sait tout effacer, et que la copie hors
+   ligne est COMPLÈTE et n'appelle personne (c'est le seul usage qui ne laisse rien). ── */
+await p.click('nav.tabs button[data-v="secu"]');
+await p.waitForTimeout(200);
+ok('la section « ce que la page laisse comme trace » est présente', !!(await p.$('#traces')));
+ok('la page ne stocke qu\'UNE chose (le dernier onglet)',
+   await p.evaluate(() => localStorage.length) === 1 &&
+   await p.evaluate(() => localStorage.getItem('tor_vue')) !== null);
+
+const reqsAvantDl = reqs.length;
+const [dl] = await Promise.all([ p.waitForEvent('download', { timeout: 15000 }), p.click('#hors-ligne') ]);
+/* Playwright range le téléchargement sans extension : on l'enregistre en .html, comme
+   le ferait un iPhone dans Fichiers, sinon le navigateur ne le rouvre pas comme une page. */
+const horsLigne = (process.env.RUNNER_TEMP || '/tmp') + '/tor-hors-ligne.html';
+await dl.saveAs(horsLigne);
+const { readFileSync, statSync } = await import('node:fs');
+const copie = readFileSync(horsLigne, 'utf8');
+ok('« Garder hors ligne » produit la page complète',
+   copie.includes('var SITES') && copie.includes('genIdentite') && copie.length > 30000,
+   Math.round(statSync(horsLigne).size / 1024) + ' Ko');
+ok('enregistrer hors ligne ne déclenche aucune requête', reqs.length === reqsAvantDl);
+
+const p2 = await ctx.newPage();
+const err2 = [], req2 = [];
+p2.on('pageerror', e => err2.push(e.message));
+p2.on('request', r => { if (!r.url().startsWith('file://')) req2.push(r.url()); });
+await p2.goto('file://' + horsLigne, { waitUntil: 'networkidle' });
+await p2.click('nav.tabs button[data-v="catalogue"]');
+await p2.waitForTimeout(200);
+ok('la copie hors ligne s\'ouvre et montre tout le catalogue',
+   err2.length === 0 && (await p2.$$eval('#list .site', n => n.length)) === 20);
+await p2.click('nav.tabs button[data-v="identite"]');
+await p2.click('#gen');
+await p2.waitForTimeout(200);
+ok('le générateur d\'identité marche hors ligne aussi',
+   (await p2.$$eval('#fiche .addr', n => n.length)) === 6);
+ok('la copie hors ligne n\'appelle personne', req2.length === 0, req2.join(','));
+await p2.close();
+
+await p.click('#efface');
+await p.waitForTimeout(250);
+ok('« Effacer mes traces » vide réellement le stockage',
+   await p.evaluate(() => localStorage.getItem('tor_vue')) === null);
+
 await p.screenshot({ path: process.argv[2] || 'tor-iphone.png', fullPage: false });
 await b.close();
 console.log('\n' + (ko ? '❌ ' + ko + ' échec(s)' : '✅ Tout passe — vérifié dans un vrai Chromium, écran iPhone SE'));
