@@ -1,5 +1,53 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 8) — Nouveau commerce : « Devenir croupier » (croupier.kd-mc.com)
+
+Kevin : « occupe-toi du nouveau commerce produit ».
+
+**Mesure d'abord** : 6 boutiques existantes, **toutes** en PayPal.me manuel, **zéro
+livraison automatique**. `digital-vault` a même des catégories « E-books & Guides » et un
+lien `paypal.me/kdmc/<montant>` brut : l'acheteur paie, et ensuite plus rien. Le connecteur
+PayPal fonctionne (0 lien existant) mais `create_payment_link` ouvre un **formulaire que
+Kevin valide** (1 clic), et `kdmc-mail` ne fait que **recevoir** — aucun envoi de courriel.
+→ Conséquence d'architecture : le produit payant doit être une **page d'accès**, pas un
+fichier à envoyer.
+
+**Décision prise pour protéger Kevin** : le guide porte sur **le métier en général**, pas
+sur les grilles de salaire internes de son employeur. Publier les grilles de la SBM sous son
+nom pendant qu'il y travaille, c'est lui créer un problème au travail pour rien. Le cadre
+structurel (rotation, jeux, hiérarchie, âge minimum) est public et reste, avec la source dite.
+
+**Livré** : le guide **gratuit et complet** — 1 437 mots. Ce qu'un croupier fait vraiment,
+une nuit heure par heure (la rotation 20/40/60 + pause de 20, le vrai différenciateur),
+les **rapports de paiement exacts** (roulette 35/17/11/8/5/2:1, blackjack 3:2, assurance
+2:1, banco −5 %), les jeux et leur ordre d'apprentissage, 7 questions honnêtes incluant
+les inconvénients, et comment on entre.
+
+**Design** : système **`editorial`** (magazine, serif Gelasio + Ubuntu Mono, lettrine),
+choisi dans la boîte à outils et **cité**. Volontairement différent de `levels` (Rotaplan) :
+ce sont deux produits, pas un gabarit dupliqué.
+
+**Le produit payant est décidé et annoncé, pas vendu** : l'**entraîneur de paiements** —
+l'exercice de calcul mental que les écoles testent réellement. C'est un **outil**, donc
+vérifiable (35:1 est un fait, pas une opinion) et livrable par une simple URL. Tant qu'il
+n'existe pas : aucun bouton de paiement, aucune préinscription, aucune adresse demandée.
+On ne vend pas ce qu'on ne peut pas livrer.
+
+**Cadre responsable** : la page dit explicitement qu'elle n'est pas une méthode pour gagner,
+ne propose aucun jeu d'argent, et affiche le 09 74 75 13 13. La garde interdit mécaniquement
+les mots « martingale », « battre la banque », « système gagnant »…
+
+**Vérifié** en vrai navigateur (3 affichages) : 0 erreur JS, 0 blocage CSP, 0 débordement,
+0 cible < 44 px, Gelasio et Ubuntu Mono réellement rendues, liens légaux en HTTP 200.
+**Garde** `npm run test:croupier` (dans `test:ci`), **prouvée discriminante** (fausser un
+paiement → échec · retirer le numéro d'aide → échec · remettre l'or illisible → échec).
+
+**Leçon appliquée immédiatement** : le nouveau sous-domaine a été ajouté aux **5 endroits
+dans le même commit** (routeur, wrangler, sonde de disponibilité, surfaces auditées en
+live, sitemap) — c'est exactement le trou trouvé une heure plus tôt avec Rotaplan.
+
+---
+
 ## 2026-09-15 (suite 7) — ROTATION AUX TABLES terminée et testée (v9.904)
 
 Kevin : « occupe-toi du produit […] il manque encore la rotation aux tables etc à terminer et tester. »

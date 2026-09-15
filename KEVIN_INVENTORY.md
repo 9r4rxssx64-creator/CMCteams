@@ -1,5 +1,18 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎲 Devenir croupier — nouveau produit — 2026-09-15
+
+**▶️ La page** : [croupier.kd-mc.com](https://croupier.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/index.html) | Le guide gratuit (1 437 mots), système de design `editorial` |
+| [`tests/croupier-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-page.test.mjs) | La garde : jeu responsable, exactitude des paiements, jetons du design, honnêteté commerciale |
+
+`npm run test:croupier` (dans `test:ci`). Produit payant à venir : l'entraîneur de paiements.
+
+---
+
 ## ⏸ Rotation aux tables — moteur + test (CMCteams v9.904) — 2026-09-15
 
 | Fichier | À quoi ça sert |

@@ -82,6 +82,7 @@ const SITES = [
   'bot.kd-mc.com',
   'beatbot.kd-mc.com',
   'rotaplan.kd-mc.com',   /* offre B2B Rotaplan (page de vente) — ajoutée 15.09.2026 */
+  'croupier.kd-mc.com',   /* Devenir croupier — guide de métier */
   'tor.kd-mc.com',        /* « Tor en clair » — routée le 15.09 sans être surveillée */
   'autorisations.kd-mc.com',
   'arbre.kd-mc.com',
