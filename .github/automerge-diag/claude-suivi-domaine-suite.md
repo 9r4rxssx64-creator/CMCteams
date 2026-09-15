@@ -1,6 +1,6 @@
 # Diagnostic auto-merge — PR #3795 (claude/suivi-domaine-suite)
 
-Généré le 2026-09-15 19:21 UTC par auto-merge-claude.yml.
+Généré le 2026-09-15 19:28 UTC par auto-merge-claude.yml.
 Ce fichier existe parce que le merge automatique a été REFUSÉ.
 
 ## Cause exacte renvoyée par GitHub
