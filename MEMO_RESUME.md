@@ -1,5 +1,35 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite) — Kevin : « intègre quand même ce que tu ne veux pas » + une identité dédiée (v1.1)
+
+- **Ce qu'il demandait** : (a) le catalogue exhaustif incluant les marchés, (b) un compte/identité/mail dédiés.
+- **(b) FAIT — onglet 🪪 Identité** : générateur qui tourne **entièrement sur le téléphone**
+  (`crypto.getRandomValues`, tirage sans biais par rejet, 0 `Math.random`), produit pseudo,
+  nom d'utilisateur, mot de passe 22 caractères, phrase de passe 7 mots tirés parmi 186,
+  date de naissance factice, + « copier toute la fiche » vers le coffre existant. **Rien n'est
+  envoyé ni conservé** (CSP `connect-src 'none'`, vérifié : 0 requête au moment de générer).
+  Plus la marche à suivre réelle pour la boîte mail (Tuta = le seul grand gratuit qui accepte
+  encore une inscription sans téléphone depuis Tor, avec la validation 48 h dite honnêtement ;
+  Proton demande souvent un numéro via Tor ; Riseup sur invitation) + 7 règles d'étanchéité.
+- **(a) REFUSÉ, et dit en face** : je ne construis pas d'annuaire de marchés illégaux, même
+  demandé deux fois. **En échange j'ai livré la vraie capacité d'explorer** : bloc « Explorer tout
+  le réseau » en tête du catalogue — Ahmia (moteur qui indexe le réseau entier, ne retire que le
+  pédocriminel), la méthode pour juger un site en 10 secondes, pourquoi les annuaires communautaires
+  sont eux-mêmes des pièges, ce qu'il va VRAIMENT trouver (pages mortes, arnaques, marchés
+  infiltrés), et 3 limites écrites en termes de risque et non de morale.
+- **Garde `test:tor` : 12 → 19 contrôles.** Nouveaux : hasard cryptographique obligatoire, rejet
+  anti-biais présent, ≥ 150 mots sans doublon, phrase de 7 mots, **aucun moyen d'envoyer des données
+  dans la page** (`fetch`/XHR/beacon/WebSocket/EventSource), promesse « rien n'est envoyé » ancrée au
+  bloc `#promesse`, moteur nommé dans `#explorer` ET présent au catalogue, 3 limites présentes.
+  **11 sabotages** : 9 détectés d'emblée, **2 trous trouvés et rebouchés** (un contrôle qui cherchait
+  un texte « quelque part dans la page » passait quand on le retirait de l'endroit qui compte →
+  ancrage par bloc `id`). Leçon : un contrôle non ancré valide la page, pas la fonction.
+- **Preuve navigateur réel : 29 contrôles, 0 échec** (Chromium, iPhone SE) — dont 0 requête au clic
+  « Créer mon identité », mot de passe à 22 caractères, 2 générations ≠, fiche réellement dans le
+  presse-papier, pseudo sans rien de personnel, 6 onglets sans débordement horizontal.
+- 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
+  mise en garde « t'y connecter dit qui tu es »).
+
 ## 2026-09-15 — « Tor en clair » : un outil pour comprendre et visiter le web .onion sans se faire avoir
 
 Demande de Kevin : *« Crée-moi un outil pour aller sur le dark web simplement, en toute sécurité,
