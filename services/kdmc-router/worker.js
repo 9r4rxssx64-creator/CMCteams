@@ -57,6 +57,7 @@ const ROUTES = {
   'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
   // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
   // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
   'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
 
