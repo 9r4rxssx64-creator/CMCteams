@@ -44,6 +44,12 @@
 
   var AI_ENDPOINT = 'https://apis.kd-mc.com/ai';
   var BEE_BASE = 'https://lingua.kd-mc.com/bee/v2/rig/'; /* la source de vérité du dessin */
+  /* Les VRAIES videos de Bee, générées depuis son dessin (Replicate) et déjà en ligne
+     pour Lingua. On les RÉUTILISE : aucun fichier dupliqué (leçon #142). Elles ne sont
+     chargées QUE dans l'app dédiée (mode plein écran) : sur une page normale le bouton
+     flottant reste la marionnette CSS, qui ne coûte rien en données mobiles. */
+  var BEE_LIVE = 'https://lingua.kd-mc.com/bee/live/';
+  var BEE_CLIPS = ['idle', 'hello', 'dance', 'jump', 'fly', 'walk'];
   var STORAGE_HIST = 'javis_widget_history';
   var STORAGE_VOICE = 'javis_widget_voice_on';
   var MAX_HISTORY = 40;
@@ -77,7 +83,7 @@
   /* ============================================================
      1. Bee — la MÊME marionnette que dans Lingua (beeRigHTML)
      ============================================================ */
-  function buildBeeRig() {
+  function buildBeeRig(avecVideo) {
     return (
       '<div class="bee-rig" data-mascot="bee" data-art="vive">' +
       '<div class="rig-look">' +
@@ -87,7 +93,9 @@
       '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>' +
       '<div class="disc-mouth"></div>' +
       '<div class="rig-zzz">z</div>' +
-      '</div></div>'
+      '</div>' +
+      (avecVideo ? '<video class="javis-vid" src="' + BEE_LIVE + 'idle.mp4" autoplay loop muted playsinline preload="auto"></video>' : '') +
+      '</div>'
     );
   }
 
@@ -129,6 +137,14 @@
       '.bee-rig.dort .rig-piece{animation:none!important}' +
       '.rig-zzz{position:absolute;left:64%;top:16%;font-size:15%;font-weight:900;color:#cfe0ee;opacity:0;pointer-events:none;text-shadow:0 2px 6px rgba(0,0,0,.5)}' +
       '.bee-rig.dort .rig-zzz{animation:javis-zzz 2.6s ease-out infinite}' +
+      /* ---- VRAIE VIDÉO (mode app) : elle recouvre la marionnette QUAND ELLE EST LUE.
+         Tant que la vidéo n'a pas dit 'canplay', la classe .vid n'est pas posée et on voit
+         la marionnette : jamais de trou noir si le réseau ou le codec lâche. ---- */
+      '.javis-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;border-radius:inherit}' +
+      '.bee-rig.vid .javis-vid{display:block}' +
+      '.bee-rig.vid .rig-piece,.bee-rig.vid .rig-lid,.bee-rig.vid .disc-mouth{display:none!important}' +
+      '.bee-rig.vid.talk{animation:javis-parle .5s ease-in-out infinite}' +
+      '@keyframes javis-parle{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2%) scale(1.012)}}' +
       '@keyframes javis-zzz{0%{opacity:0;transform:translate(0,0) scale(.6)}25%{opacity:.95}100%{opacity:0;transform:translate(38%,-52%) scale(1.5)}}' +
       '.bee-rig.rx-poke .rig-look{animation:javis-poke .9s cubic-bezier(.34,1.56,.64,1)}' +
       '@keyframes javis-poke{0%{transform:scale(1,1)}22%{transform:scale(1.1,.88) translateY(3%)}55%{transform:scale(.94,1.09) translateY(-4%)}100%{transform:scale(1,1)}}' +
@@ -351,11 +367,62 @@
     } catch (_) {}
   }
 
+  /* ============================================================
+     3 bis. VRAIE VIDÉO de Bee (mode app) — même discipline que Lingua
+     ------------------------------------------------------------
+     Règle de repli, dans cet ordre exact :
+       • la vidéo ne dit jamais « canplay »  → on ne pose jamais .vid  → marionnette CSS
+       • un clip d'humeur manque (404)        → on le note absent, retour à idle, ce
+                                                mouvement-là repasse en marionnette
+       • le clip de repos lui-même échoue     → on retire la vidéo, tout repasse en
+                                                marionnette — JAMAIS d'écran vide
+     ============================================================ */
+  var VID = { pret: false, absent: {}, retour: 0 };
+
+  function initVideo(rig) {
+    if (!rig) return;
+    var v = rig.querySelector('.javis-vid');
+    if (!v) return;
+    v.addEventListener('canplay', function () {
+      VID.pret = true;
+      rig.classList.add('vid');
+      var p = v.play(); if (p && p.catch) p.catch(function () {});
+    }, { once: true });
+    v.addEventListener('error', function () {
+      var m = String(v.getAttribute('src') || '').match(/\/live\/([a-z]+)\.mp4/);
+      if (VID.pret && m && m[1] !== 'idle') {
+        VID.absent[m[1]] = 1;                  /* ce mouvement-là seulement */
+        try { v.src = BEE_LIVE + 'idle.mp4'; var q = v.play(); if (q && q.catch) q.catch(function () {}); } catch (_) {}
+        return;
+      }
+      VID.pret = false;
+      try { rig.classList.remove('vid'); v.remove(); } catch (_) {}
+    });
+  }
+
+  /* Joue un clip et revient au repos toute seule. Rend true si elle a pu le jouer. */
+  function clip(rig, nom, secs) {
+    if (!VID.pret || !rig) return false;
+    var v = rig.querySelector('.javis-vid');
+    if (!v || !nom || VID.absent[nom] || BEE_CLIPS.indexOf(nom) < 0) return false;
+    try { v.src = BEE_LIVE + nom + '.mp4'; v.loop = true; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (_) { return false; }
+    if (VID.retour) clearTimeout(VID.retour);
+    if (nom !== 'idle') {
+      VID.retour = setTimeout(function () {
+        try { if (!VID.pret) return; v.src = BEE_LIVE + 'idle.mp4'; var q = v.play(); if (q && q.catch) q.catch(function () {}); } catch (_) {}
+      }, Math.max(2, secs || 4) * 1000);
+    }
+    return true;
+  }
+
   /* Mouvements du corps entier (porté de Lingua : beeMove) */
   function move(rig, kind, dur) {
     if (!rig) return;
     ['mv-dance', 'mv-jump', 'mv-fly', 'mv-walk'].forEach(function (c) { rig.classList.remove(c); });
     if (!kind) return;
+    /* Si la vraie vidéo est là, c'est ELLE qui bouge (bien plus vivant que le CSS).
+       Sinon on retombe sur la marionnette, exactement comme avant. */
+    if (clip(rig, kind, (dur || 2400) / 1000)) return;
     rig.classList.add('mv-' + kind);
     setTimeout(function () { try { rig.classList.remove('mv-' + kind); } catch (_) {} }, dur || 2400);
   }
@@ -377,14 +444,22 @@
       var m = r.querySelector('.disc-mouth'); if (m) m.classList.add('talking');
     });
     /* Gros plan pendant qu'elle parle (Kevin : « en gros plan le visage ») */
-    if (APP_MODE) document.body.classList.add('javis-closeup');
+    if (APP_MODE) {
+      document.body.classList.add('javis-closeup');
+      var gros = root.querySelector('#javis-launcher .bee-rig');
+      if (gros) clip(gros, 'hello', 6);
+    }
   }
   function stopTalking(root) {
     allRigs(root).forEach(function (r) {
       r.classList.remove('talk');
       var m = r.querySelector('.disc-mouth'); if (m) m.classList.remove('talking');
     });
-    if (APP_MODE) document.body.classList.remove('javis-closeup');
+    if (APP_MODE) {
+      document.body.classList.remove('javis-closeup');
+      var gros = root.querySelector('#javis-launcher .bee-rig');
+      if (gros) clip(gros, 'idle', 0);
+    }
   }
   function setThinking(root, on) {
     allRigs(root).forEach(function (r) { r.classList[on ? 'add' : 'remove']('rx-reflechit'); });
@@ -608,7 +683,7 @@
     var wrap = document.createElement('div');
     wrap.id = 'javis-root';
     wrap.innerHTML =
-      '<button id="javis-launcher" type="button" aria-label="Parler à Bee">' + buildBeeRig() + '</button>' +
+      '<button id="javis-launcher" type="button" aria-label="Parler à Bee">' + buildBeeRig(APP_MODE) + '</button>' +
       '<div id="javis-panel" role="dialog" aria-label="Bee">' +
       '<div id="javis-head"><div class="javis-mini">' + buildBeeRig() + '</div>' +
       '<div><b>Bee</b><span>Ton assistante · gratuit d\'abord</span></div>' +
@@ -622,6 +697,22 @@
     if (APP_MODE) document.body.classList.add('javis-app');
 
     allRigs(wrap).forEach(function (r) { mascotAlive(r, { sommeil: 120000 }); });
+    /* Dans l'app : on branche la vraie vidéo, et elle vit d'elle-même entre deux phrases
+       (elle vole, marche, danse) — porté de la vue Discussion de Lingua. */
+    if (APP_MODE) {
+      var grosRig = wrap.querySelector('#javis-launcher .bee-rig');
+      initVideo(grosRig);
+      (function vieLoop() {
+        setTimeout(function () {
+          if (!document.contains(wrap)) return;
+          if (VID.pret && !document.body.classList.contains('javis-closeup')) {
+            var ks = ['fly', 'walk', 'dance'];
+            clip(grosRig, ks[Math.floor(Math.random() * ks.length)], 2.6 + Math.random() * 1.8);
+          }
+          vieLoop();
+        }, 9000 + Math.random() * 7000);
+      })();
+    }
 
     var panel = wrap.querySelector('#javis-panel');
     var form = wrap.querySelector('#javis-form');
