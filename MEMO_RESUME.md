@@ -8253,3 +8253,48 @@ une lacune : une architecture différente par nécessité, pas par oubli.
 `tsc --noEmit` propre, `eslint --max-warnings=0` propre (a aussi corrigé au passage un ordre
 d'imports pré-existant dans `memory.ts`, sans rapport avec le persona). Suite complète Apex :
 12500+ tests, 0 échec lié à mes changements (voir logs de session pour le détail).
+
+---
+
+## Javis a un corps — bouton flottant + app installable (2026-09-16)
+
+Kevin a demandé de voir Javis : un bouton flottant avec le personnage, visible seulement pour
+lui sur le domaine, cliquable pour parler à Javis "de n'importe où", tournant sur Apex en
+gratuit d'abord, capable d'ouvrir des liens/apps, et une app installable sur son téléphone.
+Inspiration Duo (Duolingo) pour le style, animations réelles (yeux, bouche).
+
+### Livré
+
+- **`tools/javis/javis-widget.js`** : source canonique du widget — bouton flottant rond doré,
+  personnage SVG animé (respiration CSS, clignement aléatoire, regard qui dérive, bouche qui
+  s'anime en rythme avec la voix via `SpeechSynthesisUtterance`), panneau de chat, dictée
+  (Web Speech API). **Fail-closed sur la visibilité** (`/__sso/whoami`, même pattern éprouvé
+  que `tools/departs/_depSsoAutoAdmin`) — invisible pour quiconque n'est pas Kevin admin
+  vérifié Face ID. Fail-open sur le réseau (SSO injoignable → juste pas de bouton, page intacte).
+- Parle à **`apis.kd-mc.com/ai`** (déjà en prod) — gratuit Qwen d'abord automatiquement, 0
+  logique dupliquée (réutilise `services/_shared/ia-route.js`, le routage IA commun du domaine).
+- Intentions locales sans appel IA : ouvrir une app du domaine (arbre, apex, cmcteams), météo
+  (open-meteo gratuit). Une action sur de vraies données (envoyer un message, modifier un
+  planning) n'est **jamais** exécutée par ce script public — ouvre Apex avec la question déjà
+  écrite dans son chat, où la vraie session + le vrai registre d'outils existent.
+- **`javis/`** : app PWA installable (« Ajouter à l'écran d'accueil ») — personnage plein écran
+  + chat, service worker, manifest, icône. Même moteur que le widget, gate SSO admin propre.
+- **Câblé en vrai** dans `arbre/index.html` (script chargé + CSP `connect-src` élargie aux 2
+  hôtes nécessaires — piège CSP⇄fetch déjà documenté, évité dès l'écriture).
+
+### Honnêteté — ce qui reste à faire
+
+- Pas de vrai lip-sync phonétique (la bouche bat en rythme, pas au son exact) — pistes gratuites
+  identifiées pour la suite : Live2D (vrai lip-sync audio, technique VTuber) ou TalkingHead.js
+  (github.com/met4citizen/TalkingHead, MIT, 3D + visèmes réels).
+- Personnage **original**, pas une copie du dessin précis de Duolingo (marque déposée d'un
+  tiers — un dépôt public ne publie pas une imitation d'une marque protégée). L'esprit (mascotte
+  ronde, grands yeux) est repris, pas le dessin exact.
+- Câblé sur 1 app (arbre) + l'app installable pour l'instant, pas les 26 adresses du domaine —
+  ce domaine n'a pas de bundler, chaque app statique garde sa propre copie à coller.
+- Pas de vérification live sur le domaine réel (agent bloqué sur kd-mc.com) — prochaine étape :
+  `verif-reelle` en CI une fois déployé.
+
+Vérifié localement : `node --check` propre sur les 2 scripts + le fichier combiné d'arbre,
+manifest JSON valide, icon.svg bien formé XML, CSP mise à jour dans le même commit que l'ajout
+du script (jamais l'un sans l'autre).
