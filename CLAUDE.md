@@ -79,6 +79,58 @@ mesurée à 12 chars sous le plafond 32000 — cf. `core/prompt-budget.ts`, inci
 S'applique : Claude Code (priorité absolue), Apex (parité obligatoire), tous projets présents et
 futurs qui parlent directement à Kevin ou à un utilisateur final.
 
+### 5. Javis a un corps — bouton flottant + app installable (Kevin 2026-09-16)
+
+> Kevin : « Un bouton flottant, une image du personnage, cliquable, seulement pour moi, quand
+> j'ouvre le domaine. Il tourne sur Apex, gratuit d'abord. Qu'il puisse tout faire pour moi,
+> m'ouvrir des liens. Une app indépendante à mettre sur le bureau de mon téléphone. Donne-lui
+> l'apparence de Duo de Duolingo, ou recopie-la. De vraies mimiques, une bouche qui bouge. »
+
+**Ce qui existe :**
+- `tools/javis/javis-widget.js` — la source canonique : bouton flottant animé (respire, cligne
+  des yeux, bouche qui parle), fail-CLOSED sur la visibilité (`/__sso/whoami` — invisible pour
+  quiconque n'est pas Kevin admin vérifié, même pattern éprouvé que `tools/departs/_depSsoAutoAdmin`),
+  fail-OPEN sur le réseau (une panne SSO cache juste le bouton, ne casse jamais la page).
+- Le chat parle à **`apis.kd-mc.com/ai`** (`services/kdmc-apis`, DÉJÀ en prod) — donc **gratuit
+  Qwen d'abord automatiquement**, zéro logique dupliquée (leçon #142 : un seul routage IA,
+  `services/_shared/ia-route.js`, jamais recopié dans un nouveau worker).
+- `javis/` — app PWA autonome installable (« Ajouter à l'écran d'accueil ») : personnage plein
+  écran + chat, même moteur que le widget, séparée pour ne dépendre d'aucune autre app.
+- Intentions locales exécutées sans appel IA : ouvrir une app du domaine, météo (open-meteo,
+  gratuit). Une action qui touche de vraies données (« envoie un message », « modifie le
+  planning ») n'est **jamais exécutée par ce script public** — il ouvre Apex avec la question
+  déjà écrite (`apex_v13_chat_prefill`) : Apex a la session authentifiée + le vrai registre
+  d'outils, un widget embarqué sur des pages publiques ne doit **jamais** détenir de secret
+  d'écriture (règle sécurité domaine public déjà en place plus haut).
+
+**Ce qui n'est PAS fait, honnêtement (à ne pas prétendre) :**
+- Pas de vrai lip-sync phonétique (viseme par phonème type D-ID/HeyGen/Live2D) — la bouche
+  s'anime en rythme avec `SpeechSynthesisUtterance` (Web Speech API, 0 €), pas au son exact.
+  Meilleure option gratuite/client-side identifiée pour aller plus loin plus tard : **Live2D**
+  (rig 2D, vrai lip-sync depuis l'audio, technique des VTubers) ou **TalkingHead.js**
+  (github.com/met4citizen/TalkingHead, MIT, Three.js + Ready Player Me + visèmes réels) —
+  les deux demandent un moteur d'avatar (poids supplémentaire), pas branchées v1.
+- Le personnage est un dessin **original** (rond, grands yeux, couleurs or/sombre du domaine) —
+  **pas** une reproduction du personnage précis de Duolingo (marque déposée d'un tiers, un dépôt
+  PUBLIC ne doit rien publier qui imite une marque protégée). L'esprit (mascotte ronde, grands
+  yeux expressifs) est repris, le dessin ne l'est pas.
+- Câblé sur **1 app (`arbre`) + l'app installable** pour l'instant, pas les 26 adresses du
+  domaine — chaque app statique garde sa propre copie du widget (pas de bundler ici), donc
+  l'étendre = copier `tools/javis/javis-widget.js` dans chaque `index.html` visé + ajouter les
+  2 hôtes (`apis.kd-mc.com`, `api.open-meteo.com`) à sa CSP `connect-src`.
+- Pas vérifié en vrai navigateur sur le domaine live (l'agent n'atteint pas kd-mc.com, cf. règle
+  « J'AI INTERNET… JE VÉRIFIE » — canal 4, le runner CI, est le prochain pas pour une preuve
+  live via le skill `verif-reelle`).
+
+### 6. Test mental obligatoire avant d'étendre Javis à une nouvelle app
+
+> *« Cette app a-t-elle déjà sa CSP `connect-src` ouverte vers `apis.kd-mc.com` (sinon fetch
+> silencieusement bloqué, leçon CSP⇄fetch) ? Le bouton flottant collide-t-il avec un élément
+> `position:fixed` déjà présent (SOS, badge version, bouton propre à l'app) ? Une action qui
+> touche de vraies données part-elle bien vers Apex authentifié, jamais exécutée ici ? »*
+
+S'applique : Javis (priorité), toute app qui embarque un widget public sur le domaine.
+
 ---
 
 ## 🆓 RÈGLE ABSOLUE — QWEN GRATUIT EN IA PRINCIPALE + BASCULE AUTO PAR QUESTION (Kevin 2026-09-05, ABSOLUE)
