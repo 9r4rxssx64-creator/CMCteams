@@ -107,12 +107,21 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   d'écriture (règle sécurité domaine public déjà en place plus haut).
 
 **Ce qui n'est PAS fait, honnêtement (à ne pas prétendre) :**
-- Pas de vrai lip-sync phonétique (viseme par phonème type D-ID/HeyGen/Live2D) — la bouche
-  s'anime en rythme avec `SpeechSynthesisUtterance` (Web Speech API, 0 €), pas au son exact.
-  Meilleure option gratuite/client-side identifiée pour aller plus loin plus tard : **Live2D**
-  (rig 2D, vrai lip-sync depuis l'audio, technique des VTubers) ou **TalkingHead.js**
-  (github.com/met4citizen/TalkingHead, MIT, Three.js + Ready Player Me + visèmes réels) —
-  les deux demandent un moteur d'avatar (poids supplémentaire), pas branchées v1.
+- Pas de vrai lip-sync phonétique (viseme par phonème type D-ID/HeyGen/Live2D). Dans l'app
+  installable, c'est la **VRAIE VIDÉO de Bee** qui joue (`lingua/bee/live/*.mp4` : idle, hello,
+  dance, jump, fly, walk — générées depuis son dessin pour Lingua, **réutilisées telles quelles**,
+  aucun fichier dupliqué) : elle respire, vole, danse et enchaîne les clips pour de bon. Mais un
+  clip vidéo n'est pas une bouche qui suit les phonèmes — sur une page normale et en repli, c'est
+  la marionnette CSS rythmée par `SpeechSynthesisUtterance`. Pour aller plus loin un jour :
+  **Live2D** (vrai lip-sync depuis l'audio, technique des VTubers) ou **TalkingHead.js**
+  (github.com/met4citizen/TalkingHead, MIT, visèmes réels) — les deux demandent un moteur
+  d'avatar (poids supplémentaire), pas branchées ici.
+- **Vidéo = app installable seulement**, pas le bouton flottant : 6 clips ≈ 3 Mo, on ne les
+  impose pas à une page ouverte en 4G. Repli en trois temps, prouvé en vrai navigateur :
+  la classe `.vid` n'est posée **qu'après `canplay`** ; un clip d'humeur absent ne tue que
+  CE mouvement-là (retour au repos) ; le clip de repos qui échoue retire la vidéo et tout
+  repasse en marionnette — **jamais d'écran vide**. Une balise `<video>` n'est PAS couverte
+  par `img-src` : sans **`media-src`** dans la CSP, la vidéo est bloquée **sans message**.
 - **LE PERSONNAGE EST BEE — celui de Lingua, pas un nouveau dessin.** Kevin a dit « B de
   Duolingo », j'ai compris Duo (la chouette), puis Bea (l'humaine) : les deux étaient faux.
   C'est **Bee, la mascotte qu'on a créée ensemble pour Lingua** (`lingua/bee/`). Le widget
@@ -128,15 +137,30 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
 - Câblé sur **1 app (`arbre`) + l'app installable** pour l'instant, pas les 26 adresses du
   domaine — chaque app statique garde sa propre copie du widget (pas de bundler ici), donc
   l'étendre = copier `tools/javis/javis-widget.js` dans chaque `index.html` visé + ajouter les
-  2 hôtes (`apis.kd-mc.com`, `api.open-meteo.com`) à sa CSP `connect-src`.
-- Pas vérifié en vrai navigateur sur le domaine live (l'agent n'atteint pas kd-mc.com, cf. règle
-  « J'AI INTERNET… JE VÉRIFIE » — canal 4, le runner CI, est le prochain pas pour une preuve
-  live via le skill `verif-reelle`).
+  hôtes (`apis.kd-mc.com`, `api.open-meteo.com` en `connect-src`, `lingua.kd-mc.com` en
+  `img-src`, + `media-src` si l'app veut la vidéo) et **déclarer la page dans la garde**.
+- **Deux gardes mécaniques** (la règle ne vit plus seulement dans ce document — leçon #142 :
+  le 16.09 j'avais amélioré Bee et oublié de recopier dans `arbre/`, deux Bee en ligne sans
+  un seul message d'erreur) :
+  · `npm run test:javis-bee` (dans `test:ci`) — copies **identiques à l'octet**, hôtes CSP
+    présents page par page, chaque image/clip cité **existe vraiment**. Prouvé discriminant
+    par sabotage : copie décalée d'1 octet → ❌, `media-src` retiré → ❌, clip inventé → ❌.
+  · `npm run test:javis-bee-reelle` — **vrai navigateur** (Chromium, app servie en local,
+    Lingua détournée vers les vrais fichiers) : la vidéo est lue, `currentTime` **avance**,
+    un toucher change de clip, vidéo cassée → marionnette visible, clip manquant → retour
+    au repos, non-admin → rien + message. 16 contrôles, 0 échec.
+    Un Chromium de CI ne décode pas le H.264 : le test **rejoue les vraies images en VP9**
+    avec ffmpeg plutôt que de sauter le contrôle ; sans ffmpeg il l'annonce
+    **« NON VÉRIFIÉ ICI »** au lieu d'un vert trompeur (leçon #103, le faux vert).
+- Pas vérifié sur le domaine LIVE (l'agent n'atteint pas kd-mc.com, cf. règle « J'AI INTERNET…
+  JE VÉRIFIE » — canal 4, le runner CI, reste le pas suivant via le skill `verif-reelle`).
 
 ### 6. Test mental obligatoire avant d'étendre Javis à une nouvelle app
 
 > *« Cette app a-t-elle déjà sa CSP `connect-src` ouverte vers `apis.kd-mc.com` (sinon fetch
-> silencieusement bloqué, leçon CSP⇄fetch) ? Le bouton flottant collide-t-il avec un élément
+> silencieusement bloqué, leçon CSP⇄fetch) — et `media-src` si elle veut la vidéo (une balise
+> `<video>` n'est PAS couverte par `img-src`) ? Ai-je ajouté la page à `tests/verify-javis-bee.mjs`
+> et recopié le widget à l'octet près ? Le bouton flottant collide-t-il avec un élément
 > `position:fixed` déjà présent (SOS, badge version, bouton propre à l'app) ? Une action qui
 > touche de vraies données part-elle bien vers Apex authentifié, jamais exécutée ici ? »*
 

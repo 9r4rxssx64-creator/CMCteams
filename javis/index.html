@@ -13,8 +13,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Bee">
 <!-- img-src : les images de Bee viennent de Lingua (source unique du dessin).
+     media-src : ses VRAIES vidéos (bee/live/*.mp4), hébergées par Lingua elles aussi.
+       ⚠ une balise <video> n'est PAS couverte par img-src : sans media-src, la vidéo est
+       bloquée SANS message et on ne verrait que la marionnette (piège CSP⇄fetch, CLAUDE.md).
      connect-src : le hub IA gratuit + la météo. Un hôte oublié ici = échec SILENCIEUX. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lingua.kd-mc.com; connect-src 'self' https://apis.kd-mc.com https://api.open-meteo.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lingua.kd-mc.com; media-src 'self' https://lingua.kd-mc.com; connect-src 'self' https://apis.kd-mc.com https://api.open-meteo.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
 <style>
   html,body{margin:0;height:100%;background:#0e0a04;color:#f7efd9;
     font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}

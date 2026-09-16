@@ -9,12 +9,17 @@
 | [`tools/javis/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tools/javis/javis-widget.js) | La SOURCE : bouton flottant, personnage animé, chat, SSO admin-only. À copier tel quel dans une nouvelle app (ce domaine n'a pas de bundler — chaque app garde sa propre copie, comme `_depSsoAutoAdmin`) |
 | [`arbre/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/arbre/javis-widget.js) | La copie réellement chargée par `arbre/index.html` (preuve vivante) |
 | [`javis/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/index.html) | L'app **installable sur ton téléphone** (plein écran, personnage + chat) |
-| [`javis/manifest.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/manifest.json) · [`javis/sw.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/sw.js) · [`javis/icon.svg`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/icon.svg) | PWA : « Ajouter à l'écran d'accueil », icône, hors-ligne |
+| [`javis/manifest.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/manifest.json) · [`javis/sw.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/sw.js) | PWA : « Ajouter à l'écran d'accueil », icône, hors-ligne |
+| [`tests/verify-javis-bee.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-javis-bee.mjs) | **Garde** : les 3 copies identiques à l'octet + les bons hôtes dans chaque CSP + chaque image/vidéo citée existe (`npm run test:javis-bee`, dans `test:ci`) |
+| [`tests/verify-javis-bee-reelle.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-javis-bee-reelle.mjs) | **Garde en VRAI navigateur** : la vidéo se lit et avance, un toucher change de mouvement, et si la vidéo casse le dessin reste (jamais d'écran vide) — `npm run test:javis-bee-reelle` |
 
-**Bee**, la mascotte de Lingua (mêmes images, mêmes animations — une seule source de vérité). Parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives
-(gratuites). Pas encore fait, honnêtement : lèvres synchronisées phonétiquement (ici,
-bouche qui bouge en rythme avec la voix — pas un vrai lip-sync), et le déploiement
-domaine-large (pour l'instant : arbre + l'app installable seulement).
+**Bee**, la mascotte de Lingua — mêmes images, **et maintenant ses vraies vidéos** (`lingua/bee/live/*.mp4` :
+repos, coucou, danse, saut, vol, marche), réutilisées telles quelles : une seule source de vérité, aucun
+fichier dupliqué. Dans l'app installable elle bouge pour de vrai ; sur une page normale le bouton flottant
+reste le dessin animé en CSS (3 Mo de vidéo ne s'imposent pas à une page ouverte en 4G).
+Elle parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives (gratuites).
+**Pas encore fait, honnêtement** : les lèvres synchronisées phonétiquement (la bouche bouge en rythme,
+pas au son exact), et le déploiement domaine-large (pour l'instant : arbre + l'app installable).
 
 ## 📣 Réseaux sociaux — le moyen unique — 2026-09-16
 

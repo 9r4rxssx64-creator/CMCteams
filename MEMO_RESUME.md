@@ -1,5 +1,46 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 (soir, 3) — Bee bouge POUR DE VRAI (ses vraies vidéos), et elle ne peut plus se dédoubler
+
+### Ce qui change quand tu ouvres l'app Bee
+Elle ne fait plus semblant. Ce sont **ses vraies vidéos** qui jouent — celles qu'on avait déjà
+faites pour Lingua (repos, coucou, danse, saut, vol, marche). Elle respire, elle vole, elle danse
+toute seule entre deux phrases, elle passe en gros plan quand elle te parle, et si tu touches son
+aile elle s'envole vraiment. Aucun nouveau fichier : **on réutilise les siens**, donc si son
+dessin évolue dans Lingua, elle suit ici toute seule.
+
+Sur une page normale (l'arbre), le petit bouton rond reste le dessin animé léger : 3 Mo de vidéo
+n'ont rien à faire sur une page que tu ouvres en 4G.
+
+### Le bug que j'avais introduit sans le voir
+J'avais amélioré Bee et **oublié de recopier le fichier dans `arbre/`** : deux Bee différentes en
+ligne, et pas un seul message d'erreur. C'est exactement la panne que je me promettais d'éviter.
+Une promesse ne suffit pas → **deux gardes automatiques** :
+
+| Garde | Ce qu'elle refuse |
+|---|---|
+| `npm run test:javis-bee` (dans la chaîne de tests) | une copie qui a dérivé ne serait-ce que d'**un octet** · un hôte manquant dans la CSP d'une page · une image ou une vidéo citée **qui n'existe pas** |
+| `npm run test:javis-bee-reelle` | dans un **vrai navigateur** : la vidéo ne se lit pas · elle n'avance pas · un toucher ne change pas de mouvement · la vidéo casse et l'écran devient **vide** · Bee s'afficherait pour quelqu'un d'autre que toi |
+
+Les deux sont **prouvées** : j'ai cassé exprès chaque cas et vérifié qu'elles refusent (copie
+décalée d'1 octet → refus, `media-src` retiré → refus, clip inventé → refus), puis j'ai tout remis.
+
+### Mesuré, pas supposé
+- vrai navigateur : **16 contrôles OK, 0 échec** (vidéo lue, `0.04s → 1.26s` d'avancement réel,
+  toucher sur l'aile → clip `fly`, vidéo cassée → le dessin reste, non-admin → rien + message clair)
+- garde statique : **33 contrôles OK, 0 échec** · arbre : **5 suites OK** · Lingua : **38 fichiers, 0 demandé dans le vide**
+- versions montées ensemble : arbre v3.25 → **v3.26** (+ son cache), app Bee **v1.3**
+
+### Le piège du jour, à retenir
+Une balise `<video>` **n'est pas** couverte par `img-src` : sans **`media-src`** dans la CSP, la
+vidéo est bloquée **sans le moindre message** — on ne voit que le dessin et on croit que ça marche.
+
+### Honnête : ce qui n'est toujours pas fait
+- Les lèvres ne suivent pas les sons un par un (la bouche bouge en rythme, pas au phonème).
+- Bee n'est branchée que sur **l'arbre + l'app installable**, pas sur les 26 adresses du domaine.
+- Rien n'est encore vérifié sur le **site en ligne** : je ne peux pas l'atteindre d'ici, ça se fera
+  par la CI une fois déployé.
+
 ## 2026-09-16 (soir, 2) — Réseaux sociaux : ce que tu as vraiment, et le moyen unique
 
 ### Tu croyais avoir tout. Voici la mesure (journal CI, pas une supposition)
