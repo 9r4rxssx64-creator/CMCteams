@@ -53,7 +53,7 @@ const PRODUITS = {
      sert module par module contre un code valide, /apercu ne sert que le module
      marqué gratuit. */
   'kit-ia': {
-    nom: "Kit IA de l'indépendant — 7 modules + 60 consignes prêtes à copier",
+    nom: "Kit IA de l'indépendant — 7 modules + 57 consignes prêtes à copier",
     prix: 47, devise: 'EUR',
     livre: 'https://kit.kd-mc.com/lire.html',
     contenu: ['kit-ia'],

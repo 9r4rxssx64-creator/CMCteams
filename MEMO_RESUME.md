@@ -1,5 +1,43 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 22:55 — Kit IA de l'indépendant : produit numérique NEUF, construit, contenu en base, caisse live
+
+Kevin 21:47 : « un produit numérique dans la niche à la mode, max rentabilité, en toute autonomie.
+Pas de ce que nous avons déjà créé. On verra plus tard quand tout sera stable… Encore trop de bugs. »
+→ Lingua Premium et packs Créa GELÉS (tâches #10/#11). Niche choisie sur chiffres (3 sources) :
+**compétences IA pour non-techniciens** = le ticket le mieux payé des produits numériques 2026
+(49-499 $), packs de consignes ciblés 12-49 €, le générique « 500 prompts » est saturé.
+
+**Produit : Kit IA de l'indépendant — 7 modules, 57 consignes prêtes à copier, 47 € (2 ans).**
+Pour artisans/indépendants/commerçants francophones, iPhone-first, versions GRATUITES de
+ChatGPT/Claude/Gemini. Module 1 gratuit (aperçu), 2→7 payants.
+- Contenu : 7 modules rédigés (Opus, brief strict : vérité, 0 conseil juridique/fiscal, renvoi
+  service-public.fr, accents vérifiés par script après 2 modules livrés sans accents), 1 394 à
+  1 633 mots chacun, 103 Ko au total. **Stocké dans la base D1 `kdmc-contenu`
+  (d28c6ec0-21e4-46b8-a3dc-49f282e3a036), JAMAIS dans le dépôt public** (test qui l'interdit).
+  Inséré ligne par ligne depuis l'agent (Cloudflare MCP) — vérifié : 7 lignes, 57 consignes.
+- Caisse : `kdmc-vente` produit `kit-ia`, binding D1 `CONTENU`, `/apercu?produit=` (gratuit
+  seulement, sans code), `/lire?c=` (tout, contre code payé). CORS = tout sous-domaine HTTPS de
+  kd-mc.com (la liste fixe bloquait les pages servies depuis un sous-domaine — bug latent
+  croupier). 31 tests ; fuite aperçu prouvée discriminante par sabotage.
+- Site : `shops/kit-ia/` (index = vente + récupérer l'accès ; lire = lecteur, code mémorisé
+  `kit_ia_code`, bouton Copier par consigne, verrou visuel sur les modules payants). CSP stricte
+  sans style en ligne (attrapé par le test navigateur), 44 px, 375 px. 6 tests dont 2 en vrai
+  navigateur avec faux worker (`test:kit-ia`, dans `test:ci`).
+- Routage `kit.kd-mc.com` aux 5 endroits + `APPS` (rotaplan/croupier manquaient : garde
+  périmètre rouge depuis le 15.09, corrigée).
+- **Live (CI, run #4 vert)** : `/health` = `contenu_prive:true`, produits croupier-pro,
+  croupier-entretien, kit-ia. La preuve live attend maintenant la VRAIE version déployée
+  (mesuré : 0 s après le déploiement, l'ancien worker répondait encore = faux vert) et vérifie
+  que l'aperçu ne sert aucun module payant.
+- Paiement : PayPal.me/kdmc/47EUR et revolut.me/kdmc/47eur (montant pré-rempli), puis
+  formulaire « j'ai payé » → code. PayPal sans app = file manuelle (Kevin valide 1 clic).
+
+🔴 Non vérifié : `kit.kd-mc.com` n'est routé qu'après fusion sur main + déploiement du routeur
+(custom domain) ; le lecteur n'a pas encore été chargé sur le vrai domaine (canal CI `verif-reelle`).
+🔴 Non mesuré : la demande réelle. Prochaine étape : pub Metricool sans visage (Bee est Lingua =
+gelé → visuels neutres), test 30 jours.
+
 ## 2026-09-16 21:40 — Nouveau commerce HORS casino : choix chiffré = Lingua Premium (+ packs Créa)
 
 Recherche faite (dépôt lu + 6 sources marché citées dans le rapport) — 5 niches comparées :

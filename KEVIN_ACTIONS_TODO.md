@@ -26,6 +26,7 @@ Chaque ligne renvoie à sa section plus bas.
 
 | Quoi | Ce que ça ouvre | Temps |
 |---|---|---|
+| **Rien à faire pour le Kit IA** (kit.kd-mc.com, 47 €) : il est construit, le contenu est en base, la caisse tourne. Tu peux le LIRE et me dire ce que tu changes | Ton premier produit numérique neuf, hors casino, vendable | 0 min |
 | ~~Compte Metricool~~ ✅ fait le 16.09 (Instagram + TikTok + YouTube prouvés) | Le seul chemin vers TikTok — **Facebook reporté « plus tard »** (Kevin 16.09), voir ⚪ | fait |
 | **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |
 | **Telegram** — @BotFather | Publier + lire + messages, zéro validation | 2 min |
