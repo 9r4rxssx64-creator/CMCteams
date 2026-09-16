@@ -107,4 +107,4 @@ jobs:
             401) echo "OK — refusé proprement, personne ne publie sans Face ID." ;;
             *)   echo "À RÉPARER : refusé, mais pas par le contrôle admin (HTTP $CODE)."
                  echo "Voir le diagnostic SSO ci-dessus."; exit 1 ;;
-          esac"
+          esac
