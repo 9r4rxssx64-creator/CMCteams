@@ -184,3 +184,10 @@ test('essai à blanc + TEST_EMAIL : un seul e-mail d\'essai à Kevin, rien d\'au
   assert.equal(appels.mails[0].to_email, S.EMAIL_KEVIN);
   assert.ok(lignes.some((l) => l.includes('Essai d\'e-mail à Kevin : ENVOYÉ')));
 });
+
+test('essai d\'e-mail : tourne AUSSI quand la semaine est déjà en base', async () => {
+  const { appels } = fauxReseau({ base: [...KIT, { produit: 'club-ia', id: 's2026-39', ordre: 8, titre: 'Déjà là', html: 'x' }] });
+  const r = await S.principal({ ...ENV, DRY_RUN: 'true', TEST_EMAIL: 'true' }, () => {});
+  assert.equal(r.deja, true);
+  assert.equal(appels.mails.length, 1);
+});
