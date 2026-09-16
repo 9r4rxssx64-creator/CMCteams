@@ -8349,3 +8349,49 @@ de Bee seraient bloquées en silence — piège CSP⇄fetch déjà documenté).
 Vérifié : `node --check` propre partout, 5/5 suites arbre vertes, **`tools/lingua/verify-assets.mjs`
 vert** (38 chemins contrôlés — je n'ai rien cassé chez Bee), les 3 images du rig existent bien.
 arbre v3.23 → v3.24, javis sw v1.0 → v1.1.
+
+---
+
+## Bee : attitude, réactions, interactions (2026-09-16, suite)
+
+Kevin : « Améliore l'attitude, réactions, interactions, animations. » Réflexe appliqué cette
+fois : j'ai d'abord regardé TOUT ce que Bee savait déjà faire dans Lingua et que je n'avais pas
+repris — c'était beaucoup.
+
+### Repris de Lingua (rien réinventé)
+
+- **Toucher par ZONE** (`_rigZone`) : la tête → elle est contente et saute · le ventre → elle rit
+  et danse · les ailes → elle s'envole. Phrase différente à chaque zone (`_rxLines`), vibration
+  différente (18 ms au ventre, 10 ms ailleurs), nombre d'étincelles différent.
+- **Étincelles** (`beeSparkles`) : ✨⭐💛🐝❤️🌟 qui jaillissent.
+- **Bulle de parole** (`beeBubble`) qui apparaît à côté d'elle.
+- **Mouvements du corps entier** (`beeMove`) : danse, saut, vol, marche.
+- **Son** (`tone`) : petites notes à l'interaction, muettes si la voix est coupée.
+- **`void offsetWidth`** : l'astuce de Lingua pour relancer une animation identique.
+- **Tristesse** (`rx-triste`) : elle baisse la tête et se désature.
+
+### Attitude ajoutée (contexte assistante, pas jeu de langues)
+
+- **Elle ouvre la conversation** : salutation selon l'heure (bonjour/bonsoir/tu veilles tard) ET
+  selon l'app où elle se trouve (« On est sur ton arbre de famille. Tu cherches quelqu'un ? »).
+  Si tu n'es pas venu depuis 2 jours : « Ça fait 3 jours ! Tu m'as manqué 🍯 ».
+- **Elle réagit à la conversation** : joie + son + étincelles quand la réponse arrive, tristesse
+  quand le réseau tombe, elle réfléchit pendant l'attente.
+- **« Elle écrit… »** : trois points animés pendant qu'elle réfléchit.
+- **Elle s'ennuie** : si tu n'ouvres pas le chat, elle fait un petit geste (marche, saut, danse)
+  toutes les ~1 min — **3 fois maximum**, puis elle se tient tranquille. Pas de harcèlement.
+- **Geste de bienvenue** quand tu ouvres le panneau (coucou + son).
+- Vibration à l'envoi, gros plan pendant qu'elle parle.
+
+### Anti-divergence (leçon #142 appliquée pour de bon)
+
+L'app installable est passée de **328 lignes à 41** : ce n'est plus qu'une coquille qui charge
+`javis-widget.js` avec `JAVIS_MODE='app'`. Une seule Bee, un seul fichier de comportement —
+plus deux versions à garder synchronisées. Le mode app affiche le personnage en grand et le
+chat en plein écran, et **dit** clairement « Bee est personnelle à Kevin » si ce n'est pas lui
+(au lieu d'un écran noir inexpliqué).
+
+Vérifié : `node --check` propre, **chaque mouvement et chaque émotion demandés en JS ont bien
+leur règle CSS** (contrôle explicite JS⇄CSS — le piège « déclaré mais pas branché »), aucune
+fonction orpheline (12 contrôlées), 5/5 suites arbre vertes, `verify-assets` de Lingua vert.
+arbre v3.24 → v3.25, javis sw v1.1 → v1.2.

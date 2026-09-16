@@ -139,6 +139,35 @@
       '.bee-rig.rx-coucou .rig-look{animation:javis-coucou 1.4s ease-in-out}' +
       '@keyframes javis-coucou{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}50%{transform:rotate(7deg)}75%{transform:rotate(-5deg)}}' +
       '@media (prefers-reduced-motion:reduce){.rig-look,.bee-rig.vivant .rig-base,.bee-rig.dort .rig-base,.rig-zzz,.rig-wl,.rig-wr,.disc-mouth.talking,.bee-rig.rx-poke .rig-look,.bee-rig.rx-joie .rig-look,.bee-rig.rx-reflechit .rig-look,.bee-rig.rx-coucou .rig-look{animation:none;transition:none}}' +
+      /* mouvements du corps entier (portés de Lingua : danse, saut, vol, marche) */
+      '.bee-rig.mv-dance{animation:javis-dance 1.05s ease-in-out infinite}' +
+      '.bee-rig.mv-jump{animation:javis-jump .85s cubic-bezier(.36,.07,.19,.97) infinite}' +
+      '.bee-rig.mv-fly{animation:javis-fly 3.6s ease-in-out infinite}' +
+      '.bee-rig.mv-walk{animation:javis-walk .8s ease-in-out infinite}' +
+      '.bee-rig.mv-dance .rig-wl,.bee-rig.mv-fly .rig-wl{animation:javis-wingL .3s ease-in-out infinite}' +
+      '.bee-rig.mv-dance .rig-wr,.bee-rig.mv-fly .rig-wr{animation:javis-wingR .3s ease-in-out infinite}' +
+      '@keyframes javis-dance{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-7deg) translate(-4%,-3%)}40%{transform:rotate(6deg) translate(4%,0)}60%{transform:rotate(-6deg) translate(-3%,-4%)}80%{transform:rotate(7deg) translate(3%,0)}}' +
+      '@keyframes javis-jump{0%,100%{transform:translateY(0) scale(1,1)}18%{transform:translateY(2%) scale(1.05,.9)}45%{transform:translateY(-16%) scale(.97,1.06)}70%{transform:translateY(0) scale(1.04,.94)}85%{transform:translateY(-1%) scale(1,1)}}' +
+      '@keyframes javis-fly{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(7%,-9%) rotate(5deg)}30%{transform:translate(13%,2%) rotate(-3deg)}50%{transform:translate(0,6%) rotate(0)}70%{transform:translate(-13%,-4%) rotate(4deg)}88%{transform:translate(-6%,-10%) rotate(-4deg)}}' +
+      '@keyframes javis-walk{0%,100%{transform:translateY(0) rotate(-2.5deg)}25%{transform:translateY(-3%) rotate(0)}50%{transform:translateY(0) rotate(2.5deg)}75%{transform:translateY(-3%) rotate(0)}}' +
+      /* tristesse (réseau en panne) — portée de Lingua */
+      '.bee-rig.rx-triste .rig-look{animation:javis-triste 1.6s ease-in-out}' +
+      '@keyframes javis-triste{0%,100%{transform:rotate(0) translateY(0);filter:none}35%,70%{transform:rotate(-7deg) translateY(4%);filter:saturate(.7) brightness(.94)}}' +
+      /* étincelles + bulle (portées de Lingua) */
+      '.javis-spark{position:fixed;z-index:2147483002;pointer-events:none;font-size:16px;animation:javis-sparkFly .9s ease-out forwards}' +
+      '@keyframes javis-sparkFly{0%{transform:translate(0,0) scale(.6);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(1.25);opacity:0}}' +
+      '.javis-bubble{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom) + 172px);z-index:2147483002;max-width:240px;' +
+      'background:#241905;border:1px solid rgba(246,183,60,.6);border-radius:16px 16px 4px 16px;padding:10px 13px;' +
+      'font:13.5px/1.45 -apple-system,BlinkMacSystemFont,sans-serif;color:#f0e2bd;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer;' +
+      'animation:javis-bubblePop .35s cubic-bezier(.34,1.56,.64,1)}' +
+      '@keyframes javis-bubblePop{0%{transform:scale(.5) translateY(10px);opacity:0}100%{transform:scale(1) translateY(0);opacity:1}}' +
+      '.javis-bubble.bye{opacity:0;transform:translateY(8px);transition:all .4s}' +
+      /* « elle écrit… » pendant qu'elle réfléchit */
+      '.javis-typing{display:flex;gap:4px;align-self:flex-start;padding:10px 14px;background:#241905;border:1px solid rgba(246,183,60,.18);border-radius:14px;border-bottom-left-radius:4px}' +
+      '.javis-typing i{width:7px;height:7px;border-radius:50%;background:#f6b73c;opacity:.4;animation:javis-dot 1.1s ease-in-out infinite}' +
+      '.javis-typing i:nth-child(2){animation-delay:.18s}.javis-typing i:nth-child(3){animation-delay:.36s}' +
+      '@keyframes javis-dot{0%,100%{opacity:.35;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}' +
+      '@media (prefers-reduced-motion:reduce){.javis-spark{display:none}.javis-bubble,.javis-typing i{animation:none}}' +
       /* ---- habillage du widget ---- */
       '#javis-launcher{position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom) + 96px);' +
       'z-index:2147483000;width:68px;height:68px;border:0;border-radius:50%;padding:0;cursor:pointer;' +
@@ -225,18 +254,105 @@
       setTimeout(veille, 4000);
     })();
 
-    rig.addEventListener('pointerdown', function () {
+    /* Tu la touches : la réaction DÉPEND de l'endroit (porté de Lingua) —
+       la tête = contente, le ventre = elle rit et danse, les ailes = elle s'envole. */
+    rig.style.cursor = 'pointer';
+    rig.addEventListener('pointerdown', function (ev) {
       var etaitEndormie = dormi;
       reveille();
-      if (!etaitEndormie) react(rig, 'poke', 900);
-      try { if (navigator.vibrate) navigator.vibrate(10); } catch (_) {}
+      var zone = rigZone(rig, ev);
+      vibrate(zone === 'ventre' ? 18 : 10);
+      if (etaitEndormie) { bubble(pick(RX_LINES.reveil)); return; }
+      if (zone === 'aile') { move(rig, 'fly', 2200); }
+      else { react(rig, 'poke', 900); move(rig, zone === 'ventre' ? 'dance' : 'jump', 1600); }
+      sparkles(rig, zone === 'ventre' ? 10 : 6);
+      tone([760, 980], .18);
+      bubble(pick(RX_LINES[zone] || RX_LINES.tete), 3500);
     }, { passive: true });
+  }
+
+  /* --- Ce qu'elle DIT quand tu la touches, selon l'endroit (porté de Lingua) --- */
+  var RX_LINES = {
+    tete: ['Oh, tu me caresses la tête !', 'Hihi, ça chatouille !', 'Merci pour le câlin !', 'Toujours là pour toi, Kevin !'],
+    ventre: ['Hé, pas le ventre, ça chatouille !', 'Hihihi !', 'Arrête, je vais rire !'],
+    aile: ['Attention, je décolle !', 'Regarde comme je vole bien !', 'Zzzzip !'],
+    reveil: ['Oh ! Tu es revenu !', 'Je faisais un petit somme…', 'Coucou, on reprend ?'],
+  };
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  /* Où le doigt a touché, en % du personnage (porté de Lingua : _rigZone) */
+  function rigZone(rig, ev) {
+    var r = rig.getBoundingClientRect();
+    var p = (ev.touches && ev.touches[0]) || ev;
+    var x = (p.clientX - r.left) / r.width * 100, y = (p.clientY - r.top) / r.height * 100;
+    if (x < 28 || x > 72) return 'aile';
+    return y < 52 ? 'tete' : 'ventre';
+  }
+
+  /* Étincelles (porté de Lingua : beeSparkles) */
+  function sparkles(el, n) {
+    try {
+      var r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var em = ['✨', '⭐', '💛', '🐝', '❤️', '🌟'];
+      for (var i = 0; i < (n || 8); i++) {
+        var sp = document.createElement('span');
+        sp.className = 'javis-spark';
+        sp.textContent = pick(em);
+        var a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 55;
+        sp.style.left = cx + 'px'; sp.style.top = cy + 'px';
+        sp.style.setProperty('--dx', (Math.cos(a) * d) + 'px');
+        sp.style.setProperty('--dy', (Math.sin(a) * d - 24) + 'px');
+        document.body.appendChild(sp);
+        (function (x) { setTimeout(function () { x.remove(); }, 950); })(sp);
+      }
+    } catch (_) {}
+  }
+
+  /* Petit son (porté de Lingua : tone) — muet si la voix est coupée */
+  var AC = null;
+  function tone(freqs, dur) {
+    try {
+      if (localStorage.getItem(STORAGE_VOICE) === '0') return;
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      var o = AC.createOscillator(), g = AC.createGain();
+      o.connect(g); g.connect(AC.destination); o.type = 'sine';
+      freqs.forEach(function (f, i) { o.frequency.setValueAtTime(f, AC.currentTime + i * 0.08); });
+      g.gain.setValueAtTime(.10, AC.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001, AC.currentTime + dur);
+      o.start(); o.stop(AC.currentTime + dur);
+    } catch (_) {}
+  }
+  function vibrate(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) {} }
+
+  /* Bulle qui apparaît à côté d'elle (porté de Lingua : beeBubble) */
+  function bubble(text, ms) {
+    try {
+      var old = document.querySelector('.javis-bubble'); if (old) old.remove();
+      var b = document.createElement('div');
+      b.className = 'javis-bubble';
+      b.textContent = text;
+      b.onclick = function () { b.remove(); };
+      document.body.appendChild(b);
+      setTimeout(function () {
+        try { b.classList.add('bye'); setTimeout(function () { b.remove(); }, 400); } catch (_) {}
+      }, ms || 6000);
+    } catch (_) {}
+  }
+
+  /* Mouvements du corps entier (porté de Lingua : beeMove) */
+  function move(rig, kind, dur) {
+    if (!rig) return;
+    ['mv-dance', 'mv-jump', 'mv-fly', 'mv-walk'].forEach(function (c) { rig.classList.remove(c); });
+    if (!kind) return;
+    rig.classList.add('mv-' + kind);
+    setTimeout(function () { try { rig.classList.remove('mv-' + kind); } catch (_) {} }, dur || 2400);
   }
 
   function react(rig, kind, dur) {
     if (!rig) return;
-    ['rx-poke', 'rx-joie', 'rx-reflechit', 'rx-coucou'].forEach(function (c) { rig.classList.remove(c); });
+    ['rx-poke', 'rx-joie', 'rx-triste', 'rx-reflechit', 'rx-coucou'].forEach(function (c) { rig.classList.remove(c); });
     if (!kind) return;
+    void rig.offsetWidth; /* relance l'animation même si c'est la même (astuce de Lingua) */
     rig.classList.add('rx-' + kind);
     setTimeout(function () { try { rig.classList.remove('rx-' + kind); } catch (_) {} }, dur || 1500);
   }
@@ -336,6 +452,20 @@
   function saveHistory(h) {
     try { localStorage.setItem(STORAGE_HIST, JSON.stringify(h.slice(-MAX_HISTORY))); } catch (_) {}
   }
+  function showTyping(root, on) {
+    var list = root.querySelector('#javis-msgs');
+    var t = list.querySelector('.javis-typing');
+    if (on) {
+      if (!t) {
+        t = document.createElement('div');
+        t.className = 'javis-typing';
+        t.innerHTML = '<i></i><i></i><i></i>';
+        list.appendChild(t);
+        list.scrollTop = list.scrollHeight;
+      }
+    } else if (t) { t.remove(); }
+  }
+
   function addBubble(root, role, text, meta) {
     var list = root.querySelector('#javis-msgs');
     var b = document.createElement('div');
@@ -360,6 +490,7 @@
     if (handled) return;
 
     setThinking(root, true);
+    showTyping(root, true);
     var messages = hist.slice(-10).map(function (m) { return { role: m.role, content: m.content }; });
     fetch(AI_ENDPOINT, {
       method: 'POST',
@@ -375,17 +506,82 @@
       .then(function (r) { return r.json(); })
       .then(function (j) {
         setThinking(root, false);
-        var out = (j && j.ok && j.text) ? j.text : 'Je n\'ai pas réussi à répondre là, réessaie dans un instant.';
-        var meta = (j && j.ok) ? (j.provider + (j.provider === 'qwen' ? ' (gratuit)' : '')) : null;
+        showTyping(root, false);
+        var ok = !!(j && j.ok && j.text);
+        var out = ok ? j.text : 'Je n\'ai pas réussi à répondre là, réessaie dans un instant.';
+        var meta = ok ? (j.provider + (j.provider === 'qwen' ? ' (gratuit)' : '')) : null;
         addBubble(root, 'javis', out, meta);
-        if (j && j.ok) { allRigs(root).forEach(function (r) { react(r, 'joie', 1200); }); }
+        allRigs(root).forEach(function (r) { react(r, ok ? 'joie' : 'triste', ok ? 1200 : 1600); });
+        if (ok) { tone([660, 880], .2); vibrate(8); }
         var h = loadHistory(); h.push({ role: 'assistant', content: out }); saveHistory(h);
         speak(root, out);
       })
       .catch(function () {
         setThinking(root, false);
+        showTyping(root, false);
+        allRigs(root).forEach(function (r) { react(r, 'triste', 1600); });
         addBubble(root, 'javis', 'Le réseau ne répond pas là, réessaie dans un instant.');
       });
+  }
+
+  /* ============================================================
+     5 bis. L'ATTITUDE — elle sait quelle heure il est, où elle est, et depuis
+     combien de temps tu n'es pas venu. Elle ouvre la conversation elle-même.
+     ============================================================ */
+  var STORAGE_SEEN = 'javis_widget_last_seen';
+
+  function moment() {
+    var h = new Date().getHours();
+    if (h < 6) return 'nuit';
+    if (h < 12) return 'matin';
+    if (h < 18) return 'aprem';
+    return 'soir';
+  }
+
+  /* Où sommes-nous ? (pour qu'elle commente la page où elle apparaît) */
+  function lieu() {
+    var h = (location.hostname || '').toLowerCase();
+    if (h.indexOf('arbre') === 0) return { nom: 'ton arbre de famille', quoi: 'Tu cherches quelqu\'un ? Je peux t\'aider à retrouver une fiche.' };
+    if (h.indexOf('lingua') === 0) return { nom: 'Lingua', quoi: 'Ma maison ! On révise un peu ?' };
+    if (h.indexOf('cmcteams') === 0) return { nom: 'tes plannings', quoi: 'Besoin d\'un coup d\'oeil sur une équipe ?' };
+    if (h.indexOf('apex') === 0) return { nom: 'Apex', quoi: 'Je te laisse la main, il fait les grosses actions.' };
+    return { nom: 'ton domaine', quoi: 'Demande-moi ce que tu veux.' };
+  }
+
+  function salut() {
+    var m = moment();
+    var base = m === 'nuit' ? 'Tu veilles tard, Kevin 🌙'
+      : m === 'matin' ? 'Bonjour Kevin ☀️'
+        : m === 'aprem' ? 'Coucou Kevin 🐝'
+          : 'Bonsoir Kevin 🌆';
+    var absence = 0;
+    try { absence = Date.now() - (parseInt(localStorage.getItem(STORAGE_SEEN), 10) || Date.now()); } catch (_) {}
+    var jours = Math.floor(absence / 86400000);
+    if (jours >= 2) return base + ' Ça fait ' + jours + ' jours ! Tu m\'as manqué 🍯';
+    return base + ' On est sur ' + lieu().nom + '. ' + lieu().quoi;
+  }
+
+  /* Elle s'ennuie : petits gestes espacés tant que tu n'as pas ouvert le chat.
+     3 fois maximum, puis elle se tient tranquille (pas de harcèlement). */
+  function ennui(root) {
+    var fois = 0;
+    (function boucle() {
+      setTimeout(function () {
+        if (!document.contains(root)) return;
+        var panel = root.querySelector('#javis-panel');
+        var ouvert = panel && panel.classList.contains('javis-open');
+        if (!ouvert && fois < 3) {
+          fois++;
+          var rig = root.querySelector('#javis-launcher .bee-rig');
+          if (rig) {
+            react(rig, 'coucou', 1400);
+            move(rig, fois === 1 ? 'walk' : (fois === 2 ? 'jump' : 'dance'), 1500);
+            if (fois === 1) bubble(lieu().quoi, 5000);
+          }
+        }
+        boucle();
+      }, 45000 + Math.random() * 40000);
+    })();
   }
 
   /* ============================================================
@@ -416,15 +612,23 @@
     var mic = wrap.querySelector('#javis-mic');
 
     var hist = loadHistory();
-    if (!hist.length) {
-      addBubble(wrap, 'javis', 'Coucou Kevin 🐝 C\'est moi, Bee ! Demande-moi n\'importe quoi — je réponds gratuit d\'abord, et je peux t\'ouvrir tes applis.');
-    } else {
+    if (hist.length) {
       hist.forEach(function (m) { addBubble(wrap, m.role === 'user' ? 'user' : 'javis', m.content); });
     }
+    /* Elle ouvre la conversation elle-même, avec l'heure et l'endroit (attitude). */
+    addBubble(wrap, 'javis', salut());
+    try { localStorage.setItem(STORAGE_SEEN, String(Date.now())); } catch (_) {}
+    ennui(wrap);
 
     wrap.querySelector('#javis-launcher').addEventListener('click', function () {
       panel.classList.toggle('javis-open');
-      if (panel.classList.contains('javis-open')) setTimeout(function () { input.focus(); }, 150);
+      var ouvert = panel.classList.contains('javis-open');
+      if (ouvert) {
+        setTimeout(function () { input.focus(); }, 150);
+        allRigs(wrap).forEach(function (r) { react(r, 'coucou', 1400); });
+        tone([620, 820], .16);
+        var b = document.querySelector('.javis-bubble'); if (b) b.remove();
+      }
     });
     wrap.querySelector('#javis-close').addEventListener('click', function () {
       panel.classList.remove('javis-open');
@@ -434,6 +638,7 @@
       var v = (input.value || '').trim();
       if (!v) return;
       input.value = '';
+      vibrate(6);
       askJavis(wrap, v);
     });
     input.addEventListener('keydown', function (e) {
