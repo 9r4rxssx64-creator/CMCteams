@@ -1975,6 +1975,100 @@ function renderCompBadges(post,small){
 // 55+ : mêmes patterns que standard (20/20, 40/20, 60/20) mais max 40 min par défaut.
 // Avec accord de l'employé : jusqu'à 60 min autorisé (consentSenior=true).
 var ROTATION={senior:{maxWork:40,maxWorkConsent:60,pause:20,patterns:[20,40,60]},standard:{maxWork:60,pause:20,patterns:[20,40,60]},exceptionComp:"E"};
+// ══════════════════════════════════════════════════════════════════════════
+// ROTATION AUX TABLES — moteur de temps de table (v9.904)
+// Kevin 2026-09-15 : « il manque encore la rotation aux tables à terminer et tester ».
+//
+// CE QUI N'ALLAIT PAS (mesuré, pas supposé, le 15.09) :
+//  1. Le « Gardien des pauses » cherchait des événements de type "assign" /
+//     "rotation" / "rotation_auto". L'app n'écrit QUE "assignEmp" / "rotateNow" /
+//     "autoRotation" → intersection vide → il répondait « Pauses respectées »
+//     même avec deux personnes collées 3 h à une table. PROUVÉ en vrai navigateur.
+//  2. Il mesurait l'écart entre deux événements, pas le temps écoulé jusqu'à
+//     MAINTENANT : quelqu'un garé à une table sans nouvel événement restait invisible.
+//  3. Il attendait un événement "break"/"pause" — le journal n'en écrit AUCUN
+//     (une pause s'enregistre en "setStatut" avec s:"break").
+//  4. Les limites étaient en dur (isSenior?40:60) au lieu de venir de ROTATION.
+//  5. rotOverrideMin acceptait 10 à 120 min sans plafond légal : un employé 55+
+//     pouvait être réglé sur 120 min de table consécutives.
+//
+// Ces fonctions sont PURES (aucun effet de bord) pour être testables sans
+// interface : tests/rotation-tables.test.mjs.
+// ══════════════════════════════════════════════════════════════════════════
+
+/* Statuts qui ARRÊTENT le compteur de temps de table (la personne n'est plus au jeu). */
+var ROT_STATUTS_REPOS=["break","parti","libre","absent","malade","formation"];
+
+/* Maximum LÉGAL de travail consécutif, en minutes. Source unique : ROTATION.
+   55+ : 40 min, ou 60 min avec l'accord écrit de l'employé (emp.consentSenior). */
+function rotationMaxLegalMin(emp){
+  // Fiche introuvable : on ne sait pas si la personne est 55+. Pour une règle de
+  // PROTECTION, l'inconnu doit pencher du côté strict — mieux vaut rappeler un
+  // croupier 20 min trop tôt que laisser un 55+ dépasser de 20 min.
+  if(!emp)return ROTATION.senior.maxWork;
+  if(!isSenior(emp))return ROTATION.standard.maxWork;
+  return emp.consentSenior?ROTATION.senior.maxWorkConsent:ROTATION.senior.maxWork;
+}
+
+/* Limite EFFECTIVE : le réglage du pit boss (rotOverrideMin), mais JAMAIS
+   au-delà du maximum légal de cette personne. Un réglage plus court est permis. */
+function rotationLimiteMin(emp,statut){
+  var legal=rotationMaxLegalMin(emp);
+  var ov=statut&&statut.rotOverrideMin;
+  return (ov&&ov>0)?Math.min(ov,legal):legal;
+}
+
+/* Depuis quand cette personne est-elle à une table SANS pause ? (horodatage, ou null)
+   Passer d'une table à une autre sans pause NE remet PAS le compteur à zéro :
+   c'est du travail consécutif, et c'est bien ce que la convention limite. */
+function rotationDebutTour(live,uid){
+  if(!live||!live.events||!uid)return null;
+  var debut=null;
+  for(var i=0;i<live.events.length;i++){
+    var ev=live.events[i];
+    if(!ev||ev.uid!==uid)continue;
+    if(ev.type==="assignEmp"){ if(debut===null)debut=ev.ts; }
+    else if(ev.type==="removeEmp")debut=null;
+    else if(ev.type==="setStatut"&&ROT_STATUTS_REPOS.indexOf(ev.s)>=0)debut=null;
+  }
+  return debut;
+}
+
+/* État de rotation de TOUTES les personnes actuellement à une table ouverte.
+   Trié du plus long au plus court. etat : "ok" | "bientot" (≤5 min) | "depasse". */
+function rotationEtat(live,now){
+  now=now||Date.now();
+  var out=[];
+  if(!live||!live.tables)return out;
+  var vus={};
+  Object.keys(live.tables).forEach(function(tid){
+    var t=live.tables[tid];
+    if(!t||t.closedAt)return;
+    (t.empIds||[]).forEach(function(uid){
+      if(vus[uid])return; vus[uid]=1;
+      var st=(live.statuts||{})[uid]||null;
+      if(st&&ROT_STATUTS_REPOS.indexOf(st.s)>=0)return;   // déjà en repos
+      var debut=rotationDebutTour(live,uid);
+      if(debut===null)return;
+      var emp=(typeof empById==="function")?empById(uid):null;
+      var depuis=Math.floor((now-debut)/60000);
+      var limite=rotationLimiteMin(emp,st);
+      out.push({
+        uid:uid, tid:tid, nom:emp?emp.name:uid,
+        senior:!!(emp&&isSenior(emp)), inconnu:!emp,
+        depuisMin:depuis, limiteMin:limite, resteMin:limite-depuis,
+        etat:depuis>=limite?"depasse":((limite-depuis)<=5?"bientot":"ok")
+      });
+    });
+  });
+  out.sort(function(a,b){return b.depuisMin-a.depuisMin;});
+  return out;
+}
+
+/* Raccourci : qui doit sortir de table MAINTENANT. */
+function rotationDepassements(live,now){
+  return rotationEtat(live,now).filter(function(r){return r.etat==="depasse";});
+}
 // ── Convention Collective Jeux de Table SBM (1er avril 2015) ────────────────
 // Référence officielle pour gestion RH, droits employés, réponses IA
 var CONVENTION={
@@ -5932,7 +6026,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.903";
+var APP_VER="v9.904";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -12986,38 +13080,23 @@ function _agentRotationFairness(){
 // ─── AGENT 10 : Pause-guardian (respect des pauses 40/60 min) ─────────
 function _agentPauseGuardian(){
   try{
-    if(!A.live||!A.live.events)return;
-    var alerts=[];
-    var byUid={};
-    (A.live.events||[]).slice(-500).forEach(function(ev){
-      if(!ev.uid)return;
-      if(!byUid[ev.uid])byUid[ev.uid]=[];
-      byUid[ev.uid].push(ev);
+    if(!A.live)return;
+    // v9.904 — s'appuie sur rotationEtat() : mesure le temps de table de CHAQUE
+    // personne réellement à une table ouverte, jusqu'à MAINTENANT, avec la limite
+    // qui vient de ROTATION (plus de 40/60 en dur).
+    // AVANT : cette sentinelle cherchait des types d'événements que l'app n'écrit
+    // pas ("assign" vs "assignEmp") → elle répondait toujours « Pauses respectées ».
+    var etat=rotationEtat(A.live);
+    var alerts=etat.filter(function(r){return r.etat==="depasse";}).map(function(r){
+      return {uid:r.uid,name:r.nom,minutes:r.depuisMin,max:r.limiteMin,senior:r.senior,tid:r.tid};
     });
-    Object.keys(byUid).forEach(function(uid){
-      var e=empById(uid);if(!e)return;
-      var evs=byUid[uid];
-      // v9.409 — Cumul TRAVAIL depuis dernier break (pas gap entre events)
-      var workStart=null;
-      var maxWork=isSenior(e)?40:60;
-      for(var i=0;i<evs.length;i++){
-        var ev=evs[i];
-        if(ev.type==="assign"||ev.type==="rotation"||ev.type==="rotation_auto"){
-          if(workStart===null)workStart=ev.ts;
-          var totalWork=(ev.ts-workStart)/60000;
-          if(totalWork>maxWork+5){ // tolérance 5 min
-            alerts.push({uid:uid,name:e.name,minutes:Math.round(totalWork),max:maxWork,senior:isSenior(e)});
-            break;
-          }
-        }else if(ev.type==="break"||ev.type==="pause"){
-          workStart=null; // reset cumul au break
-        }
-      }
-    });
+    var bientot=etat.filter(function(r){return r.etat==="bientot";}).length;
     if(alerts.length){
-      agentAppendReport("pause","warn",alerts.length+" pause(s) manqu\u00e9e(s) d\u00e9tect\u00e9e(s)",alerts.slice(0,10),{label:"\u23f8 Voir pit boss",fn:"agentActionGotoPit()"});
+      agentAppendReport("pause","warn",alerts.length+" personne(s) au-delà de leur temps de table",alerts.slice(0,10),{label:"⏸ Voir le pit",fn:"sv('pit')"});
+    }else if(bientot){
+      agentAppendReport("pause","ok",bientot+" personne(s) à relever dans moins de 5 min ("+etat.length+" en table)");
     }else{
-      agentAppendReport("pause","ok","Pauses respect\u00e9es (40 min seniors, 60 min standard)");
+      agentAppendReport("pause","ok",etat.length?("Temps de table respecté ("+etat.length+" personne(s) en table)"):"Aucune personne en table");
     }
   }catch(e){agentAppendReport("pause","err","Erreur: "+(e.message||"").slice(0,100));}
 }
@@ -19345,7 +19424,16 @@ function pitAction(type,payload){
       if(!payload.uid)return;
       var minv=parseInt(payload.min,10);
       if(!live.statuts[payload.uid])live.statuts[payload.uid]={s:"present",since:Date.now()};
+      // v9.904 — PLAFOND LÉGAL : le pit boss peut raccourcir un tour, jamais
+      // l'allonger au-delà du maximum de la personne (55+ = 40 min, 60 avec accord).
+      // Avant, 10 à 120 min étaient acceptées : un employé 55+ pouvait être réglé
+      // sur 120 min de table consécutives, contre la convention.
       if(minv&&minv>=10&&minv<=120){
+        var _plafond=rotationMaxLegalMin(empById(payload.uid));
+        if(minv>_plafond){
+          minv=_plafond;
+          try{toast("\u26a0 Plafonn\u00e9 \u00e0 "+_plafond+" min (maximum de cette personne)","warn");}catch(_){}
+        }
         live.statuts[payload.uid].rotOverrideMin=minv;
       }else{
         delete live.statuts[payload.uid].rotOverrideMin;
@@ -20802,6 +20890,33 @@ function autoRotationCron(){
         triggered++;
       }
     });
+    // v9.904 — ROTATION AUX TABLES : la cloche par table sonnait, mais personne
+    // ne savait QUI devait sortir. On prévient nommément ceux qui ont dépassé leur
+    // temps de table, + le pit boss. Anti-spam : une relance par personne / 10 min.
+    try{
+      var _dep=rotationDepassements(live,now);
+      if(_dep.length){
+        var _st=live.statuts||{};
+        var _aPrevenir=_dep.filter(function(r){
+          var s=_st[r.uid];
+          return !s||!s.rotAlerteAt||(now-s.rotAlerteAt)>600000;
+        });
+        _aPrevenir.forEach(function(r){
+          if(!_st[r.uid])_st[r.uid]={s:"present",since:now};
+          _st[r.uid].rotAlerteAt=now;
+          try{sendPitMessage(r.uid,"\u23f8 "+r.depuisMin+" min de table (maximum "+r.limiteMin+" min)"+(r.senior?" \u00b7 55+":"")+" \u00b7 pause \u00e0 prendre","rotation_depassee");}catch(_){}
+        });
+        if(_aPrevenir.length){
+          live.statuts=_st;
+          var _pb=live.pitBossId;
+          if(_pb&&_pb!==A.user.id){
+            try{sendPitMessage(_pb,"\u26a0 "+_aPrevenir.length+" personne(s) au-del\u00e0 du temps de table : "+_aPrevenir.map(function(r){return r.nom+" ("+r.depuisMin+" min)";}).join(", "),"rotation_depassee_pit");}catch(_){}
+          }
+          _liveLog("rotationDepassement",{n:_aPrevenir.length,uids:_aPrevenir.map(function(r){return r.uid;})});
+          triggered++;
+        }
+      }
+    }catch(_){}
     if(triggered){
       saveLiveState();
       if(A.view==="pit")dcDebounced&&dcDebounced();

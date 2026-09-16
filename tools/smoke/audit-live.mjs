@@ -57,6 +57,10 @@ const SURFACES = [
   // suffit. Ajoutée ici dès sa mise en ligne : une surface absente de cette liste est une
   // surface que personne ne surveille (audit domaine 05/09, 25/26 → 26/26).
   { url: 'https://tor.' + ROOT + '/', name: 'Tor en clair', selKey: 'body' },
+  /* Rotaplan (15.09.2026) : page de vente B2B, publique. Même raison que « Tor en clair » —
+     une surface routée mais absente d'ici n'est surveillée par personne. */
+  { url: 'https://rotaplan.' + ROOT + '/', name: 'Rotaplan (offre B2B)', selKey: 'h1' },
+  { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
       // code famille se vérifie sur le domaine (POST /__arbre/unlock) et n'existe NULLE PART

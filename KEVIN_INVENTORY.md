@@ -1,5 +1,54 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎲 Devenir croupier — nouveau produit — 2026-09-15
+
+**▶️ La page** : [croupier.kd-mc.com](https://croupier.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/index.html) | Le guide gratuit (1 437 mots), système de design `editorial` |
+| [`tests/croupier-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-page.test.mjs) | La garde : jeu responsable, exactitude des paiements, jetons du design, honnêteté commerciale |
+
+`npm run test:croupier` (dans `test:ci`). Produit payant à venir : l'entraîneur de paiements.
+
+---
+
+## ⏸ Rotation aux tables — moteur + test (CMCteams v9.904) — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/index.html) (près de `var ROTATION`) | Le moteur : `rotationEtat`, `rotationDebutTour`, `rotationLimiteMin`, `rotationMaxLegalMin`, `rotationDepassements` |
+| [`tests/rotation-tables.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotation-tables.test.mjs) | 22 contrôles dans un vrai navigateur, prouvés discriminants par 4 sabotages |
+
+`npm run test:rotation-tables` (dans `test:ci`).
+
+---
+
+## 🎨 Dette de thème CMCteams — le cliquet — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/audit/theme-signature.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature.mjs) | Compte les couleurs de marque écrites en dur. La dette peut baisser, jamais monter. |
+| [`tools/audit/theme-signature-baseline.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature-baseline.json) | Le chiffre figé : **1 680** au 15.09.2026 |
+
+`npm run test:theme-signature` (dans `test:ci`). Une baisse volontaire se re-fige avec `--maj-baseline`.
+
+---
+
+## 🎨 Rotaplan — page de vente refaite (système « levels ») — 2026-09-15
+
+**▶️ La page en ligne** : [rotaplan.kd-mc.com](https://rotaplan.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/rotaplan/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/rotaplan/index.html) | La page de vente, refaite sous le système de design `levels` |
+| [`tests/rotaplan-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotaplan-page.test.mjs) | La garde : sécurité, liens, jetons du système, cibles iPhone, sitemap, honnêteté des chiffres |
+| [`vendor/agent-toolkit/awesome-design-skills/skills/levels/`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/vendor/agent-toolkit/awesome-design-skills/skills/levels/DESIGN.md) | Le système de design choisi (67 disponibles) |
+
+Lancer la garde : `npm run test:rotaplan` (elle tourne aussi dans `npm run test:ci`).
+
+---
+
 ## 🎬 Lire une vidéo (TikTok, Insta, YouTube…) — 2026-09-15
 
 Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcription horodatée).

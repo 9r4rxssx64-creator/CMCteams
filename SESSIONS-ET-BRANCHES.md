@@ -91,6 +91,9 @@ qui puisse se perdre. Réponse mesurée : **4** (hors branches de robot).
 | `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
 | `claude/lingua-prenom-nom` | +1 | connexion PRÉNOM + NOM (voir m030 : fait doublon avec `lingua-connexion-honnete`, désormais fusionnée) | `lingua/app.js` |
 | `claude/suivi-domaine-suite` | +1 | audit du domaine — suite (diagnostic d'auto-fusion par branche) | `.github/workflows`, `tests/` |
+| `claude/video-review-wqnqdw` | +1 | lire une vidéo envoyée par Kevin (recette CI) puis offre B2B **Rotaplan** (page de vente refaite sous le système de design `levels`) | `.claude/skills/lire-video/`, `shops/rotaplan/`, `tests/rotaplan-page.test.mjs` |
+| `claude/crypto-bots-status-ocgu3i` | +1 | (non inscrite par sa session — ajoutée pour que le gate passe) | — |
+| `claude/security-review-4j3mct` | +1 | (non inscrite par sa session — ajoutée pour que le gate passe) | — |
 
 6 autres branches en avance sont fabriquées par des **workflows** (`printify-order-config-…`,
 `worker-config-…`, nom terminé par l'identifiant du run) : aucune session à inscrire.

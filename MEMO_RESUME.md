@@ -1,5 +1,187 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-15 (suite 8) — Nouveau commerce : « Devenir croupier » (croupier.kd-mc.com)
+
+Kevin : « occupe-toi du nouveau commerce produit ».
+
+**Mesure d'abord** : 6 boutiques existantes, **toutes** en PayPal.me manuel, **zéro
+livraison automatique**. `digital-vault` a même des catégories « E-books & Guides » et un
+lien `paypal.me/kdmc/<montant>` brut : l'acheteur paie, et ensuite plus rien. Le connecteur
+PayPal fonctionne (0 lien existant) mais `create_payment_link` ouvre un **formulaire que
+Kevin valide** (1 clic), et `kdmc-mail` ne fait que **recevoir** — aucun envoi de courriel.
+→ Conséquence d'architecture : le produit payant doit être une **page d'accès**, pas un
+fichier à envoyer.
+
+**Décision prise pour protéger Kevin** : le guide porte sur **le métier en général**, pas
+sur les grilles de salaire internes de son employeur. Publier les grilles de la SBM sous son
+nom pendant qu'il y travaille, c'est lui créer un problème au travail pour rien. Le cadre
+structurel (rotation, jeux, hiérarchie, âge minimum) est public et reste, avec la source dite.
+
+**Livré** : le guide **gratuit et complet** — 1 437 mots. Ce qu'un croupier fait vraiment,
+une nuit heure par heure (la rotation 20/40/60 + pause de 20, le vrai différenciateur),
+les **rapports de paiement exacts** (roulette 35/17/11/8/5/2:1, blackjack 3:2, assurance
+2:1, banco −5 %), les jeux et leur ordre d'apprentissage, 7 questions honnêtes incluant
+les inconvénients, et comment on entre.
+
+**Design** : système **`editorial`** (magazine, serif Gelasio + Ubuntu Mono, lettrine),
+choisi dans la boîte à outils et **cité**. Volontairement différent de `levels` (Rotaplan) :
+ce sont deux produits, pas un gabarit dupliqué.
+
+**Le produit payant est décidé et annoncé, pas vendu** : l'**entraîneur de paiements** —
+l'exercice de calcul mental que les écoles testent réellement. C'est un **outil**, donc
+vérifiable (35:1 est un fait, pas une opinion) et livrable par une simple URL. Tant qu'il
+n'existe pas : aucun bouton de paiement, aucune préinscription, aucune adresse demandée.
+On ne vend pas ce qu'on ne peut pas livrer.
+
+**Cadre responsable** : la page dit explicitement qu'elle n'est pas une méthode pour gagner,
+ne propose aucun jeu d'argent, et affiche le 09 74 75 13 13. La garde interdit mécaniquement
+les mots « martingale », « battre la banque », « système gagnant »…
+
+**Vérifié** en vrai navigateur (3 affichages) : 0 erreur JS, 0 blocage CSP, 0 débordement,
+0 cible < 44 px, Gelasio et Ubuntu Mono réellement rendues, liens légaux en HTTP 200.
+**Garde** `npm run test:croupier` (dans `test:ci`), **prouvée discriminante** (fausser un
+paiement → échec · retirer le numéro d'aide → échec · remettre l'or illisible → échec).
+
+**Leçon appliquée immédiatement** : le nouveau sous-domaine a été ajouté aux **5 endroits
+dans le même commit** (routeur, wrangler, sonde de disponibilité, surfaces auditées en
+live, sitemap) — c'est exactement le trou trouvé une heure plus tôt avec Rotaplan.
+
+---
+
+## 2026-09-15 (suite 7) — ROTATION AUX TABLES terminée et testée (v9.904)
+
+Kevin : « occupe-toi du produit […] il manque encore la rotation aux tables etc à terminer et tester. »
+
+**Le plus grave d'abord** : le « Gardien des pauses » — la sentinelle qui veille au
+respect du temps de table (55+ : 40 min max, convention) — **ne pouvait structurellement
+jamais alerter**. Elle cherchait des événements de type `assign` / `rotation` /
+`rotation_auto` ; l'application n'écrit que `assignEmp` / `rotateNow` / `autoRotation`.
+Intersection vide. **Prouvé en vrai navigateur avant correction** : deux personnes
+collées 3 h à une table, verdict de la sentinelle → « ✅ Pauses respectées ».
+Un feu vert qui ne peut pas passer au rouge est pire que pas de feu du tout.
+
+**Les 7 défauts trouvés, tous mesurés** :
+
+| # | Défaut | Preuve |
+|---|---|---|
+| 1 | La sentinelle ne peut jamais alerter (mauvais noms d'événements) | navigateur : 3 h sans pause → « respectées » |
+| 2 | Elle mesurait l'écart entre deux événements, pas jusqu'à MAINTENANT | quelqu'un garé sans nouvel événement = invisible |
+| 3 | Elle attendait un événement `break` — le journal n'en écrit aucun (c'est `setStatut` s:"break") | 0 occurrence mesurée |
+| 4 | Limites `isSenior?40:60` **en dur** au lieu de lire `ROTATION` | ligne 13002 |
+| 5 | `rotOverrideMin` acceptait **10 à 120 min sans plafond légal** : un 55+ pouvait être réglé sur 120 min | ligne 19348 |
+| 6 | `consentSenior` documenté dans le commentaire, **inexistant** dans le code | 1 seule occurrence : le commentaire |
+| 7 | `ROTATION` ne pilotait rien : 3 usages, **tous du texte d'affichage** | mesuré |
+
+**Livré** : un moteur de temps de table en fonctions **pures** (`rotationEtat`,
+`rotationDebutTour`, `rotationLimiteMin`, `rotationMaxLegalMin`, `rotationDepassements`),
+posé juste à côté de `ROTATION` qui devient sa **source unique**. Il sait que changer de
+table sans pause ne remet pas le compteur à zéro (c'est du travail consécutif — c'est
+précisément ce que la convention limite), qu'une table fermée ne compte personne, et
+qu'une personne déjà en pause n'est pas en table.
+
+**Choix de conception assumé** : si la fiche de la personne est introuvable, le moteur
+applique la limite **la plus stricte** (40 min), pas la plus permissive. Pour une règle de
+protection, mieux vaut rappeler un croupier 20 min trop tôt que laisser un 55+ dépasser.
+
+**Ce qui change pour le pit boss** : la cloche par table sonnait sans dire qui devait
+sortir. Maintenant les personnes au-delà de leur temps sont **prévenues nommément**
+(« ⏸ 47 min de table, maximum 40 · 55+ · pause à prendre ») et le pit boss reçoit la
+liste. Anti-spam : une relance par personne toutes les 10 min. **Ajouté sans rien retirer**
+de l'existant.
+
+**Testé** : `npm run test:rotation-tables` (câblé dans `test:ci`) — **22 contrôles**, vraie
+app dans un vrai navigateur, zéro donnée réelle de personnel. **Prouvé discriminant par
+4 sabotages** (limites en dur → 3 échecs · plafond retiré → 2 · pause qui ne remet plus à
+zéro → 1 · sentinelle aveugle → 1), restauration → 22/22.
+
+**Non régressé** : 95/95 vues rendues, 99 boutons cliqués sans erreur, départs, équipes du
+mois, MAJ forcée, parité app/light, XSS, taille fichier — tous verts.
+
+---
+
+## 2026-09-15 (suite 6) — « CMCteams est fait pour Monaco » : la dette de thème, CHIFFRÉE
+
+Kevin : « Il faudra aussi revoir le design et thème des futurs clients. Adapter les thèmes.
+CMCteams actuel est fait pour Monaco le casino. »
+
+**Mesuré, pas estimé** :
+
+| Ce qui est gravé casino | Nombre |
+|---|---|
+| Couleurs de marque **en dur** hors `:root` | **1 680** |
+| dont l'or `#c9a227` | 707 |
+| dont l'or en transparence `rgba(201,162,39,…)` | 728 |
+| `var(--cmc-gold)` réellement utilisé | **6** |
+| Vocabulaire : casino / SBM / roulette / pit boss / baccara | 488 / 419 / 440 / 164 / 134 |
+
+**Le piège qui rend l'automatisme impossible** : sur les 167 or présents dans le JS,
+**24 sont des comparaisons de chaîne** (`=== "#c9a227"`). Un chercher-remplacer aveugle
+les transforme en comparaisons toujours fausses — l'app ne lève aucune erreur, elle se
+comporte juste mal. C'est exactement la classe de bug qu'un test « ça rend » ne voit pas.
+**Donc : pas de sed sur l'app de production.**
+
+**Ce qui aide déjà** : le crochet `body[data-theme="…"]` existe (thèmes nuit/monaco/xmas/jour),
+`:root` porte 36 variables, et `FAMILIES`/`ROLES` sont **déjà des tables de configuration**
+lues par 3 fonctions — le vocabulaire est donc à ~80 % séparable sans toucher à la logique.
+
+**Livré ce soir** : `npm run test:theme-signature` (câblé dans `test:ci`) — un **cliquet**.
+La dette peut baisser, jamais monter : un `#c9a227` écrit à la main demain fait échouer le
+gate avec le message « utilise `var(--cmc-gold)` ». **Prouvé discriminant** : un seul or
+ajouté → `707 → 708` → échec ; retiré → vert. **`index.html` n'a pas été touché.**
+
+**Pas livré, et assumé** : la conversion des 1 680 emplacements. Elle demande une preuve
+par capture des 95 vues avant/après (`vMain()` rend en chaîne pure, donc c'est comparable
+au caractère près) — c'est un chantier à faire éveillé, pas en fin de session sur l'app de
+260 personnes. Tâche #8, avec le plan détaillé et la méthode de preuve.
+
+**Décision qui revient à Kevin** : quel secteur viser en premier (clinique, hôtel, sécurité,
+centre d'appels). Ça détermine le vocabulaire du 2ᵉ profil — et c'est un choix commercial,
+pas technique.
+
+---
+
+## 2026-09-15 (suite 5) — Rotaplan refait sous un système de design NOMMÉ (`levels`)
+
+Kevin : « Améliore le design total avec tous les outils, liens, connecteurs, le meilleur. »
+
+**Direction choisie et annoncée** : `levels`, pris dans la boîte à outils design vendorisée
+(`vendor/agent-toolkit/awesome-design-skills/skills/levels/`) — décrit comme « design orienté
+conversion : enlever la friction, construire la confiance, guider vers une action ». C'est le
+cahier des charges d'une page de vente. Anti-« design d'IA générique » : je ne pars pas du
+crème/serif par défaut, je pioche une direction précise et je la cite.
+
+**Ce que ça change** : abandon du noir + or (qui disait « casino » alors que Rotaplan se vend
+aussi aux cliniques et aux hôtels) pour fond clair, texte `#111827`, primaire `#27272A`,
+accent violet `#8B5CF6`, Inter + JetBrains Mono, barème 12/14/16/20/24/32, rayons 4/8 px.
+Variante sombre ajoutée (la règle frontend demande le sombre, `levels` est clair → la page suit
+la préférence de l'appareil).
+
+**Ajout le plus utile** : un **schéma de rotation dessiné en HTML/CSS** (5 personnes × 5 jours,
+la vraie suite 1-4-2-3-5 de l'app, diagonale violette). Ce n'est **pas** une fausse capture
+d'écran du produit — c'est étiqueté « schéma — pas une capture », et il n'y a **aucun nom
+d'employé réel**. Il montre le différenciateur en une seconde.
+
+**Défauts réels trouvés et corrigés** (la page précédente passait pour « OK ») :
+1. `/shops/legal/` — dossier **sans** `index.html` → lien légal en **404**. Corrigé vers les 3 pages réelles.
+2. **Aucune CSP** alors que toutes les boutiques voisines en ont une. Ajoutée (`script-src 'none'`).
+3. **Absente du sitemap** → invisible. Ajoutée, à son adresse canonique.
+4. `frame-ancestors` en `<meta>` est **ignoré par le navigateur** (mesuré) → retiré ; la protection
+   existe déjà côté routeur (`X-Frame-Options: SAMEORIGIN`).
+5. Le bouton d'en-tête s'affichait sur téléphone (`.btn{display:inline-flex}` déclaré **après**
+   `.lien-tete{display:none}` = même spécificité, la dernière gagne) → doublon avec la barre fixe.
+6. La marque faisait **32 px** de haut (règle iPhone : 44 px minimum).
+7. Cellule vide du tableau qui héritait du style `<td>` → boîte blanche fantôme.
+
+**Mesuré en vrai navigateur** (Chromium, 3 affichages : iPhone 390 clair, bureau 1280, iPhone 390
+sombre) : 0 erreur JS, 0 blocage CSP, 0 défilement horizontal, 0 cible sous 44 px, Inter et
+JetBrains Mono réellement rendues (`document.fonts.check`), données structurées lisibles
+(SoftwareApplication + FAQPage), 3 liens légaux en HTTP 200, 3 ancres vivantes.
+
+**Garde** : `npm run test:rotaplan` (câblé dans `test:ci`), **prouvé discriminant par sabotage**
+(3 sabotages → 3 échecs distincts, restauration → vert).
+
+---
+
 ## 15 septembre 2026 (suite) — chaque app distincte, toutes liées : qui a le droit d'aller où
 
 **Ta demande** : qu'une personne de l'extérieur puisse s'inscrire **dans une seule app**,
