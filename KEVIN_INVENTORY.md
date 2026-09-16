@@ -1,5 +1,19 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 📣 Réseaux sociaux — le moyen unique — 2026-09-16
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`services/kdmc-social/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-social/worker.js) | Publier · lire · messages · file, pour TOUS tes projets |
+| [`services/kdmc-social/social.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-social/social.test.mjs) | 19 contrôles · 4 gardes prouvés par sabotage |
+| [`.github/workflows/deploy-kdmc-social.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/deploy-kdmc-social.yml) | Déploiement + preuve live (publier reste fermé sans Face ID) |
+| [`tests/social-env-parite.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/social-env-parite.test.mjs) | Empêche le bug de noms de jetons de revenir |
+| [`.github/workflows/social-scheduler.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/social-scheduler.yml) | Pipeline vidéo existant — noms de jetons corrigés + diagnostic |
+
+`npm run test:social` et `npm run test:social-env` (les deux dans `test:ci`).
+
+**▶️ Voir l'état de tes réseaux** : [Actions → Deploy kdmc-social](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-social.yml) (le journal imprime la matrice)
+
 ## 💶 Encaisser → vérifier → livrer — 2026-09-16
 
 | Fichier | À quoi ça sert |

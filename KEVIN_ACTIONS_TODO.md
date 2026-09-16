@@ -9,6 +9,58 @@
 
 ---
 
+## 📣 RÉSEAUX SOCIAUX — tu n'as que YouTube (16.09.2026)
+
+Je l'ai **mesuré**, pas supposé : sur tes 7 jetons réseaux, **un seul existe**
+(YouTube). Facebook, Instagram, Telegram et TikTok sont vides. Le moyen de publier
+est construit et testé — il attend juste tes jetons.
+
+Rangé par **ce que ça rapporte pour le temps que ça coûte**, pas par ordre d'arrivée.
+
+### 1️⃣ Telegram — 2 minutes, aucune validation de personne
+
+Le plus rentable : débloque **publier + lire + messages**, tout de suite.
+
+👆 Sur ton iPhone, ouvre Telegram → cherche **@BotFather** → envoie `/newbot` →
+choisis un nom → il te renvoie un jeton qui ressemble à `1234567890:AAH...`.
+Puis crée un canal, ajoute ton bot comme administrateur, et envoie-moi les deux
+valeurs (jeton + nom du canal). **Je pose le reste.**
+
+### 2️⃣ Meta — ~10 minutes, UN seul jeton débloque Facebook ET Instagram
+
+C'est le gros morceau, et c'est le même jeton pour les deux réseaux (ton compte
+Instagram doit être **Business** et **relié à ta Page Facebook** — ça se fait dans
+les réglages Instagram, « Passer à un compte professionnel »).
+
+👆 [developers.facebook.com/apps](https://developers.facebook.com/apps) → « Créer une
+app » → type **Business** → ajoute le produit **Facebook Login** → dans
+[l'explorateur d'API](https://developers.facebook.com/tools/explorer/), choisis ta
+Page et coche `pages_manage_posts`, `pages_read_engagement`,
+`instagram_basic`, `instagram_content_publish` → « Générer un jeton d'accès ».
+
+⚠️ Le jeton qu'il te donne dure **1 heure**. Dis-le-moi et je t'explique comment
+l'échanger contre un jeton **longue durée** (60 jours, renouvelable automatiquement).
+
+### 3️⃣ TikTok — à faire en dernier, et je suis honnête sur la limite
+
+**Personne ne publie sur TikTok en pleine autonomie** sans passer l'audit de TikTok
+(leur « Content Posting API »). Ce n'est pas une limite de mon côté, c'est leur règle.
+Ce qu'on peut faire de mieux : je prépare la vidéo et la légende, je la dépose en
+**brouillon dans ta boîte TikTok**, et tu publies **d'un doigt**. Pour ça il faut
+quand même une app sur [developers.tiktok.com](https://developers.tiktok.com/).
+
+Dis-moi si tu veux qu'on le fasse, ou si on laisse TikTok en manuel pour l'instant.
+
+### Où tu poses les jetons
+
+**Depuis ton iPhone, un collage par réseau** — plus besoin de GitHub. Je te fais la
+page dès que tu as le premier jeton. En attendant, tu peux aussi les coller en
+[secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)
+sous ces noms exacts : `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`,
+`FACEBOOK_PAGE_TOKEN`, `FACEBOOK_PAGE_ID`, `INSTAGRAM_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`.
+
+---
+
 ## 💶 PAIEMENTS — 5 minutes, une seule fois (16.09.2026)
 
 **Ce n'est PAS bloquant.** La machine encaisse déjà : sans ça, chaque vente arrive dans ta
