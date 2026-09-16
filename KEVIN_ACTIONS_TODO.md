@@ -78,6 +78,25 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > ne part en public, tu peux le supprimer). Il reste **un geste** :
 > 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — elle n'y est toujours pas.
 
+#### 🔧 « Je n'arrive pas à connecter Facebook » (Kevin 16.09) — les causes, dans l'ordre
+
+Sources : le centre d'aide Metricool ([je n'arrive pas à connecter Facebook](https://help.metricool.com/i-cant-connect-facebook-ibc3b),
+[guide complet](https://help.metricool.com/connect-facebook-on-metricool-complete-guide-5ark1),
+[permissions Business Manager](https://help.metricool.com/meta-business-manager-permissions-z266r)).
+
+| # | Cause probable | Ce que tu fais (iPhone) |
+|---|---|---|
+| **1** | **Tu n'as pas de Page** — Metricool ne connecte QUE des **Pages** Facebook, jamais un profil personnel (même en mode « professionnel » ou « créateur »). C'est de loin la cause n°1. | Appli Facebook → **Menu** (☰) → **Pages** → **Créer** → nom « Kdmc » (ou « Croupier Pro ») → catégorie « Formation » → Créer. 2 min. Puis retour dans Metricool → *Connections* → Facebook. |
+| 2 | **Une permission refusée** dans la fenêtre bleue de Facebook — si tu décoches une case, Metricool ne peut pas finir. | Recommence et laisse **toutes** les cases cochées. |
+| 3 | **Mauvais compte Facebook** ouvert dans Safari (la Page appartient à un autre profil). | Ouvre facebook.com dans un nouvel onglet Safari → déconnecte-toi → reviens dans Metricool → reconnecte avec le profil qui **administre** la Page. |
+| 4 | **Ancienne autorisation cassée** (Metricool déjà autorisé une fois, à moitié). | Facebook → Réglages → **Intégrations professionnelles** → retire « Metricool » → reconnecte depuis Metricool. |
+| 5 | **Rien ne marche** | Plan B : lien Zapier « Facebook Pages » (je te le redonne dans le chat) — même règle : il faut une **Page**. |
+
+> Ce que ça change pour la suite : **Instagram + TikTok + YouTube sont déjà branchés et
+> prouvés** — Facebook n'est pas bloquant. Facebook s'ajoutera quand la Page existera.
+> ⚠️ **Rien sur le casino/croupier ne sera publié** (Kevin 16.09 : « attends pour le produit
+> du casino ») — la pub attend le nouveau commerce, hors casino.
+
 👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
 comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
 

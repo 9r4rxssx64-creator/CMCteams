@@ -40,6 +40,38 @@ vidéo est bloquée **sans le moindre message** — on ne voit que le dessin et 
 - Bee n'est branchée que sur **l'arbre + l'app installable**, pas sur les 26 adresses du domaine.
 - Rien n'est encore vérifié sur le **site en ligne** : je ne peux pas l'atteindre d'ici, ça se fera
   par la CI une fois déployé.
+## 2026-09-16 21:40 — Nouveau commerce HORS casino : choix chiffré = Lingua Premium (+ packs Créa)
+
+Recherche faite (dépôt lu + 6 sources marché citées dans le rapport) — 5 niches comparées :
+Lingua Premium · packs Créa Studio · kit généalogie · La Détente (POD) · Cockpit Finances.
+**Principal = Lingua Premium** : le plus gros actif fini (2,07 Mo de données déjà écrites :
+anglais/italien/espagnol, monégasque 59 Ko + sources 113 Ko, LSF 309 Ko + sources 436 Ko,
+histoires bilingues 53 Ko — mesuré `wc -c`), 0 stock, 0 coût par vente hors PayPal, une
+mascotte (Bee) pour la pub sans visage, un contenu que personne ne vend (monégasque + LSF).
+Chaîne déjà en place : Metricool → page Lingua → kdmc-vente → code → contenu. Reste : le
+verrou premium dans `lingua/app.js` (aucune notion de premium aujourd'hui, vérifié grep) + 1
+entrée PRODUITS + page « Passer premium ». Prix 14,90 € (pack famille 29 €).
+**Secondaire = packs Créa Studio** (19 €, presets de filtres/sous-titres, même caisse).
+Écartés : généalogie (lourd, arbre mono-famille), La Détente (1 clic Kevin par commande +
+carte Printify), Finances (concurrence gratuite, risque « conseil financier »).
+🔴 **Non mesuré** : la demande réelle pour le monégasque → test 30 jours, 8 vidéos Bee via
+Metricool, seuil de validation 10 ventes avant d'investir plus. Marchés = chiffres mondiaux
+(apps de langues 7,4 → 8,6 Md$ 2025→2026), aucun chiffre local Monaco n'existe.
+Tâches #10 (Lingua Premium) et #11 (packs Créa) créées.
+
+## 2026-09-16 21:23 — STOP casino (Kevin) : « Je t'ai dit d'attendre pour le produit du casino »
+
+Faute reconnue : mon message précédent annonçait un « calendrier de publication croupier
+gratuit → payant ». **Tout ce qui touche au casino est gelé** : guide croupier, entraîneur de
+paiements, paliers payants, pub croupier, démo CMCteams, prospection B2B casino. On ne les
+publie pas, on n'en fait pas la pub, on n'y touche pas jusqu'au feu vert de Kevin.
+Ce qui reste et sert au nouveau commerce : `kdmc-vente` (colonne de vente générique — le
+registre `PRODUITS` sera remplacé), les canaux sociaux prouvés (Metricool : Instagram, TikTok,
+YouTube ; `kdmc-social` : Telegram/file), les moyens de paiement (PayPal.me, Revolut).
+Prochaine étape réelle : choisir le nouveau commerce **hors casino** (règle Kevin : « la niche
+la plus pertinente, la plus rentable… n'hésite pas à en faire plusieurs »), puis seulement
+après, la pub.
+
 ## 2026-09-16 (nuit) — Metricool branché : la chaîne de publication est PROUVÉE
 
 Kevin a créé le compte Metricool (marque « Kdmc », id 7000185, fuseau Europe/Paris)
@@ -60,6 +92,14 @@ Ce que ça change : pour TikTok, Instagram et YouTube, **on publie via Metricool
 gratuit). Le worker `kdmc-social` garde son rôle pour Telegram, la lecture fine des
 commentaires (Meta direct) et la file manuelle. Zapier reste une option pour Facebook si Kevin
 ne l'ajoute pas dans Metricool.
+
+**Facebook (Kevin 16.09 « je n'arrive pas à connecter ») — cause cherchée dans le centre d'aide
+Metricool, pas devinée** : Metricool ne connecte que des **Pages** Facebook, jamais un profil
+personnel (même en mode pro/créateur) — cause n°1 si Kevin n'a qu'un profil. Ensuite :
+permission décochée dans la fenêtre Facebook, mauvais profil ouvert dans Safari (se déconnecter
+de facebook.com puis reconnecter avec le profil admin de la Page), ancienne autorisation à
+retirer (Facebook → Intégrations professionnelles). Tableau complet dans `KEVIN_ACTIONS_TODO.md`.
+Facebook n'est **pas bloquant** : Instagram + TikTok + YouTube sont prouvés.
 
 Prochaine étape : calendrier de publication (croupier gratuit → payant) posé aux bons créneaux,
 et une vraie première publication validée par Kevin.
