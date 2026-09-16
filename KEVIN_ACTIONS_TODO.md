@@ -26,7 +26,7 @@ Chaque ligne renvoie à sa section plus bas.
 
 | Quoi | Ce que ça ouvre | Temps |
 |---|---|---|
-| **Compte Metricool** (gratuit) | **TikTok + Instagram + Facebook + YouTube** — le seul chemin vers TikTok | ~10 min |
+| ~~Compte Metricool~~ ✅ fait le 16.09 (Instagram + TikTok + YouTube prouvés) | Le seul chemin vers TikTok — **Facebook reporté « plus tard »** (Kevin 16.09), voir ⚪ | fait |
 | **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |
 | **Telegram** — @BotFather | Publier + lire + messages, zéro validation | 2 min |
 | **App PayPal** (client id · secret · webhook) | Livraison **instantanée** après paiement. Sans ça tu valides à la main — ça marche quand même | 5 min |
@@ -36,6 +36,7 @@ Chaque ligne renvoie à sa section plus bas.
 
 | Quoi | Pourquoi |
 |---|---|
+| **Facebook dans Metricool** *(reporté « plus tard » — Kevin 16.09)* | Il faut une **Page** Facebook (pas un profil) ; les 5 causes et la marche à suivre sont dans la section Metricool. Rien ne bloque : Instagram, TikTok et YouTube publient déjà |
 | Droit **Vectorize** sur le jeton Cloudflare | Sinon la mémoire RAG d'Apex ne se déploie jamais |
 | **Accès au compte Cloudflare « 9r4 »** | Il est verrouillé derrière GitHub ; j'en ai besoin pour certains réglages |
 | Passer le **dépôt en privé** | À faire **en dernier** (ça casse les pages publiées tant que ce n'est pas réglé) |
@@ -76,9 +77,10 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > ✅ **FAIT le 16.09** : compte créé, marque « Kdmc » (Instagram, TikTok, YouTube), connecteur
 > Claude branché, **chaîne prouvée** : un brouillon de test est dans ton planificateur (rien
 > ne part en public, tu peux le supprimer). Il reste **un geste** :
-> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — elle n'y est toujours pas.
+> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — **reporté à plus tard**
+> (Kevin 16.09 : « note dans les tâches à faire pour plus tard pour Facebook »). Pas pressé.
 
-#### 🔧 « Je n'arrive pas à connecter Facebook » (Kevin 16.09) — les causes, dans l'ordre
+#### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
 
 Sources : le centre d'aide Metricool ([je n'arrive pas à connecter Facebook](https://help.metricool.com/i-cant-connect-facebook-ibc3b),
 [guide complet](https://help.metricool.com/connect-facebook-on-metricool-complete-guide-5ark1),
