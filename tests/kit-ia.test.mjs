@@ -17,20 +17,29 @@ const JS = readFileSync(new URL('kit.js', DIR), 'utf8');
 const CSS = readFileSync(new URL('kit.css', DIR), 'utf8');
 const PRODUIT = VENTE.PRODUITS['kit-ia'];
 
-test('PARITÉ : le produit, son prix et son adresse de lecture sont ceux du worker', () => {
+test('PARITÉ : chaque produit livré sur kit.kd-mc.com est dans le menu, au bon prix, avec un lien de paiement au bon montant', () => {
   assert.ok(PRODUIT, 'kit-ia absent du catalogue du worker');
   assert.equal(JS.match(/var PRODUIT = '([^']+)'/)[1], 'kit-ia');
-  assert.ok(INDEX.includes('<input type="hidden" id="produit" value="kit-ia">'));
-  const prix = PRODUIT.prix + ' €';
-  for (const id of ['payer-paypal', 'payer-revolut']) {
-    const ligne = INDEX.match(new RegExp('id="' + id + '" href="([^"]+)"[^>]*>([^<]+)<'));
-    assert.ok(ligne, id + ' absent');
-    assert.ok(ligne[2].includes(prix), `${id} annonce « ${ligne[2]} » mais le worker vérifie ${prix}`);
-    assert.ok(ligne[1].toLowerCase().includes(String(PRODUIT.prix) + 'eur'), `${id} : le lien de paiement ne porte pas le montant ${PRODUIT.prix} EUR (${ligne[1]})`);
+  const surKit = Object.entries(VENTE.PRODUITS).filter(([, p]) => p.livre.startsWith('https://kit.kd-mc.com/'));
+  assert.ok(surKit.length >= 2, 'kit + club attendus');
+  const menu = [...INDEX.matchAll(/<option value="([a-z-]+)">([^<]+)<\/option>/g)].filter((m) => m[1].endsWith('-ia'));
+  assert.deepEqual(menu.map((m) => m[1]).sort(), surKit.map(([id]) => id).sort(), 'menu « ce que tu as acheté » ≠ catalogue du worker');
+  const boutons = { 'kit-ia': ['payer-paypal', 'payer-revolut'], 'club-ia': ['payer-club-paypal', 'payer-club-revolut'] };
+  for (const [id, p] of surKit) {
+    const prix = p.prix + ' €';
+    const opt = menu.find((m) => m[1] === id);
+    assert.ok(opt[2].includes(prix), `${id} : le menu dit « ${opt[2]} » mais le worker vérifie ${prix}`);
+    assert.equal(p.livre, 'https://kit.kd-mc.com/lire.html'); assert.equal(p.devise, 'EUR');
+    for (const b of boutons[id] || []) {
+      const ligne = INDEX.match(new RegExp('id="' + b + '" href="([^"]+)"[^>]*>([^<]+)<'));
+      assert.ok(ligne, b + ' absent');
+      assert.ok(ligne[2].includes(prix), `${b} annonce « ${ligne[2]} » mais le worker vérifie ${prix}`);
+      assert.ok(ligne[1].toLowerCase().includes(String(p.prix) + 'eur'), `${b} : le lien de paiement ne porte pas le montant ${p.prix} EUR (${ligne[1]})`);
+    }
   }
-  assert.equal(PRODUIT.livre, 'https://kit.kd-mc.com/lire.html');
-  assert.equal(PRODUIT.devise, 'EUR');
   assert.ok(INDEX.includes('"price":"' + PRODUIT.prix + '"'), 'le prix des données structurées a divergé');
+  assert.ok(VENTE.PRODUITS['club-ia'].contenu.includes('kit-ia'), 'le Club doit inclure le kit (c\'est ce que la page promet)');
+  assert.equal(VENTE.PRODUITS['club-ia'].ttlJours, 365, 'la page promet un accès 1 an');
 });
 
 test('CSP : les deux pages ne parlent QU\'au worker de vente, aucun script en ligne', () => {
@@ -95,7 +104,7 @@ function fauxWorker(page) {
         ? rep({ ok: true, produit: 'kit-ia', modules: [M1, M2], sommaire: SOMMAIRE })
         : rep({ ok: false, error: 'invalide', detail: 'code inconnu ou expiré' }, 404);
     }
-    if (u.pathname === '/reclamer') return rep({ ok: true, verifie: true, code: 'ABCD-EFGH-JKLM-NPQR', livre: 'https://kit.kd-mc.com/lire.html' });
+    if (u.pathname === '/reclamer') { const b = route.request().postDataJSON(); return rep({ ok: true, verifie: true, code: b.produit === 'club-ia' ? 'CCCC-CCCC-CCCC-CCCC' : 'ABCD-EFGH-JKLM-NPQR', livre: 'https://kit.kd-mc.com/lire.html', email_envoye: false }); }
     return rep({ ok: false, error: 'not_found' }, 404);
   }).then(() => appels);
 }
@@ -136,7 +145,12 @@ test('vrai navigateur — page de vente : 44 px partout, 375 px sans débordemen
     await page.click('#valider');
     await page.waitForSelector('#resultat.ok');
     assert.equal(await page.textContent('#resultat code'), 'ABCD-EFGH-JKLM-NPQR');
-    assert.equal(await page.evaluate(() => localStorage.getItem('kit_ia_code')), 'ABCD-EFGH-JKLM-NPQR', 'le code doit être mémorisé pour le lecteur');
+    assert.match(await page.textContent('#resultat p'), /pas pu partir par e-mail/, 'sans e-mail envoyé, on le DIT au client');
+    /* Le choix « Club » part bien au worker comme club-ia */
+    await page.selectOption('#produit', 'club-ia');
+    await page.click('#valider');
+    await page.waitForFunction(() => (document.querySelector('#resultat code') || {}).textContent === 'CCCC-CCCC-CCCC-CCCC');
+    assert.equal(await page.evaluate(() => localStorage.getItem('kit_ia_code')), 'CCCC-CCCC-CCCC-CCCC', 'le dernier code délivré doit être mémorisé pour le lecteur');
     assert.deepEqual(soucis, []);
   } finally { await nav.close(); s.close(); }
 });

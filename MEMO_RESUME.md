@@ -1,5 +1,33 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 23:20 — Business automatisé récurrent : le Club IA au Boulot (59 €/an) + machine hebdomadaire
+
+Kevin 23:00 : « Trouve une idée de business automatisé. Crée et gère en autonomie, qui me rapporte
+un max régulièrement. » Choix : un ABONNEMENT posé sur le Kit IA (même caisse, même lecteur, même
+public), parce que c'est le seul modèle récurrent que je peux faire tourner SANS Kevin avec les
+moyens réels (PayPal.me/Revolut sans abonnement natif → accès annuel payé en une fois, pas de
+prélèvement automatique = zéro litige ; contenu généré et livré par une routine hebdomadaire).
+- **Produit `club-ia`** : 59 €/an = kit complet (57 consignes) + une consigne-outil nouvelle
+  chaque semaine (produit `club-ia` en base, ordre 100+semaine). Code valable 365 j (`ttlJours`).
+- **Caisse** : chaque livraison écrit une fiche dans la table D1 `abonnes` (code, e-mail, produit,
+  expiration) et envoie le code par e-mail via EmailJS (service/gabarit des boutiques, clé
+  privée `EMAILJS_PRIVATE_KEY` poussée par le workflow). Best-effort prouvé : panne d'e-mail ou
+  de base = la vente passe quand même ; `email_envoye` dit la vérité au client (« note-le, il n'a
+  pas pu partir par e-mail »). 34 tests.
+- **Pages** : offre Club sur la page de vente (PayPal.me/kdmc/59EUR, revolut.me/kdmc/59eur), menu
+  « ce que tu as acheté », verrou du lecteur qui propose les deux. 6 tests (navigateur : le choix
+  Club part bien comme `club-ia`).
+- **Routine hebdomadaire « Club IA — contenu de la semaine »** (Claude Code Remote, session
+  neuve chaque lundi 07:00 UTC, connecteurs Gmail + Cloudflare) : lit les abonnés et les
+  dernières consignes en base, rédige la consigne de la semaine (brief vérité, accents vérifiés),
+  l'insère en D1, prévient les abonnés par e-mail, envoie à Kevin un point de 5 lignes (abonnés,
+  ventes, ce qui a été publié). Aucun cron GitHub (règle absolue), aucun cron Cloudflare (plan plein).
+🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
+best-effort et le client voit toujours son code à l'écran. 🔴 Non mesuré : demande et
+conversion. Chiffres honnêtes : 100 membres = 5 900 €/an + ventes du kit ; 0 aujourd'hui.
+Suite : pages SEO « l'IA pour [métier] » (50 métiers) générées pour l'acquisition organique,
+vidéos sans visage via Metricool.
+
 ## 2026-09-16 22:55 — Kit IA de l'indépendant : produit numérique NEUF, construit, contenu en base, caisse live
 
 Kevin 21:47 : « un produit numérique dans la niche à la mode, max rentabilité, en toute autonomie.

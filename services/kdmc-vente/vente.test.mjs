@@ -344,18 +344,25 @@ test('chaque produit déclare ce qu\'il débloque (sinon on vend du vide)', () =
    contre un code valide, et que l'aperçu ne fuit pas un module payant. */
 function fauxD1(lignes) {
   return {
-    _sql: [],
+    _sql: [], abonnes: [],
     prepare(sql) {
       const self = this;
       return {
         bind(...args) {
           return {
+            async run() {
+              self._sql.push(sql);
+              if (/INSERT OR REPLACE INTO abonnes/.test(sql)) self.abonnes.push({ code: args[0], email: args[1], produit: args[2], source: args[3], ts: args[4], expire: args[5], email_envoye: args[6] });
+              return { success: true };
+            },
             async all() {
               self._sql.push(sql);
-              let rows = lignes.filter((l) => l.produit === args[0]);
+              const n = (sql.match(/\?\d+/g) || []).length;
+              const produits = args.slice(0, n);
+              let rows = lignes.filter((l) => produits.includes(l.produit));
               if (/gratuit = 1/.test(sql)) rows = rows.filter((l) => l.gratuit === 1);
               rows = [...rows].sort((a, b) => a.ordre - b.ordre);
-              if (/^SELECT id, ordre, titre, gratuit /.test(sql)) rows = rows.map(({ id, ordre, titre, gratuit }) => ({ id, ordre, titre, gratuit }));
+              if (/^SELECT produit, id, ordre, titre, gratuit /.test(sql)) rows = rows.map(({ produit, id, ordre, titre, gratuit }) => ({ produit, id, ordre, titre, gratuit }));
               return { results: rows };
             },
           };
@@ -368,6 +375,7 @@ const KIT = [
   { produit: 'kit-ia', id: 'm1', ordre: 1, titre: 'Module 1', html: '<h2>Gratuit</h2>', gratuit: 1 },
   { produit: 'kit-ia', id: 'm2', ordre: 2, titre: 'Module 2', html: '<h2>PAYANT-SECRET</h2>', gratuit: 0 },
   { produit: 'autre', id: 'x', ordre: 1, titre: 'Autre produit', html: '<h2>AUTRE</h2>', gratuit: 1 },
+  { produit: 'club-ia', id: 'c1', ordre: 101, titre: 'Semaine 1', html: '<h2>CLUB-SEMAINE-1</h2>', gratuit: 0 },
 ];
 
 test('/apercu ne sert QUE le module gratuit du produit demandé, sans code', async () => {
@@ -423,4 +431,72 @@ test('CORS : tout sous-domaine HTTPS de kd-mc.com est une origine du domaine, ri
   assert.equal(o('https://kd-mc.com.evil.io'), false, 'suffixe piégé');
   assert.equal(o('https://evilkd-mc.com'), false);
   assert.equal(o(''), false);
+});
+
+/* ── Club IA au Boulot : abonnement annuel = le kit + les consignes de la semaine ── */
+test('un paiement Club (59 €) ouvre le kit ET le contenu hebdomadaire, un paiement kit (47 €) seulement le kit', async () => {
+  const d1 = fauxD1(KIT);
+  const env = { VENTES: fauxKV(), CONTENU: d1, ...ENV_COMPLET };
+  let stop = monteFetch({ transactions: [tx('club@m.com', '59.00', 'EUR', 'TXC')] });
+  const { code } = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'club-ia', email: 'club@m.com' } }), env));
+  stop();
+  assert.ok(code, 'un paiement de 59 € doit délivrer un code Club');
+  const j = await lis(await worker.fetch(req('/lire?c=' + code), env));
+  assert.deepEqual(j.modules.map((m) => m.id), ['m1', 'm2', 'c1'], 'le Club ouvre le kit puis la semaine 1');
+  assert.ok(!JSON.stringify(j).includes('AUTRE'));
+  stop = monteFetch({ transactions: [tx('kit@m.com', '47.00', 'EUR', 'TXK')] });
+  const k = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'kit-ia', email: 'kit@m.com' } }), env));
+  stop();
+  const jk = await lis(await worker.fetch(req('/lire?c=' + k.code), env));
+  assert.deepEqual(jk.modules.map((m) => m.id), ['m1', 'm2'], 'le kit seul ne doit PAS ouvrir le contenu du Club');
+  /* L'aperçu public du kit ne montre rien du Club */
+  const a = await lis(await worker.fetch(req('/apercu?produit=kit-ia'), env));
+  assert.ok(!JSON.stringify(a).includes('CLUB'), 'le Club a fuité dans l\'aperçu du kit');
+});
+
+test('chaque livraison écrit une fiche abonné en base (e-mail, produit, expiration), sans jamais bloquer si la base manque', async () => {
+  const d1 = fauxD1(KIT);
+  const env = { VENTES: fauxKV(), CONTENU: d1, ...ENV_COMPLET };
+  const stop = monteFetch({ transactions: [tx('a@m.com', '59.00')] });
+  const { code } = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'club-ia', email: 'a@m.com' } }), env));
+  stop();
+  assert.equal(d1.abonnes.length, 1);
+  const f = d1.abonnes[0];
+  assert.equal(f.code, code); assert.equal(f.email, 'a@m.com'); assert.equal(f.produit, 'club-ia');
+  const jours = (new Date(f.expire) - new Date(f.ts)) / 864e5;
+  assert.ok(jours > 364 && jours < 366, 'un abonnement Club dure 1 an, mesuré ' + jours + ' j');
+  assert.equal(f.email_envoye, 0, 'sans clé EmailJS, on note honnêtement que le code n\'est PAS parti par e-mail');
+  /* Sans base : la vente passe quand même */
+  const stop2 = monteFetch({ transactions: [tx('b@m.com', '47.00')] });
+  const r = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'kit-ia', email: 'b@m.com' } }), { VENTES: fauxKV(), ...ENV_COMPLET }));
+  stop2();
+  assert.ok(r.code, 'une panne de la base de contenu ne doit jamais bloquer une livraison payée');
+});
+
+test('e-mail du code : envoyé via EmailJS quand la clé existe, jamais bloquant, jamais la clé dans la réponse', async () => {
+  const appels = [];
+  const vrai = globalThis.fetch;
+  globalThis.fetch = async (u, opt = {}) => {
+    const url = String(u);
+    if (url.includes('api.emailjs.com')) { appels.push(JSON.parse(opt.body)); return new Response('OK', { status: 200 }); }
+    if (url.includes('/v1/oauth2/token')) return new Response(JSON.stringify({ access_token: 'T' }), { status: 200 });
+    if (url.includes('/v1/reporting/transactions')) return new Response(JSON.stringify({ transaction_details: [tx('c@m.com', '47.00')] }), { status: 200 });
+    throw new Error('appel imprévu: ' + url);
+  };
+  try {
+    const env = { VENTES: fauxKV(), CONTENU: fauxD1(KIT), EMAILJS_PRIVATE_KEY: 'prive-XYZ', ...ENV_COMPLET };
+    const j = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'kit-ia', email: 'c@m.com' } }), env));
+    assert.equal(j.email_envoye, true);
+    assert.equal(appels.length, 1);
+    assert.equal(appels[0].template_params.to_email, 'c@m.com');
+    assert.ok(appels[0].template_params.message.includes(j.code), 'le message doit contenir le code');
+    assert.ok(appels[0].template_params.message.includes('kit.kd-mc.com/lire.html?c='), 'et le lien direct');
+    assert.ok(!JSON.stringify(j).includes('prive-XYZ'), 'la clé privée ne doit jamais sortir');
+    /* Panne EmailJS → la vente passe quand même */
+    globalThis.fetch = async (u) => { const url = String(u); if (url.includes('emailjs')) throw new Error('smtp down');
+      if (url.includes('oauth2')) return new Response(JSON.stringify({ access_token: 'T' }), { status: 200 });
+      return new Response(JSON.stringify({ transaction_details: [tx('d@m.com', '47.00', 'EUR', 'TX9')] }), { status: 200 }); };
+    const j2 = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'kit-ia', email: 'd@m.com' } }), env));
+    assert.ok(j2.code); assert.equal(j2.email_envoye, false);
+  } finally { globalThis.fetch = vrai; }
 });

@@ -58,6 +58,17 @@ const PRODUITS = {
     livre: 'https://kit.kd-mc.com/lire.html',
     contenu: ['kit-ia'],
   },
+  /* Club IA au Boulot (Kevin 2026-09-16 « un business automatisé qui rapporte
+     régulièrement ») : abonnement ANNUEL. Le kit complet + chaque semaine une
+     nouvelle consigne-outil, ajoutée en base (produit 'club-ia') par la routine
+     hebdomadaire. Le code dure 1 an (ttlJours), pas 2. */
+  'club-ia': {
+    nom: 'Club IA au Boulot — 1 an : le kit complet + une nouvelle consigne chaque semaine',
+    prix: 59, devise: 'EUR',
+    livre: 'https://kit.kd-mc.com/lire.html',
+    contenu: ['kit-ia', 'club-ia'],
+    ttlJours: 365,
+  },
 };
 
 const JOURS_RECHERCHE = 14;      // fenêtre de réclamation
@@ -203,13 +214,53 @@ async function delivre(env, { produitId, email, source, txId }) {
     if (deja) return { ok: true, code: deja, deja_delivre: true, livre: produit.livre };
   }
   const code = nouveauCode();
+  const ttl = produit.ttlJours ? produit.ttlJours * 86400 : TTL_CODE;
   const fiche = {
     produit: produitId, email: email || null, source,
     tx: txId || null, ts: Date.now(), ts_iso: new Date().toISOString(),
+    expire_iso: new Date(Date.now() + ttl * 1000).toISOString(),
   };
-  await env.VENTES.put('code:' + code, JSON.stringify(fiche), { expirationTtl: TTL_CODE });
-  if (txId) await env.VENTES.put('tx:' + txId, code, { expirationTtl: TTL_CODE });
-  return { ok: true, code, deja_delivre: false, livre: produit.livre };
+  await env.VENTES.put('code:' + code, JSON.stringify(fiche), { expirationTtl: ttl });
+  if (txId) await env.VENTES.put('tx:' + txId, code, { expirationTtl: ttl });
+  /* Le code arrive aussi par e-mail (sinon un client qui ferme l'onglet le perd),
+     et la fiche abonné va en base D1 : c'est elle que la routine hebdomadaire lit
+     pour prévenir les abonnés du Club. Les deux sont best-effort : une panne
+     d'e-mail ou de base ne bloque JAMAIS une livraison payée. */
+  const email_envoye = email ? await envoieCode(env, { email, produit, code }) : false;
+  await noteAbonne(env, { code, email, produitId, source, fiche, email_envoye });
+  return { ok: true, code, deja_delivre: false, livre: produit.livre, email_envoye };
+}
+
+/* EmailJS (clé privée EMAILJS_PRIVATE_KEY poussée par le workflow ; le service et le
+   gabarit sont ceux déjà utilisés par les boutiques). Renvoie true/false, ne lève jamais. */
+const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUsorWTtC' };
+async function envoieCode(env, { email, produit, code }) {
+  if (!env.EMAILJS_PRIVATE_KEY) return false;
+  try {
+    const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        service_id: EMAILJS.service, template_id: EMAILJS.template, user_id: EMAILJS.user,
+        accessToken: env.EMAILJS_PRIVATE_KEY,
+        template_params: {
+          to_email: email, store: 'kd-mc.com',
+          message: 'Merci pour ton achat : ' + produit.nom + '.\nTon code d\'accès : ' + code +
+            '\nOuvre ton accès ici : ' + produit.livre + '?c=' + code +
+            '\nGarde ce message : le code ouvre ton accès sur tous tes appareils.',
+        },
+      }),
+    });
+    return r.ok;
+  } catch (_) { return false; }
+}
+async function noteAbonne(env, { code, email, produitId, source, fiche, email_envoye }) {
+  if (!env.CONTENU || typeof env.CONTENU.prepare !== 'function') return false;
+  try {
+    await env.CONTENU.prepare('INSERT OR REPLACE INTO abonnes (code, email, produit, source, ts, expire, email_envoye) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+      .bind(code, email || null, produitId, source || null, fiche.ts_iso, fiche.expire_iso, email_envoye ? 1 : 0).run();
+    return true;
+  } catch (_) { return false; }
 }
 
 /* ── Garde-fou de débit (anti-balayage d'e-mails sur /reclamer) ───────────── */
@@ -246,14 +297,19 @@ async function lireContenu(env, produitId, { gratuitSeulement }) {
     return { ok: false, status: 503, error: 'contenu_indisponible', detail: 'base de contenu non branchée (binding CONTENU absent)', step: 'contenu_binding' };
   }
   try {
-    const sql = 'SELECT id, ordre, titre, html, gratuit FROM contenu WHERE produit = ?1' + (gratuitSeulement ? ' AND gratuit = 1' : '') + ' ORDER BY ordre';
-    const res = await env.CONTENU.prepare(sql).bind(produitId).all();
+    /* Un produit peut débloquer plusieurs contenus (le Club = le kit + les
+       consignes hebdomadaires). Chaque id de contenu est un produit en base. */
+    const prod = PRODUITS[produitId];
+    const cles = (prod && prod.contenu && prod.contenu.length) ? prod.contenu : [produitId];
+    const marques = cles.map((_, i) => '?' + (i + 1)).join(', ');
+    const sql = 'SELECT produit, id, ordre, titre, html, gratuit FROM contenu WHERE produit IN (' + marques + ')' + (gratuitSeulement ? ' AND gratuit = 1' : '') + ' ORDER BY ordre';
+    const res = await env.CONTENU.prepare(sql).bind(...cles).all();
     const lignes = (res && res.results) || [];
-    const somm = await env.CONTENU.prepare('SELECT id, ordre, titre, gratuit FROM contenu WHERE produit = ?1 ORDER BY ordre').bind(produitId).all();
+    const somm = await env.CONTENU.prepare('SELECT produit, id, ordre, titre, gratuit FROM contenu WHERE produit IN (' + marques + ') ORDER BY ordre').bind(...cles).all();
     return {
       ok: true,
-      modules: lignes.map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, html: l.html, gratuit: !!l.gratuit })),
-      sommaire: ((somm && somm.results) || []).map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, gratuit: !!l.gratuit })),
+      modules: lignes.map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, html: l.html, gratuit: !!l.gratuit, source: l.produit })),
+      sommaire: ((somm && somm.results) || []).map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, gratuit: !!l.gratuit, source: l.produit })),
     };
   } catch (e) {
     return { ok: false, status: 500, error: 'contenu_lecture', detail: String((e && e.message) || e).slice(0, 160), step: 'contenu_sql' };
@@ -272,6 +328,7 @@ export default {
     if (p === '/health') {
       return json({
         contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'),
+        email_code: Boolean(env.EMAILJS_PRIVATE_KEY),
         ok: true, service: 'kdmc-vente',
         paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),
         paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID),
@@ -352,7 +409,7 @@ export default {
           if (rech.trouve) {
             const d = await delivre(env, { produitId, email, source: 'paypal-recherche', txId: rech.tx.id });
             if (!d.ok) return json(d, d.status || 500, origin);
-            return json({ ok: true, verifie: true, code: d.code, livre: d.livre, deja_delivre: d.deja_delivre }, 200, origin);
+            return json({ ok: true, verifie: true, code: d.code, livre: d.livre, deja_delivre: d.deja_delivre, email_envoye: !!d.email_envoye }, 200, origin);
           }
           /* Pas trouvé ≠ pas payé : l'API PayPal a ~3 h de retard. On le DIT. */
           const id = crypto.randomUUID();
@@ -472,7 +529,7 @@ export default {
       const dd = await delivre(env, { produitId, email: d.email, source: 'admin:' + g.name, txId: null });
       if (!dd.ok) return json(dd, dd.status || 500, origin);
       await env.VENTES.delete('demande:' + id);
-      return json({ ok: true, code: dd.code, livre: dd.livre, produit: produitId }, 200, origin);
+      return json({ ok: true, code: dd.code, livre: dd.livre, produit: produitId, email_envoye: !!dd.email_envoye }, 200, origin);
     }
 
     return json({ ok: false, error: 'not_found', detail: 'route inconnue: ' + p, step: 'routage' }, 404, origin);
@@ -480,4 +537,4 @@ export default {
 };
 
 /* Export pour les tests hors-ligne (le worker n'en dépend pas). */
-export const __test = { PRODUITS, nouveauCode, memeMontant, nettoieEmail, emailPlausible, ALPHABET, origineDuDomaine, lireContenu };
+export const __test = { PRODUITS, nouveauCode, memeMontant, nettoieEmail, emailPlausible, ALPHABET, origineDuDomaine, lireContenu, envoieCode, EMAILJS };

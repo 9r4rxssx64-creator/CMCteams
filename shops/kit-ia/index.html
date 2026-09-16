@@ -61,10 +61,20 @@
     <p class="petit">Après le paiement, récupère ton accès juste en dessous avec l'adresse e-mail utilisée pour payer. PayPal : vérification automatique. Revolut : vérification à la main, tu reçois ton code par e-mail.</p>
   </div>
 
+  <div class="carte" id="club">
+    <p class="sur">Ou le Club, pour ne jamais être à court</p>
+    <div class="prix"><span class="maintenant">59 €</span><span class="petit">/ an, kit complet inclus</span></div>
+    <p><strong>Chaque semaine, une nouvelle consigne-outil</strong> ajoutée à ton lecteur : une situation réelle d'indépendant, la consigne prête à copier, l'exemple de résultat. 52 par an, en plus des 57 du kit. Tu es prévenu par e-mail quand elle arrive.</p>
+    <p class="petit">C'est 12 € de plus que le kit seul pour une année de nouveautés. Accès 1 an, pas de renouvellement automatique : rien ne te sera prélevé sans que tu le décides.</p>
+    <p><a class="btn btn-primaire" id="payer-club-paypal" href="https://paypal.me/kdmc/59EUR" rel="noopener" target="_blank">Rejoindre le Club, 59 € avec PayPal</a></p>
+    <p><a class="btn btn-secondaire" id="payer-club-revolut" href="https://revolut.me/kdmc/59eur" rel="noopener" target="_blank">Rejoindre le Club, 59 € avec Revolut</a></p>
+  </div>
+
   <div class="carte" id="recuperer">
     <h2 class="mt0">J'ai payé, je récupère mon accès</h2>
     <form id="form" novalidate>
-      <input type="hidden" id="produit" value="kit-ia">
+      <label for="produit">Ce que tu as acheté</label>
+      <select id="produit"><option value="kit-ia">Kit IA de l'indépendant, 47 €</option><option value="club-ia">Club IA au Boulot, 59 € / an</option></select>
       <label for="methode">Payé avec</label>
       <select id="methode"><option value="paypal">PayPal</option><option value="revolut">Revolut</option><option value="virement">Virement</option></select>
       <label for="email">Ton adresse e-mail</label>

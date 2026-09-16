@@ -2515,3 +2515,4 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 | `services/kdmc-vente/worker.js` | Caisse : produit `kit-ia`, `/apercu`, `/lire` (contenu en base D1) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
 | Base D1 `kdmc-contenu` | Les 7 modules (hors dépôt, privé) | [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) | — |
 | Site live | `https://kit.kd-mc.com/` (après fusion + déploiement du routeur) | [ouvrir](https://kit.kd-mc.com/) | — |
+| Routine « Club IA — contenu de la semaine » | Session Claude automatique chaque lundi 07:00 UTC : nouvelle consigne en base + e-mail aux abonnés + point à Kevin | [Routines](https://claude.ai/code) | — |

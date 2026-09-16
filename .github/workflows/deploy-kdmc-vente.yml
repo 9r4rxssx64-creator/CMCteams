@@ -51,6 +51,7 @@ jobs:
           push PAYPAL_CLIENT_ID  "${{ secrets.PAYPAL_CLIENT_ID }}"  "vérification auto désactivée, tout passe en file manuelle"
           push PAYPAL_SECRET     "${{ secrets.PAYPAL_SECRET }}"     "idem"
           push PAYPAL_WEBHOOK_ID "${{ secrets.PAYPAL_WEBHOOK_ID }}" "livraison instantanée désactivée, les webhooks seront ignorés"
+          push EMAILJS_PRIVATE_KEY "${{ secrets.EMAILJS_PRIVATE_KEY }}" "le code d'accès n'est pas envoyé par e-mail, seulement affiché à l'écran"
 
       - name: Deploy worker
         id: deploy

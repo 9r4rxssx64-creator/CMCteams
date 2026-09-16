@@ -23,7 +23,8 @@
     if (!rep || typeof rep !== 'object') return { etat: 'erreur', titre: 'Réponse illisible', texte: 'Réessaie dans un instant.' };
     if (rep.ok && rep.verifie && rep.code) {
       return { etat: 'ok', titre: 'Paiement vérifié', code: rep.code, livre: rep.livre,
-        texte: rep.deja_delivre ? 'Tu avais déjà récupéré cet accès : voici le même code.' : 'Garde ce code : il ouvre ton kit à tout moment, sur tous tes appareils.' };
+        texte: (rep.deja_delivre ? 'Tu avais déjà récupéré cet accès : voici le même code. ' : 'Garde ce code : il ouvre ton accès à tout moment, sur tous tes appareils. ')
+          + (rep.email_envoye ? 'Il t’a aussi été envoyé par e-mail.' : 'Note-le : il n’a pas pu partir par e-mail.') };
     }
     if (rep.ok && rep.en_attente) {
       return { etat: 'attente', titre: 'Paiement enregistré, vérification en cours', texte: rep.detail || 'Ton accès arrive dès que le paiement est confirmé.' };
@@ -87,7 +88,7 @@
       if (!emailPlausible(email.value)) { afficheResultat(boite, { etat: 'erreur', titre: 'Adresse incomplète', texte: 'Il manque quelque chose dans l’adresse e-mail.' }); email.focus(); return; }
       bouton.disabled = true; var ancien = bouton.textContent; texte(bouton, 'Vérification…');
       fetch(API + '/reclamer', { method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ produit: PRODUIT, methode: methode.value, email: email.value.trim(), reference: ($('reference') || {}).value || '' }) })
+        body: JSON.stringify({ produit: ($('produit') && $('produit').value) || PRODUIT, methode: methode.value, email: email.value.trim(), reference: ($('reference') || {}).value || '' }) })
         .then(function (r) { return r.json().then(function (j) { return { j: j, ok: r.ok }; }); })
         .then(function (x) { afficheResultat(boite, interprete(x.j, x.ok)); })
         .catch(function (e) { afficheResultat(boite, { etat: 'erreur', titre: 'Pas de réseau', texte: 'Ton paiement n’est pas perdu. Réessaie : ' + String(e.message || e) }); })
