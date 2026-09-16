@@ -463,7 +463,8 @@
       "etat": "actif",
       "maj": "2026-09-16",
       "attend_kevin": null,
-      "attend_session": null
+      "attend_session": null,
+      "note": "Bee : lip-sync mesuré (1,20 → 0,30), animations remontées dans Lingua v2.125.0 (clignement unique, saut dessin animé, regard détourné) ; les 3 gardes de Bee tournent enfin sur GitHub (bee-gardes.yml, vert en CI : 22 + 13 contrôles) ; clayscore-verif-prix.yml réparé (413 échecs silencieux) + garde test:workflows-valides"
     }
   },
   "messages": [
