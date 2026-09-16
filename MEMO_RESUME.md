@@ -1,5 +1,24 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 21:40 — Nouveau commerce HORS casino : choix chiffré = Lingua Premium (+ packs Créa)
+
+Recherche faite (dépôt lu + 6 sources marché citées dans le rapport) — 5 niches comparées :
+Lingua Premium · packs Créa Studio · kit généalogie · La Détente (POD) · Cockpit Finances.
+**Principal = Lingua Premium** : le plus gros actif fini (2,07 Mo de données déjà écrites :
+anglais/italien/espagnol, monégasque 59 Ko + sources 113 Ko, LSF 309 Ko + sources 436 Ko,
+histoires bilingues 53 Ko — mesuré `wc -c`), 0 stock, 0 coût par vente hors PayPal, une
+mascotte (Bee) pour la pub sans visage, un contenu que personne ne vend (monégasque + LSF).
+Chaîne déjà en place : Metricool → page Lingua → kdmc-vente → code → contenu. Reste : le
+verrou premium dans `lingua/app.js` (aucune notion de premium aujourd'hui, vérifié grep) + 1
+entrée PRODUITS + page « Passer premium ». Prix 14,90 € (pack famille 29 €).
+**Secondaire = packs Créa Studio** (19 €, presets de filtres/sous-titres, même caisse).
+Écartés : généalogie (lourd, arbre mono-famille), La Détente (1 clic Kevin par commande +
+carte Printify), Finances (concurrence gratuite, risque « conseil financier »).
+🔴 **Non mesuré** : la demande réelle pour le monégasque → test 30 jours, 8 vidéos Bee via
+Metricool, seuil de validation 10 ventes avant d'investir plus. Marchés = chiffres mondiaux
+(apps de langues 7,4 → 8,6 Md$ 2025→2026), aucun chiffre local Monaco n'existe.
+Tâches #10 (Lingua Premium) et #11 (packs Créa) créées.
+
 ## 2026-09-16 21:23 — STOP casino (Kevin) : « Je t'ai dit d'attendre pour le produit du casino »
 
 Faute reconnue : mon message précédent annonçait un « calendrier de publication croupier
