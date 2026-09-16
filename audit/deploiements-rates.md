@@ -7,6 +7,28 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 16/09/2026 22:08 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `be906588` · **Run** : `35155521373`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35155521373
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3826 — merge auto refusé. Cause exacte ci-dessous.
+[claude/video-review-wqnqdw c99267488] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 22:02 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `be906588` · **Run** : `35155521388`
@@ -445,19 +467,6 @@ pull request create failed: GraphQL: Something went wrong while executing your q
 - **Branche** : `claude/apex-chat-mfa-faceid` · **Commit** : `535f032a` · **Run** : `34527969098`
 - **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
 - **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34527969098
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 10/09/2026 20:43 UTC
-
-- **Branche** : `claude/apex-chat-mfa-faceid` · **Commit** : `a0cc590c` · **Run** : `34527629976`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34527629976
 - **Ce que la machine a dit** :
 
 ```
