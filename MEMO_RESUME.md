@@ -1,5 +1,31 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 (nuit) — Metricool branché : la chaîne de publication est PROUVÉE
+
+Kevin a créé le compte Metricool (marque « Kdmc », id 7000185, fuseau Europe/Paris)
+et connecté le connecteur MCP côté Claude. Mesuré à 23h13 :
+
+- `getBrandSettings` → Instagram `kd45772` · TikTok « Kevin Mc » · YouTube. **Pas Facebook**
+  (à ajouter dans Metricool → Connections).
+- `getScheduledPosts` (16–30.09) → planificateur vide.
+- **Publication de test créée en BROUILLON** (id 377175245, uuid -6655376254529288625) :
+  Instagram + TikTok, `draft:true`, `autoPublish:false`, TikTok en `SELF_ONLY`. Elle apparaît
+  dans le planificateur de Kevin, **rien ne part en public**. C'est la preuve que Claude écrit
+  dans Metricool ; Kevin peut la supprimer.
+- **Meilleurs créneaux (Europe/Paris, données Metricool)** : TikTok → 10h puis 18h, mercredi et
+  jeudi en tête (~1 400), week-end ~2× plus faible. Instagram → 10h (jeudi/vendredi ~6 700),
+  puis 12h et 18h. Samedi/dimanche : moitié.
+
+Ce que ça change : pour TikTok, Instagram et YouTube, **on publie via Metricool** (50/mois en
+gratuit). Le worker `kdmc-social` garde son rôle pour Telegram, la lecture fine des
+commentaires (Meta direct) et la file manuelle. Zapier reste une option pour Facebook si Kevin
+ne l'ajoute pas dans Metricool.
+
+Prochaine étape : calendrier de publication (croupier gratuit → payant) posé aux bons créneaux,
+et une vraie première publication validée par Kevin.
+
+---
+
 ## 2026-09-16 (soir, 2) — Réseaux sociaux : ce que tu as vraiment, et le moyen unique
 
 ### Tu croyais avoir tout. Voici la mesure (journal CI, pas une supposition)
