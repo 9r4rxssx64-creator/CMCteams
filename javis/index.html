@@ -4,293 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#171008">
-<title>Javis</title>
-<meta name="description" content="Javis — l'assistant personnel de Kevin, gratuit d'abord.">
+<title>Bee</title>
+<meta name="description" content="Bee — l'assistante personnelle de Kevin, gratuit d'abord.">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon-512.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-512.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Javis">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://apis.kd-mc.com https://api.open-meteo.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
+<meta name="apple-mobile-web-app-title" content="Bee">
+<!-- img-src : les images de Bee viennent de Lingua (source unique du dessin).
+     connect-src : le hub IA gratuit + la météo. Un hôte oublié ici = échec SILENCIEUX. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://lingua.kd-mc.com; connect-src 'self' https://apis.kd-mc.com https://api.open-meteo.com; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; manifest-src 'self'">
 <style>
-:root{--gold:#e8b830;--gold2:#f5cc4a;--gold3:#c9a227;--bg:#0e0a04;--ink:#f7efd9;--mut:#a4906a;--card:#171008;--line:rgba(232,184,48,.22)}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
-body{display:flex;flex-direction:column;min-height:100dvh}
-#gate{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:var(--bg);padding:24px;text-align:center}
-#gate.hidden{display:none}
-#gate p{color:var(--mut);max-width:320px;margin:0}
-#stage{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 16px 10px;flex:0 0 auto}
-#javis-face{width:min(52vw,250px);height:min(52vw,250px);display:block;filter:drop-shadow(0 12px 30px rgba(232,184,48,.35));transition:transform .45s cubic-bezier(.2,.8,.3,1)}
-#javis-face.javis-breathe{animation:jbreathe 3.2s ease-in-out infinite}
-@keyframes jbreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-/* Gros plan quand Javis parle (Kevin : « en gros plan le visage ») — on coupe
-   la respiration pendant, sinon les deux transform se battent. */
-#stage.javis-closeup #javis-face{animation:none;transform:scale(1.28) translateY(6%)}
-#stage{transition:padding .45s ease}
-#stage.javis-closeup{padding-top:10px;padding-bottom:0}
-#javis-name{margin-top:10px;font-weight:700;font-size:19px;background:linear-gradient(90deg,var(--gold2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent}
-#javis-sub{color:var(--mut);font-size:12px;margin-top:2px}
-#javis-pupil-l,#javis-pupil-r{transition:transform .35s ease}
-#javis-lid-l,#javis-lid-r{transition:transform .09s ease}
-.javis-blink #javis-lid-l,.javis-blink #javis-lid-r{transform:scaleY(1)!important}
-#javis-mouth{transition:d .09s linear}
-#msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}
-.bub{max-width:86%;padding:10px 13px;border-radius:15px;white-space:pre-wrap;word-break:break-word;animation:pop .15s ease}
-@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.bub.me{align-self:flex-end;background:#3a2c16;color:#f7efd9;border-bottom-right-radius:4px}
-.bub.js{align-self:flex-start;background:var(--card);color:#f0e2bd;border:1px solid var(--line);border-bottom-left-radius:4px}
-.bub.js small{display:block;margin-top:5px;color:var(--mut);font-size:10px}
-form{display:flex;gap:8px;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);border-top:1px solid var(--line);background:var(--card)}
-textarea{flex:1;background:#241905;border:1px solid var(--line);color:var(--ink);border-radius:14px;padding:11px 14px;font-size:15px;min-height:46px;max-height:120px;resize:none;font-family:inherit}
-textarea:focus{outline:2px solid var(--gold3)}
-button.act{flex:0 0 46px;height:46px;border-radius:14px;border:0;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#241905;font-size:19px;font-weight:800;cursor:pointer}
-#mic.on{background:linear-gradient(135deg,#c8506a,#e2748f)}
-#voice-toggle{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:12px;background:rgba(36,25,5,.7);border:1px solid var(--line);color:var(--mut);border-radius:20px;padding:6px 12px;font-size:12px;cursor:pointer}
+  html,body{margin:0;height:100%;background:#0e0a04;color:#f7efd9;
+    font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+  #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;color:#a4906a;font-size:14px}
 </style>
 </head>
 <body>
 
-<div id="gate">
-  <svg viewBox="0 0 200 200" style="width:96px;height:96px;opacity:.5"><circle cx="100" cy="100" r="80" fill="#e8b830" opacity=".3"/></svg>
-  <div id="gate-msg">Vérification…</div>
-  <p id="gate-sub">Javis est l'assistant personnel de Kevin. Si c'est bien toi, connecte-toi d'abord sur le domaine.</p>
-</div>
+<!-- Cette app n'est qu'une COQUILLE : tout (Bee, ses animations, le chat, le gate
+     SSO) vit dans javis-widget.js, le MEME fichier que le bouton flottant du
+     domaine. Une seule Bee a maintenir — pas deux versions qui divergent
+     (lecon #142). JAVIS_MODE='app' lui dit juste de s'afficher en plein ecran. -->
+<div id="boot">Bee arrive…</div>
 
-<button id="voice-toggle" type="button">🔊 Voix</button>
-
-<div id="stage">
-  <svg id="javis-face" viewBox="0 0 200 200" aria-hidden="true">
-    <defs>
-      <linearGradient id="javis-hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f4873f"/><stop offset="100%" stop-color="#d2551d"/></linearGradient>
-      <linearGradient id="javis-skin" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fcdcb8"/><stop offset="100%" stop-color="#f2bd90"/></linearGradient>
-    </defs>
-    <g id="javis-body-wrap">
-      <path d="M34 200 Q38 160 74 150 L126 150 Q162 160 166 200 Z" fill="#6f5fd0"/>
-      <path d="M86 136 L114 136 L114 152 Q100 164 86 152 Z" fill="#eab183"/>
-      <path d="M44 100 Q40 32 100 30 Q160 32 156 100 L156 130 Q150 116 146 110 L54 110 Q50 116 44 130 Z" fill="url(#javis-hair)"/>
-      <ellipse cx="100" cy="96" rx="47" ry="51" fill="url(#javis-skin)"/>
-      <ellipse cx="53" cy="99" rx="7" ry="10" fill="#f2bd90"/>
-      <ellipse cx="147" cy="99" rx="7" ry="10" fill="#f2bd90"/>
-      <path d="M53 76 Q58 38 100 36 Q142 38 147 76 Q136 56 114 52 Q104 64 88 60 Q68 60 53 76 Z" fill="url(#javis-hair)"/>
-      <ellipse cx="67" cy="110" rx="12" ry="7" fill="#ef8f74" opacity=".4"/>
-      <ellipse cx="133" cy="110" rx="12" ry="7" fill="#ef8f74" opacity=".4"/>
-      <g fill="#cf8055" opacity=".6"><circle cx="63" cy="104" r="1.7"/><circle cx="71" cy="110" r="1.7"/><circle cx="61" cy="113" r="1.5"/><circle cx="137" cy="104" r="1.7"/><circle cx="129" cy="110" r="1.7"/><circle cx="139" cy="113" r="1.5"/></g>
-      <g id="javis-eye-l" transform="translate(80,92)"><ellipse rx="13" ry="15" fill="#fff"/><circle id="javis-pupil-l" r="7" fill="#3b2415" cx="0" cy="1"/><circle r="2.6" fill="#fff" cx="-2.6" cy="-2.6"/><rect id="javis-lid-l" x="-14" y="-16" width="28" height="18" fill="#f2bd90" transform="scaleY(0)" style="transform-origin:0 -16px"/></g>
-      <g id="javis-eye-r" transform="translate(120,92)"><ellipse rx="13" ry="15" fill="#fff"/><circle id="javis-pupil-r" r="7" fill="#3b2415" cx="0" cy="1"/><circle r="2.6" fill="#fff" cx="-2.6" cy="-2.6"/><rect id="javis-lid-r" x="-14" y="-16" width="28" height="18" fill="#f2bd90" transform="scaleY(0)" style="transform-origin:0 -16px"/></g>
-      <path id="javis-brow-l" d="M68 70 Q80 63 92 69" stroke="#b9491a" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <path id="javis-brow-r" d="M108 69 Q120 63 132 70" stroke="#b9491a" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <path d="M100 102 Q104 111 99 113" stroke="#d9996d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-      <path id="javis-mouth" d="M86 126 Q100 136 114 126" stroke="#a63f2d" stroke-width="4" fill="none" stroke-linecap="round"/>
-    </g>
-  </svg>
-  <div id="javis-name">Javis</div>
-  <div id="javis-sub">Ton assistant personnel · gratuit d'abord</div>
-</div>
-
-<div id="msgs"></div>
-
-<form id="form">
-  <textarea id="input" placeholder="Demande-moi n'importe quoi…" rows="1"></textarea>
-  <button id="mic" class="act" type="button" aria-label="Dicter">🎙</button>
-  <button id="send" class="act" type="submit" aria-label="Envoyer">➤</button>
-</form>
-
+<script>window.JAVIS_MODE = 'app';</script>
+<script src="javis-widget.js" defer></script>
 <script>
-'use strict';
-var AI_ENDPOINT = 'https://apis.kd-mc.com/ai';
-var STORAGE_HIST = 'javis_app_history';
-var STORAGE_VOICE = 'javis_app_voice_on';
-var MAX_HISTORY = 60;
-
-/* ---------- 1. Qui es-tu ? (même pattern éprouvé que tools/departs) ---------- */
-function ssoToken(){
-  try{
-    var m=(location.hash||'').match(/[#&]kdmc_sso=([^&]+)/);
-    if(m){ try{localStorage.setItem('kdmc_sso_token',decodeURIComponent(m[1]));}catch(_){}
-           try{history.replaceState(null,'',location.pathname+location.search);}catch(_){} }
-    return localStorage.getItem('kdmc_sso_token')||'';
-  }catch(_){ return ''; }
-}
-function checkAdmin(cb){
-  try{
-    var tok=ssoToken(); var hdr={}; if(tok)hdr.Authorization='Bearer '+tok;
-    fetch('/__sso/whoami',{credentials:'include',cache:'no-store',headers:hdr})
-      .then(function(r){return r&&r.ok?r.json():null;})
-      .then(function(j){cb(!!(j&&j.ok&&j.verified===true&&j.admin===true));})
-      .catch(function(){cb(false);});
-  }catch(_){ cb(false); }
-}
-
-/* ---------- 2. Animations (respiration, clignement, regard) ---------- */
-var mouthShapes={
-  idle:'M86 126 Q100 136 114 126',
-  smallOpen:'M88 125 Q100 137 112 125 Q100 131 88 125',
-  talkA:'M88 126 Q100 133 112 126 Q100 130 88 126',
-  talkB:'M86 124 Q100 142 114 124 Q100 132 86 124'
-};
-function setMouth(key){ var m=document.getElementById('javis-mouth'); if(m&&mouthShapes[key])m.setAttribute('d',mouthShapes[key]); }
-var mouthTimer=null;
-function closeup(on){ var st=document.getElementById('stage'); if(st)st.classList[on?'add':'remove']('javis-closeup'); }
-function startTalking(){ stopTalking(); closeup(true); var t=false; mouthTimer=setInterval(function(){t=!t;setMouth(t?'talkA':'talkB');},110); }
-function stopTalking(){ if(mouthTimer){clearInterval(mouthTimer);mouthTimer=null;} closeup(false); setMouth('idle'); }
-function setThinking(on){ var f=document.getElementById('javis-face'); if(on){f.style.animationDuration='.9s';setMouth('smallOpen');}else{f.style.animationDuration='';setMouth('idle');} }
-
-function startIdle(){
-  document.getElementById('javis-face').classList.add('javis-breathe');
-  (function blinkLoop(){
-    setTimeout(function(){
-      document.body.classList.add('javis-blink');
-      setTimeout(function(){document.body.classList.remove('javis-blink');},140);
-      blinkLoop();
-    },2500+Math.random()*3500);
-  })();
-  (function lookLoop(){
-    setTimeout(function(){
-      var dx=(Math.random()*6-3).toFixed(1), dy=(Math.random()*4-1).toFixed(1);
-      ['javis-pupil-l','javis-pupil-r'].forEach(function(id){
-        var el=document.getElementById(id); if(el)el.setAttribute('transform','translate('+dx+','+dy+')');
-      });
-      lookLoop();
-    },1800+Math.random()*2600);
-  })();
-}
-
-/* ---------- 3. Voix (Web Speech API, gratuite) ---------- */
-function voiceOn(){ try{return localStorage.getItem(STORAGE_VOICE)!=='0';}catch(_){return true;} }
-function speak(text){
-  if(!voiceOn()||!('speechSynthesis' in window)||!text) return;
-  try{
-    window.speechSynthesis.cancel();
-    var u=new SpeechSynthesisUtterance(text.slice(0,600));
-    u.lang='fr-FR'; u.rate=1.02;
-    u.onstart=startTalking; u.onend=stopTalking; u.onerror=stopTalking;
-    window.speechSynthesis.speak(u);
-  }catch(_){}
-}
-
-/* ---------- 4. Intentions locales + chat (identique en principe au widget) ---------- */
-var DOMAIN_APPS={
-  'arbre|généalog|famille|arrière.grand.père|arrière grand père':'https://arbre.kd-mc.com',
-  'apex|assistant ia avancé':'https://apex.kd-mc.com',
-  'planning|cmcteams|équipe|départ':'https://cmcteams.kd-mc.com'
-};
-function tryLocalIntent(text,respond){
-  var t=text.toLowerCase();
-  for(var pattern in DOMAIN_APPS){
-    if(new RegExp(pattern,'i').test(t) && /ouvre|va sur|montre|affiche|lance/.test(t)){
-      var url=DOMAIN_APPS[pattern];
-      respond('J\'ouvre ça pour toi 👉 '+url);
-      setTimeout(function(){window.open(url,'_blank','noopener');},300);
-      return true;
-    }
-  }
-  if(/m[eé]t[eé]o|temps.*(fera|fait)|pleuvoir|prévisions?/.test(t)){
-    var give=function(lat,lon,place){
-      fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weather_code&timezone=auto')
-        .then(function(r){return r.json();})
-        .then(function(j){
-          var c=j&&j.current, temp=c?Math.round(c.temperature_2m):null;
-          respond(temp!==null?('Il fait '+temp+'°C'+(place?' à '+place:'')+' en ce moment.'):'Je n\'ai pas réussi à lire la météo, réessaie.');
-        }).catch(function(){respond('Météo indisponible là, réessaie.');});
-    };
-    if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(
-        function(pos){give(pos.coords.latitude,pos.coords.longitude,'');},
-        function(){give(43.7325,7.4197,'Monaco');},{timeout:4000});
-    } else give(43.7325,7.4197,'Monaco');
-    return true;
-  }
-  if(/envoie.*message|écris.*à|planning.*modifi|change.*planning/.test(t)){
-    try{localStorage.setItem('apex_v13_chat_prefill',text);}catch(_){}
-    respond('Ça, je te l\'ouvre dans Apex (lui a accès à ton compte et peut vraiment agir) — ta question est déjà écrite, tu n\'as qu\'à valider.');
-    setTimeout(function(){window.open('https://apex.kd-mc.com/#chat','_blank','noopener');},500);
-    return true;
-  }
-  return false;
-}
-
-function loadHistory(){ try{return JSON.parse(localStorage.getItem(STORAGE_HIST)||'[]');}catch(_){return [];} }
-function saveHistory(h){ try{localStorage.setItem(STORAGE_HIST,JSON.stringify(h.slice(-MAX_HISTORY)));}catch(_){} }
-function addBubble(role,text,meta){
-  var list=document.getElementById('msgs');
-  var b=document.createElement('div'); b.className='bub '+(role==='user'?'me':'js'); b.textContent=text;
-  if(meta){var small=document.createElement('small');small.textContent=meta;b.appendChild(small);}
-  list.appendChild(b); list.scrollTop=list.scrollHeight;
-}
-function ask(text){
-  addBubble('user',text);
-  var hist=loadHistory(); hist.push({role:'user',content:text}); saveHistory(hist);
-  var handled=tryLocalIntent(text,function(reply){
-    addBubble('javis',reply);
-    var h=loadHistory(); h.push({role:'assistant',content:reply}); saveHistory(h);
-    speak(reply);
+  window.addEventListener('load', function () {
+    setTimeout(function () { var b = document.getElementById('boot'); if (b) b.remove(); }, 900);
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function () {}); }
   });
-  if(handled) return;
-  setThinking(true);
-  var messages=hist.slice(-12).map(function(m){return {role:m.role,content:m.content};});
-  fetch(AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-    messages:messages,
-    system:'Tu es Javis, l\'assistant personnel de Kevin sur son domaine kd-mc.com. Réponds court, chaleureux, tutoiement, en français. Si la demande exige une action réelle (envoyer un message, modifier des données), dis-le clairement plutôt que de prétendre l\'avoir fait.',
-    max_tokens:500
-  })})
-    .then(function(r){return r.json();})
-    .then(function(j){
-      setThinking(false);
-      var text2=(j&&j.ok&&j.text)?j.text:'Je n\'ai pas réussi à répondre là, réessaie dans un instant.';
-      var meta=(j&&j.ok)?(j.provider+(j.provider==='qwen'?' (gratuit)':'')):null;
-      addBubble('javis',text2,meta);
-      var h=loadHistory(); h.push({role:'assistant',content:text2}); saveHistory(h);
-      speak(text2);
-    })
-    .catch(function(){ setThinking(false); addBubble('javis','Le réseau ne répond pas là, réessaie dans un instant.'); });
-}
-
-/* ---------- 5. Montage ---------- */
-function mount(){
-  document.getElementById('gate').classList.add('hidden');
-  startIdle();
-  var hist=loadHistory();
-  if(!hist.length) addBubble('javis','Salut Kevin 👋 Je suis Javis. Demande-moi n\'importe quoi — je réponds gratuit d\'abord, et je peux t\'ouvrir tes applis.');
-  else hist.forEach(function(m){addBubble(m.role==='user'?'user':'javis',m.content);});
-
-  var form=document.getElementById('form'), input=document.getElementById('input');
-  form.addEventListener('submit',function(e){ e.preventDefault(); var v=(input.value||'').trim(); if(!v)return; input.value=''; ask(v); });
-  input.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();} });
-
-  var vt=document.getElementById('voice-toggle');
-  vt.textContent=voiceOn()?'🔊 Voix':'🔇 Voix';
-  vt.addEventListener('click',function(){
-    var next=!voiceOn(); try{localStorage.setItem(STORAGE_VOICE,next?'1':'0');}catch(_){}
-    vt.textContent=next?'🔊 Voix':'🔇 Voix';
-    if(!next){try{window.speechSynthesis.cancel();}catch(_){}}
-  });
-
-  var mic=document.getElementById('mic');
-  var Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(Recognition){
-    var rec=new Recognition(); rec.lang='fr-FR'; rec.interimResults=false;
-    mic.addEventListener('click',function(){
-      if(mic.classList.contains('on')){ try{rec.stop();}catch(_){} return; }
-      try{rec.start();mic.classList.add('on');}catch(_){}
-    });
-    rec.onresult=function(e){ var t=e.results&&e.results[0]&&e.results[0][0]&&e.results[0][0].transcript; if(t){input.value=t;form.requestSubmit();} };
-    rec.onend=function(){mic.classList.remove('on');};
-    rec.onerror=function(){mic.classList.remove('on');};
-  } else mic.style.display='none';
-}
-
-/* ---------- 6. Go ---------- */
-checkAdmin(function(isAdmin){
-  if(isAdmin){ mount(); return; }
-  document.getElementById('gate-msg').textContent='🔒 Cette app est personnelle à Kevin.';
-  document.getElementById('gate-sub').textContent='Connecte-toi d\'abord sur le domaine (Face ID) puis rouvre Javis.';
-});
-
-if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
-}
 </script>
 </body>
 </html>

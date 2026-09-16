@@ -85,9 +85,9 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
 > j'ouvre le domaine. Il tourne sur Apex, gratuit d'abord. Qu'il puisse tout faire pour moi,
 > m'ouvrir des liens. Une app indépendante à mettre sur le bureau de mon téléphone. Donne-lui
 > l'apparence de Duo de Duolingo, ou recopie-la. De vraies mimiques, une bouche qui bouge. »
-> — puis, précision du même jour : **« Je parlais de Bea »** (le personnage HUMAIN de Duolingo,
-> cheveux orange au carré + taches de rousseur), pas la chouette Duo. Dessin refait en
-> conséquence : personnage humain, pas mascotte animale.
+> — puis : **« Bee, le personnage qu'on a créé pour apprendre les langues — Lingua »**. Ce
+> n'est donc NI Duo NI Bea de Duolingo : c'est SA mascotte, déjà dessinée et animée dans
+> `lingua/`. Deux dessins faits pour rien avant de chercher l'existant.
 
 **Ce qui existe :**
 - `tools/javis/javis-widget.js` — la source canonique : bouton flottant animé (respire, cligne
@@ -113,16 +113,18 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   (rig 2D, vrai lip-sync depuis l'audio, technique des VTubers) ou **TalkingHead.js**
   (github.com/met4citizen/TalkingHead, MIT, Three.js + Ready Player Me + visèmes réels) —
   les deux demandent un moteur d'avatar (poids supplémentaire), pas branchées v1.
-- Le personnage est un dessin **original** dans l'esprit de **Bea** (personnage humain de
-  Duolingo demandé par Kevin) : humaine, cheveux orange au carré avec frange, taches de
-  rousseur, grands yeux expressifs, style plat et chaleureux, haut violet. **Pas** une
-  reproduction du dessin précis de Duolingo (marque déposée d'un tiers, et ce dépôt est PUBLIC :
-  on n'y publie rien qui imite une marque protégée). L'esprit est repris, le dessin ne l'est pas.
-- **Règle de structure à respecter si on redessine encore** : l'animation ne dépend PAS du style.
-  Tout redessin DOIT conserver les ancres `#javis-face`, `#javis-body-wrap`, `#javis-pupil-l/r`,
-  `#javis-lid-l/r`, `#javis-mouth` (+ recaler `mouthShapes` sur la nouvelle géométrie de bouche,
-  sinon la bouche s'anime à côté du visage). Contrôle rapide : rendre `buildJavisSVG()` en Node,
-  parser le XML, et vérifier la présence des 7 ids.
+- **LE PERSONNAGE EST BEE — celui de Lingua, pas un nouveau dessin.** Kevin a dit « B de
+  Duolingo », j'ai compris Duo (la chouette), puis Bea (l'humaine) : les deux étaient faux.
+  C'est **Bee, la mascotte qu'on a créée ensemble pour Lingua** (`lingua/bee/`). Le widget
+  réutilise **les mêmes images** (`lingua.kd-mc.com/bee/v2/rig/`), **les mêmes classes**
+  (`bee-rig`, `rig-base`, `rig-lid`, `disc-mouth`) et **la même géométrie mesurée** sur son
+  dessin (paupières et bouche en %, `--ll-*`/`--lr-*`/`--mo-*`). Si l'art de Bee évolue dans
+  Lingua, Javis suit tout seul : **aucune image dupliquée** (leçon #142).
+  → **Réflexe** : avant de dessiner un personnage pour Kevin, chercher s'il en a déjà un
+  (`find . -iname "*mascotte*" -o -iname "*bee*"`). J'ai dessiné deux personnages pour rien.
+- Animations = **port fidèle de `mascotAlive()`** (`lingua/app.js`) : respiration, clignement
+  naturel, regard qui suit le doigt, endormissement avec « z », réaction au toucher, bouche
+  qui parle, ailes qui battent plus vite pendant la parole, gros plan pendant qu'elle parle.
 - Câblé sur **1 app (`arbre`) + l'app installable** pour l'instant, pas les 26 adresses du
   domaine — chaque app statique garde sa propre copie du widget (pas de bundler ici), donc
   l'étendre = copier `tools/javis/javis-widget.js` dans chaque `index.html` visé + ajouter les
