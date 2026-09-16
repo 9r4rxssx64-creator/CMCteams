@@ -186,7 +186,7 @@ export async function redige(env, prompt, retour) {
 }
 
 /* ── E-mails (EmailJS, côté serveur, au mieux — jamais bloquant) ─────────── */
-export async function envoieEmail(env, { to, message }) {
+export async function envoieEmail(env, { to, message }, log = () => {}) {
   if (!env.EMAILJS_PRIVATE_KEY) return false;
   try {
     const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -194,8 +194,14 @@ export async function envoieEmail(env, { to, message }) {
       body: JSON.stringify({ service_id: EMAILJS.service, template_id: EMAILJS.template, user_id: EMAILJS.user,
         accessToken: env.EMAILJS_PRIVATE_KEY, template_params: { to_email: to, store: 'kd-mc.com', message } }),
     });
+    if (!r.ok) {
+      /* Cause EXACTE dans le journal (jamais la clé) : EmailJS répond en texte clair
+         (ex. « API calls are disabled for non-browser applications » = réglage du compte). */
+      const corps = (await r.text().catch(() => '')).slice(0, 200);
+      log('EmailJS refuse l\'envoi à ' + to.replace(/^(.).*@/, '$1…@') + ' : HTTP ' + r.status + ' ' + corps);
+    }
     return r.ok;
-  } catch (_) { return false; }
+  } catch (e) { log('EmailJS injoignable : ' + (e && e.message ? e.message : e)); return false; }
 }
 export function messageAbonne({ titre }) {
   return 'Nouveau au Club IA au Boulot : « ' + titre + ' ».\n' +
@@ -243,6 +249,11 @@ export async function principal(env = process.env, log = console.log) {
   log('Titre : ' + verdict.titre);
 
   if (dry) {
+    if (String(env.TEST_EMAIL || '').toLowerCase() === 'true') {
+      const okMail = await envoieEmail(env, { to: env.EMAIL_KEVIN || EMAIL_KEVIN,
+        message: 'Club IA au Boulot — essai d\'envoi (aucune consigne publiée). Si tu lis ceci, les e-mails du Club partent bien.' }, log);
+      log('Essai d\'e-mail à Kevin : ' + (okMail ? 'ENVOYÉ' : 'ÉCHEC (cause ci-dessus)'));
+    }
     log('--- extrait ---\n' + html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 500) + '…');
     log('SEMAINE SIMULÉE : tout est prêt, rien n\'a été écrit ni envoyé (essai à blanc).');
     return { ok: true, dry: true, id: sem.id, titre: verdict.titre };
@@ -260,7 +271,7 @@ export async function principal(env = process.env, log = console.log) {
   let envoyes = 0, rates = 0;
   if (!env.EMAILJS_PRIVATE_KEY) log('EMAILJS_PRIVATE_KEY absent : ' + abonnes.length + ' abonné(s) actif(s), AUCUN e-mail envoyé (le contenu est quand même en ligne dans leur espace).');
   for (const a of abonnes) {
-    const ok = await envoieEmail(env, { to: a.email, message: messageAbonne({ titre: verdict.titre }) });
+    const ok = await envoieEmail(env, { to: a.email, message: messageAbonne({ titre: verdict.titre }) }, log);
     if (ok) envoyes++; else rates++;
     await new Promise((r) => setTimeout(r, 300));
   }
@@ -271,7 +282,7 @@ export async function principal(env = process.env, log = console.log) {
     'Consigne n° ' + numero + ' publiée : « ' + verdict.titre + ' » (' + verdict.mots + ' mots, ' + verdict.consignes + ' consignes).',
     'Abonnés actifs : ' + abonnes.length + ' · e-mails envoyés : ' + envoyes + (rates ? ' · échecs : ' + rates : '') + '.',
     'Espace membres : ' + LIRE, 'Rien à faire de ton côté.'].join('\n');
-  const kevinOk = await envoieEmail(env, { to: env.EMAIL_KEVIN || EMAIL_KEVIN, message: point });
+  const kevinOk = await envoieEmail(env, { to: env.EMAIL_KEVIN || EMAIL_KEVIN, message: point }, log);
   log((kevinOk ? 'Point envoyé à Kevin.' : 'Point à Kevin NON envoyé (EmailJS absent ou en panne) — il est dans ce journal :') + '\n' + point);
   log('SEMAINE PUBLIÉE : ' + sem.id + ' · « ' + verdict.titre + ' » · ' + envoyes + ' abonné(s) prévenu(s)');
   return { ok: true, id: sem.id, titre: verdict.titre, abonnes: abonnes.length, envoyes, rates };
