@@ -18,6 +18,11 @@ on:
         type: choice
         options: ["true", "false"]
         default: "true"
+      tester_email:
+        description: "Avec l'essai à blanc : envoyer UN e-mail d'essai à Kevin pour voir si EmailJS accepte (cause exacte dans le journal)"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
 
 permissions:
   contents: read
@@ -44,6 +49,7 @@ jobs:
       - name: Consigne de la semaine
         env:
           DRY_RUN: ${{ inputs.dry_run }}
+          TEST_EMAIL: ${{ inputs.tester_email }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

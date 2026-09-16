@@ -93,7 +93,7 @@ function fauxReseau({ base = [], reponseIA = bon, d1Refuse = false, emailOk = tr
     if (u.includes('api.emailjs.com')) {
       appels.mails.push(corps.template_params);
       assert.equal(corps.accessToken, 'ej-test');
-      return { ok: emailOk, status: emailOk ? 200 : 500, json: async () => ({}) };
+      return { ok: emailOk, status: emailOk ? 200 : 403, json: async () => ({}), text: async () => (emailOk ? 'OK' : 'API calls are disabled for non-browser applications') };
     }
     throw new Error('appel réseau inattendu : ' + u);
   };
@@ -163,4 +163,24 @@ test('variété : métier et thème ne se recroisent pas avant des mois', () => 
   const vus = new Set();
   for (let n = 1; n <= 52; n++) vus.add(S.METIERS[n % S.METIERS.length] + '|' + S.THEMES[n % S.THEMES.length]);
   assert.equal(vus.size, 52);
+});
+
+test('EmailJS refuse : la cause EXACTE est dans le journal, la publication continue', async () => {
+  fauxReseau({ base: KIT, emailOk: false });
+  const lignes = [];
+  const r = await S.principal({ ...ENV, DRY_RUN: 'false' }, (l) => lignes.push(l));
+  assert.equal(r.envoyes, 0);
+  assert.equal(r.rates, 2);
+  assert.ok(lignes.some((l) => /EmailJS refuse .* HTTP 403 API calls are disabled/.test(l)), 'cause exacte attendue');
+  assert.ok(!lignes.some((l) => l.includes('ej-test')), 'jamais la clé dans le journal');
+  assert.ok(lignes.some((l) => l.startsWith('SEMAINE PUBLIÉE')));
+});
+
+test('essai à blanc + TEST_EMAIL : un seul e-mail d\'essai à Kevin, rien d\'autre', async () => {
+  const { appels } = fauxReseau({ base: KIT });
+  const lignes = [];
+  await S.principal({ ...ENV, DRY_RUN: 'true', TEST_EMAIL: 'true' }, (l) => lignes.push(l));
+  assert.equal(appels.mails.length, 1);
+  assert.equal(appels.mails[0].to_email, S.EMAIL_KEVIN);
+  assert.ok(lignes.some((l) => l.includes('Essai d\'e-mail à Kevin : ENVOYÉ')));
 });

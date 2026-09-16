@@ -28,6 +28,7 @@ Chaque ligne renvoie à sa section plus bas.
 |---|---|---|
 | **Rien à faire pour le Kit IA** (kit.kd-mc.com, 47 €) : il est construit, le contenu est en base, la caisse tourne. Tu peux le LIRE et me dire ce que tu changes | Ton premier produit numérique neuf, hors casino, vendable | 0 min |
 | **Club IA au Boulot (59 €/an)** : rien à faire non plus, la routine du lundi tourne seule. Si tu veux l'arrêter : dis-le, je coupe la routine | Le revenu RÉCURRENT (accès annuel + nouveauté chaque semaine) | 0 min |
+| **E-mails du Kit / Club (EmailJS)** : le premier envoi serveur a été refusé par EmailJS (cause exacte au prochain essai à blanc). Si c'est le réglage « Allow EmailJS API for non-browser applications », il se coche en 1 clic ici : [EmailJS → Account → Security](https://dashboard.emailjs.com/admin/account/security). Sans ça : le code d'achat reste affiché à l'écran (la vente passe), mais pas envoyé par e-mail | Que l'acheteur reçoive son code par e-mail + que tu reçoives le point du lundi | 1 clic |
 | *(facultatif)* Vérifier dans EmailJS que le gabarit `template_newsletter` affiche bien le champ `message` | Sinon le code d'accès n'arrive pas par e-mail (il reste affiché à l'écran) | 2 min |
 | ~~Compte Metricool~~ ✅ fait le 16.09 (Instagram + TikTok + YouTube prouvés) | Le seul chemin vers TikTok — **Facebook reporté « plus tard »** (Kevin 16.09), voir ⚪ | fait |
 | **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |

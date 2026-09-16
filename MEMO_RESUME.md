@@ -34,7 +34,17 @@ prélèvement automatique = zéro litige ; contenu généré et livré par une r
   mais pas dans la source unique `kdmc-home/apps.json` (ni `rotaplan`/`croupier`, absents depuis le 15.09 —
   « et les autres aussi ») → les 3 ajoutés à `apps.json` + replis `APP_NM` (portail) et `APP_NAMES` (admin).
   `apps-consistency.test.mjs` : 5/7 → 7/7.
-🔴 Non vérifié tant que l'essai à blanc en CI n'a pas tourné : le jeton `CLOUDFLARE_API_TOKEN` a-t-il le droit D1 (la lecture réelle le prouve). 🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
+- **MESURÉ le 16.09 à 22:45 UTC (run 35159072126, `main`)** : la machine a tourné POUR DE VRAI — la porte de
+  vérité a refusé l'essai 1 (un « [À COMPLÉTER] » oublié) et accepté l'essai 2 (757 mots, 2 consignes) ;
+  la consigne n° 1 « Répondre à un avis négatif sans t'énerver » est en base (`club-ia`/`s2026-38`, ordre 8,
+  6589 caractères, relue par moi via D1) → **le jeton Cloudflare a bien le droit d'écrire D1** ✅. Abonnés
+  actifs : 0. **Le point à Kevin par EmailJS n'est PAS parti** (clé présente, réponse non-ok) → cause exacte
+  désormais écrite dans le journal (HTTP + texte d'EmailJS) + bouton `tester_email` sur l'essai à blanc.
+  Hypothèse la plus probable (à mesurer au prochain essai) : réglage EmailJS « Allow EmailJS API for
+  non-browser applications » désactivé → refus 403 pour tout envoi serveur (code d'achat compris).
+- **Audit LIVE (run 35158702924)** : `https://kit.kd-mc.com/` rend dans un vrai Chromium, 0 requête projet
+  bloquée (seul bruit : le beacon Cloudflare Insights, refusé par la CSP, sans effet). 32 surfaces OK.
+🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
 best-effort et le client voit toujours son code à l'écran. 🔴 Non mesuré : demande et
 conversion. Chiffres honnêtes : 100 membres = 5 900 €/an + ventes du kit ; 0 aujourd'hui.
 Suite : pages SEO « l'IA pour [métier] » (50 métiers) générées pour l'acquisition organique,
