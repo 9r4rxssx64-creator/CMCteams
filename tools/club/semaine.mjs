@@ -216,6 +216,13 @@ export async function principal(env = process.env, log = console.log) {
     if (!env[k]) throw new Error('secret manquant : ' + k + ' (à poser dans les secrets GitHub, jamais dans le dépôt)');
   }
   const maintenant = env.CLUB_DATE ? new Date(env.CLUB_DATE) : new Date();
+  /* Essai d'e-mail (à blanc seulement) : AVANT tout, pour qu'il tourne même si la
+     semaine est déjà en base (mesuré le 16.09 : l'essai était sauté par ce raccourci). */
+  if (dry && String(env.TEST_EMAIL || '').toLowerCase() === 'true') {
+    const okMail = await envoieEmail(env, { to: env.EMAIL_KEVIN || EMAIL_KEVIN,
+      message: 'Club IA au Boulot — essai d\'envoi (aucune consigne publiée). Si tu lis ceci, les e-mails du Club partent bien.' }, log);
+    log('Essai d\'e-mail à Kevin : ' + (okMail ? 'ENVOYÉ' : (env.EMAILJS_PRIVATE_KEY ? 'ÉCHEC (cause ci-dessus)' : 'IMPOSSIBLE, EMAILJS_PRIVATE_KEY absent')));
+  }
   const sem = semaineISO(maintenant);
   const lundi = dateFr(lundiDe(maintenant));
   log('Semaine ' + sem.id + ' (lundi ' + lundi + ') · ' + (dry ? 'ESSAI À BLANC (rien n\'est écrit, rien n\'est envoyé)' : 'PUBLICATION RÉELLE'));
@@ -249,11 +256,6 @@ export async function principal(env = process.env, log = console.log) {
   log('Titre : ' + verdict.titre);
 
   if (dry) {
-    if (String(env.TEST_EMAIL || '').toLowerCase() === 'true') {
-      const okMail = await envoieEmail(env, { to: env.EMAIL_KEVIN || EMAIL_KEVIN,
-        message: 'Club IA au Boulot — essai d\'envoi (aucune consigne publiée). Si tu lis ceci, les e-mails du Club partent bien.' }, log);
-      log('Essai d\'e-mail à Kevin : ' + (okMail ? 'ENVOYÉ' : 'ÉCHEC (cause ci-dessus)'));
-    }
     log('--- extrait ---\n' + html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 500) + '…');
     log('SEMAINE SIMULÉE : tout est prêt, rien n\'a été écrit ni envoyé (essai à blanc).');
     return { ok: true, dry: true, id: sem.id, titre: verdict.titre };
