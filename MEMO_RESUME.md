@@ -8191,3 +8191,65 @@ Claude Code », puis « Go tout ». Écrit et branché des deux côtés :
   citer Javis.
 - Tests ajoutés (append-only, aucun test existant modifié) dans `apex-identity.test.ts` et
   `apex-identity-extended.test.ts`. `tsc --noEmit` propre, 128 tests identité verts.
+
+---
+
+## Vérification parité + consommation IA (2026-09-16, suite persona)
+
+Kevin a demandé de vérifier : (1) la parité Javis Claude Code ⇄ Apex avec toggle ON/OFF,
+(2) qu'Apex ne consomme pas trop et bascule bien vers le gratuit en priorité, (3) qu'Anthropic
+soit "au courant" et minimise la consommation payante, (4) la parité générale (liens,
+connecteurs, MCP, hooks, skills, historique, données).
+
+### 1. Toggle ON/OFF Javis — implémenté
+
+`persona.javis` ajouté au registre existant `services/auth/feature-toggles.ts` (ON par
+défaut). `buildIdentitySection(userId?)` et `buildExtendedIdentitySection(userId?)` vérifient
+`isFeatureEnabled('persona.javis', userId)` — résolution per-user > global > défaut ON.
+Kevin peut donc désactiver Javis globalement OU pour un user précis (Laurence par ex.) sans
+toucher au reste de l'identité (Kevin/Laurence/projets restent injectés).
+
+**Piège trouvé et corrigé** : ma 1ʳᵉ version ajoutait "(persona Javis)" à DEUX endroits de la
+section compacte → +16 chars → a fait sauter un test qui vivait sur une marge de seulement
+**12 chars** sous le plafond strict de `prompt-budget.ts` (32000 chars, celui qui avait déjà
+cassé Apex en septembre, incident #365). Retiré la mention redondante — la section ON fait
+exactement la même longueur (2381 chars) qu'avant le persona. Règle ajoutée dans le code :
+OFF ne doit JAMAIS être plus long que ON.
+
+### 2. Routage IA gratuit-d'abord — VÉRIFIÉ, déjà correct
+
+`services/ai/ai-routing-policy.ts` : `getMode()` retourne `'free-smart'` par défaut pour
+l'admin (Kevin) — Qwen en premier sur les domaines simples (`SIMPLE_FREE_DOMAINS` =
+translation/summary/speed/general/vision), Anthropic en premier sur code/reasoning/admin/
+creative/search. Coûts réels €/1M tokens déclarés (`COST_PER_M_TOKENS_EUR` : Anthropic 8€,
+Qwen/Groq/Gemini/OpenRouter 0€). Toggle visible et cliquable dans le chat (icône ⚡,
+`features/chat/chat-misc-wiring.ts`) : free-smart → premium → economy → auto.
+
+### 3. Dashboard de consommation réelle — VÉRIFIÉ, câblé (pas mort)
+
+`tokensDashboard.record()` appelé après CHAQUE stream (`ai-router.ts:1202`), consommé par
+`consumption-monitor.ts` + `financial-dashboard.ts`. Onglet admin **💰 Conso** réellement
+rendu et cliquable (`features/admin/index.ts` — `case 'consumption'` monte
+`consumption-dashboard.js`). Kevin peut donc voir sa vraie consommation, pas une estimation.
+
+### 4. Parité MCP/connecteurs — mesurée, documentation CLAUDE.md dépassée (bonne nouvelle)
+
+`services/ai/mcp-registry.ts` déclare **30 connecteurs** (github, cloudflare, vercel, stripe,
+sentry, notion, slack, discord, telegram, gmail, calendar, apple-shortcuts, home-assistant,
+n8n, make, pinecone, firebase, supabase, coingecko, finnhub, tavily, brave-search,
+duckduckgo, bofip, legifrance, legal-hunter, almanac, railway, anthropic-skills, video-use) —
+bien plus que les « 3 serveurs MCP » documentés dans une ancienne section CLAUDE.md
+(2026-05-14, jamais mise à jour depuis).
+
+**Hooks** : Claude Code a des hooks réels (`.claude/settings.json` PostToolUse : syntax-check
+`index.html`, journal auto sur commit, rappel workflow expert) + `.claude/hooks/*.sh`.
+Apex n'a pas d'équivalent littéral (impossible : Apex tourne dans un navigateur, pas dans un
+environnement CLI avec accès bash) — sa parité FONCTIONNELLE est assurée par les 9 sentinelles
+(`services/sentinels/sentinels.ts`) + `apex-execute.ts` (whitelist d'actions autonomes). Pas
+une lacune : une architecture différente par nécessité, pas par oubli.
+
+### Tests
+
+`tsc --noEmit` propre, `eslint --max-warnings=0` propre (a aussi corrigé au passage un ordre
+d'imports pré-existant dans `memory.ts`, sans rapport avec le persona). Suite complète Apex :
+12500+ tests, 0 échec lié à mes changements (voir logs de session pour le détail).

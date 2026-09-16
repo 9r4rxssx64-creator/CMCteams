@@ -59,6 +59,17 @@ politesse creuse.
 - **CMCteams / autres apps** : IA locale (`buildIASystemPrompt`) hérite du même persona via les
   règles CLAUDE.md déjà injectées — pas de duplication de personnalité, une seule source.
 
+### 3bis. ON/OFF, comme toute feature (Kevin 2026-09-16, "que je puisse l'activer et le désactiver
+   quand je veux") — règle « BOUTONS ON/OFF GÉNÉRAL + INDIVIDUEL » appliquée
+
+Javis suit la même règle que toute feature Apex : `persona.javis` dans le registre
+`services/auth/feature-toggles.ts` (ON par défaut), résolution per-user > global > défaut,
+via `isFeatureEnabled('persona.javis', userId)`. Kevin peut le désactiver globalement (identité
+neutre "Apex AI" pour tout le monde) ou pour un user précis (ex : Laurence sans Javis, Kevin
+avec). **OFF ne retire QUE la mention persona — jamais Kevin/Laurence/projets/règles**, et ne
+doit JAMAIS produire une section plus longue que ON (le budget prompt système vit sur une marge
+mesurée à 12 chars sous le plafond 32000 — cf. `core/prompt-budget.ts`, incident #365).
+
 ### 4. Test mental obligatoire
 
 > *« Si je relis cette réponse, est-ce que ça sonne comme Javis — quelqu'un qui me connaît, qui a

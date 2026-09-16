@@ -23,6 +23,8 @@
  * - `buildExtendedIdentitySection()` : variante enrichie pour scénarios admin.
  */
 
+import { isFeatureEnabled } from '../services/auth/feature-toggles.js';
+
 export const APEX_IDENTITY = {
   self: {
     name: 'Apex AI',
@@ -206,13 +208,24 @@ export const APEX_IDENTITY = {
  *
  * Compact section : Kevin + Laurence + projets + règles + mention 258 employés CMC.
  * Pour version enrichie (employés cadres détaillés, clients test) → buildExtendedIdentitySection().
+ *
+ * Persona "Javis" ON/OFF (Kevin 2026-09-16, "que je puisse l'activer et le désactiver
+ * quand je veux") : `isFeatureEnabled('persona.javis', userId)` — global admin + per-user,
+ * résolution per-user > global > défaut ON (`services/auth/feature-toggles.ts`).
+ * OFF ne retire QUE la mention "(persona Javis)" (identité neutre "Apex AI") — jamais
+ * plus long que ON, pour ne jamais mettre en danger le budget serré de cette section
+ * (cf. `core/prompt-budget.ts` — marge mesurée à 12 chars sur un vrai cas Kevin).
  */
-export function buildIdentitySection(): string {
+export function buildIdentitySection(userId?: string): string {
   const i = APEX_IDENTITY;
+  const personaOn = isFeatureEnabled('persona.javis', userId);
+  const introLine = personaOn
+    ? `Tu es ${i.self.name} ${i.self.version} (persona ${i.persona.name}), créé par ${i.admin.name}.`
+    : `Tu es ${i.self.name} ${i.self.version}, créé par ${i.admin.name}.`;
   return [
     `# 🪪 IDENTITÉ APEX (irrévocable — par cœur, JAMAIS oubliée)`,
     ``,
-    `Tu es ${i.self.name} ${i.self.version} (persona ${i.persona.name}), créé par ${i.admin.name}.`,
+    introLine,
     `${i.self.purpose}. Tu disposes de ${i.self.capabilities}.`,
     `Tu n'es PAS Claude. Tu n'es PAS Gemini. Tu n'es PAS GPT. Tu es **APEX**.`,
     ``,
@@ -237,7 +250,7 @@ export function buildIdentitySection(): string {
     ...i.rules_critical.map((r, idx) => `${idx + 1}. ${r}`),
     ``,
     `=== TEST D'IDENTITÉ ===`,
-    `Si on te demande "Qui es-tu ?" → "Je suis Apex, ton assistant IA personnel (persona Javis) créé par Kevin DESARZENS."`,
+    `Si on te demande "Qui es-tu ?" → "Je suis Apex, ton assistant IA personnel créé par Kevin DESARZENS."`,
     `Si on te demande "Qui est Kevin ?" → "Kevin DESARZENS, mon créateur, admin Casino Monaco (CMC, CDP, Sun, MCB)."`,
     `Si on te demande "Qui est Laurence ?" → "Laurence Saint-Polit, la femme de Kevin ❤️, utilisatrice tier privilégié."`,
     `Si on te demande "Tes projets ?" → cite Apex AI v13, CMCteams, e-KDMC, Apex Chat, Social Video Pipeline, Télécommande KDMC, CrackPass.`,
@@ -260,7 +273,7 @@ export function buildIdentitySection(): string {
  * Si Kevin demande "rappelle-toi de tout", on peut switcher vers cette version
  * via flag `ax_use_extended_identity` (admin only).
  */
-export function buildExtendedIdentitySection(): string {
+export function buildExtendedIdentitySection(userId?: string): string {
   const i = APEX_IDENTITY;
   const lines: string[] = [];
   lines.push(`# 🪪 IDENTITÉ APEX ENRICHIE (Kevin 2026-05-08 "Oublie ni moi ni personne jamais")`);
@@ -269,11 +282,13 @@ export function buildExtendedIdentitySection(): string {
   lines.push(`${i.self.purpose}. Capacités: ${i.self.capabilities}.`);
   lines.push(``);
 
-  /* Persona Javis (Kevin 2026-09-16 "Go tout") */
-  lines.push(`=== PERSONA : ${i.persona.name} (${i.persona.inspiration}) ===`);
-  lines.push(`Ton: ${i.persona.tone === 'tutoiement' ? 'tutoiement toujours' : 'vouvoiement'}.`);
-  i.persona.traits.forEach((t, idx) => lines.push(`${idx + 1}. ${t}`));
-  lines.push(``);
+  /* Persona Javis (Kevin 2026-09-16 "Go tout" — toggle ON/OFF global+per-user) */
+  if (isFeatureEnabled('persona.javis', userId)) {
+    lines.push(`=== PERSONA : ${i.persona.name} (${i.persona.inspiration}) ===`);
+    lines.push(`Ton: ${i.persona.tone === 'tutoiement' ? 'tutoiement toujours' : 'vouvoiement'}.`);
+    i.persona.traits.forEach((t, idx) => lines.push(`${idx + 1}. ${t}`));
+    lines.push(``);
+  }
 
   /* Kevin */
   lines.push(`=== KEVIN (admin) ===`);
