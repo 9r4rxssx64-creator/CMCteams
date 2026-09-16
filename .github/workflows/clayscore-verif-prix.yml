@@ -11,14 +11,13 @@ name: ClayScore — Vérifier les prix sur les vraies pages
 # Déclenchement MANUEL uniquement (workflow_dispatch) : pas de cron, donc
 # aucun mail automatique. Conforme à la règle anti-spam.
 
-# Garde « une seule à la fois par branche » (ajouté 15/08/2026). Sans lui, chaque
-# commit empilait une nouvelle exécution sans effacer la précédente — le 6 août,
-# 399 exécutions étaient bloquées en file. Le garde-fou tests/verify-ci-no-stampede
-# l'exigeait depuis, mais ce fichier passait entre les mailles : il faisait
-# ÉCHOUER toute la suite de tests, qui s'arrêtait donc à la 2e vérification.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+# Garde « une seule à la fois » : elle est plus bas, AVEC l'événement dans le groupe.
+# Il y en avait DEUX ici (une posée le 15/08, une seconde ensuite sans retirer la
+# première) : deux clés `concurrency:` dans le même document YAML = fichier INVALIDE.
+# Conséquence mesurée le 16/09/2026 : GitHub refusait le fichier au démarrage, donc
+# CHAQUE push de CHAQUE branche produisait une exécution en échec immédiat (0 job,
+# 0 ligne de journal) — 413 échecs, et autant de mails. Un échec qu'on ne peut pas
+# lire n'existe pas (leçon #214) : celui-ci criait dans le vide depuis des semaines.
 
 on:
   # Déclencheur PUSH volontairement très étroit : uniquement quand l'outil ou
