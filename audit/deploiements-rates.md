@@ -7,6 +7,95 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 16/09/2026 23:29 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `450057f5` · **Run** : `35161631297`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35161631297
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+pull request create failed: GraphQL: Something went wrong while executing your query on 2026-09-16T23:23:00Z. Please include `6441:2FBA38:385CF0:B99254:6AAB24D3` when reporting this issue.
+##[warning]PR #3832 — merge auto refusé. Cause exacte ci-dessous.
+[claude/video-review-wqnqdw 570e74dbb] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 23:26 UTC
+
+- **Branche** : `main` · **Commit** : `d16dbc3c` · **Run** : `35162108941`
+- **Ce qui a lâché** : deploy › Smoke test réel (leçon
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35162108941
+- **Ce que la machine a dit** :
+
+```
+^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
+^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
+^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
+^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
+^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
+^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
+^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
+^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
+--- /run sans clé doit être refusé (garde) ---
+  "error": "trop tôt : 1 passage / 5 min"
+##[error]/run invalide : {
+  "error": "trop tôt : 1 passage / 5 min"
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 23:25 UTC
+
+- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `5590ce8f` · **Run** : `35162092047`
+- **Ce qui a lâché** : deploy › Smoke test réel (leçon
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35162092047
+- **Ce que la machine a dit** :
+
+```
+^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
+^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
+^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
+^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
+^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
+^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
+^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
+^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
+--- /run sans clé doit être refusé (garde) ---
+    "why": "error code: 1042\n"
+##[error]push NON envoyé : HTTP 404 error code: 1042
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 23:23 UTC
+
+- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `41023d67` · **Run** : `35161992763`
+- **Ce qui a lâché** : deploy › Smoke test réel (leçon
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35161992763
+- **Ce que la machine a dit** :
+
+```
+^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
+^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
+^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
+^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
+^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
+^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
+^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
+^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
+--- /run sans clé doit être refusé (garde) ---
+    "why": "error code: 1042\n"
+##[error]push NON envoyé : HTTP 404 error code: 1042
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 16/09/2026 22:25 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `0aa098d3` · **Run** : `35157474307`
@@ -387,89 +476,4 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 ^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 11/09/2026 21:28 UTC
-
-- **Branche** : `claude/sarzance-family-tree-3jxi7i` · **Commit** : `bc430702` · **Run** : `34648451359`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34648451359
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3730 — merge auto refusé. Cause exacte ci-dessous.
-[claude/sarzance-family-tree-3jxi7i 8950cec35] diag: pourquoi l'auto-merge de claude/sarzance-family-tree-3jxi7i est refusé [skip ci]
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 11/09/2026 21:21 UTC
-
-- **Branche** : `claude/sarzance-family-tree-3jxi7i` · **Commit** : `4fc658c8` · **Run** : `34648349830`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34648349830
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3730 — merge auto refusé. Cause exacte ci-dessous.
-[claude/sarzance-family-tree-3jxi7i 4ad59d0e6] diag: pourquoi l'auto-merge de claude/sarzance-family-tree-3jxi7i est refusé [skip ci]
-error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 11/09/2026 11:33 UTC
-
-- **Branche** : `claude/apex-chat-suite-2210` · **Commit** : `af3aaa78` · **Run** : `34594043469`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34594043469
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and claude/apex-chat-suite-2210, Head ref must be a branch (createPullRequest)
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 11/09/2026 10:21 UTC
-
-- **Branche** : `claude/apex-chat-suite-2210` · **Commit** : `39b2d744` · **Run** : `34588152576`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34588152576
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3767 — merge auto refusé. Cause exacte ci-dessous.
-[claude/apex-chat-suite-2210 632d03018] diag: pourquoi l'auto-merge de claude/apex-chat-suite-2210 est refusé [skip ci]
-error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
-##[error]Process completed with exit code 1.
 ```
