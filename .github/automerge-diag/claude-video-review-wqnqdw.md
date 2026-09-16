@@ -1,18 +1,18 @@
-# Diagnostic auto-merge — PR #3806 (claude/video-review-wqnqdw)
+# Diagnostic auto-merge — PR #3826 (claude/video-review-wqnqdw)
 
-Généré le 2026-09-15 22:56 UTC par auto-merge-claude.yml.
+Généré le 2026-09-16 22:15 UTC par auto-merge-claude.yml.
 Ce fichier existe parce que le merge automatique a été REFUSÉ.
 
 ## Cause exacte renvoyée par GitHub
 ```
-X Pull request 9r4rxssx64-creator/CMCteams#3806 is not mergeable: the merge commit cannot be cleanly created.
+X Pull request 9r4rxssx64-creator/CMCteams#3826 is not mergeable: the merge commit cannot be cleanly created.
 To have the pull request merged after all the requirements have been met, add the `--auto` flag.
 Run the following to resolve the merge conflicts locally:
-  gh pr checkout 3806 && git fetch origin main && git merge origin/main
-X Pull request 9r4rxssx64-creator/CMCteams#3806 is not mergeable: the merge commit cannot be cleanly created.
+  gh pr checkout 3826 && git fetch origin main && git merge origin/main
+X Pull request 9r4rxssx64-creator/CMCteams#3826 is not mergeable: the merge commit cannot be cleanly created.
 To have the pull request merged after all the requirements have been met, add the `--auto` flag.
 Run the following to resolve the merge conflicts locally:
-  gh pr checkout 3806 && git fetch origin main && git merge origin/main
+  gh pr checkout 3826 && git fetch origin main && git merge origin/main
 ```
 
 ## État de la PR vu par GitHub
