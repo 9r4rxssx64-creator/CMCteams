@@ -117,6 +117,7 @@ const WORKERS = [
   'kdmc-rag',
   'apex-auth-worker',
   'kdmc-vente',
+  'kdmc-social',
 ];
 
 /* Ces adresses exigent une session admin : un 401/403 est la BONNE réponse,

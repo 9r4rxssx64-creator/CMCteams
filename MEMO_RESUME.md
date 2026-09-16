@@ -1,5 +1,81 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 (soir, 2) — Réseaux sociaux : ce que tu as vraiment, et le moyen unique
+
+### Tu croyais avoir tout. Voici la mesure (journal CI, pas une supposition)
+
+```
+FB_PAGE_TOKEN         : ABSENT      IG_USER_ID          : ABSENT
+FB_PAGE_ID            : ABSENT      IG_ACCESS_TOKEN     : ABSENT
+TELEGRAM_BOT_TOKEN    : ABSENT      TIKTOK_ACCESS_TOKEN : ABSENT
+YOUTUBE_REFRESH_TOKEN : PRÉSENT (104 caractères)
+```
+
+**Seul YouTube est relié.** Les noms `FACEBOOK_PAGE_TOKEN` / `INSTAGRAM_ACCESS_TOKEN`
+existent dans le workflow, mais les secrets sont **vides**.
+
+### Et un bug qui aurait tout cassé même avec les jetons
+
+`tools/social` est un vrai pipeline (appels `graph.facebook.com`, 4 779 lignes). Mais :
+
+| | |
+|---|---|
+| le workflow fournissait | `FACEBOOK_PAGE_TOKEN` / `INSTAGRAM_ACCESS_TOKEN` |
+| le code lisait | `FB_PAGE_TOKEN` / `IG_ACCESS_TOKEN` |
+| mappage entre les deux | **aucun, nulle part** |
+
+Facebook et Instagram n'auraient **jamais** pu publier. Corrigé, et verrouillé par
+`tests/social-env-parite.test.mjs` qui compare les trois maillons (déclaré ⇄ lu ⇄ fourni).
+
+Le même test rend visible un second trou : **TikTok, Twitter et Telegram n'ont aucun
+publisher** — alors que du contenu est généré pour TikTok. On fabriquait pour une
+plateforme muette.
+
+### Le moyen unique que tu demandais : `services/kdmc-social`
+
+Un worker, appelable par **n'importe lequel de tes projets** (boutiques, CMCteams,
+Apex, Lingua…) : `/publier` · `/lire` · `/message` · `/file`.
+
+| Réseau | Publier | Lire | Messages |
+|---|---|---|---|
+| Page Facebook | ✅ | ✅ + commentaires | ⚠️ permission Meta à demander |
+| Instagram Business | ✅ (image/vidéo obligatoire) | ✅ + commentaires | ⚠️ revue Meta |
+| Telegram | ✅ | ✅ | ✅ |
+| **TikTok** | ❌ **impossible sans l'audit TikTok** | ✅ | ❌ aucune API |
+| YouTube | via la CI (ffmpeg) | — | — |
+
+**Je ne maquille pas TikTok** : personne au monde ne publie dessus en pleine autonomie
+sans l'audit de TikTok. Le mieux possible = déposer un brouillon prêt dans ta boîte,
+que tu publies d'un doigt. Un test empêche le worker de prétendre le contraire.
+
+**Rien n'est jamais un faux succès** : un réseau sans jeton, une permission manquante,
+un échec réseau → ça part dans une **file** avec la raison exacte, jamais un « publié ».
+
+### Tu peux poser tes jetons depuis l'iPhone, un collage par réseau
+
+`POST /admin/jeton` (Face ID obligatoire, liste blanche stricte de noms). Plus besoin
+de passer par GitHub ni de redéployer. Un secret de la CI l'emporte toujours sur un
+jeton posé à la main.
+
+### Quatre gardes prouvés par sabotage
+
+| Ce que j'ai cassé exprès | Ce qui a rougi |
+|---|---|
+| un admin sans Face ID peut publier | 1 test |
+| on ne masque plus les jetons dans les erreurs | 2 tests |
+| TikTok se prétend publiable | 1 test |
+| `/admin/jeton` accepte n'importe quelle clé | 1 test |
+
+### Ce qu'il te reste (par valeur, pas par ordre d'arrivée)
+
+1. **Telegram — 2 minutes**, aucune revue. Débloque publier + lire + messages.
+2. **Meta — ~10 minutes**, UN seul jeton débloque **Facebook ET Instagram**.
+3. **TikTok** — long, et limité même après. À faire en dernier.
+
+Détail dans `KEVIN_ACTIONS_TODO.md`.
+
+---
+
 ## 2026-09-16 (soir) — Encaisser, VÉRIFIER, livrer : la pièce qui manquait
 
 ### Ce que j'ai mesuré avant de coder (audit des paiements, ta 1re demande)
