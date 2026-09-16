@@ -32,8 +32,8 @@ prévenu de rien (accès annuel payé en une fois = zéro relance = zéro renouv
   (leur `.catch` affiche « Inscrit ! » quand même — leçon #103, le faux vert). Il faut la vraie clé publique
   (EmailJS → Account → General → « Public Key », publique par conception) : 1 copier-coller de Kevin, puis je
   la pose aux 7 endroits. Le service `service_318elaz` et le gabarit restent 🔴 non vérifiés jusque-là.
-🔴 Non vérifié : les pages `pour/` sur le vrai domaine (le routeur sert le dossier `shops/kit-ia` par préfixe,
-donc `kit.kd-mc.com/pour/plombier.html` devrait suivre — à confirmer par `audit-live` après fusion).
+- `audit-live` couvre désormais `kit.kd-mc.com/pour/index.html`, `pour/plombier.html` et `lire.html` (module 1 chargé
+  depuis la vraie base) : c'est lui qui dira si le routeur sert bien le sous-dossier `pour/` (à lancer après fusion).
 ⚠ `test:paquet-pages` rouge en local sur `apex-ai` (63 chunks manquants du build v13) — préexistant, pas mien.
 
 ## 2026-09-16 23:20 — Business automatisé récurrent : le Club IA au Boulot (59 €/an) + machine hebdomadaire

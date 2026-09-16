@@ -61,6 +61,9 @@ const SURFACES = [
      une surface routée mais absente d'ici n'est surveillée par personne. */
   { url: 'https://rotaplan.' + ROOT + '/', name: 'Rotaplan (offre B2B)', selKey: 'h1' },
   { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1' },
+  { url: 'https://kit.' + ROOT + '/pour/index.html', name: "Kit IA — l'IA par métier (index)", selKey: 'h1' },
+  { url: 'https://kit.' + ROOT + '/pour/plombier.html', name: "Kit IA — l'IA pour un plombier", selKey: 'h1' },
+  { url: 'https://kit.' + ROOT + '/lire.html', name: 'Kit IA — lecteur (module 1 gratuit)', selKey: '#module h2' },
   { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
