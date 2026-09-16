@@ -15,13 +15,16 @@ const JS = readFileSync(new URL('../shops/croupier/acces.js', import.meta.url), 
 
 test('PARITÉ : chaque produit du menu existe côté worker, et inversement', () => {
   const dansLaPage = [...HTML.matchAll(/<option value="(croupier-[a-z-]+)"/g)].map((m) => m[1]);
-  const dansLeWorker = Object.keys(VENTE.PRODUITS);
+  /* Seuls les produits LIVRÉS sur croupier.kd-mc.com ont leur place dans ce menu :
+     le catalogue du worker sert aussi d'autres sites (kit.kd-mc.com…). */
+  const dansLeWorker = Object.keys(VENTE.PRODUITS).filter((id) => VENTE.PRODUITS[id].livre.startsWith('https://croupier.kd-mc.com/'));
   assert.deepEqual([...dansLaPage].sort(), [...dansLeWorker].sort(),
     'menu de la page et catalogue du worker ont divergé — un client pourrait choisir un produit inexistant');
 });
 
 test('PARITÉ : le prix affiché dans le menu est celui que le worker vérifie', () => {
   for (const [id, p] of Object.entries(VENTE.PRODUITS)) {
+    if (!p.livre.startsWith('https://croupier.kd-mc.com/')) continue;
     const ligne = HTML.match(new RegExp('<option value="' + id + '">([^<]+)</option>'));
     assert.ok(ligne, `produit ${id} absent du menu`);
     assert.ok(ligne[1].includes(p.prix + ' ' + (p.devise === 'EUR' ? '€' : p.devise)),

@@ -2502,3 +2502,17 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 | Le garde | Vérifie que les 23 restent surveillées, sans volume ni spam | [verify-deploiement-declenche.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-deploiement-declenche.mjs) |
 
 **Rien dans le journal = tout va bien.** Il ne se remplit que sur panne.
+
+## 🧰 Kit IA de l'indépendant — produit numérique neuf (2026-09-16)
+
+| Fichier | Rôle | Voir | Modifier |
+|---|---|---|---|
+| `shops/kit-ia/index.html` | Page de vente + « j'ai payé, je récupère mon accès » | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/index.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/index.html) |
+| `shops/kit-ia/lire.html` | Lecteur : module 1 gratuit, le reste avec le code | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/lire.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/lire.html) |
+| `shops/kit-ia/kit.js` | Logique (récupération d'accès, lecteur, bouton Copier) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/kit.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/kit.js) |
+| `shops/kit-ia/kit.css` | Style « Swiss moderne », clair/sombre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/kit.css) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/kit.css) |
+| `tests/kit-ia.test.mjs` | 6 preuves (parité prix, CSP, 0 contenu payant public, 2 vrais navigateurs) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-ia.test.mjs) | — |
+| `services/kdmc-vente/worker.js` | Caisse : produit `kit-ia`, `/apercu`, `/lire` (contenu en base D1) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
+| Base D1 `kdmc-contenu` | Les 7 modules (hors dépôt, privé) | [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) | — |
+| Site live | `https://kit.kd-mc.com/` (après fusion + déploiement du routeur) | [ouvrir](https://kit.kd-mc.com/) | — |
+| Routine « Club IA — contenu de la semaine » | Session Claude automatique chaque lundi 07:00 UTC : nouvelle consigne en base + e-mail aux abonnés + point à Kevin | [Routines](https://claude.ai/code) | — |

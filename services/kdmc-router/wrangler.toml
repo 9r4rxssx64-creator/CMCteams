@@ -36,6 +36,7 @@ routes = [
   { pattern = "outils.kd-mc.com", custom_domain = true },
   { pattern = "shops.kd-mc.com", custom_domain = true },
   { pattern = "rotaplan.kd-mc.com", custom_domain = true },
+  { pattern = "kit.kd-mc.com", custom_domain = true },
   { pattern = "croupier.kd-mc.com", custom_domain = true },
   { pattern = "cuisine.kd-mc.com", custom_domain = true },
   { pattern = "cocina.kd-mc.com", custom_domain = true },

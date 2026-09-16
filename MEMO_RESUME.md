@@ -1,5 +1,71 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 23:20 — Business automatisé récurrent : le Club IA au Boulot (59 €/an) + machine hebdomadaire
+
+Kevin 23:00 : « Trouve une idée de business automatisé. Crée et gère en autonomie, qui me rapporte
+un max régulièrement. » Choix : un ABONNEMENT posé sur le Kit IA (même caisse, même lecteur, même
+public), parce que c'est le seul modèle récurrent que je peux faire tourner SANS Kevin avec les
+moyens réels (PayPal.me/Revolut sans abonnement natif → accès annuel payé en une fois, pas de
+prélèvement automatique = zéro litige ; contenu généré et livré par une routine hebdomadaire).
+- **Produit `club-ia`** : 59 €/an = kit complet (57 consignes) + une consigne-outil nouvelle
+  chaque semaine (produit `club-ia` en base, ordre 100+semaine). Code valable 365 j (`ttlJours`).
+- **Caisse** : chaque livraison écrit une fiche dans la table D1 `abonnes` (code, e-mail, produit,
+  expiration) et envoie le code par e-mail via EmailJS (service/gabarit des boutiques, clé
+  privée `EMAILJS_PRIVATE_KEY` poussée par le workflow). Best-effort prouvé : panne d'e-mail ou
+  de base = la vente passe quand même ; `email_envoye` dit la vérité au client (« note-le, il n'a
+  pas pu partir par e-mail »). 34 tests.
+- **Pages** : offre Club sur la page de vente (PayPal.me/kdmc/59EUR, revolut.me/kdmc/59eur), menu
+  « ce que tu as acheté », verrou du lecteur qui propose les deux. 6 tests (navigateur : le choix
+  Club part bien comme `club-ia`).
+- **Routine hebdomadaire « Club IA — contenu de la semaine »** (Claude Code Remote, session
+  neuve chaque lundi 07:00 UTC, connecteurs Gmail + Cloudflare) : lit les abonnés et les
+  dernières consignes en base, rédige la consigne de la semaine (brief vérité, accents vérifiés),
+  l'insère en D1, prévient les abonnés par e-mail, envoie à Kevin un point de 5 lignes (abonnés,
+  ventes, ce qui a été publié). Aucun cron GitHub (règle absolue), aucun cron Cloudflare (plan plein).
+🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
+best-effort et le client voit toujours son code à l'écran. 🔴 Non mesuré : demande et
+conversion. Chiffres honnêtes : 100 membres = 5 900 €/an + ventes du kit ; 0 aujourd'hui.
+Suite : pages SEO « l'IA pour [métier] » (50 métiers) générées pour l'acquisition organique,
+vidéos sans visage via Metricool.
+
+## 2026-09-16 22:55 — Kit IA de l'indépendant : produit numérique NEUF, construit, contenu en base, caisse live
+
+Kevin 21:47 : « un produit numérique dans la niche à la mode, max rentabilité, en toute autonomie.
+Pas de ce que nous avons déjà créé. On verra plus tard quand tout sera stable… Encore trop de bugs. »
+→ Lingua Premium et packs Créa GELÉS (tâches #10/#11). Niche choisie sur chiffres (3 sources) :
+**compétences IA pour non-techniciens** = le ticket le mieux payé des produits numériques 2026
+(49-499 $), packs de consignes ciblés 12-49 €, le générique « 500 prompts » est saturé.
+
+**Produit : Kit IA de l'indépendant — 7 modules, 57 consignes prêtes à copier, 47 € (2 ans).**
+Pour artisans/indépendants/commerçants francophones, iPhone-first, versions GRATUITES de
+ChatGPT/Claude/Gemini. Module 1 gratuit (aperçu), 2→7 payants.
+- Contenu : 7 modules rédigés (Opus, brief strict : vérité, 0 conseil juridique/fiscal, renvoi
+  service-public.fr, accents vérifiés par script après 2 modules livrés sans accents), 1 394 à
+  1 633 mots chacun, 103 Ko au total. **Stocké dans la base D1 `kdmc-contenu`
+  (d28c6ec0-21e4-46b8-a3dc-49f282e3a036), JAMAIS dans le dépôt public** (test qui l'interdit).
+  Inséré ligne par ligne depuis l'agent (Cloudflare MCP) — vérifié : 7 lignes, 57 consignes.
+- Caisse : `kdmc-vente` produit `kit-ia`, binding D1 `CONTENU`, `/apercu?produit=` (gratuit
+  seulement, sans code), `/lire?c=` (tout, contre code payé). CORS = tout sous-domaine HTTPS de
+  kd-mc.com (la liste fixe bloquait les pages servies depuis un sous-domaine — bug latent
+  croupier). 31 tests ; fuite aperçu prouvée discriminante par sabotage.
+- Site : `shops/kit-ia/` (index = vente + récupérer l'accès ; lire = lecteur, code mémorisé
+  `kit_ia_code`, bouton Copier par consigne, verrou visuel sur les modules payants). CSP stricte
+  sans style en ligne (attrapé par le test navigateur), 44 px, 375 px. 6 tests dont 2 en vrai
+  navigateur avec faux worker (`test:kit-ia`, dans `test:ci`).
+- Routage `kit.kd-mc.com` aux 5 endroits + `APPS` (rotaplan/croupier manquaient : garde
+  périmètre rouge depuis le 15.09, corrigée).
+- **Live (CI, run #4 vert)** : `/health` = `contenu_prive:true`, produits croupier-pro,
+  croupier-entretien, kit-ia. La preuve live attend maintenant la VRAIE version déployée
+  (mesuré : 0 s après le déploiement, l'ancien worker répondait encore = faux vert) et vérifie
+  que l'aperçu ne sert aucun module payant.
+- Paiement : PayPal.me/kdmc/47EUR et revolut.me/kdmc/47eur (montant pré-rempli), puis
+  formulaire « j'ai payé » → code. PayPal sans app = file manuelle (Kevin valide 1 clic).
+
+🔴 Non vérifié : `kit.kd-mc.com` n'est routé qu'après fusion sur main + déploiement du routeur
+(custom domain) ; le lecteur n'a pas encore été chargé sur le vrai domaine (canal CI `verif-reelle`).
+🔴 Non mesuré : la demande réelle. Prochaine étape : pub Metricool sans visage (Bee est Lingua =
+gelé → visuels neutres), test 30 jours.
+
 ## 2026-09-16 (soir, 3) — Bee bouge POUR DE VRAI (ses vraies vidéos), et elle ne peut plus se dédoubler
 
 ### Ce qui change quand tu ouvres l'app Bee

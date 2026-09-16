@@ -60,6 +60,7 @@ const SURFACES = [
   /* Rotaplan (15.09.2026) : page de vente B2B, publique. Même raison que « Tor en clair » —
      une surface routée mais absente d'ici n'est surveillée par personne. */
   { url: 'https://rotaplan.' + ROOT + '/', name: 'Rotaplan (offre B2B)', selKey: 'h1' },
+  { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1' },
   { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
