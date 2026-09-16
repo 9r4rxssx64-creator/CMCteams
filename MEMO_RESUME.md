@@ -1,5 +1,41 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 23:45 — « Va plus loin. Enrichit. Améliore » : acquisition, fraîcheur, fidélisation du Kit/Club
+
+Kevin 23:25 : « Va plus loin. Enrichit. Améliore, etc ». Trois manques mesurés sur le business Kit/Club :
+personne ne TROUVE la page (une seule adresse, sans mot-clé métier), rien ne PROUVE que le Club vit
+(la carte promettait « chaque semaine » sans montrer une seule consigne), et un abonné qui expire n'était
+prévenu de rien (accès annuel payé en une fois = zéro relance = zéro renouvellement). Livré :
+- **47 pages « l'IA pour [métier] »** (`shops/kit-ia/pour/<slug>.html` + `pour/index.html`) générées par
+  `tools/kit/pages-metiers.mjs` depuis la **source unique `tools/kit/metiers.json`** (47 métiers × 5 situations
+  concrètes : devis, relance, réseaux, paperasse, routine — écrites pour CE métier, ex. plombier : « le courrier
+  au syndic pour la colonne commune »). Même CSP et même feuille de style que la vente, 0 script, données
+  structurées (WebPage + fil d'Ariane), 6 voisins par page, 48 entrées dans `shops/sitemap.xml` (entre deux
+  repères, réécrites par le générateur). Liens depuis la vente (FAQ « ça marche pour mon métier ? » + pied).
+  **Aucune consigne payante** dans ces pages : elles disent CE QUE l'IA fait faire, jamais COMMENT.
+  Garde `test:kit-metiers` (5) câblée dans `test:ci` : pages sur disque == source (générateur oublié = rouge),
+  CSP identique, 0 script/consigne/secret/emoji, liens relatifs qui existent, sitemap et index complets,
+  chaque page cite bien ses 5 situations. Régénérer : `npm run kit:metiers`.
+- **« Déjà publié au Club »** sur la page de vente : `kit.js` lit `/apercu?produit=club-ia` (le sommaire liste
+  tout, `source==='club-ia'` = les consignes hebdo) et montre les **3 titres les plus récents** avec le numéro de
+  semaine en clair. Bloc caché tant que rien n'est chargé (base vide, worker en panne = pas de trou). 2 tests
+  navigateur (3 titres dans le bon ordre, jamais un module du kit, jamais le contenu payant ; panne → caché).
+- **Relances J-14** dans `tools/club/semaine.mjs` (`relances()`) : chaque lundi, les abonnés `club-ia` dont
+  l'accès expire sous 14 jours reçoivent UN rappel (date de fin en clair, lien `#club`, « rien n'est prélevé
+  automatiquement »), marqué dans la nouvelle colonne **`abonnes.relance`** (ajoutée en D1 par MCP le 16.09 :
+  `ALTER TABLE abonnes ADD COLUMN relance TEXT`). Refus d'e-mail = pas marqué = repart lundi suivant. Tourne
+  aussi quand la semaine est déjà publiée. Le point à Kevin compte les rappels. 3 tests (16 au total).
+- **Cause EXACTE du refus EmailJS, mesurée (run 35160816828, essai à blanc + `tester_email`)** :
+  `HTTP 400 The Public Key is invalid`. Ce n'est PAS le réglage « non-browser » : la clé publique
+  `nUsorWTtC` (copiée du gabarit des 5 boutiques, jamais vérifiée) **n'existe pas** dans le compte EmailJS de
+  Kevin. Conséquence honnête : les formulaires newsletter/contact des 5 boutiques n'ont jamais envoyé non plus
+  (leur `.catch` affiche « Inscrit ! » quand même — leçon #103, le faux vert). Il faut la vraie clé publique
+  (EmailJS → Account → General → « Public Key », publique par conception) : 1 copier-coller de Kevin, puis je
+  la pose aux 7 endroits. Le service `service_318elaz` et le gabarit restent 🔴 non vérifiés jusque-là.
+🔴 Non vérifié : les pages `pour/` sur le vrai domaine (le routeur sert le dossier `shops/kit-ia` par préfixe,
+donc `kit.kd-mc.com/pour/plombier.html` devrait suivre — à confirmer par `audit-live` après fusion).
+⚠ `test:paquet-pages` rouge en local sur `apex-ai` (63 chunks manquants du build v13) — préexistant, pas mien.
+
 ## 2026-09-16 23:20 — Business automatisé récurrent : le Club IA au Boulot (59 €/an) + machine hebdomadaire
 
 Kevin 23:00 : « Trouve une idée de business automatisé. Crée et gère en autonomie, qui me rapporte
