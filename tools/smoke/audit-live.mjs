@@ -60,7 +60,37 @@ const SURFACES = [
   /* Rotaplan (15.09.2026) : page de vente B2B, publique. Même raison que « Tor en clair » —
      une surface routée mais absente d'ici n'est surveillée par personne. */
   { url: 'https://rotaplan.' + ROOT + '/', name: 'Rotaplan (offre B2B)', selKey: 'h1' },
-  { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1' },
+  { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1', deep: async (page) => {
+      // « Déjà publié au Club » : la page lit le sommaire du Club sur le VRAI worker et la
+      // VRAIE base (au moins 1 consigne hebdo depuis le 16.09, s2026-38). Bloc caché =
+      // worker injoignable, base vide ou source≠club-ia → la promesse « chaque semaine »
+      // n'est pas prouvée sur le domaine.
+      try {
+        await page.waitForSelector('#clubSemaine:not([hidden])', { timeout: 15000 });
+        const titres = await page.$$eval('#clubListe li strong', (els) => els.map((e) => e.textContent.trim()));
+        if (!titres.length) return { ok: false, note: 'vitrine Club visible mais vide' };
+        if (titres.some((t) => /^Module|Ton assistant/i.test(t))) return { ok: false, note: 'un module du kit dans la vitrine du Club : ' + titres.join(' | ') };
+        return { ok: true, note: 'vitrine Club : ' + titres.length + ' consigne(s) réelle(s) — « ' + titres[0] + ' »' };
+      } catch (e) { return { ok: false, note: 'vitrine « Déjà publié au Club » jamais affichée (worker /apercu?produit=club-ia muet ou sommaire sans club-ia)' }; }
+    } },
+  { url: 'https://kit.' + ROOT + '/pour/index.html', name: "Kit IA — l'IA par métier (index)", selKey: 'h1', deep: async (page) => {
+      const n = await page.$$eval('ul.liste li a[href$=".html"]', (els) => els.length).catch(() => 0);
+      return n >= 40 ? { ok: true, note: n + ' métiers listés' } : { ok: false, note: 'index métiers : ' + n + ' liens (≥ 40 attendus)' };
+    } },
+  { url: 'https://kit.' + ROOT + '/pour/plombier.html', name: "Kit IA — l'IA pour un plombier", selKey: 'h1', deep: async (page) => {
+      const h1 = await page.textContent('h1').catch(() => '');
+      const situ = await page.$$eval('ul.liste li', (els) => els.length).catch(() => 0);
+      const css = await page.evaluate(() => getComputedStyle(document.body).fontFamily).catch(() => '');
+      if (!/plombier/i.test(h1)) return { ok: false, note: 'h1 ≠ plombier : ' + h1.slice(0, 60) };
+      if (situ !== 5) return { ok: false, note: situ + ' situations (5 attendues)' };
+      if (!/Manrope|Inter|system/i.test(css)) return { ok: false, note: 'feuille ../kit.css non appliquée (police ' + css.slice(0, 40) + ')' };
+      return { ok: true, note: '5 situations, feuille de style appliquée' };
+    } },
+  { url: 'https://kit.' + ROOT + '/lire.html', name: 'Kit IA — lecteur (module 1 gratuit)', selKey: '#module h2', deep: async (page) => {
+      const h2 = await page.textContent('#module h2').catch(() => '');
+      const nb = await page.$$eval('#sommaire li', (els) => els.length).catch(() => 0);
+      return nb >= 8 ? { ok: true, note: 'sommaire ' + nb + ' entrées (7 kit + Club), module 1 « ' + h2.slice(0, 50) + ' »' } : { ok: false, note: 'sommaire ' + nb + ' entrées (≥ 8 attendues : 7 modules + ≥ 1 consigne du Club)' };
+    } },
   { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le

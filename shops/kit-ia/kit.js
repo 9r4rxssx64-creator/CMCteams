@@ -45,7 +45,18 @@
     return { etat: 'erreur', texte: (rep && rep.detail) || (httpOk ? 'Cas imprévu.' : 'Le serveur ne répond pas.') };
   }
 
-  var expose = { emailPlausible: emailPlausible, normaliseCode: normaliseCode, interprete: interprete, interpreteLecture: interpreteLecture, API: API, PRODUIT: PRODUIT };
+  /* Consignes du Club les plus récentes d'abord (ordre décroissant), n au plus. */
+  function clubRecentes(sommaire, n) {
+    return (sommaire || []).filter(function (s) { return s && s.source === 'club-ia' && s.titre; })
+      .sort(function (a, b) { return (Number(b.ordre) || 0) - (Number(a.ordre) || 0); }).slice(0, n);
+  }
+  /* 's2026-38' → '38 de 2026' ; autre forme → '' (jamais un identifiant brut à l'écran). */
+  function clubSemaineLisible(id) {
+    var m = /^s(\d{4})-(\d{2})$/.exec(String(id || ''));
+    return m ? String(Number(m[2])) + ' de ' + m[1] : '';
+  }
+
+  var expose = { emailPlausible: emailPlausible, normaliseCode: normaliseCode, interprete: interprete, interpreteLecture: interpreteLecture, clubRecentes: clubRecentes, clubSemaineLisible: clubSemaineLisible, API: API, PRODUIT: PRODUIT };
   if (typeof globalThis !== 'undefined') globalThis.__kit = expose;
 
   /* ── Navigateur ─────────────────────────────────────────────────────── */
@@ -94,6 +105,29 @@
         .catch(function (e) { afficheResultat(boite, { etat: 'erreur', titre: 'Pas de réseau', texte: 'Ton paiement n’est pas perdu. Réessaie : ' + String(e.message || e) }); })
         .finally(function () { bouton.disabled = false; texte(bouton, ancien); });
     });
+  }
+
+  /* ── Page de vente : ce qui est déjà publié au Club (preuve de fraîcheur) ─
+     /apercu ne sert que le module gratuit, mais son SOMMAIRE liste tout, dont
+     les consignes hebdomadaires (source === 'club-ia'). On montre les 3 plus
+     récentes, titres seulement. Caché tant que rien n'est chargé : une panne
+     ou une base vide ne laisse pas de bloc vide. */
+  var clubSemaine = $('clubSemaine');
+  if (clubSemaine && form) {
+    fetchJson(API + '/apercu?produit=club-ia').then(function (x) {
+      var r = interpreteLecture(x.j, x.ok, false);
+      var hebdo = (r.sommaire || []).filter(function (s) { return s.source === 'club-ia'; });
+      var recentes = clubRecentes(hebdo, 3);
+      if (!recentes.length) return;
+      var ul = $('clubListe'); ul.textContent = '';
+      recentes.forEach(function (s) {
+        var li = document.createElement('li'), st = document.createElement('strong');
+        texte(st, s.titre); li.appendChild(st);
+        li.appendChild(document.createTextNode('Consigne-outil de la semaine ' + clubSemaineLisible(s.id) + '.'));
+        ul.appendChild(li);
+      });
+      clubSemaine.hidden = false;
+    }).catch(function () { /* silencieux : la carte Club se suffit à elle-même */ });
   }
 
   /* ── Lecteur ────────────────────────────────────────────────────────── */

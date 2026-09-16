@@ -209,6 +209,33 @@ export function messageAbonne({ titre }) {
     'Ton code d\'accès est celui que tu as reçu à l\'achat (il ouvre le kit complet et toutes les consignes de la semaine).';
 }
 
+export const JOURS_RELANCE = 14;
+export function messageRelance({ expire }) {
+  return 'Ton accès au Club IA au Boulot se termine le ' + dateFr(new Date(expire)) + '.\n' +
+    'Pour garder le kit complet et recevoir encore un an de consignes-outils (une par semaine) : https://kit.kd-mc.com/#club (59 €).\n' +
+    'Rien n\'est prélevé automatiquement : si tu ne fais rien, ton accès s\'arrête simplement à cette date, sans frais.\n' +
+    'Après paiement, récupère ton nouveau code sur la même page avec l\'adresse e-mail utilisée pour payer.';
+}
+/* Relances J-14 : un abonné dont l'accès expire dans les 14 jours reçoit UN
+   rappel (colonne `relance` = date d'envoi, jamais deux fois). Lecture même à
+   blanc (prouve la colonne) ; envoi + marquage seulement en réel. Un e-mail qui
+   échoue n'est pas marqué : il repartira au prochain lundi. */
+export async function relances(env, { dry, maintenant }, log = () => {}) {
+  const de = maintenant.toISOString();
+  const a = new Date(maintenant.getTime() + JOURS_RELANCE * 86400000).toISOString();
+  const lignes = await d1(env, 'SELECT code, email, expire FROM abonnes WHERE produit = ?1 AND email IS NOT NULL AND email <> \'\' AND expire > ?2 AND expire <= ?3 AND (relance IS NULL OR relance = \'\') ORDER BY expire', [PRODUIT, de, a]);
+  log('Relances J-' + JOURS_RELANCE + ' : ' + lignes.length + ' abonné(s) dont l\'accès expire d\'ici le ' + dateFr(new Date(a)) + (dry && lignes.length ? ' (à blanc : rien n\'est envoyé)' : ''));
+  if (dry) return { a_relancer: lignes.length, relances: 0 };
+  let relancees = 0;
+  for (const l of lignes) {
+    const ok = await envoieEmail(env, { to: l.email, message: messageRelance({ expire: l.expire }) }, log);
+    if (ok) { await d1(env, 'UPDATE abonnes SET relance = ?1 WHERE code = ?2', [de, l.code]); relancees++; }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  if (lignes.length) log('Relances envoyées : ' + relancees + '/' + lignes.length);
+  return { a_relancer: lignes.length, relances: relancees };
+}
+
 /* ── Le déroulé ──────────────────────────────────────────────────────────── */
 export async function principal(env = process.env, log = console.log) {
   const dry = String(env.DRY_RUN ?? 'true').toLowerCase() !== 'false';
@@ -232,6 +259,7 @@ export async function principal(env = process.env, log = console.log) {
   const titres = lignes.map((l) => l.titre);
   const clubs = lignes.filter((l) => l.produit === PRODUIT);
   log('En base : ' + lignes.length + ' contenus (' + clubs.length + ' consignes du Club déjà publiées)');
+  const rel = await relances(env, { dry, maintenant }, log);
   if (clubs.some((l) => l.id === sem.id)) {
     log('SEMAINE DÉJÀ PUBLIÉE : ' + sem.id + ' est en base, rien à refaire.');
     return { ok: true, deja: true, id: sem.id };
@@ -283,11 +311,12 @@ export async function principal(env = process.env, log = console.log) {
   const point = ['Club IA au Boulot — point du lundi ' + lundi,
     'Consigne n° ' + numero + ' publiée : « ' + verdict.titre + ' » (' + verdict.mots + ' mots, ' + verdict.consignes + ' consignes).',
     'Abonnés actifs : ' + abonnes.length + ' · e-mails envoyés : ' + envoyes + (rates ? ' · échecs : ' + rates : '') + '.',
+    'Accès qui expirent sous ' + JOURS_RELANCE + ' jours : ' + rel.a_relancer + ' · rappels envoyés : ' + rel.relances + '.',
     'Espace membres : ' + LIRE, 'Rien à faire de ton côté.'].join('\n');
   const kevinOk = await envoieEmail(env, { to: env.EMAIL_KEVIN || EMAIL_KEVIN, message: point }, log);
   log((kevinOk ? 'Point envoyé à Kevin.' : 'Point à Kevin NON envoyé (EmailJS absent ou en panne) — il est dans ce journal :') + '\n' + point);
   log('SEMAINE PUBLIÉE : ' + sem.id + ' · « ' + verdict.titre + ' » · ' + envoyes + ' abonné(s) prévenu(s)');
-  return { ok: true, id: sem.id, titre: verdict.titre, abonnes: abonnes.length, envoyes, rates };
+  return { ok: true, id: sem.id, titre: verdict.titre, abonnes: abonnes.length, envoyes, rates, relances: rel.relances };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

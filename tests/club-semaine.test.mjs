@@ -67,7 +67,7 @@ test('la porte de vérité refuse chaque sabotage (prouvée discriminante)', () 
 });
 
 /* Faux réseau : D1 (REST), Anthropic, EmailJS — tout est capturé. */
-function fauxReseau({ base = [], reponseIA = bon, d1Refuse = false, emailOk = true } = {}) {
+function fauxReseau({ base = [], reponseIA = bon, d1Refuse = false, emailOk = true, expirants = [] } = {}) {
   const appels = { d1: [], ia: [], mails: [] };
   const contenu = [...base];
   globalThis.fetch = async (url, opt) => {
@@ -76,12 +76,19 @@ function fauxReseau({ base = [], reponseIA = bon, d1Refuse = false, emailOk = tr
     if (u.includes('api.cloudflare.com')) {
       appels.d1.push(corps);
       if (d1Refuse) return { ok: false, status: 403, json: async () => ({ success: false, errors: [{ code: 10000, message: 'Authentication error' }] }) };
-      assert.ok(!/'/.test(corps.sql.replace(/<> ''/, '')), 'jamais de valeur concaténée dans le SQL');
+      assert.ok(!/'/.test(corps.sql.replace(/<> ''/g, '').replace(/= ''/g, '')), 'jamais de valeur concaténée dans le SQL');
       let results = [];
       if (/^SELECT produit, id, ordre, titre FROM contenu/.test(corps.sql)) results = contenu.filter((l) => corps.params.includes(l.produit));
       else if (/^INSERT INTO contenu/.test(corps.sql)) contenu.push({ produit: corps.params[0], id: corps.params[1], ordre: corps.params[2], titre: corps.params[3], html: corps.params[4] });
       else if (/^SELECT id, ordre, titre, length\(html\)/.test(corps.sql)) results = contenu.filter((l) => l.produit === corps.params[0] && l.id === corps.params[1]).map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, taille: l.html.length }));
       else if (/^SELECT DISTINCT email FROM abonnes/.test(corps.sql)) results = [{ email: 'a@x.fr' }, { email: 'b@x.fr' }];
+      else if (/^SELECT code, email, expire FROM abonnes/.test(corps.sql)) {
+        assert.equal(corps.params[0], 'club-ia');
+        assert.ok(corps.params[1] < corps.params[2], 'fenêtre [maintenant, +14 j]');
+        results = expirants.filter((x) => !x.relance && x.expire > corps.params[1] && x.expire <= corps.params[2]);
+      } else if (/^UPDATE abonnes SET relance = \?1 WHERE code = \?2$/.test(corps.sql)) {
+        const x = expirants.find((e) => e.code === corps.params[1]); assert.ok(x, 'UPDATE d\'un code inconnu'); x.relance = corps.params[0];
+      }
       return { ok: true, status: 200, json: async () => ({ success: true, result: [{ results }] }) };
     }
     if (u.includes('api.anthropic.com')) {
@@ -97,7 +104,7 @@ function fauxReseau({ base = [], reponseIA = bon, d1Refuse = false, emailOk = tr
     }
     throw new Error('appel réseau inattendu : ' + u);
   };
-  return { appels, contenu };
+  return { appels, contenu, expirants };
 }
 const ENV = { CLOUDFLARE_API_TOKEN: 'cf-test', CLOUDFLARE_ACCOUNT_ID: 'acct', ANTHROPIC_API_KEY: 'sk-test', EMAILJS_PRIVATE_KEY: 'ej-test', CLUB_DATE: '2026-09-21T07:00:00Z' };
 const KIT = [1, 2, 3, 4, 5, 6, 7].map((n) => ({ produit: 'kit-ia', id: 'm' + n, ordre: n, titre: 'Module ' + n, html: 'x' }));
@@ -107,7 +114,8 @@ test('essai à blanc : lit la base, rédige, contrôle, n\'écrit RIEN et n\'env
   const lignes = [];
   const r = await S.principal({ ...ENV, DRY_RUN: 'true' }, (l) => lignes.push(l));
   assert.equal(r.dry, true);
-  assert.equal(appels.d1.length, 1, 'une seule lecture D1');
+  assert.equal(appels.d1.length, 2, 'deux lectures D1 (contenus + accès qui expirent), aucune écriture');
+  assert.ok(appels.d1.every((c) => /^SELECT/.test(c.sql)), 'à blanc : que des SELECT');
   assert.equal(appels.ia.length, 1);
   assert.equal(appels.mails.length, 0);
   assert.equal(contenu.length, 7);
@@ -190,4 +198,57 @@ test('essai d\'e-mail : tourne AUSSI quand la semaine est déjà en base', async
   const r = await S.principal({ ...ENV, DRY_RUN: 'true', TEST_EMAIL: 'true' }, () => {});
   assert.equal(r.deja, true);
   assert.equal(appels.mails.length, 1);
+});
+
+test('relances J-14 : un abonné qui expire sous 14 jours reçoit UN rappel, marqué en base ; pas deux fois, pas hors fenêtre, pas à blanc', async () => {
+  const expirants = [
+    { code: 'AAAA-AAAA-AAAA-AAAA', email: 'bientot@x.fr', expire: '2026-09-30T07:00:00.000Z', relance: null },
+    { code: 'BBBB-BBBB-BBBB-BBBB', email: 'deja@x.fr', expire: '2026-09-28T07:00:00.000Z', relance: '2026-09-14T07:00:00.000Z' },
+    { code: 'CCCC-CCCC-CCCC-CCCC', email: 'loin@x.fr', expire: '2026-12-01T07:00:00.000Z', relance: null },
+    { code: 'DDDD-DDDD-DDDD-DDDD', email: 'fini@x.fr', expire: '2026-09-01T07:00:00.000Z', relance: null },
+  ];
+  /* À blanc : lu, compté, rien envoyé, rien marqué */
+  let f = fauxReseau({ base: KIT, expirants });
+  let lignes = [];
+  await S.principal({ ...ENV, DRY_RUN: 'true' }, (l) => lignes.push(l));
+  assert.equal(f.appels.mails.length, 0);
+  assert.ok(lignes.some((l) => l.startsWith('Relances J-14 : 1 abonné(s)')), lignes.join('\n'));
+  assert.equal(f.expirants[0].relance, null);
+  /* En réel : 1 rappel à bientot@x.fr, marqué ; les 2 abonnés + Kevin comme avant */
+  f = fauxReseau({ base: KIT, expirants: expirants.map((e) => ({ ...e })) });
+  lignes = [];
+  const r = await S.principal({ ...ENV, DRY_RUN: 'false' }, (l) => lignes.push(l));
+  assert.equal(r.relances, 1);
+  const rappel = f.appels.mails.find((m) => m.to_email === 'bientot@x.fr');
+  assert.ok(rappel, 'le rappel doit partir');
+  assert.match(rappel.message, /30 septembre 2026/, 'la date de fin est dite en clair');
+  assert.match(rappel.message, /kit\.kd-mc\.com\/#club/, 'le lien pour reprendre un an');
+  assert.match(rappel.message, /Rien n'est prélevé automatiquement/);
+  assert.ok(!f.appels.mails.some((m) => ['deja@x.fr', 'loin@x.fr', 'fini@x.fr'].includes(m.to_email)), 'déjà relancé, trop loin ou expiré : pas de rappel');
+  assert.equal(f.expirants[0].relance, '2026-09-21T07:00:00.000Z', 'marqué avec la date d\'envoi');
+  assert.ok(f.appels.mails.at(-1).message.includes('rappels envoyés : 1'), 'le point à Kevin compte les rappels');
+  /* Le lundi suivant (semaine déjà en base, même base d'abonnés) : plus rien à relancer */
+  const g = fauxReseau({ base: [...KIT, { produit: 'club-ia', id: 's2026-40', ordre: 9, titre: 'Autre', html: 'x' }], expirants: f.expirants });
+  await S.principal({ ...ENV, DRY_RUN: 'false', CLUB_DATE: '2026-09-28T07:00:00Z' }, () => {});
+  assert.equal(g.appels.mails.filter((m) => m.to_email === 'bientot@x.fr').length, 0, 'jamais deux rappels');
+});
+
+test('relances J-14 : un e-mail refusé n\'est PAS marqué (il repartira lundi prochain), la publication continue', async () => {
+  const f = fauxReseau({ base: KIT, emailOk: false, expirants: [{ code: 'AAAA-AAAA-AAAA-AAAA', email: 'bientot@x.fr', expire: '2026-09-30T07:00:00.000Z', relance: null }] });
+  const lignes = [];
+  const r = await S.principal({ ...ENV, DRY_RUN: 'false' }, (l) => lignes.push(l));
+  assert.equal(r.relances, 0);
+  assert.equal(f.expirants[0].relance, null);
+  assert.ok(lignes.some((l) => l.startsWith('SEMAINE PUBLIÉE')));
+});
+
+test('relances J-14 tournent aussi quand la semaine est déjà publiée', async () => {
+  const f = fauxReseau({ base: [...KIT, { produit: 'club-ia', id: 's2026-39', ordre: 8, titre: 'Déjà là', html: 'x' }],
+    expirants: [{ code: 'AAAA-AAAA-AAAA-AAAA', email: 'bientot@x.fr', expire: '2026-09-30T07:00:00.000Z', relance: null }] });
+  const lignes = [];
+  const r = await S.principal({ ...ENV, DRY_RUN: 'false' }, (l) => lignes.push(l));
+  assert.equal(r.deja, true);
+  assert.equal(f.appels.ia.length, 0, 'rien n\'est rédigé');
+  assert.equal(f.appels.mails.length, 1, 'le rappel part quand même');
+  assert.equal(f.appels.mails[0].to_email, 'bientot@x.fr');
 });

@@ -76,6 +76,12 @@ test('logique pure : normaliseCode, interprete, interpreteLecture', () => {
   assert.equal(l({ ok: true, modules: [], sommaire: [] }, true, true).etat, 'complet');
   assert.equal(l({ ok: false, error: 'invalide', detail: 'code inconnu' }, false, true).etat, 'code_invalide');
   assert.match(l({ ok: false, error: 'contenu_indisponible' }, false, true).texte, /code reste valable/, 'une panne de contenu ne doit pas faire croire au client que son code est mort');
+  /* Vitrine Club : les plus récentes d'abord, jamais un module du kit, jamais un id brut à l'écran */
+  const somm = [{ id: 'm1', ordre: 1, titre: 'Kit', source: 'kit-ia' }, { id: 's2026-38', ordre: 8, titre: 'A', source: 'club-ia' }, { id: 's2026-40', ordre: 10, titre: 'C', source: 'club-ia' }, { id: 's2026-39', ordre: 9, titre: 'B', source: 'club-ia' }];
+  assert.deepEqual(k.clubRecentes(somm, 2).map((x) => x.titre), ['C', 'B']);
+  assert.deepEqual(k.clubRecentes([], 3), []);
+  assert.equal(k.clubSemaineLisible('s2026-38'), '38 de 2026');
+  assert.equal(k.clubSemaineLisible('m1'), '');
 });
 
 function serveurLocal(racine) {
@@ -93,11 +99,18 @@ function serveurLocal(racine) {
 const SOMMAIRE = [{ id: 'm1', ordre: 1, titre: 'Ton assistant en 20 min', gratuit: true }, { id: 'm2', ordre: 2, titre: 'La consigne parfaite', gratuit: false }];
 const M1 = { id: 'm1', ordre: 1, titre: 'Ton assistant en 20 min', gratuit: true, html: '<h2>Module 1</h2><p class="promesse">Promesse.</p><h3>Test</h3><pre class="consigne">Tu es [métier]. Écris…</pre><div class="exemple">Résultat</div>' };
 const M2 = { id: 'm2', ordre: 2, titre: 'La consigne parfaite', gratuit: false, html: '<h2>Module 2</h2><pre class="consigne">SECRET-PAYANT</pre>' };
+const CLUB = [{ id: 's2026-38', ordre: 8, titre: 'Répondre à un avis négatif sans t\'énerver', gratuit: false, source: 'club-ia' },
+  { id: 's2026-39', ordre: 9, titre: 'Relancer un devis sans se sentir lourd', gratuit: false, source: 'club-ia' },
+  { id: 's2026-40', ordre: 10, titre: 'Préparer un rendez-vous en 5 minutes', gratuit: false, source: 'club-ia' },
+  { id: 's2026-41', ordre: 11, titre: 'La plus récente', gratuit: false, source: 'club-ia' }];
 function fauxWorker(page) {
   const appels = [];
   return page.route('https://kdmc-vente.9r4rxssx64.workers.dev/**', (route) => {
     const u = new URL(route.request().url()); appels.push(u.pathname + u.search);
     const rep = (obj, status) => route.fulfill({ status: status || 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(obj) });
+    if (u.pathname === '/apercu' && u.searchParams.get('produit') === 'club-ia') {
+      return rep(page.__clubVide ? { ok: false, error: 'contenu_indisponible' } : { ok: true, produit: 'club-ia', modules: [M1], sommaire: [...SOMMAIRE.map((s) => ({ ...s, source: 'kit-ia' })), ...CLUB] });
+    }
     if (u.pathname === '/apercu') return rep({ ok: true, produit: 'kit-ia', modules: [M1], sommaire: SOMMAIRE });
     if (u.pathname === '/lire') {
       return u.searchParams.get('c') === 'ABCD-EFGH-JKLM-NPQR'
@@ -151,6 +164,29 @@ test('vrai navigateur — page de vente : 44 px partout, 375 px sans débordemen
     await page.click('#valider');
     await page.waitForFunction(() => (document.querySelector('#resultat code') || {}).textContent === 'CCCC-CCCC-CCCC-CCCC');
     assert.equal(await page.evaluate(() => localStorage.getItem('kit_ia_code')), 'CCCC-CCCC-CCCC-CCCC', 'le dernier code délivré doit être mémorisé pour le lecteur');
+    /* Vitrine « déjà publié au Club » : 3 titres, du plus récent au plus ancien, aucun titre du kit, aucun secret */
+    await page.waitForSelector('#clubSemaine:not([hidden])');
+    const titres = await page.$$eval('#clubListe li strong', (els) => els.map((e) => e.textContent));
+    assert.deepEqual(titres, ['La plus récente', 'Préparer un rendez-vous en 5 minutes', 'Relancer un devis sans se sentir lourd']);
+    assert.match(await page.textContent('#clubListe li'), /semaine 41 de 2026/);
+    assert.ok(!(await page.textContent('#clubSemaine')).includes('Ton assistant en 20 min'), 'un module du kit n\'a rien à faire dans la vitrine du Club');
+    assert.ok(!(await page.content()).includes('SECRET-PAYANT'));
+    assert.deepEqual(soucis, []);
+  } finally { await nav.close(); s.close(); }
+});
+
+test('vrai navigateur — vitrine Club : base vide ou worker en panne → le bloc reste caché, la page vit', async () => {
+  const { s, port } = await serveurLocal(DIR.pathname);
+  const nav = await chromium.launch({ headless: true });
+  try {
+    const page = await nav.newPage({ viewport: { width: 375, height: 812 } });
+    page.__clubVide = true;
+    const soucis = [];
+    page.on('pageerror', (e) => soucis.push('exception: ' + e.message));
+    await fauxWorker(page);
+    await page.goto('http://127.0.0.1:' + port + '/index.html', { waitUntil: 'networkidle' });
+    assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('clubSemaine')).display), 'none');
+    assert.equal(await page.evaluate(() => getComputedStyle(document.getElementById('club')).display), 'block', 'la carte Club reste visible');
     assert.deepEqual(soucis, []);
   } finally { await nav.close(); s.close(); }
 });
