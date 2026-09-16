@@ -67,9 +67,13 @@ verifie('un seul titre principal', (h.match(/<h1[\s>]/g) || []).length === 1);
 verifie('cible tactile de la marque ≥ 44 px', /\.marque\{[^}]*min-height:44px/.test(h));
 
 /* 6. Honnêteté commerciale : rien n'est vendu tant que rien n'est livrable. */
-verifie('dit que l\'entraîneur est en construction', h.includes('en construction'));
-verifie('ne demande ni paiement ni adresse avant d\'être utilisable',
-  h.includes('Aucune préinscription, aucun') && h.includes('adresse courriel demandée'));
+verifie('la partie gratuite de l\'entraîneur est annoncée comme gratuite pour toujours',
+  h.includes('gratuite, pour toujours'));
+verifie('dit que rien n\'est en vente tant que l\'encaissement n\'est pas branché',
+  h.includes("rien n'est en vente tant que l'encaissement n'est\n      pas branché") || /rien n'est en vente tant que l'encaissement/.test(h.replace(/\s+/g, ' ')));
+verifie('ne demande ni préinscription ni adresse',
+  /Aucune préinscription, aucune adresse courriel demandée/.test(h.replace(/\s+/g, ' ')));
+verifie('mène bien à l\'entraîneur', h.includes('href="/entrainement.html"'));
 verifie('aucun lien de paiement tant que le produit n\'existe pas', !/paypal\.me|checkout|payer maintenant/i.test(h));
 
 if (echecs.length) {
