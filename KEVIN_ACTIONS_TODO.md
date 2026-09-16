@@ -31,13 +31,48 @@ Ils étaient écrits en clair dans le dépôt, qui est **public**. Je les ai mas
 
 ---
 
+## 🟣 PASSER LE DÉPÔT EN PRIVÉ — 1 seul clic pour toi, et il vient EN DERNIER
+
+> Tu m'as dit le 15.09 : « que personne ne puisse voir mon code, mes liens, tout ce qui se
+> construit — seuls les sites restent accessibles ». Voici où on en est, honnêtement.
+
+**Ce que j'ai vérifié (pas supposé)** : GitHub ne sert un site depuis un dépôt **privé** qu'avec
+un **abonnement payant**. Ton compte est en gratuit. **Si tu cliques « privé » maintenant,
+kd-mc.com s'éteint.** Il faut donc héberger le site ailleurs d'abord — c'est fait.
+
+**Ce que j'ai trouvé en le préparant** : ton code sortait par **DEUX** portes, pas une. Le miroir
+`kdmc-site.pages.dev` publiait **le dépôt entier** (2 049 fichiers de code serveur, 37 498 du
+source d'Apex, 193 automatisations, 188 tests). Passer GitHub en privé **n'aurait rien caché**.
+Les deux portes envoient maintenant le même paquet trié : les applications, et rien d'autre.
+
+**L'ordre à respecter** — je fais 1 à 4, tu ne fais que le 5 :
+
+| # | Quoi | Qui |
+|---|---|---|
+| 1 | Publier le site sur Cloudflare Pages (paquet trié) | moi |
+| 2 | Vérifier que les **26 adresses** répondent vraiment sur la nouvelle publication | moi |
+| 3 | Basculer le routeur du domaine vers cette publication | moi |
+| 4 | Vérifier kd-mc.com en vrai, page par page | moi |
+| 5 | **Passer le dépôt en privé** → [Réglages du dépôt, tout en bas](https://github.com/9r4rxssx64-creator/CMCteams/settings) → « Change repository visibility » → **Private** | 👆 **toi** |
+
+**Deux choses que je préfère te dire franchement :**
+
+- **Passer en privé n'efface pas le passé.** Tout ce qui a été publié reste chez qui l'a copié.
+  C'est pourquoi les 4 codes de la section 🔴 ci-dessus doivent être **changés**, pas seulement
+  cachés. Le privé protège la **suite**, pas ce qui est déjà sorti.
+- **Ton compte Cloudflare s'ouvre avec ton compte GitHub.** Si un jour tu perds l'accès à
+  GitHub, tu perds aussi la main sur l'hébergement de tes sites. Ça mérite un second moyen de
+  connexion (je peux te préparer la marche à suivre quand tu veux).
+
+---
+
 ## 🟠 UNE RÉPONSE SUFFIT — je fais le travail derrière
 
 Rien à installer, rien à configurer. Tu réponds, je m'occupe du reste.
 
 | # | Ma question | Ce que je fais avec ta réponse |
 |---|---|---|
-| 5 | **Le dépôt est public et contient les noms de tes collègues et de tes proches** (261 noms d'effectif, les 6 Pit Boss, le nom de Laurence). Trois choix : **(a)** on assume, **(b)** je remplace les noms par des matricules dans l'app et la correspondance part dans Firebase (chantier, mais c'est le vrai correctif), **(c)** on passe le dépôt en privé (le plus rapide, mais ça casse la publication du site — je mesure d'abord). | J'exécute l'option choisie |
+| 5 | ~~**Le dépôt est public et contient les noms de tes collègues et de tes proches.** (a) on assume · (b) matricules + correspondance dans Firebase · (c) dépôt en privé~~ → **Tu as répondu (c) le 15.09.2026.** J'ai mesuré, et le chemin est préparé : voir la section « 🟣 PASSER LE DÉPÔT EN PRIVÉ » ci-dessous. | Fait — plus rien à décider ici |
 | 6 | **Les boutiques peuvent être modifiées par n'importe qui.** Deux règles Firebase autorisent l'écriture **sans aucune condition**. Je les ferme ? | Je durcis les règles et je vérifie que les boutiques marchent toujours |
 | 7 | **N'importe quelle branche de travail peut déployer la production d'Apex Chat.** Je restreins à `main` seulement ? | Je corrige le déploiement |
 | 8 | **`arbre/research/ACTES-VERIF.md`** contient les dates et lieux de naissance d'environ **18 personnes vivantes** + une adresse — dans un dépôt public. Je le retire du dépôt ? | Je le sors et je le remplace par une note |

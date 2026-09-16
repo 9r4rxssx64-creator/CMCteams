@@ -56,6 +56,7 @@ const APPS = [
   { chemin: 'tools/crea-studio', quoi: 'studio' },
   { chemin: 'tools/crypto-bot-dashboard', quoi: 'bot' },
   { chemin: 'tools/poolrobot', quoi: 'beatbot' },
+  { chemin: 'tools/tor', quoi: 'tor' },  // 27e adresse, ajoutee sur main le 15.09 : sans elle, GitHub eteint = 404
   { chemin: 'tools/approvals', quoi: 'autorisations' },
   { chemin: 'lingua', quoi: 'lingua' },
   { chemin: 'shops/dashboard', quoi: 'dashboard' },
@@ -85,6 +86,20 @@ const MEDIAS = [
   { chemin: 'arbre', quoi: 'arbre généalogique' },
   { chemin: 'shops/chez-lolo', quoi: 'chez-lolo' },
   { chemin: 'la-detente', quoi: 'la-detente' },
+  /* OUBLIÉ jusqu'au 10/09/2026 : cuisine.kd-mc.com (+ cocina, cujina) est
+     dans la table ROUTES depuis le 13/08 mais n'était recopié NULLE PART.
+     GitHub éteint = ces trois adresses restaient en 404, sans secours.
+     19 Mo, 136 fichiers : c'est un livre illustré → il va avec les médias. */
+  { chemin: 'tools/cuisine', quoi: 'cuisine / cocina / cujina' },
+];
+/* PORTAILS — un dossier dont SEULE la page d'accueil est servie. Ses vitrines
+   vivent dans des sous-dossiers déjà recopiés plus haut (chez-lolo, dashboard,
+   sourcing…), donc recopier `shops` en entier coûterait 167 Mo pour 16 Ko
+   utiles. OUBLIÉ jusqu'au 10/09/2026 : shops.kd-mc.com pointe sur la RACINE de
+   `shops`, et cette racine (index.html, robots.txt, sitemap.xml) n'était dans
+   aucune liste — la page d'accueil des boutiques n'avait pas de secours. */
+const PORTAILS = [
+  { chemin: 'shops', quoi: 'portail boutiques — page d\'accueil seule' },
 ];
 /* cmcteams.kd-mc.com pointe sur la RACINE du dépôt : on ne recopie donc que
    les fichiers de l'app, surtout pas les 500 Mo de coulisses. */
@@ -96,20 +111,37 @@ const RACINE_FICHIERS = ['index.html', 'sw.js', 'manifest.webmanifest', 'manifes
    de code SERVEUR. Aucune page ne les charge — vérifié, 0 référence. Refaire le
    paquet est l'occasion de ne plus les mettre en ligne. */
 const IGNORER = new Set(['node_modules', '.git', 'coverage', '.DS_Store', 'tests', '__tests__', 'workers']);
+/* Documents de travail qui ne sont PAS des Markdown. Ce sont exactement ceux que
+   deploy.yml retire et que publier.sh exclut — décision déjà prise le 5.09, jamais
+   appliquée ICI (mesuré le 10/09 : les deux étaient dans le paquet). On ne
+   RE-décide rien, on aligne la troisième surface sur les deux autres.
+   ⚠️ `arbre/research/actesimg/` reste, lui : l'app arbre s'en sert vraiment
+   (19 références dans arbre/index.html) — même exception que les deux autres. */
+const TRAVAIL = new Set(['arbre/research/actes.json', 'coffre-fort/memo', 'CLAUDE_HANDOFF.json']);
 function filtre(src) {
   const base = src.split('/').pop();
+  const rel = src.startsWith(RACINE + '/') ? src.slice(RACINE.length + 1) : '';
+  if (TRAVAIL.has(rel)) return false;
   if (IGNORER.has(base)) return false;
   if (/\.(mp4|mov|avi|zip|patch)$/i.test(base)) return false;   // trop lourd, inutile au dépannage
   if (/\.map$/i.test(base)) return false;                       // carte de code source = tout le source exposé
   if (/\.(test|spec)\.[jt]sx?$/i.test(base)) return false;
-  /* Notes internes : SECRETS_TODO.md listait l'architecture des secrets de
-     Kevin (les noms, pas les valeurs) — inutile de la laisser en ligne. */
-  if (/^(SECRETS|CLAUDE|NOTES_|MEMO|KEVIN_).*\.md$/i.test(base)) return false;
+  /* AUCUN document de travail, comme sur les DEUX autres publications
+     (deploy.yml retire `*.md`, publier.sh les exclut du miroir). Ce paquet est
+     la TROISIÈME surface publique : quand GitHub est éteint, c'est LUI qui sert
+     kd-mc.com — il doit obéir à la même règle, sinon la panne publie ce que le
+     fonctionnement normal cache.
+     MESURÉ le 10/09/2026 : la liste par préfixes (SECRETS|CLAUDE|NOTES_|MEMO|
+     KEVIN_) en laissait passer **33**, dont les 21 fiches de recherche
+     généalogique d'`arbre/research/` (données personnelles de la famille) et
+     l'architecture des règles Firebase des boutiques.
+     Sûr : 0 page du site ne charge un `.md` local — vérifié, tous les renvois
+     sont des adresses absolues vers github.com (même mesure que le 5.09). */
+  if (/\.md$/i.test(base)) return false;
   /* Scripts internes de fabrication (_gen-boards.mjs, _crosscheck.mjs…) :
      aucune page ne les charge — vérifié, 0 référence — et ils n'ont rien à
      faire sur un site public. */
   if (/^_.*\.(mjs|js|cjs)$/i.test(base)) return false;
-  if (/TODO.*\.md$/i.test(base)) return false;
   try { if (statSync(src).size > 24 * 1024 * 1024) return false; } catch (_) { /* rien */ }
   return true;
 }
@@ -157,6 +189,27 @@ for (const a of liste) {
   totalFichiers += n; totalOctets += o;
   console.log(`  ${String(n).padStart(5)} fichiers  ${(o / 1048576).toFixed(1).padStart(6)} Mo   ${a.chemin}  (${a.quoi})`);
 }
+/* Portails : on copie les fichiers posés À LA RACINE du dossier, et rien
+   d'autre — pas de descente dans les sous-dossiers (ils sont déjà traités,
+   ou volontairement laissés de côté). Un seul mode l'exclut : --app, qui
+   fabrique un paquet pour UNE application servie à la racine. */
+for (const p of (UNE_APP ? [] : PORTAILS)) {
+  const src = join(RACINE, p.chemin);
+  if (!existsSync(src)) { absents.push(p.chemin); continue; }
+  const dst = join(SORTIE, p.chemin);
+  mkdirSync(dst, { recursive: true });
+  let n = 0, o = 0;
+  for (const e of readdirSync(src, { withFileTypes: true })) {
+    if (!e.isFile()) continue;
+    const f = join(src, e.name);
+    if (!filtre(f)) continue;
+    cpSync(f, join(dst, e.name));
+    n++; o += statSync(f).size;
+  }
+  totalFichiers += n; totalOctets += o;
+  console.log(`  ${String(n).padStart(5)} fichiers  ${(o / 1048576).toFixed(1).padStart(6)} Mo   ${p.chemin}  (${p.quoi})`);
+}
+
 for (const f of RACINE_FICHIERS) {
   const src = join(RACINE, f);
   if (!existsSync(src)) continue;

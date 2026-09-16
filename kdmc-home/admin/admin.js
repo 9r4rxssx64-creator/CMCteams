@@ -56,7 +56,11 @@
   function globalPills(accounts) {
     var withCgu = accounts.filter(function (a) { return a.cgu_at; }).length;
     var hits = accounts.reduce(function (s, a) { return s + (a.hits || 0); }, 0);
+    /* Combien sont limités à une app : c'est la file de ce que Kevin a à décider
+       (chaque nouvel inscrit y entre). Visible d'un coup d'œil, sans dérouler. */
+    var limites = accounts.filter(function (a) { return a.portee === 'app'; }).length;
     return '<div class="pill kdmc-in"><b>' + accounts.length + '</b> comptes clients</div>'
+      + '<div class="pill kdmc-in" id="pill-limites" title="Personnes qui n\'ont accès qu\'aux applications cochées sur leur fiche"><b>' + limites + '</b> limité' + (limites > 1 ? 's' : '') + ' à une app</div>'
       + '<div class="pill kdmc-in"><b>' + withCgu + '</b> CGU acceptées</div>'
       + '<div class="pill kdmc-in"><b>' + hits + '</b> connexions cumulées</div>';
   }
@@ -160,15 +164,122 @@
       + kvp('Lieux', places)
       + kvp('Dernière connexion', dt(a.last_seen))
       + '</div>'
+      + blocAcces(a)
       + '<button class="revoke" data-uid="' + esc(a.uid) + '" type="button" '
       + 'title="Coupe toutes ses sessions ouvertes (appareil perdu/volé). Il pourra se reconnecter normalement.">🚪 Déconnecter partout</button>'
       + '</div>';
   }
 
+  /* ---- Où cette personne a le droit d'aller (Kevin 2026-09-15) -------------
+     « Quelqu'un d'extérieur peut s'enregistrer et être seulement dans une app,
+     d'autres font partie du domaine entier […] admin possibilité de bloquer
+     dans une app. » Ici c'est LE bouton qui décide — le routeur applique.
+     Deux réglages séparés, parce qu'ils répondent à deux questions différentes :
+       · la PORTÉE  = « où elle a le droit d'être »
+       · la FERMETURE = « sauf ici » (marche même en portée domaine)
+     Mélanger les deux dans une seule liste de cases rend le sens ambigu (la même
+     case voudrait dire « ouvre » ou « ferme » selon le réglage d'à côté). */
+  var APPS_LISTE = [];
+  function chip(uid, groupe, app, coche) {
+    var id = 'acc-' + groupe + '-' + uid + '-' + app;
+    return '<label class="chipacc" for="' + esc(id) + '">'
+      + '<input type="checkbox" id="' + esc(id) + '" data-grp="' + groupe + '" data-app="' + esc(app) + '"'
+      + (coche ? ' checked' : '') + '> ' + esc(app) + '</label>';
+  }
+  function blocAcces(a) {
+    if (!APPS_LISTE.length) return '';
+    var portee = a.portee === 'app' ? 'app' : 'domaine';
+    var acces = a.acces || [], bloque = a.bloque || [];
+    var resume = portee === 'domaine'
+      ? ('Tout le domaine' + (bloque.length ? ' · sauf ' + esc(bloque.join(', ')) : ''))
+      : (acces.length ? esc(acces.join(', ')) : '⚠️ aucune app');
+    return '<details class="acces" data-uid="' + esc(a.uid) + '">'
+      + '<summary>🔐 Où elle peut aller <b>' + resume + '</b></summary>'
+      + '<div class="accbody">'
+      + '<label class="accradio"><input type="radio" name="p-' + esc(a.uid) + '" data-portee="domaine"'
+      + (portee === 'domaine' ? ' checked' : '') + '> Partout dans le domaine <span class="d">(la partie admin reste réservée)</span></label>'
+      + '<label class="accradio"><input type="radio" name="p-' + esc(a.uid) + '" data-portee="app"'
+      + (portee === 'app' ? ' checked' : '') + '> Seulement les applications cochées</label>'
+      + '<div class="chips grpacces">' + APPS_LISTE.map(function (x) { return chip(a.uid, 'acces', x, acces.indexOf(x) >= 0); }).join('') + '</div>'
+      + '<details class="sousbloc"><summary>🚫 Fermer une application précise</summary>'
+      + '<div class="d">Marche même si la personne a accès à tout le domaine.</div>'
+      + '<div class="chips">' + APPS_LISTE.map(function (x) { return chip(a.uid, 'bloque', x, bloque.indexOf(x) >= 0); }).join('') + '</div>'
+      + '</details>'
+      + '<button class="savacc" data-uid="' + esc(a.uid) + '" type="button">💾 Enregistrer</button>'
+      + '<span class="accmsg"></span>'
+      + '</div></details>';
+  }
+  function wireAcces() {
+    var list = document.getElementById('list');
+    if (!list) return;
+    /* Les cases « autorisée » n'ont de sens qu'en portée « une app » : on les
+       grise sinon, pour qu'on ne coche pas quelque chose qui ne servira à rien. */
+    function majEtat(box) {
+      var app = box.querySelector('input[data-portee="app"]');
+      var chips = box.querySelector('.grpacces');
+      if (!app || !chips) return;
+      chips.style.opacity = app.checked ? '1' : '.45';
+      var ins = chips.querySelectorAll('input');
+      for (var i = 0; i < ins.length; i++) ins[i].disabled = !app.checked;
+    }
+    var boxes = list.querySelectorAll('details.acces');
+    for (var i = 0; i < boxes.length; i++) majEtat(boxes[i]);
+    list.addEventListener('change', function (e) {
+      var box = e.target && e.target.closest ? e.target.closest('details.acces') : null;
+      if (box) majEtat(box);
+    });
+    list.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('.savacc') : null;
+      if (!b) return;
+      var box = b.closest('details.acces'), uid = b.getAttribute('data-uid') || '';
+      var portee = box.querySelector('input[data-portee="app"]').checked ? 'app' : 'domaine';
+      var lu = function (grp) {
+        var out = [], ins = box.querySelectorAll('input[data-grp="' + grp + '"]');
+        for (var i = 0; i < ins.length; i++) if (ins[i].checked) out.push(ins[i].getAttribute('data-app'));
+        return out;
+      };
+      var acces = lu('acces'), bloque = lu('bloque');
+      var msg = box.querySelector('.accmsg');
+      /* On prévient AVANT d'enregistrer : « une app » sans app cochée = la
+         personne n'a plus accès à rien, et elle ne comprendrait pas pourquoi. */
+      if (portee === 'app' && !acces.length) {
+        msg.textContent = '⚠️ Coche au moins une application.';
+        return;
+      }
+      b.disabled = true; msg.textContent = '…';
+      fetch('/__admin/acces', {
+        method: 'POST', credentials: 'include',
+        headers: Object.assign({ 'content-type': 'application/json' }, adminHeaders()),
+        body: JSON.stringify({ uid: uid, portee: portee, acces: acces, bloque: bloque }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          b.disabled = false;
+          if (j && j.ok) {
+            msg.textContent = '✅ Enregistré';
+            var s = box.querySelector('summary b');
+            if (s) s.textContent = portee === 'domaine'
+              ? ('Tout le domaine' + (bloque.length ? ' · sauf ' + bloque.join(', ') : ''))
+              : acces.join(', ');
+            loadAudit();
+          } else msg.textContent = '⚠️ ' + ((j && j.reason) || 'Échec — réessaie');
+        })
+        .catch(function () { b.disabled = false; msg.textContent = '⚠️ Réseau — réessaie'; });
+    });
+  }
+  function chargerApps(puis) {
+    fetch('/__admin/acces', { credentials: 'include', cache: 'no-store', headers: adminHeaders() })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (j && j.apps) APPS_LISTE = j.apps; })
+      .catch(function () { /* section optionnelle : sans la liste, le bloc ne s'affiche pas */ })
+      .then(puis);
+  }
+
   /* ---- Journal admin (événements sensibles, tracés côté serveur) ---- */
   var AUD_EV = {
     admin_login_ok: '🔓 Connexion admin réussie', admin_login_fail: '⛔️ Code admin refusé',
-    revoke_sessions: '🚪 Déconnexion forcée', new_device: '📱 Nouvel appareil', fbtoken_mint: '🔥 Jeton Firebase admin émis'
+    revoke_sessions: '🚪 Déconnexion forcée', new_device: '📱 Nouvel appareil', fbtoken_mint: '🔥 Jeton Firebase admin émis',
+    perimetre: '🔐 Périmètre modifié', nouvel_inscrit: '🆕 Nouvel inscrit (limité à une app)'
   };
   function audRow(e) {
     return '<div class="tlrow">' + esc(dt(e.ts)) + ' · <b>' + esc(AUD_EV[e.ev] || e.ev) + '</b>'
@@ -226,6 +337,7 @@
     wirePresence();
     wireHist();
     wireRevoke();
+    wireAcces();
     var q = document.getElementById('q');
     if (q) q.addEventListener('input', function () {
       var v = q.value.toLowerCase();
@@ -282,7 +394,17 @@
     if (inp) { inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); }); inp.focus(); }
   }
 
+  var _appsCharge = false;
   function loadAccounts(tries, silent) {
+    /* La liste des apps du domaine est nécessaire pour afficher le bloc « Où elle
+       peut aller ». Chargée UNE fois, avant le premier rendu. Son absence ne bloque
+       rien : sans elle, les fiches s'affichent exactement comme avant (fail-open).
+       Drapeau DÉDIÉ : réutiliser `silent` ici avalerait la demande du code admin
+       au premier chargement (silent = « ne casse pas la vue sur hoquet réseau »). */
+    if (!_appsCharge) {
+      _appsCharge = true;
+      return chargerApps(function () { loadAccounts(tries, silent); });
+    }
     return fetch('/__admin/accounts', { credentials: 'include', cache: 'no-store', headers: adminHeaders() })
       .then(function (r) { return r.json().then(function (j) { return { st: r.status, j: j }; }).catch(function () { return { st: r.status, j: null }; }); })
       .then(function (res) {

@@ -370,7 +370,9 @@
       var acc = { uid: uid, name: name, salt: salt, codeHash: h, created: Date.now() };
       ls(LS_ACCOUNT, acc);
       ls(LS_CGU, { at: Date.now(), v: 1 });
-      return (window.kdmcSSO ? window.kdmcSSO.issue(uid, name, true) : Promise.resolve(false)).then(function () { return acc; });
+      /* 4e argument = l'app d'où la personne vient (?return=) : le domaine ouvre son
+         NOUVEAU compte à cette app-là, pas au portail (qui n'est que la réception). */
+      return (window.kdmcSSO ? window.kdmcSSO.issue(uid, name, true, safeReturnUrl()) : Promise.resolve(false)).then(function () { return acc; });
     }).then(function (acc) {
       _postLogin(acc);
     }).catch(function () { err.textContent = 'Erreur, réessaie.'; btn.disabled = false; btn.textContent = 'Créer mon compte'; });
@@ -383,7 +385,7 @@
     var btn = document.getElementById('u-go'); btn.disabled = true; btn.textContent = '…';
     hashCode(code, acc.salt).then(function (h) {
       if (!timingEq(h, acc.codeHash)) { err.textContent = 'Code incorrect.'; btn.disabled = false; btn.textContent = 'Se connecter'; return; }
-      return (window.kdmcSSO ? window.kdmcSSO.issue(acc.uid, acc.name, true) : Promise.resolve(false)).then(function () { _postLogin(acc); });
+      return (window.kdmcSSO ? window.kdmcSSO.issue(acc.uid, acc.name, true, safeReturnUrl()) : Promise.resolve(false)).then(function () { _postLogin(acc); });
     }).catch(function () { err.textContent = 'Erreur, réessaie.'; btn.disabled = false; btn.textContent = 'Se connecter'; });
   }
 

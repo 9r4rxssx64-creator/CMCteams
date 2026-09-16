@@ -12,6 +12,9 @@
   'use strict';
   var BASE = '/__sso';
   var LS_TOK = 'kdmc_sso_token';
+  /* Dernier refus « hors périmètre » reçu du domaine (app, reason, message) —
+     lisible par l'app via kdmcSSO.refus() pour l'expliquer en français. */
+  var _refus = null;
 
   function storedToken() { try { return localStorage.getItem(LS_TOK) || ''; } catch (e) { return ''; } }
   function setToken(t) { try { if (t) localStorage.setItem(LS_TOK, t); else localStorage.removeItem(LS_TOK); } catch (e) { /* quota */ } }
@@ -45,9 +48,18 @@
       .then(function (r) {
         if (!r.ok) return { state: 'neterr' };
         return r.json().then(function (j) {
-          return (j && j.ok)
-            ? { state: 'session', session: { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin, verified: !!j.verified } }
-            : { state: 'invalid' };
+          if (j && j.ok) return { state: 'session', session: { uid: j.uid, name: j.name, cgu: !!j.cgu, admin: !!j.admin, verified: !!j.verified, app: j.app || '', portee: j.portee || '' } };
+          /* 4e état — 'hors_perimetre' : la session est VALIDE, mais cette personne
+             n'existe pas dans CETTE app (périmètre décidé par l'admin, 2026-09-15).
+             Ce n'est PAS un pass invalide : le jeter déconnecterait la personne de
+             l'app où elle EST chez elle, juste pour avoir ouvert une autre porte.
+             On garde le pass, on n'envoie pas au portail (il redonnerait la même
+             réponse), et on retient le message pour que l'app puisse l'afficher. */
+          if (j && j.hors_perimetre) {
+            _refus = { app: j.app || '', reason: j.reason || 'hors_perimetre', message: j.message || 'Ton compte n\'est pas ouvert sur cette application.' };
+            return { state: 'hors_perimetre', refus: _refus };
+          }
+          return { state: 'invalid' };
         }).catch(function () { return { state: 'neterr' }; });
       })
       .catch(function () { return { state: 'neterr' }; });
@@ -118,14 +130,23 @@
   function issue(uid, name, cgu) {
     /* Établit la session unique pour tout le domaine. Stocke le pass signé
        (pour le canal Bearer / les PWA). → true/false. */
+    /* `pour` = l'adresse de l'app d'où la personne vient (le portail la reçoit en
+       ?return=). Le domaine ouvre le NOUVEAU compte à cette app-là — pas au portail,
+       qui n'est qu'une réception. Optionnel : sans lui, rien ne change. */
+    var pour = '';
+    try { if (arguments[3]) pour = new URL(String(arguments[3]), location.origin).hostname; } catch (e) { pour = ''; }
     return fetch(BASE + '/issue', {
       method: 'POST',
       credentials: 'include',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ uid: uid, name: name, cgu: !!cgu }),
+      body: JSON.stringify({ uid: uid, name: name, cgu: !!cgu, pour: pour }),
     })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { if (j && j.ok && j.token) setToken(j.token); return !!(j && j.ok); })
+      .then(function (j) {
+        if (j && j.ok && j.token) setToken(j.token);
+        if (j && j.hors_perimetre) _refus = { app: j.app || '', reason: j.reason || 'hors_perimetre', message: j.message || '' };
+        return !!(j && j.ok);
+      })
       .catch(function () { return false; });
   }
 
@@ -150,6 +171,10 @@
       /* réseau/serveur KO → on GARDE le pass (il est peut-être valide) et l'app
          retombe sur son login normal. Jamais de verrouillage, jamais de purge. */
       if (r.state === 'neterr') return null;
+      /* hors périmètre : pass VALIDE mais pas pour cette app. On le GARDE (elle est
+         chez elle ailleurs) et on ne renvoie PAS au portail (même réponse). L'app
+         retombe sur son écran normal et peut afficher kdmcSSO.refus().message. */
+      if (r.state === 'hors_perimetre') return null;
       /* serveur a dit explicitement « pas de session » : si on avait déjà un pass,
          il est réellement invalide → on le jette, mais on NE reboucle PAS. */
       if (got || hadToken) { setToken(''); return null; }
@@ -217,6 +242,9 @@
     ensureSession: ensureSession,
     autoLogin: autoLogin,
     token: storedToken,
+    /* Dernier refus « hors périmètre » ({app, reason, message}) ou null — pour
+       que l'app dise en français POURQUOI, au lieu d'un écran de connexion muet. */
+    refus: function () { return _refus; },
     supportsPasskey: supportsPasskey,
     registerPasskey: registerPasskey,
     loginPasskey: loginPasskey,
