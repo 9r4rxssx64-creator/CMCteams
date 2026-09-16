@@ -32,8 +32,14 @@ prévenu de rien (accès annuel payé en une fois = zéro relance = zéro renouv
   (leur `.catch` affiche « Inscrit ! » quand même — leçon #103, le faux vert). Il faut la vraie clé publique
   (EmailJS → Account → General → « Public Key », publique par conception) : 1 copier-coller de Kevin, puis je
   la pose aux 7 endroits. Le service `service_318elaz` et le gabarit restent 🔴 non vérifiés jusque-là.
-- `audit-live` couvre désormais `kit.kd-mc.com/pour/index.html`, `pour/plombier.html` et `lire.html` (module 1 chargé
-  depuis la vraie base) : c'est lui qui dira si le routeur sert bien le sous-dossier `pour/` (à lancer après fusion).
+- **MESURÉ sur le vrai domaine (audit-live run 35162308998, après fusion #3831)** : `kit.kd-mc.com/` ✅ **vitrine Club
+  réelle : 1 consigne « Répondre à un avis négatif sans t'énerver »** (lue par le vrai worker sur la vraie base) ·
+  `pour/index.html` ✅ **47 métiers listés** (le routeur sert bien le sous-dossier) · `pour/plombier.html` ✅ **5 situations,
+  feuille de style appliquée** · `lire.html` ❌ puis corrigé : ma sonde attendait ≥ 8 entrées, le lecteur SANS code montre
+  le sommaire du KIT (7 modules, 6 verrous) — les consignes du Club n'apparaissent qu'avec un code Club. Sonde réécrite
+  (7 modules / 6 verrous / module 1 rendu), c'était mon attente qui était fausse, pas la page.
+- Relances J-14 prouvées contre la vraie base (run 35162221001, à blanc) : « 0 abonné dont l'accès expire d'ici le
+  30 septembre 2026 », requête passée sur la vraie colonne.
 ⚠ `test:paquet-pages` rouge en local sur `apex-ai` (63 chunks manquants du build v13) — préexistant, pas mien.
 
 ## 2026-09-16 23:20 — Business automatisé récurrent : le Club IA au Boulot (59 €/an) + machine hebdomadaire

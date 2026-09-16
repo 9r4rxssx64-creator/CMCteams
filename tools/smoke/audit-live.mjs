@@ -102,9 +102,17 @@ const SURFACES = [
       return { ok: true, note: '5 situations, feuille de style appliquée' };
     } },
   { url: 'https://kit.' + ROOT + '/lire.html', name: 'Kit IA — lecteur (module 1 gratuit)', selKey: '#module h2', deep: async (page) => {
+      // Sans code, le lecteur demande /apercu?produit=kit-ia : le sommaire est celui du KIT
+      // (7 modules, 1 ouvert, 6 verrouillés). Les consignes du Club n'apparaissent qu'avec
+      // un code Club (mesuré run 35162308998 : 7 entrées — ma 1re attente « ≥ 8 » était fausse,
+      // pas la page). Ce qui se prouve ici : 7 modules, le 1er rendu, 6 verrous visibles.
       const h2 = await page.textContent('#module h2').catch(() => '');
       const nb = await page.$$eval('#sommaire li', (els) => els.length).catch(() => 0);
-      return nb >= 8 ? { ok: true, note: 'sommaire ' + nb + ' entrées (7 kit + Club), module 1 « ' + h2.slice(0, 50) + ' »' } : { ok: false, note: 'sommaire ' + nb + ' entrées (≥ 8 attendues : 7 modules + ≥ 1 consigne du Club)' };
+      const verrous = await page.$$eval('#sommaire .verrou', (els) => els.length).catch(() => 0);
+      if (nb !== 7) return { ok: false, note: 'sommaire ' + nb + ' entrées (7 modules du kit attendus)' };
+      if (verrous !== 6) return { ok: false, note: verrous + ' verrous (6 attendus : seul le module 1 est gratuit)' };
+      if (!h2) return { ok: false, note: 'module 1 non rendu' };
+      return { ok: true, note: '7 modules, 6 verrouillés, module 1 rendu « ' + h2.slice(0, 50) + ' »' };
     } },
   { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
