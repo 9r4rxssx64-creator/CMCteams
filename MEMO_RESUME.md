@@ -30,6 +30,10 @@ prélèvement automatique = zéro litige ; contenu généré et livré par une r
   lignes à Kevin, imprime « SEMAINE PUBLIÉE ». Idempotent (semaine déjà en base = rien).
   Garde `test:club-semaine` (10, faux réseau, sabotages) câblée dans `test:ci`. Aucun cron
   GitHub (règle absolue), aucun cron Cloudflare (plan plein).
+- **Attrapé par la CI (kdmc-sso-e2e sur la PR #3826)** : `kit.kd-mc.com` était dans les ROUTES du routeur
+  mais pas dans la source unique `kdmc-home/apps.json` (ni `rotaplan`/`croupier`, absents depuis le 15.09 —
+  « et les autres aussi ») → les 3 ajoutés à `apps.json` + replis `APP_NM` (portail) et `APP_NAMES` (admin).
+  `apps-consistency.test.mjs` : 5/7 → 7/7.
 🔴 Non vérifié tant que l'essai à blanc en CI n'a pas tourné : le jeton `CLOUDFLARE_API_TOKEN` a-t-il le droit D1 (la lecture réelle le prouve). 🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
 best-effort et le client voit toujours son code à l'écran. 🔴 Non mesuré : demande et
 conversion. Chiffres honnêtes : 100 membres = 5 900 €/an + ventes du kit ; 0 aujourd'hui.
