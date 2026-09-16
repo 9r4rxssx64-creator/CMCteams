@@ -9,55 +9,132 @@
 
 ---
 
-## 📣 RÉSEAUX SOCIAUX — tu n'as que YouTube (16.09.2026)
+## 🗂 TOUT CE QUI T'ATTEND, EN UNE PAGE (vérifié le 16.09.2026)
 
-Je l'ai **mesuré**, pas supposé : sur tes 7 jetons réseaux, **un seul existe**
-(YouTube). Facebook, Instagram, Telegram et TikTok sont vides. Le moyen de publier
-est construit et testé — il attend juste tes jetons.
+Trié par **ce que ça te coûte de ne pas le faire**, pas par ordre d'arrivée.
+Chaque ligne renvoie à sa section plus bas.
 
-Rangé par **ce que ça rapporte pour le temps que ça coûte**, pas par ordre d'arrivée.
+### 🔴 Ça te coûte MAINTENANT
 
-### 1️⃣ Telegram — 2 minutes, aucune validation de personne
+| Quoi | Pourquoi ça presse | Temps |
+|---|---|---|
+| **Ton vrai IBAN** (ou dis-moi de retirer le bouton) | Tes 6 boutiques affichent `MC98 •••• •••• ••••` et « Copier l'IBAN » **copie des points**. Un client qui choisit « virement » tombe dans le vide, **en ce moment** | 1 min |
+| **Régénérer `AGENT_SECRET`** | Seule protection de ton agent en ligne. Qui l'a lance ses cycles — chaque cycle appelle l'IA, **c'est ton argent** | 2 min |
+| **Changer le code famille de l'arbre** + **révoquer le jeton GitLab** `glpat-wD6Q…` | Le code **est** l'adresse des données : qui l'a lit et modifie l'arbre — des infos de personnes vivantes | 3 min |
 
-Le plus rentable : débloque **publier + lire + messages**, tout de suite.
+### 🟡 Ça débloque des revenus
 
-👆 Sur ton iPhone, ouvre Telegram → cherche **@BotFather** → envoie `/newbot` →
-choisis un nom → il te renvoie un jeton qui ressemble à `1234567890:AAH...`.
-Puis crée un canal, ajoute ton bot comme administrateur, et envoie-moi les deux
-valeurs (jeton + nom du canal). **Je pose le reste.**
+| Quoi | Ce que ça ouvre | Temps |
+|---|---|---|
+| **Compte Metricool** (gratuit) | **TikTok + Instagram + Facebook + YouTube** — le seul chemin vers TikTok | ~10 min |
+| **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |
+| **Telegram** — @BotFather | Publier + lire + messages, zéro validation | 2 min |
+| **App PayPal** (client id · secret · webhook) | Livraison **instantanée** après paiement. Sans ça tu valides à la main — ça marche quand même | 5 min |
+| **App Meta** *(facultatif)* | Lire commentaires et mentions → repérer des clients | ~10 min |
 
-### 2️⃣ Meta — ~10 minutes, UN seul jeton débloque Facebook ET Instagram
+### ⚪ Quand tu veux — rien ne casse en attendant
 
-C'est le gros morceau, et c'est le même jeton pour les deux réseaux (ton compte
-Instagram doit être **Business** et **relié à ta Page Facebook** — ça se fait dans
-les réglages Instagram, « Passer à un compte professionnel »).
+| Quoi | Pourquoi |
+|---|---|
+| Droit **Vectorize** sur le jeton Cloudflare | Sinon la mémoire RAG d'Apex ne se déploie jamais |
+| **Accès au compte Cloudflare « 9r4 »** | Il est verrouillé derrière GitHub ; j'en ai besoin pour certains réglages |
+| Passer le **dépôt en privé** | À faire **en dernier** (ça casse les pages publiées tant que ce n'est pas réglé) |
+| **Compte développeur Apple** (99 $/an) : oui ou non ? | Décide si on publie des apps sur l'App Store |
+| **Combien de gilets**, et broderie logo seul ou logo + prénoms ? | Bloque la commande La Détente |
+| Mot de passe **Sentry** — *seulement si tu avais copié celui du guide* | Un document public suggérait un mot de passe précis |
+| **Crédit image Google à zéro** | C'est ça qui cassait les figurines |
+
+> **Rappel qui vaut pour toute cette page** : tu ne me donnes **jamais** un mot de passe.
+> Uniquement des **jetons**, que tu crées et que tu peux révoquer.
+
+---
+
+## 📣 RÉSEAUX SOCIAUX — tout ce que tu dois aller chercher (16.09.2026)
+
+**Mesuré** (journal CI, pas une supposition) : sur tes 7 jetons réseaux, **un seul
+existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
+
+> ⚠️ **Ne me donne JAMAIS tes mots de passe.** Ce dépôt est public, et un mot de passe
+> Facebook = accès total et permanent (messages, paiements, publicité). Ce qu'il me
+> faut, ce sont des **jetons** : limités à ce que tu autorises, et **révocables d'un
+> clic**. Tu les crées toi-même, tu ne me donnes jamais ton identifiant.
+
+### Par ordre de valeur — la 1️⃣ suffit pour démarrer
+
+| # | Ce que tu vas chercher | Temps | Ce que ça débloque |
+|---|---|---|---|
+| **1️⃣** | **Compte Metricool** (gratuit) | ~10 min | **TikTok + Instagram + Facebook + YouTube** d'un coup, publication automatique |
+| 2️⃣ | **Zapier** — 2 liens à taper (tu as déjà le compte) | 2 min | Facebook Pages + Instagram, sans créer d'app Meta |
+| 3️⃣ | **Telegram** — @BotFather | 2 min | Publier + lire + messages, sans aucune validation |
+| 4️⃣ | **App Meta** *(facultatif)* | ~10 min | Contrôle total via mon worker : lire les commentaires, publier finement |
+| 5️⃣ | **App TikTok** *(à éviter)* | long | Rien de plus que Metricool. **Ne le fais que si Metricool ne te convient pas.** |
+
+---
+
+### 1️⃣ Metricool — le seul chemin vers TikTok, et il couvre tout le reste
+
+👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
+comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
+
+**Pourquoi c'est le premier de la liste** : TikTok n'autorise la publication automatique
+qu'aux outils qui ont passé **leur audit**. Metricool l'a passé — donc ce que ni toi ni
+moi ne pouvons faire directement, Metricool le fait. Et le même compte sert aussi pour
+Instagram, Facebook et YouTube.
+
+**Le gratuit suffit pour démarrer** : 50 publications/mois (≈ 1,6 par jour), 1 marque,
+sans limite de durée. Si un jour ça déborde, on regardera le payant à ce moment-là.
+
+Ensuite je branche le connecteur Metricool côté Claude et **je publie pour toi**.
+
+### 2️⃣ Zapier — 2 liens, tu as déjà un compte
+
+👆 Je te donne les **deux liens exacts dans le chat** (ils ne sont volontairement pas
+écrits ici : ce dépôt est public, et un lien de connexion ne doit pas traîner en ligne).
+Tu tapes, tu te connectes avec Facebook, c'est fini — **aucune app Meta à créer**.
+
+Si tu as perdu les liens, demande-les-moi, je les régénère en 10 secondes.
+
+### 3️⃣ Telegram — 2 minutes, personne à convaincre
+
+👆 Sur ton iPhone : Telegram → cherche **@BotFather** → envoie `/newbot` → choisis un
+nom. Il te renvoie un jeton qui ressemble à `1234567890:AAH…`. Crée un canal, ajoute ton
+bot comme **administrateur**, et envoie-moi le jeton + le nom du canal.
+
+### 4️⃣ App Meta — seulement si tu veux le contrôle fin
+
+Utile pour **lire les commentaires et les mentions** (repérer des clients potentiels),
+ce que Metricool ne fait pas aussi bien.
 
 👆 [developers.facebook.com/apps](https://developers.facebook.com/apps) → « Créer une
-app » → type **Business** → ajoute le produit **Facebook Login** → dans
-[l'explorateur d'API](https://developers.facebook.com/tools/explorer/), choisis ta
-Page et coche `pages_manage_posts`, `pages_read_engagement`,
-`instagram_basic`, `instagram_content_publish` → « Générer un jeton d'accès ».
+app » → type **Business** → produit **Facebook Login** → dans
+[l'explorateur d'API](https://developers.facebook.com/tools/explorer/), choisis ta Page
+et coche `pages_manage_posts`, `pages_read_engagement`, `instagram_basic`,
+`instagram_content_publish` → « Générer un jeton d'accès ».
 
-⚠️ Le jeton qu'il te donne dure **1 heure**. Dis-le-moi et je t'explique comment
-l'échanger contre un jeton **longue durée** (60 jours, renouvelable automatiquement).
+⚠️ Prérequis : ton Instagram doit être en **compte professionnel** et **relié à ta Page
+Facebook** (réglages Instagram → « Passer à un compte professionnel »).
 
-### 3️⃣ TikTok — à faire en dernier, et je suis honnête sur la limite
+⚠️ Le jeton donné dure **1 heure**. Dis-le-moi : je t'explique comment l'échanger contre
+un jeton **60 jours**, renouvelé ensuite tout seul.
 
-**Personne ne publie sur TikTok en pleine autonomie** sans passer l'audit de TikTok
-(leur « Content Posting API »). Ce n'est pas une limite de mon côté, c'est leur règle.
-Ce qu'on peut faire de mieux : je prépare la vidéo et la légende, je la dépose en
-**brouillon dans ta boîte TikTok**, et tu publies **d'un doigt**. Pour ça il faut
-quand même une app sur [developers.tiktok.com](https://developers.tiktok.com/).
+### 5️⃣ TikTok en direct — honnêtement, ne le fais pas
 
-Dis-moi si tu veux qu'on le fasse, ou si on laisse TikTok en manuel pour l'instant.
+Une app sur [developers.tiktok.com](https://developers.tiktok.com/) + leur audit, pour
+finir au même endroit que Metricool. **À ne faire que si Metricool ne te va pas.**
 
 ### Où tu poses les jetons
 
-**Depuis ton iPhone, un collage par réseau** — plus besoin de GitHub. Je te fais la
-page dès que tu as le premier jeton. En attendant, tu peux aussi les coller en
-[secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)
-sous ces noms exacts : `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`,
-`FACEBOOK_PAGE_TOKEN`, `FACEBOOK_PAGE_ID`, `INSTAGRAM_ACCESS_TOKEN`, `INSTAGRAM_USER_ID`.
+**Depuis ton iPhone, un collage par réseau** — je te fais la page dès que tu as le
+premier. Sinon, en
+[secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new),
+sous ces noms **exacts** (une majuscule de travers et le jeton n'arrive jamais) :
+`TELEGRAM_BOT_TOKEN` · `TELEGRAM_CHAT_ID` · `FACEBOOK_PAGE_TOKEN` · `FACEBOOK_PAGE_ID` ·
+`INSTAGRAM_ACCESS_TOKEN` · `INSTAGRAM_USER_ID`.
+
+### Ce qui marche DÉJÀ, sans que tu fasses rien
+
+- **YouTube** : jeton présent et valide (104 caractères), le pipeline vidéo l'utilise.
+- **Le moyen de publier** (`kdmc-social`) : déployé, testé, surveillé. Il attend les jetons.
 
 ---
 
