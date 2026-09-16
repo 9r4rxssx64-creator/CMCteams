@@ -164,3 +164,16 @@ describe('buildIdentitySection() — Sortie déterministe', () => {
     expect(buildIdentitySection()).toBe(buildIdentitySection());
   });
 });
+
+describe('APEX_IDENTITY.persona — "Javis" (Kevin 2026-09-16, "Go tout")', () => {
+  it('s\'appelle Javis, ton tutoiement, 8 traits', () => {
+    expect(APEX_IDENTITY.persona.name).toBe('Javis');
+    expect(APEX_IDENTITY.persona.tone).toBe('tutoiement');
+    expect(APEX_IDENTITY.persona.traits).toHaveLength(8);
+  });
+
+  it('buildIdentitySection() mentionne le persona Javis', () => {
+    const section = buildIdentitySection();
+    expect(section).toContain('Javis');
+  });
+});
