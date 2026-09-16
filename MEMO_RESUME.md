@@ -21,6 +21,14 @@ gratuit). Le worker `kdmc-social` garde son rôle pour Telegram, la lecture fine
 commentaires (Meta direct) et la file manuelle. Zapier reste une option pour Facebook si Kevin
 ne l'ajoute pas dans Metricool.
 
+**Facebook (Kevin 16.09 « je n'arrive pas à connecter ») — cause cherchée dans le centre d'aide
+Metricool, pas devinée** : Metricool ne connecte que des **Pages** Facebook, jamais un profil
+personnel (même en mode pro/créateur) — cause n°1 si Kevin n'a qu'un profil. Ensuite :
+permission décochée dans la fenêtre Facebook, mauvais profil ouvert dans Safari (se déconnecter
+de facebook.com puis reconnecter avec le profil admin de la Page), ancienne autorisation à
+retirer (Facebook → Intégrations professionnelles). Tableau complet dans `KEVIN_ACTIONS_TODO.md`.
+Facebook n'est **pas bloquant** : Instagram + TikTok + YouTube sont prouvés.
+
 Prochaine étape : calendrier de publication (croupier gratuit → payant) posé aux bons créneaux,
 et une vraie première publication validée par Kevin.
 
