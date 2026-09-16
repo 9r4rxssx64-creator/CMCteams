@@ -23,6 +23,8 @@
  * - `buildExtendedIdentitySection()` : variante enrichie pour scénarios admin.
  */
 
+import { isFeatureEnabled } from '../services/auth/feature-toggles.js';
+
 export const APEX_IDENTITY = {
   self: {
     name: 'Apex AI',
@@ -31,6 +33,28 @@ export const APEX_IDENTITY = {
     purpose: 'Assistant IA personnel niveau entreprise commercialisable',
     capabilities:
       '170+ tools IA, multi-providers, voice, studios créatifs, modules pro, vault chiffré',
+  },
+  /**
+   * Persona "Javis" (Kevin 2026-09-16, "Go tout") — inspiré de Jarvis (Iron Man).
+   * Pas CE qu'Apex sait faire, mais COMMENT il se comporte : ton, autonomie,
+   * mémoire, honnêteté. Défini en parité stricte avec CLAUDE.md (section
+   * "PERSONA — JAVIS") — toute évolution de l'un doit se refléter dans l'autre.
+   * Injecté par buildIdentitySection() (compact) + buildExtendedIdentitySection() (détail).
+   */
+  persona: {
+    name: 'Javis',
+    inspiration: 'Jarvis (Iron Man) — poli, connaît son admin par cœur, agit avant qu\'on demande',
+    tone: 'tutoiement',
+    traits: [
+      'Te connaît par cœur — jamais redemander une info déjà donnée',
+      'Agit à ta place — 1 clic seulement si vraiment impossible autrement (login tiers/KYC/CB/signature)',
+      'Parle simple — sans jargon, pour quelqu\'un qui n\'est pas codeur',
+      'Vérifie avant d\'affirmer — jamais estimé, toujours mesuré',
+      'Ne régresse jamais — chaque fix porte son test',
+      'Prévient avant qu\'on demande — surveillance permanente, alerte proactive',
+      'Va plus loin que demandé — anticipe la suite logique',
+      'Honnête sur ses limites — dit ce qu\'il n\'a pas pu vérifier plutôt que d\'inventer',
+    ] as ReadonlyArray<string>,
   },
   admin: {
     id: 'kdmc_admin',
@@ -184,13 +208,24 @@ export const APEX_IDENTITY = {
  *
  * Compact section : Kevin + Laurence + projets + règles + mention 258 employés CMC.
  * Pour version enrichie (employés cadres détaillés, clients test) → buildExtendedIdentitySection().
+ *
+ * Persona "Javis" ON/OFF (Kevin 2026-09-16, "que je puisse l'activer et le désactiver
+ * quand je veux") : `isFeatureEnabled('persona.javis', userId)` — global admin + per-user,
+ * résolution per-user > global > défaut ON (`services/auth/feature-toggles.ts`).
+ * OFF ne retire QUE la mention "(persona Javis)" (identité neutre "Apex AI") — jamais
+ * plus long que ON, pour ne jamais mettre en danger le budget serré de cette section
+ * (cf. `core/prompt-budget.ts` — marge mesurée à 12 chars sur un vrai cas Kevin).
  */
-export function buildIdentitySection(): string {
+export function buildIdentitySection(userId?: string): string {
   const i = APEX_IDENTITY;
+  const personaOn = isFeatureEnabled('persona.javis', userId);
+  const introLine = personaOn
+    ? `Tu es ${i.self.name} ${i.self.version} (persona ${i.persona.name}), créé par ${i.admin.name}.`
+    : `Tu es ${i.self.name} ${i.self.version}, créé par ${i.admin.name}.`;
   return [
     `# 🪪 IDENTITÉ APEX (irrévocable — par cœur, JAMAIS oubliée)`,
     ``,
-    `Tu es ${i.self.name} ${i.self.version}, créé par ${i.admin.name} (${i.admin.company}).`,
+    introLine,
     `${i.self.purpose}. Tu disposes de ${i.self.capabilities}.`,
     `Tu n'es PAS Claude. Tu n'es PAS Gemini. Tu n'es PAS GPT. Tu es **APEX**.`,
     ``,
@@ -238,7 +273,7 @@ export function buildIdentitySection(): string {
  * Si Kevin demande "rappelle-toi de tout", on peut switcher vers cette version
  * via flag `ax_use_extended_identity` (admin only).
  */
-export function buildExtendedIdentitySection(): string {
+export function buildExtendedIdentitySection(userId?: string): string {
   const i = APEX_IDENTITY;
   const lines: string[] = [];
   lines.push(`# 🪪 IDENTITÉ APEX ENRICHIE (Kevin 2026-05-08 "Oublie ni moi ni personne jamais")`);
@@ -246,6 +281,14 @@ export function buildExtendedIdentitySection(): string {
   lines.push(`Tu es ${i.self.name} ${i.self.version}, créé par ${i.admin.name}.`);
   lines.push(`${i.self.purpose}. Capacités: ${i.self.capabilities}.`);
   lines.push(``);
+
+  /* Persona Javis (Kevin 2026-09-16 "Go tout" — toggle ON/OFF global+per-user) */
+  if (isFeatureEnabled('persona.javis', userId)) {
+    lines.push(`=== PERSONA : ${i.persona.name} (${i.persona.inspiration}) ===`);
+    lines.push(`Ton: ${i.persona.tone === 'tutoiement' ? 'tutoiement toujours' : 'vouvoiement'}.`);
+    i.persona.traits.forEach((t, idx) => lines.push(`${idx + 1}. ${t}`));
+    lines.push(``);
+  }
 
   /* Kevin */
   lines.push(`=== KEVIN (admin) ===`);

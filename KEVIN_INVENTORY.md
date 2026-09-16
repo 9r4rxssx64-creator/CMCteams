@@ -1,5 +1,21 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🤖 Javis — le personnage flottant + l'app installable — 2026-09-16
+
+**▶️ Essayer (une fois déployé)** : ouvre [arbre.kd-mc.com](https://arbre.kd-mc.com) connecté en admin — le bouton rond doré apparaît en bas à droite, au-dessus du bouton ➕ existant.
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/javis/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tools/javis/javis-widget.js) | La SOURCE : bouton flottant, personnage animé, chat, SSO admin-only. À copier tel quel dans une nouvelle app (ce domaine n'a pas de bundler — chaque app garde sa propre copie, comme `_depSsoAutoAdmin`) |
+| [`arbre/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/arbre/javis-widget.js) | La copie réellement chargée par `arbre/index.html` (preuve vivante) |
+| [`javis/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/index.html) | L'app **installable sur ton téléphone** (plein écran, personnage + chat) |
+| [`javis/manifest.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/manifest.json) · [`javis/sw.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/sw.js) · [`javis/icon.svg`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/icon.svg) | PWA : « Ajouter à l'écran d'accueil », icône, hors-ligne |
+
+**Bee**, la mascotte de Lingua (mêmes images, mêmes animations — une seule source de vérité). Parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives
+(gratuites). Pas encore fait, honnêtement : lèvres synchronisées phonétiquement (ici,
+bouche qui bouge en rythme avec la voix — pas un vrai lip-sync), et le déploiement
+domaine-large (pour l'instant : arbre + l'app installable seulement).
+
 ## 📣 Réseaux sociaux — le moyen unique — 2026-09-16
 
 | Fichier | À quoi ça sert |
