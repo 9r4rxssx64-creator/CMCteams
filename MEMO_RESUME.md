@@ -8,7 +8,7 @@ public), parce que c'est le seul modèle récurrent que je peux faire tourner SA
 moyens réels (PayPal.me/Revolut sans abonnement natif → accès annuel payé en une fois, pas de
 prélèvement automatique = zéro litige ; contenu généré et livré par une routine hebdomadaire).
 - **Produit `club-ia`** : 59 €/an = kit complet (57 consignes) + une consigne-outil nouvelle
-  chaque semaine (produit `club-ia` en base, ordre 100+semaine). Code valable 365 j (`ttlJours`).
+  chaque semaine (produit `club-ia` en base, id `sAAAA-SS` = semaine ISO, l'ordre continue celui du kit : 8, 9, 10…). Code valable 365 j (`ttlJours`).
 - **Caisse** : chaque livraison écrit une fiche dans la table D1 `abonnes` (code, e-mail, produit,
   expiration) et envoie le code par e-mail via EmailJS (service/gabarit des boutiques, clé
   privée `EMAILJS_PRIVATE_KEY` poussée par le workflow). Best-effort prouvé : panne d'e-mail ou
@@ -17,12 +17,20 @@ prélèvement automatique = zéro litige ; contenu généré et livré par une r
 - **Pages** : offre Club sur la page de vente (PayPal.me/kdmc/59EUR, revolut.me/kdmc/59eur), menu
   « ce que tu as acheté », verrou du lecteur qui propose les deux. 6 tests (navigateur : le choix
   Club part bien comme `club-ia`).
-- **Routine hebdomadaire « Club IA — contenu de la semaine »** (Claude Code Remote, session
-  neuve chaque lundi 07:00 UTC, connecteurs Gmail + Cloudflare) : lit les abonnés et les
-  dernières consignes en base, rédige la consigne de la semaine (brief vérité, accents vérifiés),
-  l'insère en D1, prévient les abonnés par e-mail, envoie à Kevin un point de 5 lignes (abonnés,
-  ventes, ce qui a été publié). Aucun cron GitHub (règle absolue), aucun cron Cloudflare (plan plein).
-🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
+- **Routine hebdomadaire « Club IA — contenu de la semaine »** (Claude Code Remote,
+  `trig_01EAY5rmth8oQid62eVkGRBr`, session neuve chaque lundi 07:00 UTC) : elle ne fait QU'UNE
+  chose — déclencher le workflow **`club-semaine.yml`** (`dry_run=false`) et lire son journal.
+  Mesuré : les sessions de routine n'ont aucun connecteur dans cette organisation → tout le
+  travail vit dans le workflow, qui a les secrets. **`tools/club/semaine.mjs`** : lit les titres
+  déjà publiés (D1 REST, paramètres liés), fait rédiger UNE consigne par l'API Anthropic
+  (`claude-opus-5`, thème × métier qui tournent sur 52 semaines sans doublon), la contrôle
+  (balises, 2 consignes + exemples, pièges, checklist, accents, pas de « prompt », pas de trou,
+  chiffre légal ⇒ service-public.fr, titre inédit) — 3 essais sinon RIEN n'est publié —,
+  l'insère, relit la ligne, prévient chaque abonné actif par EmailJS, envoie le point de 5
+  lignes à Kevin, imprime « SEMAINE PUBLIÉE ». Idempotent (semaine déjà en base = rien).
+  Garde `test:club-semaine` (10, faux réseau, sabotages) câblée dans `test:ci`. Aucun cron
+  GitHub (règle absolue), aucun cron Cloudflare (plan plein).
+🔴 Non vérifié tant que l'essai à blanc en CI n'a pas tourné : le jeton `CLOUDFLARE_API_TOKEN` a-t-il le droit D1 (la lecture réelle le prouve). 🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
 best-effort et le client voit toujours son code à l'écran. 🔴 Non mesuré : demande et
 conversion. Chiffres honnêtes : 100 membres = 5 900 €/an + ventes du kit ; 0 aujourd'hui.
 Suite : pages SEO « l'IA pour [métier] » (50 métiers) générées pour l'acquisition organique,
