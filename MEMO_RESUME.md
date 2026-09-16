@@ -1,5 +1,18 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 21:23 — STOP casino (Kevin) : « Je t'ai dit d'attendre pour le produit du casino »
+
+Faute reconnue : mon message précédent annonçait un « calendrier de publication croupier
+gratuit → payant ». **Tout ce qui touche au casino est gelé** : guide croupier, entraîneur de
+paiements, paliers payants, pub croupier, démo CMCteams, prospection B2B casino. On ne les
+publie pas, on n'en fait pas la pub, on n'y touche pas jusqu'au feu vert de Kevin.
+Ce qui reste et sert au nouveau commerce : `kdmc-vente` (colonne de vente générique — le
+registre `PRODUITS` sera remplacé), les canaux sociaux prouvés (Metricool : Instagram, TikTok,
+YouTube ; `kdmc-social` : Telegram/file), les moyens de paiement (PayPal.me, Revolut).
+Prochaine étape réelle : choisir le nouveau commerce **hors casino** (règle Kevin : « la niche
+la plus pertinente, la plus rentable… n'hésite pas à en faire plusieurs »), puis seulement
+après, la pub.
+
 ## 2026-09-16 (nuit) — Metricool branché : la chaîne de publication est PROUVÉE
 
 Kevin a créé le compte Metricool (marque « Kdmc », id 7000185, fuseau Europe/Paris)

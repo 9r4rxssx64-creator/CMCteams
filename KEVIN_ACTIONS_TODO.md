@@ -93,8 +93,9 @@ Sources : le centre d'aide Metricool ([je n'arrive pas à connecter Facebook](ht
 | 5 | **Rien ne marche** | Plan B : lien Zapier « Facebook Pages » (je te le redonne dans le chat) — même règle : il faut une **Page**. |
 
 > Ce que ça change pour la suite : **Instagram + TikTok + YouTube sont déjà branchés et
-> prouvés** — Facebook n'est pas bloquant, je peux commencer le calendrier de publication
-> sans lui. Facebook s'ajoutera quand la Page existera.
+> prouvés** — Facebook n'est pas bloquant. Facebook s'ajoutera quand la Page existera.
+> ⚠️ **Rien sur le casino/croupier ne sera publié** (Kevin 16.09 : « attends pour le produit
+> du casino ») — la pub attend le nouveau commerce, hors casino.
 
 👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
 comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
