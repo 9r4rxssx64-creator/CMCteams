@@ -9,6 +9,48 @@
 
 ---
 
+## 💶 PAIEMENTS — 5 minutes, une seule fois (16.09.2026)
+
+**Ce n'est PAS bloquant.** La machine encaisse déjà : sans ça, chaque vente arrive dans ta
+file et tu valides en 1 clic. Avec ça, le client est servi **tout seul, instantanément**,
+et tu ne fais plus rien du tout.
+
+Je ne peux pas le faire à ta place : créer une application dans TON compte PayPal exige
+**ta session connectée**. C'est la seule vraie limite — le reste est déjà fait et testé.
+
+👆 **1. Créer l'application** → [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live)
+   « Create App » → nom : `KDMC Vente` → type **Merchant** → Create.
+   Tu obtiens un **Client ID** et un **Secret**.
+
+👆 **2. Créer le webhook** (même page, ton app → section *Webhooks* → « Add Webhook ») :
+   - **URL** : `https://kdmc-vente.9r4rxssx64.workers.dev/webhook/paypal`
+   - **Événement à cocher** : `Payment capture completed` (celui-là seulement)
+   - Tu obtiens un **Webhook ID**.
+
+👆 **3. Coller les 3 valeurs** → [Settings → Secrets → New secret](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)
+   Un secret par valeur, **noms exacts** (une majuscule de travers = la clé n'arrive jamais) :
+
+   | Nom du secret | Ce que tu colles dedans |
+   |---|---|
+   | `PAYPAL_CLIENT_ID` | le Client ID de l'étape 1 |
+   | `PAYPAL_SECRET` | le Secret de l'étape 1 |
+   | `PAYPAL_WEBHOOK_ID` | le Webhook ID de l'étape 2 |
+
+👆 **4. Relancer le déploiement** → [Actions → Deploy kdmc-vente → Run workflow](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-vente.yml)
+
+**Comment tu sauras que ça marche** : le journal du déploiement imprime la santé du worker.
+`"paypal_recherche":true` et `"paypal_webhook":true` = c'est bon. Il imprime aussi le refus
+d'un faux paiement — la preuve qu'on ne livre rien sans preuve.
+
+### Pendant que tu y es — deux choses que j'ai trouvées dans les boutiques
+
+| Quoi | Le problème, en clair |
+|---|---|
+| **L'IBAN est faux** | Les 6 boutiques affichent `MC98 •••• •••• ••••` et le bouton « Copier l'IBAN » copie **des points**. Donne-moi le vrai (ou dis-moi de retirer le bouton) — aujourd'hui il ne sert qu'à faire perdre un client. |
+| **Revolut sans montant** | Ton lien Revolut n'emporte pas la somme : le client la tape lui-même, donc il se trompe. PayPal, lui, l'emporte. Je peux afficher le montant à recopier en gros à côté du bouton. |
+
+---
+
 ## 🔴 URGENT — 4 mots de passe sont connus de tout le monde
 
 Ils étaient écrits en clair dans le dépôt, qui est **public**. Je les ai masqués, mais

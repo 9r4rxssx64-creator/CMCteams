@@ -1,5 +1,21 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 💶 Encaisser → vérifier → livrer — 2026-09-16
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`services/kdmc-vente/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/worker.js) | Le worker : webhook PayPal, recherche API, file manuelle, anti-rejeu, `/contenu` |
+| [`services/kdmc-vente/vente.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/vente.test.mjs) | 26 contrôles · 3 gardes prouvés par sabotage |
+| [`services/kdmc-vente/wrangler.toml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/wrangler.toml) | Réglages + le stockage KV (id `059260f5…`, créé le 16.09) |
+| [`.github/workflows/deploy-kdmc-vente.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/deploy-kdmc-vente.yml) | Déploiement : tests obligatoires, puis preuve live (un faux webhook DOIT être refusé) |
+| [`shops/croupier/acces.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/acces.html) | La page « J'ai payé, donne-moi mon accès » |
+| [`shops/croupier/acces.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/acces.js) | Sa logique — elle ne décide rien, elle obéit au worker |
+| [`tests/croupier-acces.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-acces.test.mjs) | 6 contrôles dont la **parité menu ⇄ catalogue du worker** |
+
+`npm run test:vente` et `npm run test:croupier-acces` (les deux dans `test:ci`).
+
+**▶️ Lancer le déploiement** : [Actions → Deploy kdmc-vente](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-vente.yml)
+
 ## 🎯 L'entraîneur de paiements — 2026-09-16
 
 **▶️ Essayer** : [croupier.kd-mc.com/entrainement.html](https://croupier.kd-mc.com/entrainement.html)
