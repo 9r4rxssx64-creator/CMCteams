@@ -7,6 +7,19 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 16/09/2026 22:25 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `0aa098d3` · **Run** : `35157474307`
+- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35157474307
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+##[error]Process completed with exit code 128.
+```
+
 ## ❌ Auto-merge Claude branches into main — 16/09/2026 22:16 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `ae13542e` · **Run** : `35155879915`
@@ -458,27 +471,5 @@ pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be 
 ##[warning]PR #3767 — merge auto refusé. Cause exacte ci-dessous.
 [claude/apex-chat-suite-2210 632d03018] diag: pourquoi l'auto-merge de claude/apex-chat-suite-2210 est refusé [skip ci]
 error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 10/09/2026 22:22 UTC
-
-- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `4491f54c` · **Run** : `34535801571`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/34535801571
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-pull request create failed: GraphQL: Something went wrong while executing your query on 2026-09-10T22:15:31Z. Please include `3841:3839AF:3FF8C2:CF54E3:6AA32C02` when reporting this issue.
-##[warning]PR #3765 — merge auto refusé. Cause exacte ci-dessous.
-[claude/verify-cmcteams-light-data-rzlvau 2111b6405] diag: pourquoi l'auto-merge de claude/verify-cmcteams-light-data-rzlvau est refusé [skip ci]
 ##[error]Process completed with exit code 1.
 ```
