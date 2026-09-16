@@ -74,12 +74,24 @@ jobs:
         run: |
           URL="${{ steps.deploy.outputs.worker_url }}"
           [ -z "$URL" ] && { echo "URL introuvable"; exit 1; }
-          for i in 1 2 3 4 5; do
-            if curl -fsS "$URL/health" | tee /tmp/h.json | grep -q '"ok":true'; then break; fi
-            echo "retry $i"; sleep 5
+          # La version qu'on vient de déployer se reconnaît à SON catalogue : tant que
+          # /health ne liste pas chaque produit du worker.js du dépôt, c'est l'ancienne
+          # version qui répond (mesuré le 16.09 : le premier appel, 0 s après le
+          # déploiement, lisait encore l'ancien worker — la preuve était un faux vert).
+          ATTENDUS=$(node -e "import('./worker.js').then(m=>console.log(Object.keys(m.__test.PRODUITS).join(' ')))")
+          echo "produits attendus : $ATTENDUS"
+          ok=0
+          for i in $(seq 1 12); do
+            curl -fsS "$URL/health" > /tmp/h.json || true
+            manque=0
+            for prod in $ATTENDUS; do grep -q "\"$prod\"" /tmp/h.json || manque=1; done
+            if grep -q '"ok":true' /tmp/h.json && [ "$manque" = 0 ]; then ok=1; break; fi
+            echo "ancienne version encore servie (essai $i) — attente 5 s"; sleep 5
           done
           echo "— santé —"; cat /tmp/h.json; echo
-          grep -q '"ok":true' /tmp/h.json
+          [ "$ok" = 1 ] || { echo "ÉCHEC : après 60 s, /health ne sert toujours pas le catalogue déployé"; exit 1; }
+          # Le contenu payant (Kit IA) vit dans la base D1 : sans binding, on vend du vide.
+          grep -q '"contenu_prive":true' /tmp/h.json || { echo "ÉCHEC : base de contenu (binding CONTENU) absente du worker déployé"; exit 1; }
           echo "— catalogue —"; curl -fsS "$URL/produits"; echo
           # Un faux webhook, sans signature valable, ne doit RIEN délivrer.
           echo "— faux webhook (doit être ignoré) —"
