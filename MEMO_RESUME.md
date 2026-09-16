@@ -8322,3 +8322,30 @@ Vérifié : SVG du widget **rendu en Node puis parsé en XML** (pas juste lu) + 
 d'animation présentes des deux côtés, SVG inline de l'app parsé, icon.svg parsé, `node --check`
 propre partout, 5/5 suites arbre toujours vertes. arbre v3.22 → v3.23 (APP_VER + CACHE en
 lockstep, le fichier servi a changé).
+
+---
+
+## Javis = Bee, celle de Lingua (2026-09-16, correction finale)
+
+Kevin : « Bee, le personnage qu'on a créé pour apprendre les langues — Lingua. » Ce n'était ni
+Duo ni Bea de Duolingo : c'est **sa** mascotte, déjà dessinée et animée dans `lingua/bee/`.
+**J'ai dessiné deux personnages pour rien avant de chercher l'existant** — réflexe à garder :
+chercher si Kevin a déjà l'objet demandé AVANT de le créer.
+
+Le widget et l'app réutilisent maintenant :
+- **Les mêmes images** : `lingua.kd-mc.com/bee/v2/rig/` (base + aile gauche + aile droite).
+  Une seule source de vérité : si l'art de Bee change dans Lingua, Javis suit tout seul.
+- **Les mêmes classes et la même géométrie mesurée** (`bee-rig`, `rig-lid` avec `--ll-*`/`--lr-*`,
+  `disc-mouth` avec `--mo-*`) — copiées telles quelles de `lingua/index.html`.
+- **`mascotAlive()` porté fidèlement** de `lingua/app.js` : respiration, clignement naturel,
+  regard qui suit le doigt, endormissement avec « z », réaction au toucher, bouche qui parle,
+  ailes qui battent plus vite pendant la parole. Plus le gros plan pendant la parole.
+- Voix : `pitch 1.35` (claire et enjouée, comme Bee dans Lingua).
+- Icône de l'app = `lingua/bee/icon-512.png` (son icône officielle).
+
+CSP mise à jour des deux côtés : `img-src` inclut `https://lingua.kd-mc.com` (sinon les images
+de Bee seraient bloquées en silence — piège CSP⇄fetch déjà documenté).
+
+Vérifié : `node --check` propre partout, 5/5 suites arbre vertes, **`tools/lingua/verify-assets.mjs`
+vert** (38 chemins contrôlés — je n'ai rien cassé chez Bee), les 3 images du rig existent bien.
+arbre v3.23 → v3.24, javis sw v1.0 → v1.1.
