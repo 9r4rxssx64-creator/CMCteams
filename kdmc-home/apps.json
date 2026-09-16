@@ -108,6 +108,18 @@
     "shops.kd-mc.com": {
       "icon": "🏬",
       "name": "Portail boutiques"
+    },
+    "rotaplan.kd-mc.com": {
+      "icon": "🗓️",
+      "name": "Rotaplan"
+    },
+    "kit.kd-mc.com": {
+      "icon": "🧰",
+      "name": "Kit IA de l'indépendant"
+    },
+    "croupier.kd-mc.com": {
+      "icon": "🃏",
+      "name": "Devenir croupier"
     }
   }
 }

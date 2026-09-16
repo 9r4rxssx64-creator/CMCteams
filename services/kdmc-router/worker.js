@@ -60,6 +60,7 @@ const ROUTES = {
   'javis.kd-mc.com': '/CMCteams/javis', // Javis / Bee — l'assistant de Kevin, app installable (Kevin 2026-09-16)
   'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
   'rotaplan.kd-mc.com': '/CMCteams/shops/rotaplan',
+  'kit.kd-mc.com': '/CMCteams/shops/kit-ia', // Kit IA de l'indépendant — produit numérique neuf (Kevin 2026-09-16)
   'croupier.kd-mc.com': '/CMCteams/shops/croupier', // Devenir croupier — guide de métier (Kevin 2026-09-15) // Rotaplan — planning des équipes en rotation, offre B2B (Kevin 2026-09-15)
   'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
@@ -121,6 +122,8 @@ const APPS = {
   'ia.kd-mc.com': 'ia',
   'outils.kd-mc.com': 'outils',
   'shops.kd-mc.com': 'shops',
+  'kit.kd-mc.com': 'kit',
+  'rotaplan.kd-mc.com': 'rotaplan', 'croupier.kd-mc.com': 'croupier', /* manquaient depuis le 15.09 : garde périmètre rouge (mesuré 16.09) */
   'tor.kd-mc.com': 'tor',
   'rotaplan.kd-mc.com': 'rotaplan',
   'croupier.kd-mc.com': 'croupier',

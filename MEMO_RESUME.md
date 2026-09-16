@@ -1,5 +1,129 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 23:45 — « Va plus loin. Enrichit. Améliore » : acquisition, fraîcheur, fidélisation du Kit/Club
+
+Kevin 23:25 : « Va plus loin. Enrichit. Améliore, etc ». Trois manques mesurés sur le business Kit/Club :
+personne ne TROUVE la page (une seule adresse, sans mot-clé métier), rien ne PROUVE que le Club vit
+(la carte promettait « chaque semaine » sans montrer une seule consigne), et un abonné qui expire n'était
+prévenu de rien (accès annuel payé en une fois = zéro relance = zéro renouvellement). Livré :
+- **47 pages « l'IA pour [métier] »** (`shops/kit-ia/pour/<slug>.html` + `pour/index.html`) générées par
+  `tools/kit/pages-metiers.mjs` depuis la **source unique `tools/kit/metiers.json`** (47 métiers × 5 situations
+  concrètes : devis, relance, réseaux, paperasse, routine — écrites pour CE métier, ex. plombier : « le courrier
+  au syndic pour la colonne commune »). Même CSP et même feuille de style que la vente, 0 script, données
+  structurées (WebPage + fil d'Ariane), 6 voisins par page, 48 entrées dans `shops/sitemap.xml` (entre deux
+  repères, réécrites par le générateur). Liens depuis la vente (FAQ « ça marche pour mon métier ? » + pied).
+  **Aucune consigne payante** dans ces pages : elles disent CE QUE l'IA fait faire, jamais COMMENT.
+  Garde `test:kit-metiers` (5) câblée dans `test:ci` : pages sur disque == source (générateur oublié = rouge),
+  CSP identique, 0 script/consigne/secret/emoji, liens relatifs qui existent, sitemap et index complets,
+  chaque page cite bien ses 5 situations. Régénérer : `npm run kit:metiers`.
+- **« Déjà publié au Club »** sur la page de vente : `kit.js` lit `/apercu?produit=club-ia` (le sommaire liste
+  tout, `source==='club-ia'` = les consignes hebdo) et montre les **3 titres les plus récents** avec le numéro de
+  semaine en clair. Bloc caché tant que rien n'est chargé (base vide, worker en panne = pas de trou). 2 tests
+  navigateur (3 titres dans le bon ordre, jamais un module du kit, jamais le contenu payant ; panne → caché).
+- **Relances J-14** dans `tools/club/semaine.mjs` (`relances()`) : chaque lundi, les abonnés `club-ia` dont
+  l'accès expire sous 14 jours reçoivent UN rappel (date de fin en clair, lien `#club`, « rien n'est prélevé
+  automatiquement »), marqué dans la nouvelle colonne **`abonnes.relance`** (ajoutée en D1 par MCP le 16.09 :
+  `ALTER TABLE abonnes ADD COLUMN relance TEXT`). Refus d'e-mail = pas marqué = repart lundi suivant. Tourne
+  aussi quand la semaine est déjà publiée. Le point à Kevin compte les rappels. 3 tests (16 au total).
+- **Cause EXACTE du refus EmailJS, mesurée (run 35160816828, essai à blanc + `tester_email`)** :
+  `HTTP 400 The Public Key is invalid`. Ce n'est PAS le réglage « non-browser » : la clé publique
+  `nUsorWTtC` (copiée du gabarit des 5 boutiques, jamais vérifiée) **n'existe pas** dans le compte EmailJS de
+  Kevin. Conséquence honnête : les formulaires newsletter/contact des 5 boutiques n'ont jamais envoyé non plus
+  (leur `.catch` affiche « Inscrit ! » quand même — leçon #103, le faux vert). Il faut la vraie clé publique
+  (EmailJS → Account → General → « Public Key », publique par conception) : 1 copier-coller de Kevin, puis je
+  la pose aux 7 endroits. Le service `service_318elaz` et le gabarit restent 🔴 non vérifiés jusque-là.
+- `audit-live` couvre désormais `kit.kd-mc.com/pour/index.html`, `pour/plombier.html` et `lire.html` (module 1 chargé
+  depuis la vraie base) : c'est lui qui dira si le routeur sert bien le sous-dossier `pour/` (à lancer après fusion).
+⚠ `test:paquet-pages` rouge en local sur `apex-ai` (63 chunks manquants du build v13) — préexistant, pas mien.
+
+## 2026-09-16 23:20 — Business automatisé récurrent : le Club IA au Boulot (59 €/an) + machine hebdomadaire
+
+Kevin 23:00 : « Trouve une idée de business automatisé. Crée et gère en autonomie, qui me rapporte
+un max régulièrement. » Choix : un ABONNEMENT posé sur le Kit IA (même caisse, même lecteur, même
+public), parce que c'est le seul modèle récurrent que je peux faire tourner SANS Kevin avec les
+moyens réels (PayPal.me/Revolut sans abonnement natif → accès annuel payé en une fois, pas de
+prélèvement automatique = zéro litige ; contenu généré et livré par une routine hebdomadaire).
+- **Produit `club-ia`** : 59 €/an = kit complet (57 consignes) + une consigne-outil nouvelle
+  chaque semaine (produit `club-ia` en base, id `sAAAA-SS` = semaine ISO, l'ordre continue celui du kit : 8, 9, 10…). Code valable 365 j (`ttlJours`).
+- **Caisse** : chaque livraison écrit une fiche dans la table D1 `abonnes` (code, e-mail, produit,
+  expiration) et envoie le code par e-mail via EmailJS (service/gabarit des boutiques, clé
+  privée `EMAILJS_PRIVATE_KEY` poussée par le workflow). Best-effort prouvé : panne d'e-mail ou
+  de base = la vente passe quand même ; `email_envoye` dit la vérité au client (« note-le, il n'a
+  pas pu partir par e-mail »). 34 tests.
+- **Pages** : offre Club sur la page de vente (PayPal.me/kdmc/59EUR, revolut.me/kdmc/59eur), menu
+  « ce que tu as acheté », verrou du lecteur qui propose les deux. 6 tests (navigateur : le choix
+  Club part bien comme `club-ia`).
+- **Routine hebdomadaire « Club IA — contenu de la semaine »** (Claude Code Remote,
+  `trig_01EAY5rmth8oQid62eVkGRBr`, session neuve chaque lundi 07:00 UTC) : elle ne fait QU'UNE
+  chose — déclencher le workflow **`club-semaine.yml`** (`dry_run=false`) et lire son journal.
+  Mesuré : les sessions de routine n'ont aucun connecteur dans cette organisation → tout le
+  travail vit dans le workflow, qui a les secrets. **`tools/club/semaine.mjs`** : lit les titres
+  déjà publiés (D1 REST, paramètres liés), fait rédiger UNE consigne par l'API Anthropic
+  (`claude-opus-5`, thème × métier qui tournent sur 52 semaines sans doublon), la contrôle
+  (balises, 2 consignes + exemples, pièges, checklist, accents, pas de « prompt », pas de trou,
+  chiffre légal ⇒ service-public.fr, titre inédit) — 3 essais sinon RIEN n'est publié —,
+  l'insère, relit la ligne, prévient chaque abonné actif par EmailJS, envoie le point de 5
+  lignes à Kevin, imprime « SEMAINE PUBLIÉE ». Idempotent (semaine déjà en base = rien).
+  Garde `test:club-semaine` (10, faux réseau, sabotages) câblée dans `test:ci`. Aucun cron
+  GitHub (règle absolue), aucun cron Cloudflare (plan plein).
+- **Attrapé par la CI (kdmc-sso-e2e sur la PR #3826)** : `kit.kd-mc.com` était dans les ROUTES du routeur
+  mais pas dans la source unique `kdmc-home/apps.json` (ni `rotaplan`/`croupier`, absents depuis le 15.09 —
+  « et les autres aussi ») → les 3 ajoutés à `apps.json` + replis `APP_NM` (portail) et `APP_NAMES` (admin).
+  `apps-consistency.test.mjs` : 5/7 → 7/7.
+- **MESURÉ le 16.09 à 22:45 UTC (run 35159072126, `main`)** : la machine a tourné POUR DE VRAI — la porte de
+  vérité a refusé l'essai 1 (un « [À COMPLÉTER] » oublié) et accepté l'essai 2 (757 mots, 2 consignes) ;
+  la consigne n° 1 « Répondre à un avis négatif sans t'énerver » est en base (`club-ia`/`s2026-38`, ordre 8,
+  6589 caractères, relue par moi via D1) → **le jeton Cloudflare a bien le droit d'écrire D1** ✅. Abonnés
+  actifs : 0. **Le point à Kevin par EmailJS n'est PAS parti** (clé présente, réponse non-ok) → cause exacte
+  désormais écrite dans le journal (HTTP + texte d'EmailJS) + bouton `tester_email` sur l'essai à blanc.
+  Hypothèse la plus probable (à mesurer au prochain essai) : réglage EmailJS « Allow EmailJS API for
+  non-browser applications » désactivé → refus 403 pour tout envoi serveur (code d'achat compris).
+- **Audit LIVE (run 35158702924)** : `https://kit.kd-mc.com/` rend dans un vrai Chromium, 0 requête projet
+  bloquée (seul bruit : le beacon Cloudflare Insights, refusé par la CSP, sans effet). 32 surfaces OK.
+🔴 Non vérifié : le gabarit EmailJS `template_newsletter` (ses champs exacts) — l'appel est
+best-effort et le client voit toujours son code à l'écran. 🔴 Non mesuré : demande et
+conversion. Chiffres honnêtes : 100 membres = 5 900 €/an + ventes du kit ; 0 aujourd'hui.
+Suite : pages SEO « l'IA pour [métier] » (50 métiers) générées pour l'acquisition organique,
+vidéos sans visage via Metricool.
+
+## 2026-09-16 22:55 — Kit IA de l'indépendant : produit numérique NEUF, construit, contenu en base, caisse live
+
+Kevin 21:47 : « un produit numérique dans la niche à la mode, max rentabilité, en toute autonomie.
+Pas de ce que nous avons déjà créé. On verra plus tard quand tout sera stable… Encore trop de bugs. »
+→ Lingua Premium et packs Créa GELÉS (tâches #10/#11). Niche choisie sur chiffres (3 sources) :
+**compétences IA pour non-techniciens** = le ticket le mieux payé des produits numériques 2026
+(49-499 $), packs de consignes ciblés 12-49 €, le générique « 500 prompts » est saturé.
+
+**Produit : Kit IA de l'indépendant — 7 modules, 57 consignes prêtes à copier, 47 € (2 ans).**
+Pour artisans/indépendants/commerçants francophones, iPhone-first, versions GRATUITES de
+ChatGPT/Claude/Gemini. Module 1 gratuit (aperçu), 2→7 payants.
+- Contenu : 7 modules rédigés (Opus, brief strict : vérité, 0 conseil juridique/fiscal, renvoi
+  service-public.fr, accents vérifiés par script après 2 modules livrés sans accents), 1 394 à
+  1 633 mots chacun, 103 Ko au total. **Stocké dans la base D1 `kdmc-contenu`
+  (d28c6ec0-21e4-46b8-a3dc-49f282e3a036), JAMAIS dans le dépôt public** (test qui l'interdit).
+  Inséré ligne par ligne depuis l'agent (Cloudflare MCP) — vérifié : 7 lignes, 57 consignes.
+- Caisse : `kdmc-vente` produit `kit-ia`, binding D1 `CONTENU`, `/apercu?produit=` (gratuit
+  seulement, sans code), `/lire?c=` (tout, contre code payé). CORS = tout sous-domaine HTTPS de
+  kd-mc.com (la liste fixe bloquait les pages servies depuis un sous-domaine — bug latent
+  croupier). 31 tests ; fuite aperçu prouvée discriminante par sabotage.
+- Site : `shops/kit-ia/` (index = vente + récupérer l'accès ; lire = lecteur, code mémorisé
+  `kit_ia_code`, bouton Copier par consigne, verrou visuel sur les modules payants). CSP stricte
+  sans style en ligne (attrapé par le test navigateur), 44 px, 375 px. 6 tests dont 2 en vrai
+  navigateur avec faux worker (`test:kit-ia`, dans `test:ci`).
+- Routage `kit.kd-mc.com` aux 5 endroits + `APPS` (rotaplan/croupier manquaient : garde
+  périmètre rouge depuis le 15.09, corrigée).
+- **Live (CI, run #4 vert)** : `/health` = `contenu_prive:true`, produits croupier-pro,
+  croupier-entretien, kit-ia. La preuve live attend maintenant la VRAIE version déployée
+  (mesuré : 0 s après le déploiement, l'ancien worker répondait encore = faux vert) et vérifie
+  que l'aperçu ne sert aucun module payant.
+- Paiement : PayPal.me/kdmc/47EUR et revolut.me/kdmc/47eur (montant pré-rempli), puis
+  formulaire « j'ai payé » → code. PayPal sans app = file manuelle (Kevin valide 1 clic).
+
+🔴 Non vérifié : `kit.kd-mc.com` n'est routé qu'après fusion sur main + déploiement du routeur
+(custom domain) ; le lecteur n'a pas encore été chargé sur le vrai domaine (canal CI `verif-reelle`).
+🔴 Non mesuré : la demande réelle. Prochaine étape : pub Metricool sans visage (Bee est Lingua =
+gelé → visuels neutres), test 30 jours.
+
 ## 2026-09-16 (soir, 3) — Bee bouge POUR DE VRAI (ses vraies vidéos), et elle ne peut plus se dédoubler
 
 ### Ce qui change quand tu ouvres l'app Bee
@@ -73,6 +197,38 @@ servies sans étiquette d'app, la chaîne de tests était **rouge sur `main`** �
 Ses lèvres suivent le **volume**, pas chaque lettre : elle ouvre la bouche au bon moment et de
 la bonne taille, mais elle ne forme pas un « o » sur un « o ». Pour ça il faudrait un moteur
 d'avatar (Live2D / TalkingHead.js) — plus lourd, pas branché.
+## 2026-09-16 21:40 — Nouveau commerce HORS casino : choix chiffré = Lingua Premium (+ packs Créa)
+
+Recherche faite (dépôt lu + 6 sources marché citées dans le rapport) — 5 niches comparées :
+Lingua Premium · packs Créa Studio · kit généalogie · La Détente (POD) · Cockpit Finances.
+**Principal = Lingua Premium** : le plus gros actif fini (2,07 Mo de données déjà écrites :
+anglais/italien/espagnol, monégasque 59 Ko + sources 113 Ko, LSF 309 Ko + sources 436 Ko,
+histoires bilingues 53 Ko — mesuré `wc -c`), 0 stock, 0 coût par vente hors PayPal, une
+mascotte (Bee) pour la pub sans visage, un contenu que personne ne vend (monégasque + LSF).
+Chaîne déjà en place : Metricool → page Lingua → kdmc-vente → code → contenu. Reste : le
+verrou premium dans `lingua/app.js` (aucune notion de premium aujourd'hui, vérifié grep) + 1
+entrée PRODUITS + page « Passer premium ». Prix 14,90 € (pack famille 29 €).
+**Secondaire = packs Créa Studio** (19 €, presets de filtres/sous-titres, même caisse).
+Écartés : généalogie (lourd, arbre mono-famille), La Détente (1 clic Kevin par commande +
+carte Printify), Finances (concurrence gratuite, risque « conseil financier »).
+🔴 **Non mesuré** : la demande réelle pour le monégasque → test 30 jours, 8 vidéos Bee via
+Metricool, seuil de validation 10 ventes avant d'investir plus. Marchés = chiffres mondiaux
+(apps de langues 7,4 → 8,6 Md$ 2025→2026), aucun chiffre local Monaco n'existe.
+Tâches #10 (Lingua Premium) et #11 (packs Créa) créées.
+
+## 2026-09-16 21:23 — STOP casino (Kevin) : « Je t'ai dit d'attendre pour le produit du casino »
+
+Faute reconnue : mon message précédent annonçait un « calendrier de publication croupier
+gratuit → payant ». **Tout ce qui touche au casino est gelé** : guide croupier, entraîneur de
+paiements, paliers payants, pub croupier, démo CMCteams, prospection B2B casino. On ne les
+publie pas, on n'en fait pas la pub, on n'y touche pas jusqu'au feu vert de Kevin.
+Ce qui reste et sert au nouveau commerce : `kdmc-vente` (colonne de vente générique — le
+registre `PRODUITS` sera remplacé), les canaux sociaux prouvés (Metricool : Instagram, TikTok,
+YouTube ; `kdmc-social` : Telegram/file), les moyens de paiement (PayPal.me, Revolut).
+Prochaine étape réelle : choisir le nouveau commerce **hors casino** (règle Kevin : « la niche
+la plus pertinente, la plus rentable… n'hésite pas à en faire plusieurs »), puis seulement
+après, la pub.
+
 ## 2026-09-16 (nuit) — Metricool branché : la chaîne de publication est PROUVÉE
 
 Kevin a créé le compte Metricool (marque « Kdmc », id 7000185, fuseau Europe/Paris)
@@ -93,6 +249,14 @@ Ce que ça change : pour TikTok, Instagram et YouTube, **on publie via Metricool
 gratuit). Le worker `kdmc-social` garde son rôle pour Telegram, la lecture fine des
 commentaires (Meta direct) et la file manuelle. Zapier reste une option pour Facebook si Kevin
 ne l'ajoute pas dans Metricool.
+
+**Facebook (Kevin 16.09 « je n'arrive pas à connecter ») — cause cherchée dans le centre d'aide
+Metricool, pas devinée** : Metricool ne connecte que des **Pages** Facebook, jamais un profil
+personnel (même en mode pro/créateur) — cause n°1 si Kevin n'a qu'un profil. Ensuite :
+permission décochée dans la fenêtre Facebook, mauvais profil ouvert dans Safari (se déconnecter
+de facebook.com puis reconnecter avec le profil admin de la Page), ancienne autorisation à
+retirer (Facebook → Intégrations professionnelles). Tableau complet dans `KEVIN_ACTIONS_TODO.md`.
+Facebook n'est **pas bloquant** : Instagram + TikTok + YouTube sont prouvés.
 
 Prochaine étape : calendrier de publication (croupier gratuit → payant) posé aux bons créneaux,
 et une vraie première publication validée par Kevin.

@@ -26,7 +26,11 @@ Chaque ligne renvoie à sa section plus bas.
 
 | Quoi | Ce que ça ouvre | Temps |
 |---|---|---|
-| **Compte Metricool** (gratuit) | **TikTok + Instagram + Facebook + YouTube** — le seul chemin vers TikTok | ~10 min |
+| **Rien à faire pour le Kit IA** (kit.kd-mc.com, 47 €) : il est construit, le contenu est en base, la caisse tourne. Tu peux le LIRE et me dire ce que tu changes | Ton premier produit numérique neuf, hors casino, vendable | 0 min |
+| **Club IA au Boulot (59 €/an)** : rien à faire non plus, la routine du lundi tourne seule. Si tu veux l'arrêter : dis-le, je coupe la routine | Le revenu RÉCURRENT (accès annuel + nouveauté chaque semaine) | 0 min |
+| **E-mails du Kit / Club / boutiques (EmailJS)** — cause MESURÉE le 16.09 : `HTTP 400 The Public Key is invalid`. La clé publique `nUsorWTtC` écrite dans les 5 boutiques n'existe pas dans ton compte. Il me faut la vraie : ouvre [EmailJS → Account → General](https://dashboard.emailjs.com/admin/account), copie « Public Key » et colle-la moi ici (elle est publique par conception, pas un secret). Je la pose ensuite aux 7 endroits (caisse, machine du lundi, 5 boutiques). Sans ça : le code d'achat reste affiché à l'écran (la vente passe), mais rien ne part par e-mail — ni le point du lundi, ni les rappels J-14, ni la newsletter des boutiques | Que l'acheteur reçoive son code par e-mail + que tu reçoives le point du lundi | 1 copier-coller |
+| *(facultatif)* Vérifier dans EmailJS que le gabarit `template_newsletter` affiche bien le champ `message` | Sinon le code d'accès n'arrive pas par e-mail (il reste affiché à l'écran) | 2 min |
+| ~~Compte Metricool~~ ✅ fait le 16.09 (Instagram + TikTok + YouTube prouvés) | Le seul chemin vers TikTok — **Facebook reporté « plus tard »** (Kevin 16.09), voir ⚪ | fait |
 | **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |
 | **Telegram** — @BotFather | Publier + lire + messages, zéro validation | 2 min |
 | **App PayPal** (client id · secret · webhook) | Livraison **instantanée** après paiement. Sans ça tu valides à la main — ça marche quand même | 5 min |
@@ -36,6 +40,7 @@ Chaque ligne renvoie à sa section plus bas.
 
 | Quoi | Pourquoi |
 |---|---|
+| **Facebook dans Metricool** *(reporté « plus tard » — Kevin 16.09)* | Il faut une **Page** Facebook (pas un profil) ; les 5 causes et la marche à suivre sont dans la section Metricool. Rien ne bloque : Instagram, TikTok et YouTube publient déjà |
 | Droit **Vectorize** sur le jeton Cloudflare | Sinon la mémoire RAG d'Apex ne se déploie jamais |
 | **Accès au compte Cloudflare « 9r4 »** | Il est verrouillé derrière GitHub ; j'en ai besoin pour certains réglages |
 | Passer le **dépôt en privé** | À faire **en dernier** (ça casse les pages publiées tant que ce n'est pas réglé) |
@@ -76,7 +81,27 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > ✅ **FAIT le 16.09** : compte créé, marque « Kdmc » (Instagram, TikTok, YouTube), connecteur
 > Claude branché, **chaîne prouvée** : un brouillon de test est dans ton planificateur (rien
 > ne part en public, tu peux le supprimer). Il reste **un geste** :
-> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — elle n'y est toujours pas.
+> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — **reporté à plus tard**
+> (Kevin 16.09 : « note dans les tâches à faire pour plus tard pour Facebook »). Pas pressé.
+
+#### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
+
+Sources : le centre d'aide Metricool ([je n'arrive pas à connecter Facebook](https://help.metricool.com/i-cant-connect-facebook-ibc3b),
+[guide complet](https://help.metricool.com/connect-facebook-on-metricool-complete-guide-5ark1),
+[permissions Business Manager](https://help.metricool.com/meta-business-manager-permissions-z266r)).
+
+| # | Cause probable | Ce que tu fais (iPhone) |
+|---|---|---|
+| **1** | **Tu n'as pas de Page** — Metricool ne connecte QUE des **Pages** Facebook, jamais un profil personnel (même en mode « professionnel » ou « créateur »). C'est de loin la cause n°1. | Appli Facebook → **Menu** (☰) → **Pages** → **Créer** → nom « Kdmc » (ou « Croupier Pro ») → catégorie « Formation » → Créer. 2 min. Puis retour dans Metricool → *Connections* → Facebook. |
+| 2 | **Une permission refusée** dans la fenêtre bleue de Facebook — si tu décoches une case, Metricool ne peut pas finir. | Recommence et laisse **toutes** les cases cochées. |
+| 3 | **Mauvais compte Facebook** ouvert dans Safari (la Page appartient à un autre profil). | Ouvre facebook.com dans un nouvel onglet Safari → déconnecte-toi → reviens dans Metricool → reconnecte avec le profil qui **administre** la Page. |
+| 4 | **Ancienne autorisation cassée** (Metricool déjà autorisé une fois, à moitié). | Facebook → Réglages → **Intégrations professionnelles** → retire « Metricool » → reconnecte depuis Metricool. |
+| 5 | **Rien ne marche** | Plan B : lien Zapier « Facebook Pages » (je te le redonne dans le chat) — même règle : il faut une **Page**. |
+
+> Ce que ça change pour la suite : **Instagram + TikTok + YouTube sont déjà branchés et
+> prouvés** — Facebook n'est pas bloquant. Facebook s'ajoutera quand la Page existera.
+> ⚠️ **Rien sur le casino/croupier ne sera publié** (Kevin 16.09 : « attends pour le produit
+> du casino ») — la pub attend le nouveau commerce, hors casino.
 
 👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
 comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
