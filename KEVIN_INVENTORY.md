@@ -1,5 +1,19 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎯 L'entraîneur de paiements — 2026-09-16
+
+**▶️ Essayer** : [croupier.kd-mc.com/entrainement.html](https://croupier.kd-mc.com/entrainement.html)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/entrainement.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/entrainement.html) | L'écran (système `editorial`, hors-ligne, `connect-src 'none'`) |
+| [`shops/croupier/entrainement.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/entrainement.js) | Le moteur : rapports, génération des exercices, score local |
+| [`tests/croupier-entrainement.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-entrainement.test.mjs) | 40 contrôles dont 400 tirages vérifiés · prouvés discriminants |
+
+`npm run test:croupier-entrainement` (dans `test:ci`).
+
+---
+
 ## 🎲 Devenir croupier — nouveau produit — 2026-09-15
 
 **▶️ La page** : [croupier.kd-mc.com](https://croupier.kd-mc.com/)

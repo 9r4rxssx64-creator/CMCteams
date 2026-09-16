@@ -1,5 +1,48 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 — L'entraîneur de paiements est en ligne (gratuit pour la roulette)
+
+Le produit annoncé hier existe : **croupier.kd-mc.com/entrainement.html**. Une mise sur
+la table, elle gagne, tu annonces — chronométré, avec la correction et le calcul expliqué.
+Tout tourne dans le téléphone : **aucun réseau, aucun compte, `connect-src 'none'`**, et la
+progression reste sur l'appareil.
+
+**Gratuit pour toujours** : la roulette à une mise. **Verrouillé** (futur payant) : les mises
+cumulées, le 3 pour 2 du blackjack sur mises non rondes, la commission de 5 % du Punto Banco.
+Rien n'est en vente : l'encaissement n'est pas branché, et on ne vend pas ce qu'on ne peut
+pas livrer.
+
+**Trois vrais défauts trouvés et corrigés pendant la construction** :
+
+1. **Le verrou existait à DEUX endroits** — l'attribut `disabled` du HTML et le drapeau
+   `libre` du moteur — qui pouvaient diverger en silence. Mesuré : mettre `libre:true` dans
+   le moteur laissait le bouton `disabled` dans le HTML, et **mon test passait au vert**
+   alors que le verrou n'était plus celui qu'on croit. Corrigé : le moteur est la **source
+   unique**, le HTML ne fait que refléter. C'est exactement la leçon #142 (deux surfaces,
+   même règle, divergence silencieuse), rencontrée pour la troisième fois aujourd'hui.
+
+2. **`.btn{display:inline-flex}` écrasait l'attribut `hidden`** → le bouton « Suivante »
+   était visible dès le départ, on pouvait sauter la question sans répondre. **Même piège
+   que sur la page Rotaplan ce matin**, deux fois dans la même journée. Corrigé par
+   `[hidden]{display:none !important}`. Vérifié : Rotaplan n'a que des `aria-hidden`, pas
+   l'attribut — pas de risque là-bas.
+
+3. Un lien inline de 15 px dans le pied de page (règle iPhone : 44 px). On ne peut pas
+   grossir un lien au milieu d'une phrase : le lien a été retiré, l'en-tête porte déjà la
+   cible à 44 px.
+
+**Testé** : `npm run test:croupier-entrainement` (câblé dans `test:ci`) — **40 contrôles**,
+dont **400 tirages** vérifiés un par un (les rapports sont des faits : un 35:1 faux, c'est
+quelqu'un qui apprend une erreur et la répète à une vraie table). **Prouvé discriminant** :
+fausser un rapport → échec · changer le 3 pour 2 → 2 échecs · changer la commission →
+2 échecs · déverrouiller un mode payant → 3 échecs · retirer le correctif `hidden` → échec.
+
+**Au passage** : mon premier jeu de sabotages n'avait rien attrapé — j'avais supprimé la
+sortie d'erreur (`2>/dev/null`) alors que les échecs y sont écrits. Un sabotage qui « passe »
+doit faire suspecter le protocole avant de conclure que la garde est bonne.
+
+---
+
 ## 2026-09-15 (suite 8) — Nouveau commerce : « Devenir croupier » (croupier.kd-mc.com)
 
 Kevin : « occupe-toi du nouveau commerce produit ».
