@@ -63,7 +63,7 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 
 | # | Ce que tu vas chercher | Temps | Ce que ça débloque |
 |---|---|---|---|
-| **1️⃣** | ~~Compte Metricool~~ ✅ fait — reste **connecter à Claude** + **ajouter Facebook** | 2 min | **TikTok + Instagram + Facebook + YouTube** d'un coup, publication automatique |
+| **1️⃣** | ~~Compte Metricool~~ ✅ branché et prouvé — reste **ajouter Facebook** dans Metricool | 1 min | **TikTok + Instagram + Facebook + YouTube** d'un coup, publication automatique |
 | 2️⃣ | **Zapier** — 2 liens à taper (tu as déjà le compte) | 2 min | Facebook Pages + Instagram, sans créer d'app Meta |
 | 3️⃣ | **Telegram** — @BotFather | 2 min | Publier + lire + messages, sans aucune validation |
 | 4️⃣ | **App Meta** *(facultatif)* | ~10 min | Contrôle total via mon worker : lire les commentaires, publier finement |
@@ -73,13 +73,10 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 
 ### 1️⃣ Metricool — le seul chemin vers TikTok, et il couvre tout le reste
 
-> ✅ **FAIT par Kevin le 16.09 à 23h06** : compte créé, marque « Kdmc » avec **Instagram,
-> TikTok et YouTube** reliés. Il reste **deux gestes** :
-> 1. 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* (elle n'y est pas encore).
-> 2. 👆 **Connecter Metricool à Claude** → [claude.ai → Connecteurs](https://claude.ai/customize/connectors)
->    → cherche *Metricool* → *Connecter*. C'est sur TON compte claude.ai, je ne peux pas le faire.
->
-> Dès que c'est fait, je lis la marque, je vérifie les 3 réseaux, et je fais une publication de test.
+> ✅ **FAIT le 16.09** : compte créé, marque « Kdmc » (Instagram, TikTok, YouTube), connecteur
+> Claude branché, **chaîne prouvée** : un brouillon de test est dans ton planificateur (rien
+> ne part en public, tu peux le supprimer). Il reste **un geste** :
+> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — elle n'y est toujours pas.
 
 👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
 comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
