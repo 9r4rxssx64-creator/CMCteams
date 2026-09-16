@@ -254,6 +254,23 @@ export default {
     const p = url.pathname;
     if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors(origin) });
 
+    /* --- Diagnostic : le contrôle admin peut-il seulement joindre le SSO ? -
+       Question précise et mesurable : un Worker peut-il atteindre kd-mc.com,
+       servi par un AUTRE Worker du même compte ? (Cloudflare refuse certaines
+       de ces requêtes — erreur 1042, cf. services/kdmc-uptime/worker.js.)
+       Ne renvoie aucun secret : on n'envoie qu'un faux pass. */
+    if (p === '/diag/sso') {
+      try {
+        const r = await fetch('https://kd-mc.com/__sso/whoami', {
+          headers: { Authorization: 'Bearer diagnostic-sans-valeur' }, cache: 'no-store',
+        });
+        const t = (await r.text()).slice(0, 160);
+        return json({ ok: true, joignable: true, statut: r.status, debut_reponse: t }, 200, origin);
+      } catch (e) {
+        return json({ ok: true, joignable: false, detail: String((e && e.message) || e).slice(0, 200) }, 200, origin);
+      }
+    }
+
     /* --- Poser / remplacer un jeton (depuis l'iPhone, 1 collage) ---------- */
     if (p === '/admin/jeton' && req.method === 'POST') {
       const gj = await requireAdmin(req);
