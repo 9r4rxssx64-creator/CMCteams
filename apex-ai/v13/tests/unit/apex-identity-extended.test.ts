@@ -284,3 +284,12 @@ describe('Test mental obligatoire — Apex reconnaît tous les users', () => {
     expect(section).toContain('CrackPass');
   });
 });
+
+describe('buildExtendedIdentitySection() — persona Javis (Kevin 2026-09-16, "Go tout")', () => {
+  it('détaille les 8 traits Javis en version étendue', () => {
+    const section = buildExtendedIdentitySection();
+    expect(section).toContain('PERSONA');
+    expect(section).toContain('Javis');
+    expect(section).toContain('tutoiement toujours');
+  });
+});

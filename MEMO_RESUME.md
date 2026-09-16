@@ -8172,3 +8172,22 @@ d'image sont à sec (Gemini « crédits épuisés », Replicate « palier gratui
 l'argent, pas du code. Recharger l'un des deux suffit.
 
 Leçon #235.
+
+---
+
+## Persona "Javis" (2026-09-16)
+
+Kevin a demandé « qu'est-ce qu'un persona, un personnage Javis, et qu'est-ce que Javis pour
+Claude Code », puis « Go tout ». Écrit et branché des deux côtés :
+
+- **CLAUDE.md** : nouvelle section « 🤖 PERSONA — JAVIS » juste après le bandeau d'en-tête —
+  les 8 traits (connaît par cœur, agit à ta place, parle simple, vérifie avant d'affirmer, ne
+  régresse jamais, prévient avant qu'on demande, va plus loin, honnête sur ses limites), ton
+  tutoiement, et où Javis vit (Claude Code = ce fichier, Apex = `apex-identity.ts`).
+- **Apex** (`apex-ai/v13/core/apex-identity.ts`) : `APEX_IDENTITY.persona` (nom, ton, 8 traits)
+  injecté dans `buildIdentitySection()` (compact, respecte le budget strict 600 tokens/2400
+  chars — a fallu raccourcir 2 fois pour tenir dedans) et détaillé dans
+  `buildExtendedIdentitySection()`. Réponse au test d'identité « Qui es-tu ? » mise à jour pour
+  citer Javis.
+- Tests ajoutés (append-only, aucun test existant modifié) dans `apex-identity.test.ts` et
+  `apex-identity-extended.test.ts`. `tsc --noEmit` propre, 128 tests identité verts.
