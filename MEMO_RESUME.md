@@ -27,6 +27,27 @@ Les **trois vraiment nouvelles** sont reparties chez elle :
 
 Versions : `lingua/app.js` v2.124.0 → **v2.125.0**, `lingua/sw.js` → `lingua-v2.125.0` (invariant CACHE == APP_VER).
 
+**Et surtout : ces gardes TOURNENT enfin sur GitHub** (`.github/workflows/bee-gardes.yml`, neuf).
+Constat mesuré : `npm run test:ci` ne tourne dans **aucun** workflow GitHub — seulement dans le job
+« tests » de GitLab, qui ne voit les branches qu'à une remise à niveau occasionnelle (c'est le message
+m049 de cmcteams-pdf). Autrement dit les **trois** gardes de Bee (`test:javis-bee`,
+`test:javis-bee-reelle`, `test:lingua-bee`) étaient câblées… et ne s'exécutaient sur **aucune PR**.
+Le nouveau workflow les lance à chaque PR qui touche `lingua/`, `tools/javis/`, `javis/` ou
+`arbre/javis-widget.js` : Playwright + Chromium + ffmpeg (sans ffmpeg, la garde Javis annonce
+honnêtement « NON VÉRIFIÉ ICI » plutôt qu'un vert trompeur, leçon #103). `pull_request` et **jamais**
+`pull_request_target` (dépôt public), 0 secret, pas de cron (le compte a été suspendu pour volume le 15/08).
+
+**⚠️ Vercel bloque les PR de TOUT LE MONDE pour 24 h (mesuré, pas déduit)** : le compte a dépassé
+**100 déploiements/jour** (plan gratuit) → statut rouge « Deployment rate limited » sur chaque PR.
+Cause exacte relevée par l'API Vercel : le seul projet du compte, `kdmc-agent-monaco`, crée un
+déploiement à **chaque push de chaque branche ET de main**, y compris les commits de robots
+(`menage: 0 branche(s)`, `🧾 Déploiement raté consigné`) — **20 déploiements en 20 minutes**, tous
+`CANCELED`. Un déploiement annulé par `ignoreCommand` compte quand même dans le quota : le correctif
+de m035 (ignoreCommand) empêche le *build*, pas la *création* du déploiement. Je n'y touche PAS :
+ce projet porte trois **crons de production** (`/api/cron`), c'est le terrain de `domaine-audit`, et je
+ne peux pas prouver qu'une coupure globale (`git.deploymentEnabled: false`) laisserait les crons vivre.
+Signalé avec la mesure ; en attendant, ce rouge n'est pas un rouge de code.
+
 **Vérification RÉELLE sur le vrai domaine** (workflow `verif-reelle`, run 35162311942, connecté) :
 `javis.kd-mc.com` répond ✅ — `fail-closed correct : Bee cachée + message clair` (session **nommée**,
 pas Face ID : c'est le comportement voulu, Bee n'apparaît que pour un admin **prouvé**). Le seul rouge

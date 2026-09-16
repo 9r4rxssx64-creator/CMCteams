@@ -11,6 +11,7 @@ regarde-la sauter (elle se ramasse, s'étire, s'écrase, rebondit) et cligner de
 | [`lingua/app.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/app.js) | `beeClinNaturel()` — **un seul** clignement pour les trois Bee (mascotte, accueil, visage du coach) au lieu de trois boucles recopiées |
 | [`lingua/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/index.html) | Le saut « dessin animé » (`rigJump`) + le regard qui se détourne quand elle réfléchit (`rxPense`) |
 | [`tests/verify-lingua-bee-vivante.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-lingua-bee-vivante.mjs) | **Garde en VRAI navigateur** (dans `test:ci`) : le saut écrase ET étire (-36 px), le regard se détourne, la durée du clignement varie (110-177 ms) et 1 fois sur 5 c'est double — `npm run test:lingua-bee` |
+| [`.github/workflows/bee-gardes.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/.github/workflows/bee-gardes.yml) | **Les 3 gardes de Bee tournent enfin sur GitHub**, à chaque PR qui touche Lingua ou Javis (avant : câblées dans `test:ci`, qui ne tourne dans aucun workflow GitHub — donc jamais exécutées sur une PR) |
 
 **Ce qui n'est PAS reparti, et pourquoi** : la bouche qui suit le son et le repli sur la voix du
 téléphone **venaient déjà de Lingua** — c'est Javis qui les lui avait empruntées. On ne recopie pas
