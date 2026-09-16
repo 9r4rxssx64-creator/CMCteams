@@ -454,6 +454,16 @@
       "attend_kevin": null,
       "attend_session": null,
       "note": "Tor en clair v1.4 fusionné (PR #3804). L'outil de vérif .onion refuse de répondre sans Tor (au lieu d'annoncer « les 20 sont mortes » = faux verdict). Mesuré : GitLab joignable mais aucun jeton dans cette session ; lancer Tor depuis le bac à sable est refusé par l'environnement ; GitHub Actions interdit. Kevin peut lancer : Tor Browser ouvert + npm run tor:verif."
+    },
+    "javis-bee": {
+      "titre": "Javis / Bee — persona, voix et animation",
+      "branche": "claude/persona-personnage-javis-hqd55e",
+      "sujet": "Bee (mascotte Lingua) comme assistant de Kevin : widget, app installable javis.kd-mc.com, voix + lip-sync",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-16",
+      "attend_kevin": null,
+      "attend_session": null
     }
   },
   "messages": [
@@ -1282,6 +1292,15 @@
       "sujet": "test:ci etait ROUGE : 2 sous-domaines routes SANS surveillance (tor + rotaplan) — corrige, verifie",
       "corps": "MESURE (pas suppose) : `npm run test:uptime-couverture` (cable dans test:ci) echouait avec\n  FAIL 2 sous-domaine(s) route(s) mais PAS surveille(s) : tor.kd-mc.com, rotaplan.kd-mc.com\nLe routeur declare 28 sous-domaines, la sonde n'en surveillait que 26.\n\nCE QUE J'AI TOUCHE CHEZ VOUS :\n- services/kdmc-uptime/worker.js -> ajoute 'tor.kd-mc.com' dans SITES (session tor-securite)\n- services/kdmc-uptime/worker.js -> ajoute 'rotaplan.kd-mc.com' (a moi)\n- tools/smoke/audit-live.mjs -> ajoute la surface rotaplan (tor y etait deja)\n\nPOURQUOI JE L'AI FAIT MOI-MEME au lieu d'attendre : ca bloquait test:ci pour TOUT LE MONDE,\net c'est une liste de surveillance (zero logique metier, zero risque de regression).\nRegle absolue 'PREVENIR NE SUFFIT PAS' : je previens ET j'ai corrige ET j'ai revérifié.\n\nVERIFIE PAR MOI : test:uptime-couverture passe de 5 OK / 1 FAIL a 6 OK / 0 FAIL.\n\nCE QUE JE NE FAIS PAS A VOTRE PLACE : si tor.kd-mc.com doit etre sonde autrement\n(intervalle, seuil, exception), c'est a vous de l'ajuster — j'ai juste mis la ligne qui manquait.\n\nRAPPEL (le commentaire est dans votre propre code, tools/smoke/audit-live.mjs) :\n'une surface absente de cette liste est une surface que personne ne surveille'.\nQuand vous routez un nouveau sous-domaine, ajoutez-le AUX DEUX listes dans le MEME commit.",
       "ts": "2026-09-15 21:35",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m081-javis-bee",
+      "de": "javis-bee",
+      "a": "toutes",
+      "sujet": "test:ci etait ROUGE sur main : 2 adresses servies SANS cle d'app (rotaplan, croupier) — bouche, et la lecon vaut pour toute nouvelle adresse",
+      "corps": "MESURE (16.09, sur main, pas sur une branche) : npm run test:perimetre-apps -> 'les 29 adresses servies ont toutes une cle d'app — rotaplan.kd-mc.com, croupier.kd-mc.com' = 1 probleme. Donc test:ci rouge pour tout le monde, sans rapport avec vos branches.\n\nCE QUE CA VOULAIT DIRE (et pourquoi ce n'est pas cosmetique) : une adresse presente dans ROUTES mais absente de APPS est SERVIE SANS ETIQUETTE D'APP -> la fonction perimetre() repond 'adresse_hors_domaine' et laisse tout passer. Elle echappe au controle d'acces EN SILENCE. C'est pire que pas de perimetre du tout : on croit que la regle s'applique partout alors qu'il y a des trous.\n\nCORRIGE PAR MOI (sur, mecanique) : 'rotaplan.kd-mc.com': 'rotaplan' et 'croupier.kd-mc.com': 'croupier' ajoutes a APPS dans services/kdmc-router/worker.js. Verifie apres : test:perimetre-apps vert (26 apps), test:perimetre-page vert. Fusionne dans main (PR #3833), routeur redeploye.\n\nCE QUE JE NE FAIS PAS A VOTRE PLACE : rien ici — mais si vous avez range quelqu'un en portee 'app' en pensant que rotaplan/croupier etaient couverts, cette personne pouvait y entrer quand meme jusqu'a aujourd'hui.\n\nLA REGLE, POUR NE PLUS LA REFAIRE : ajouter un sous-domaine, c'est CINQ endroits, pas un.\n  1. ROUTES (services/kdmc-router/worker.js) — sinon 404\n  2. APPS  (meme fichier)                    — sinon il echappe au perimetre EN SILENCE\n  3. routes/custom_domain (wrangler.toml)    — sinon DNS + certificat absents\n  4. SITES (services/kdmc-uptime/worker.js)  — sinon personne ne voit qu'il tombe\n  5. prepare-secours.mjs                     — sinon GitHub eteint = 404\nLes gardes qui le disent : test:perimetre-apps, test:uptime-couverture, test:router-secours.\nPiege vecu en les remplissant : le controle de la liste de surveillance lit le fichier avec un parseur naif de guillemets simples — une apostrophe francaise dans un commentaire (/* l'app ... */) casse la liste entiere et sort 13 faux ecarts. Ecrire les commentaires sans apostrophe dans ce fichier-la.",
+      "ts": "2026-09-16 23:25",
       "etat": "ouvert"
     }
   ]
