@@ -60,6 +60,21 @@ const SURFACES = [
   /* Rotaplan (15.09.2026) : page de vente B2B, publique. Même raison que « Tor en clair » —
      une surface routée mais absente d'ici n'est surveillée par personne. */
   { url: 'https://rotaplan.' + ROOT + '/', name: 'Rotaplan (offre B2B)', selKey: 'h1' },
+  /* Bee / Javis (16.09.2026) : l'app installable de l'assistante de Kevin. Elle est
+     fail-CLOSED — elle ne s'affiche QUE pour un admin prouvé par Face ID, ce qu'une
+     session de CI ne peut pas fabriquer (et ne doit pas). Ce qu'on vérifie ici est donc
+     exactement ce qui DOIT être vrai pour tout le monde : la page existe, elle se monte,
+     elle ne jette rien, et elle DIT clairement pourquoi Bee n'est pas là — jamais un
+     écran noir inexpliqué. */
+  { url: 'https://javis.' + ROOT + '/', name: 'Bee (app installable)', selKey: 'body', deep: async (page) => {
+      const t = await page.evaluate(() => document.body.innerText || '');
+      const bee = await page.locator('#javis-launcher .bee-rig').count().catch(() => 0);
+      if (bee > 0) return { ok: true, note: 'Bee est affichée (session reconnue admin prouvé)' };
+      return { ok: /personnelle à Kevin|Bee/i.test(t),
+        note: /personnelle à Kevin/i.test(t)
+          ? 'fail-closed correct : Bee cachée + message clair (session nommée, pas Face ID)'
+          : 'PAGE MUETTE : ni Bee ni explication' };
+    } },
   { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1', deep: async (page) => {
       // « Déjà publié au Club » : la page lit le sommaire du Club sur le VRAI worker et la
       // VRAIE base (au moins 1 consigne hebdo depuis le 16.09, s2026-38). Bloc caché =

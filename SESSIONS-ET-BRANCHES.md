@@ -46,6 +46,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Session | Branche | État au 2.09 |
 | Lingua — garde sur le parcours | `claude/lingua-parcours-garde` | 🟢 P0 live du m051 fermé · `test:lingua-parcours` 11/11, discriminant (6 échecs sans le correctif) |
 | Lingua — voix rectifiée | `claude/lingua-voix-rectifiee` | 🟢 `test:lingua-voix` 26/26 (était 21/5). Écran blanc sans `prog` corrigé, mot dit une seule fois, voix de secours nommée |
+| Javis / Bee — persona, voix, animation | `claude/persona-personnage-javis-hqd55e` | 🟢 Bee (mascotte Lingua) parle avec SA voix + lip-sync **mesuré** (1,20 → 0,30, vrai navigateur) · app installable **javis.kd-mc.com** enfin routée · gardes `test:javis-bee` 39/0 et `test:javis-bee-reelle` 22/0 (dans `test:ci`) |
 | Ménage auto-deploy — clôture | `claude/menage-autodeploy-cloture` | ✅ déclenche le 1er passage avec le filtre étendu |
 | Ménage — extension aux `auto-deploy/*` | `claude/menage-auto-deploy` | 🟢 452 branches de build supprimables (453/461 déjà dans main), garde de source 15/15 |
 |---|---|---|
