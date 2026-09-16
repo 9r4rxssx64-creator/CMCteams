@@ -1,5 +1,71 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-16 (soir) — Encaisser, VÉRIFIER, livrer : la pièce qui manquait
+
+### Ce que j'ai mesuré avant de coder (audit des paiements, ta 1re demande)
+
+| Moyen | État RÉEL | Preuve |
+|---|---|---|
+| PayPal.me/kdmc | ✅ vivant, montant pré-rempli | 6 boutiques, `paypal.me/kdmc/<montant>` |
+| API PayPal (lecture) | ✅ vivante — je l'ai interrogée | **0 transaction sur 31 jours** |
+| Revolut.me/kdmc | ⚠️ vivant **sans montant** | le client tape la somme lui-même |
+| API Revolut | ❌ n'existe pas pour un compte perso | |
+| IBAN | ❌ **FAUX** : `MC98 •••• •••• ••••` | « Copier l'IBAN » copie des points |
+| Stripe | ❌ nulle part | 0 clé, 0 lien |
+| EmailJS | ✅ vivant | notifie au **clic**, pas au paiement |
+
+**Le trou qui expliquait tout** : `processOrder()` se déclenche **au clic sur PayPal**, pas
+au paiement. Stock décrémenté, commande « confirmée », e-mail parti — même si le client
+ferme l'onglet sans payer un centime. **Rien ne vérifiait jamais qu'un euro était arrivé.**
+
+### Ce que j'ai construit
+
+**`services/kdmc-vente`** — worker isolé, 26 tests. Trois chemins, chacun marche seul :
+
+1. **Webhook PayPal** → instantané, zéro action de ta part.
+2. **Recherche API PayPal** → le client réclame, on interroge PayPal. ⚠️ L'API a un délai
+   officiel d'environ **3 h** : c'est écrit au client, on ne lui fait pas croire à une panne.
+3. **File manuelle** → Revolut, virement, ou PayPal non configuré. Tu valides **en 1 clic**
+   depuis une session admin vérifiée (Face ID).
+
+**Sans aucun secret PayPal, le worker encaisse quand même** : tout tombe en file manuelle.
+Une vente n'est jamais perdue parce qu'une configuration manque.
+
+**Anti-rejeu** : une transaction PayPal ne délivre **qu'une fois**. Sans ça, un client donne
+son reçu à dix amis et ils se servent tous.
+
+**Le contenu payant vit DANS le worker**, servi par `/contenu` contre un code valide — pas
+caché dans la page. Un verrou écrit en JavaScript dans un fichier public ne protège rien.
+
+### Trois gardes prouvés par sabotage (un test vert qui ne casse rien ne protège rien)
+
+| Ce que j'ai cassé exprès | Ce qui a rougi |
+|---|---|
+| on accepte un webhook sans vérifier sa signature | 2 tests |
+| on retire l'anti-rejeu | 1 test |
+| un admin non vérifié (sans Face ID) passe | 1 test (leçon #99) |
+
+### Un faux vert attrapé dans mon propre test
+
+Mon test en navigateur injectait le script **en ligne** — et la CSP de la page l'a **bloqué**.
+Elle faisait son travail, mais mes trois premières assertions passaient **à vide**. Corrigé :
+les vrais fichiers sont servis par HTTP, et le test **refuse de continuer** si `acces.js`
+n'a pas tourné.
+
+### Ce qu'il te reste à faire (une seule fois, ~5 minutes)
+
+Créer l'application PayPal pour la vérification automatique → voir `KEVIN_ACTIONS_TODO.md`.
+**Tant que tu ne l'as pas fait, tout fonctionne** : chaque vente arrive dans ta file et tu
+valides en 1 clic.
+
+### Ce qui n'est PAS encore fait (je ne vends rien qu'on ne peut pas livrer)
+
+Aucun bouton « Acheter » n'existe, et le contenu payant (modes verrouillés de l'entraîneur,
+guide d'entretien) n'est pas encore écrit. **La machine à encaisser est prête, la boutique
+ne l'est pas.** C'est la suite immédiate.
+
+---
+
 ## 2026-09-16 — L'entraîneur de paiements est en ligne (gratuit pour la roulette)
 
 Le produit annoncé hier existe : **croupier.kd-mc.com/entrainement.html**. Une mise sur

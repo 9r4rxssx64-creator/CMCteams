@@ -1,0 +1,90 @@
+name: Deploy kdmc-vente Worker
+
+on:
+  push:
+    branches: [ main, 'claude/**' ]
+    paths:
+      - "services/kdmc-vente/**"
+      - ".github/workflows/deploy-kdmc-vente.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-kdmc-vente
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/kdmc-vente
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Un worker qui encaisse ne part JAMAIS sans ses tests (23 contrôles,
+      # dont 3 prouvés discriminants par sabotage : signature webhook, anti-rejeu,
+      # admin non vérifié). Hors-ligne : aucun compte PayPal nécessaire.
+      - name: Tests (obligatoires avant tout déploiement)
+        run: node --test vente.test.mjs
+
+      - name: Install wrangler
+        run: npm i -g wrangler@4
+
+      # Secrets OPTIONNELS : leur absence ne casse rien, elle fait tomber les
+      # ventes en file manuelle (Kevin valide en 1 clic). On le DIT dans le journal.
+      - name: Push PayPal secrets (ceux qui existent)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          push() {
+            if [ -n "$2" ]; then printf '%s' "$2" | wrangler secret put "$1"; echo "$1 poussé"; 
+            else echo "$1 ABSENT — $3"; fi
+          }
+          push PAYPAL_CLIENT_ID  "${{ secrets.PAYPAL_CLIENT_ID }}"  "vérification auto désactivée, tout passe en file manuelle"
+          push PAYPAL_SECRET     "${{ secrets.PAYPAL_SECRET }}"     "idem"
+          push PAYPAL_WEBHOOK_ID "${{ secrets.PAYPAL_WEBHOOK_ID }}" "livraison instantanée désactivée, les webhooks seront ignorés"
+
+      - name: Deploy worker
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT.
+        shell: bash -eo pipefail {0}
+        run: |
+          set -e
+          wrangler deploy 2>&1 | tee /tmp/deploy.log
+          URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.workers\.dev" /tmp/deploy.log | head -1)
+          echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Déployé: $URL"
+
+      # PREUVE LIVE (l'agent ne peut atteindre ni workers.dev ni l'API GitHub —
+      # le journal CI est la seule preuve réelle, leçon #135).
+      - name: Preuve live — santé + catalogue + refus d'un webhook non signé
+        shell: bash -eo pipefail {0}
+        run: |
+          URL="${{ steps.deploy.outputs.worker_url }}"
+          [ -z "$URL" ] && { echo "URL introuvable"; exit 1; }
+          for i in 1 2 3 4 5; do
+            if curl -fsS "$URL/health" | tee /tmp/h.json | grep -q '"ok":true'; then break; fi
+            echo "retry $i"; sleep 5
+          done
+          echo "— santé —"; cat /tmp/h.json; echo
+          grep -q '"ok":true' /tmp/h.json
+          echo "— catalogue —"; curl -fsS "$URL/produits"; echo
+          # Un faux webhook, sans signature valable, ne doit RIEN délivrer.
+          echo "— faux webhook (doit être ignoré) —"
+          curl -sS -X POST "$URL/webhook/paypal" -H 'content-type: application/json' \
+            -d '{"event_type":"PAYMENT.CAPTURE.COMPLETED","resource":{"id":"FAUX","amount":{"value":"39.00","currency_code":"EUR"}}}' \
+            | tee /tmp/w.json; echo
+          grep -q '"ignore":true' /tmp/w.json || { echo "DANGER : un webhook non signé a été accepté"; exit 1; }
+          echo "OK — un paiement non prouvé ne délivre rien."
