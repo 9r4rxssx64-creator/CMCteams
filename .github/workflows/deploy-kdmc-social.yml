@@ -89,9 +89,22 @@ jobs:
           if grep -qiE '(EAA[A-Za-z0-9]{20}|[0-9]{8,10}:AA[A-Za-z0-9_-]{30})' /tmp/h.json; then
             echo "DANGER : un jeton est visible dans /health"; exit 1
           fi
-          echo "— publier sans session (doit être refusé) —"
+          echo "— le worker répond-il aux POST ? (route inconnue) —"
+          curl -sS -D- -o /tmp/x.json -X POST "$URL/route-qui-nexiste-pas" \
+               -H 'content-type: application/json' -d '{}' | head -3
+          cat /tmp/x.json; echo
+          echo "— le contrôle admin peut-il joindre le SSO ? (erreur 1042 ?) —"
+          curl -sS "$URL/diag/sso"; echo
+          echo "— publier sans session —"
           CODE=$(curl -sS -o /tmp/p.json -w '%{http_code}' -X POST "$URL/publier" \
                  -H 'content-type: application/json' -d '{"texte":"test"}')
           echo "HTTP $CODE"; cat /tmp/p.json; echo
-          [ "$CODE" = "401" ] || { echo "DANGER : publier est ouvert sans session"; exit 1; }
-          echo "OK — personne ne publie au nom de Kevin sans Face ID."
+          # Le SEUL vrai danger est que ça RÉUSSISSE sans session. Un 404 ou un
+          # 502 n'est pas une ouverture : c'est un montage à réparer, et on le
+          # distingue au lieu de crier au loup (une alerte fausse ne se lit plus).
+          case "$CODE" in
+            2*) echo "DANGER : publier a réussi SANS session"; exit 1 ;;
+            401) echo "OK — refusé proprement, personne ne publie sans Face ID." ;;
+            *)   echo "À RÉPARER : refusé, mais pas par le contrôle admin (HTTP $CODE)."
+                 echo "Voir le diagnostic SSO ci-dessus."; exit 1 ;;
+          esac"
