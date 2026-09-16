@@ -85,6 +85,9 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
 > j'ouvre le domaine. Il tourne sur Apex, gratuit d'abord. Qu'il puisse tout faire pour moi,
 > m'ouvrir des liens. Une app indépendante à mettre sur le bureau de mon téléphone. Donne-lui
 > l'apparence de Duo de Duolingo, ou recopie-la. De vraies mimiques, une bouche qui bouge. »
+> — puis, précision du même jour : **« Je parlais de Bea »** (le personnage HUMAIN de Duolingo,
+> cheveux orange au carré + taches de rousseur), pas la chouette Duo. Dessin refait en
+> conséquence : personnage humain, pas mascotte animale.
 
 **Ce qui existe :**
 - `tools/javis/javis-widget.js` — la source canonique : bouton flottant animé (respire, cligne
@@ -110,10 +113,16 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   (rig 2D, vrai lip-sync depuis l'audio, technique des VTubers) ou **TalkingHead.js**
   (github.com/met4citizen/TalkingHead, MIT, Three.js + Ready Player Me + visèmes réels) —
   les deux demandent un moteur d'avatar (poids supplémentaire), pas branchées v1.
-- Le personnage est un dessin **original** (rond, grands yeux, couleurs or/sombre du domaine) —
-  **pas** une reproduction du personnage précis de Duolingo (marque déposée d'un tiers, un dépôt
-  PUBLIC ne doit rien publier qui imite une marque protégée). L'esprit (mascotte ronde, grands
-  yeux expressifs) est repris, le dessin ne l'est pas.
+- Le personnage est un dessin **original** dans l'esprit de **Bea** (personnage humain de
+  Duolingo demandé par Kevin) : humaine, cheveux orange au carré avec frange, taches de
+  rousseur, grands yeux expressifs, style plat et chaleureux, haut violet. **Pas** une
+  reproduction du dessin précis de Duolingo (marque déposée d'un tiers, et ce dépôt est PUBLIC :
+  on n'y publie rien qui imite une marque protégée). L'esprit est repris, le dessin ne l'est pas.
+- **Règle de structure à respecter si on redessine encore** : l'animation ne dépend PAS du style.
+  Tout redessin DOIT conserver les ancres `#javis-face`, `#javis-body-wrap`, `#javis-pupil-l/r`,
+  `#javis-lid-l/r`, `#javis-mouth` (+ recaler `mouthShapes` sur la nouvelle géométrie de bouche,
+  sinon la bouche s'anime à côté du visage). Contrôle rapide : rendre `buildJavisSVG()` en Node,
+  parser le XML, et vérifier la présence des 7 ids.
 - Câblé sur **1 app (`arbre`) + l'app installable** pour l'instant, pas les 26 adresses du
   domaine — chaque app statique garde sa propre copie du widget (pas de bundler ici), donc
   l'étendre = copier `tools/javis/javis-widget.js` dans chaque `index.html` visé + ajouter les

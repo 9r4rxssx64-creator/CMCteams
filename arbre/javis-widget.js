@@ -77,50 +77,68 @@
   }
 
   /* ============================================================
-     1. Le personnage — SVG original (esprit "gros yeux ronds expressifs",
-        pas une copie de la mascotte Duolingo — couleurs or/sombre du domaine)
+     1. Le personnage — PERSONNAGE HUMAIN, esprit "Bea" (Duolingo) :
+        cheveux orange au carré, taches de rousseur, grands yeux expressifs.
+        Dessin ORIGINAL : Kevin a demandé l'apparence de Bea — l'esprit est
+        repris (coupe, rousseur, rondeur, style plat et chaleureux), le dessin
+        précis de Duolingo ne l'est pas (marque déposée d'un tiers, et ce dépôt
+        est PUBLIC). Toutes les pièces animées gardent leur id (pupilles,
+        paupières, sourcils, bouche) : l'animation ne dépend pas du style.
      ============================================================ */
   function buildJavisSVG() {
     return (
       '<svg id="javis-face" viewBox="0 0 200 200" aria-hidden="true">' +
       '<defs>' +
-      '<radialGradient id="javis-body-grad" cx="35%" cy="30%" r="75%">' +
-      '<stop offset="0%" stop-color="#f5cc4a"/>' +
-      '<stop offset="55%" stop-color="#e8b830"/>' +
-      '<stop offset="100%" stop-color="#c9a227"/>' +
-      '</radialGradient>' +
+      '<linearGradient id="javis-hair" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#f4873f"/><stop offset="100%" stop-color="#d2551d"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="javis-skin" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#fcdcb8"/><stop offset="100%" stop-color="#f2bd90"/>' +
+      '</linearGradient>' +
       '</defs>' +
       '<g id="javis-body-wrap">' +
-      '<ellipse cx="100" cy="106" rx="82" ry="78" fill="url(#javis-body-grad)"/>' +
-      '<ellipse cx="100" cy="176" rx="58" ry="14" fill="#000" opacity=".14"/>' +
+      /* épaules + haut */
+      '<path d="M34 200 Q38 160 74 150 L126 150 Q162 160 166 200 Z" fill="#6f5fd0"/>' +
+      /* cou */
+      '<path d="M86 136 L114 136 L114 152 Q100 164 86 152 Z" fill="#eab183"/>' +
+      /* cheveux (carré, derrière) */
+      '<path d="M44 100 Q40 32 100 30 Q160 32 156 100 L156 130 Q150 116 146 110 L54 110 Q50 116 44 130 Z" fill="url(#javis-hair)"/>' +
+      /* visage */
+      '<ellipse cx="100" cy="96" rx="47" ry="51" fill="url(#javis-skin)"/>' +
+      /* oreilles */
+      '<ellipse cx="53" cy="99" rx="7" ry="10" fill="#f2bd90"/>' +
+      '<ellipse cx="147" cy="99" rx="7" ry="10" fill="#f2bd90"/>' +
+      /* frange */
+      '<path d="M53 76 Q58 38 100 36 Q142 38 147 76 Q136 56 114 52 Q104 64 88 60 Q68 60 53 76 Z" fill="url(#javis-hair)"/>' +
       /* joues */
-      '<ellipse cx="52" cy="128" rx="14" ry="9" fill="#e07a4a" opacity=".35"/>' +
-      '<ellipse cx="148" cy="128" rx="14" ry="9" fill="#e07a4a" opacity=".35"/>' +
+      '<ellipse cx="67" cy="110" rx="12" ry="7" fill="#ef8f74" opacity=".4"/>' +
+      '<ellipse cx="133" cy="110" rx="12" ry="7" fill="#ef8f74" opacity=".4"/>' +
+      /* taches de rousseur */
+      '<g fill="#cf8055" opacity=".6">' +
+      '<circle cx="63" cy="104" r="1.7"/><circle cx="71" cy="110" r="1.7"/><circle cx="61" cy="113" r="1.5"/>' +
+      '<circle cx="137" cy="104" r="1.7"/><circle cx="129" cy="110" r="1.7"/><circle cx="139" cy="113" r="1.5"/>' +
+      '</g>' +
       /* oeil gauche */
-      '<g id="javis-eye-l" transform="translate(68,92)">' +
-      '<ellipse rx="21" ry="24" fill="#221607"/>' +
-      '<ellipse rx="17" ry="20" fill="#fff"/>' +
-      '<circle id="javis-pupil-l" r="9" fill="#221607" cx="0" cy="2"/>' +
-      '<circle r="3" fill="#fff" cx="-3" cy="-3"/>' +
-      '<rect id="javis-lid-l" x="-22" y="-25" width="44" height="26" fill="#c9a227" transform="scaleY(0)" style="transform-origin:0 -25px"/>' +
+      '<g id="javis-eye-l" transform="translate(80,92)">' +
+      '<ellipse rx="13" ry="15" fill="#fff"/>' +
+      '<circle id="javis-pupil-l" r="7" fill="#3b2415" cx="0" cy="1"/>' +
+      '<circle r="2.6" fill="#fff" cx="-2.6" cy="-2.6"/>' +
+      '<rect id="javis-lid-l" x="-14" y="-16" width="28" height="18" fill="#f2bd90" transform="scaleY(0)" style="transform-origin:0 -16px"/>' +
       '</g>' +
       /* oeil droit */
-      '<g id="javis-eye-r" transform="translate(132,92)">' +
-      '<ellipse rx="21" ry="24" fill="#221607"/>' +
-      '<ellipse rx="17" ry="20" fill="#fff"/>' +
-      '<circle id="javis-pupil-r" r="9" fill="#221607" cx="0" cy="2"/>' +
-      '<circle r="3" fill="#fff" cx="-3" cy="-3"/>' +
-      '<rect id="javis-lid-r" x="-22" y="-25" width="44" height="26" fill="#c9a227" transform="scaleY(0)" style="transform-origin:0 -25px"/>' +
+      '<g id="javis-eye-r" transform="translate(120,92)">' +
+      '<ellipse rx="13" ry="15" fill="#fff"/>' +
+      '<circle id="javis-pupil-r" r="7" fill="#3b2415" cx="0" cy="1"/>' +
+      '<circle r="2.6" fill="#fff" cx="-2.6" cy="-2.6"/>' +
+      '<rect id="javis-lid-r" x="-14" y="-16" width="28" height="18" fill="#f2bd90" transform="scaleY(0)" style="transform-origin:0 -16px"/>' +
       '</g>' +
       /* sourcils (expressivité) */
-      '<path id="javis-brow-l" d="M50 68 Q68 58 86 68" stroke="#241905" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-      '<path id="javis-brow-r" d="M114 68 Q132 58 150 68" stroke="#241905" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<path id="javis-brow-l" d="M68 70 Q80 63 92 69" stroke="#b9491a" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      '<path id="javis-brow-r" d="M108 69 Q120 63 132 70" stroke="#b9491a" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+      /* nez */
+      '<path d="M100 102 Q104 111 99 113" stroke="#d9996d" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
       /* bouche : path remplacé selon l'état (idle / open / talk) */
-      '<path id="javis-mouth" d="M78 140 Q100 152 122 140" stroke="#241905" stroke-width="5" fill="none" stroke-linecap="round"/>' +
-      '</g>' +
-      /* étincelle IA, discrète */
-      '<g id="javis-spark" transform="translate(158,44)" opacity=".9">' +
-      '<path d="M0 -10 L3 -2 L11 0 L3 2 L0 10 L-3 2 L-11 0 L-3 -2 Z" fill="#fff"/>' +
+      '<path id="javis-mouth" d="M86 126 Q100 136 114 126" stroke="#a63f2d" stroke-width="4" fill="none" stroke-linecap="round"/>' +
       '</g>' +
       '</svg>'
     );
@@ -176,12 +194,13 @@
   /* ============================================================
      3. Animation : respiration, clignement, regard, bouche qui parle
      ============================================================ */
+  /* Géométrie calée sur le visage humain (bouche centrée x≈100, y≈126). */
   var mouthShapes = {
-    idle: 'M78 140 Q100 152 122 140',
-    smallOpen: 'M78 140 Q100 158 122 140 Q100 148 78 140',
-    open: 'M76 138 Q100 168 124 138 Q100 150 76 138',
-    talkA: 'M80 140 Q100 154 120 140 Q100 146 80 140',
-    talkB: 'M77 139 Q100 162 123 139 Q100 149 77 139',
+    idle: 'M86 126 Q100 136 114 126',
+    smallOpen: 'M88 125 Q100 137 112 125 Q100 131 88 125',
+    open: 'M85 124 Q100 146 115 124 Q100 133 85 124',
+    talkA: 'M88 126 Q100 133 112 126 Q100 130 88 126',
+    talkB: 'M86 124 Q100 142 114 124 Q100 132 86 124',
   };
 
   function startIdleAnimations(root) {

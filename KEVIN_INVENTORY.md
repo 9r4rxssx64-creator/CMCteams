@@ -11,7 +11,7 @@
 | [`javis/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/index.html) | L'app **installable sur ton téléphone** (plein écran, personnage + chat) |
 | [`javis/manifest.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/manifest.json) · [`javis/sw.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/sw.js) · [`javis/icon.svg`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/icon.svg) | PWA : « Ajouter à l'écran d'accueil », icône, hors-ligne |
 
-Parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives
+Personnage humain façon **Bea** (cheveux orange, taches de rousseur). Parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives
 (gratuites). Pas encore fait, honnêtement : lèvres synchronisées phonétiquement (ici,
 bouche qui bouge en rythme avec la voix — pas un vrai lip-sync), et le déploiement
 domaine-large (pour l'instant : arbre + l'app installable seulement).

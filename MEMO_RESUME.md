@@ -8298,3 +8298,27 @@ Inspiration Duo (Duolingo) pour le style, animations réelles (yeux, bouche).
 Vérifié localement : `node --check` propre sur les 2 scripts + le fichier combiné d'arbre,
 manifest JSON valide, icon.svg bien formé XML, CSP mise à jour dans le même commit que l'ajout
 du script (jamais l'un sans l'autre).
+
+---
+
+## Javis : c'était Bea, pas Duo (2026-09-16, suite)
+
+Kevin : « Je parlais de Bea. » J'avais compris « Duo » (la chouette) quand il avait dit « B de
+Duolingo » — c'était **Bea**, le personnage HUMAIN. Dessin entièrement refait :
+
+- Personnage humain : visage, cheveux orange au carré avec frange, taches de rousseur, joues
+  rosées, sourcils, nez, oreilles, cou et épaules (haut violet). Fini la mascotte ronde dorée.
+- `mouthShapes` recalées sur la nouvelle géométrie (bouche centrée x≈100 y≈126 au lieu de y≈140) —
+  sinon la bouche s'anime à côté du visage.
+- **Gros plan quand il parle** (demande de Kevin « en gros plan le visage ») : `#stage` prend la
+  classe `javis-closeup` pendant que la voix joue → le visage passe à `scale(1.28)`, la
+  respiration est coupée le temps du gros plan (deux `transform` concurrents sinon).
+- Visage agrandi dans l'app : `min(46vw,220px)` → `min(52vw,250px)`.
+- Icône de l'app refaite avec le même personnage (le même dessin, mis à l'échelle 2.3).
+- 4 surfaces mises à jour ensemble : `tools/javis/javis-widget.js` (source), `arbre/javis-widget.js`
+  (copie servie), `javis/index.html` (app), `javis/icon.svg` (icône bureau).
+
+Vérifié : SVG du widget **rendu en Node puis parsé en XML** (pas juste lu) + les 7 ancres
+d'animation présentes des deux côtés, SVG inline de l'app parsé, icon.svg parsé, `node --check`
+propre partout, 5/5 suites arbre toujours vertes. arbre v3.22 → v3.23 (APP_VER + CACHE en
+lockstep, le fichier servi a changé).
