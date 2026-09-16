@@ -8198,3 +8198,226 @@ d'image sont à sec (Gemini « crédits épuisés », Replicate « palier gratui
 l'argent, pas du code. Recharger l'un des deux suffit.
 
 Leçon #235.
+
+---
+
+## Persona "Javis" (2026-09-16)
+
+Kevin a demandé « qu'est-ce qu'un persona, un personnage Javis, et qu'est-ce que Javis pour
+Claude Code », puis « Go tout ». Écrit et branché des deux côtés :
+
+- **CLAUDE.md** : nouvelle section « 🤖 PERSONA — JAVIS » juste après le bandeau d'en-tête —
+  les 8 traits (connaît par cœur, agit à ta place, parle simple, vérifie avant d'affirmer, ne
+  régresse jamais, prévient avant qu'on demande, va plus loin, honnête sur ses limites), ton
+  tutoiement, et où Javis vit (Claude Code = ce fichier, Apex = `apex-identity.ts`).
+- **Apex** (`apex-ai/v13/core/apex-identity.ts`) : `APEX_IDENTITY.persona` (nom, ton, 8 traits)
+  injecté dans `buildIdentitySection()` (compact, respecte le budget strict 600 tokens/2400
+  chars — a fallu raccourcir 2 fois pour tenir dedans) et détaillé dans
+  `buildExtendedIdentitySection()`. Réponse au test d'identité « Qui es-tu ? » mise à jour pour
+  citer Javis.
+- Tests ajoutés (append-only, aucun test existant modifié) dans `apex-identity.test.ts` et
+  `apex-identity-extended.test.ts`. `tsc --noEmit` propre, 128 tests identité verts.
+
+---
+
+## Vérification parité + consommation IA (2026-09-16, suite persona)
+
+Kevin a demandé de vérifier : (1) la parité Javis Claude Code ⇄ Apex avec toggle ON/OFF,
+(2) qu'Apex ne consomme pas trop et bascule bien vers le gratuit en priorité, (3) qu'Anthropic
+soit "au courant" et minimise la consommation payante, (4) la parité générale (liens,
+connecteurs, MCP, hooks, skills, historique, données).
+
+### 1. Toggle ON/OFF Javis — implémenté
+
+`persona.javis` ajouté au registre existant `services/auth/feature-toggles.ts` (ON par
+défaut). `buildIdentitySection(userId?)` et `buildExtendedIdentitySection(userId?)` vérifient
+`isFeatureEnabled('persona.javis', userId)` — résolution per-user > global > défaut ON.
+Kevin peut donc désactiver Javis globalement OU pour un user précis (Laurence par ex.) sans
+toucher au reste de l'identité (Kevin/Laurence/projets restent injectés).
+
+**Piège trouvé et corrigé** : ma 1ʳᵉ version ajoutait "(persona Javis)" à DEUX endroits de la
+section compacte → +16 chars → a fait sauter un test qui vivait sur une marge de seulement
+**12 chars** sous le plafond strict de `prompt-budget.ts` (32000 chars, celui qui avait déjà
+cassé Apex en septembre, incident #365). Retiré la mention redondante — la section ON fait
+exactement la même longueur (2381 chars) qu'avant le persona. Règle ajoutée dans le code :
+OFF ne doit JAMAIS être plus long que ON.
+
+### 2. Routage IA gratuit-d'abord — VÉRIFIÉ, déjà correct
+
+`services/ai/ai-routing-policy.ts` : `getMode()` retourne `'free-smart'` par défaut pour
+l'admin (Kevin) — Qwen en premier sur les domaines simples (`SIMPLE_FREE_DOMAINS` =
+translation/summary/speed/general/vision), Anthropic en premier sur code/reasoning/admin/
+creative/search. Coûts réels €/1M tokens déclarés (`COST_PER_M_TOKENS_EUR` : Anthropic 8€,
+Qwen/Groq/Gemini/OpenRouter 0€). Toggle visible et cliquable dans le chat (icône ⚡,
+`features/chat/chat-misc-wiring.ts`) : free-smart → premium → economy → auto.
+
+### 3. Dashboard de consommation réelle — VÉRIFIÉ, câblé (pas mort)
+
+`tokensDashboard.record()` appelé après CHAQUE stream (`ai-router.ts:1202`), consommé par
+`consumption-monitor.ts` + `financial-dashboard.ts`. Onglet admin **💰 Conso** réellement
+rendu et cliquable (`features/admin/index.ts` — `case 'consumption'` monte
+`consumption-dashboard.js`). Kevin peut donc voir sa vraie consommation, pas une estimation.
+
+### 4. Parité MCP/connecteurs — mesurée, documentation CLAUDE.md dépassée (bonne nouvelle)
+
+`services/ai/mcp-registry.ts` déclare **30 connecteurs** (github, cloudflare, vercel, stripe,
+sentry, notion, slack, discord, telegram, gmail, calendar, apple-shortcuts, home-assistant,
+n8n, make, pinecone, firebase, supabase, coingecko, finnhub, tavily, brave-search,
+duckduckgo, bofip, legifrance, legal-hunter, almanac, railway, anthropic-skills, video-use) —
+bien plus que les « 3 serveurs MCP » documentés dans une ancienne section CLAUDE.md
+(2026-05-14, jamais mise à jour depuis).
+
+**Hooks** : Claude Code a des hooks réels (`.claude/settings.json` PostToolUse : syntax-check
+`index.html`, journal auto sur commit, rappel workflow expert) + `.claude/hooks/*.sh`.
+Apex n'a pas d'équivalent littéral (impossible : Apex tourne dans un navigateur, pas dans un
+environnement CLI avec accès bash) — sa parité FONCTIONNELLE est assurée par les 9 sentinelles
+(`services/sentinels/sentinels.ts`) + `apex-execute.ts` (whitelist d'actions autonomes). Pas
+une lacune : une architecture différente par nécessité, pas par oubli.
+
+### Tests
+
+`tsc --noEmit` propre, `eslint --max-warnings=0` propre (a aussi corrigé au passage un ordre
+d'imports pré-existant dans `memory.ts`, sans rapport avec le persona). Suite complète Apex :
+12500+ tests, 0 échec lié à mes changements (voir logs de session pour le détail).
+
+---
+
+## Javis a un corps — bouton flottant + app installable (2026-09-16)
+
+Kevin a demandé de voir Javis : un bouton flottant avec le personnage, visible seulement pour
+lui sur le domaine, cliquable pour parler à Javis "de n'importe où", tournant sur Apex en
+gratuit d'abord, capable d'ouvrir des liens/apps, et une app installable sur son téléphone.
+Inspiration Duo (Duolingo) pour le style, animations réelles (yeux, bouche).
+
+### Livré
+
+- **`tools/javis/javis-widget.js`** : source canonique du widget — bouton flottant rond doré,
+  personnage SVG animé (respiration CSS, clignement aléatoire, regard qui dérive, bouche qui
+  s'anime en rythme avec la voix via `SpeechSynthesisUtterance`), panneau de chat, dictée
+  (Web Speech API). **Fail-closed sur la visibilité** (`/__sso/whoami`, même pattern éprouvé
+  que `tools/departs/_depSsoAutoAdmin`) — invisible pour quiconque n'est pas Kevin admin
+  vérifié Face ID. Fail-open sur le réseau (SSO injoignable → juste pas de bouton, page intacte).
+- Parle à **`apis.kd-mc.com/ai`** (déjà en prod) — gratuit Qwen d'abord automatiquement, 0
+  logique dupliquée (réutilise `services/_shared/ia-route.js`, le routage IA commun du domaine).
+- Intentions locales sans appel IA : ouvrir une app du domaine (arbre, apex, cmcteams), météo
+  (open-meteo gratuit). Une action sur de vraies données (envoyer un message, modifier un
+  planning) n'est **jamais** exécutée par ce script public — ouvre Apex avec la question déjà
+  écrite dans son chat, où la vraie session + le vrai registre d'outils existent.
+- **`javis/`** : app PWA installable (« Ajouter à l'écran d'accueil ») — personnage plein écran
+  + chat, service worker, manifest, icône. Même moteur que le widget, gate SSO admin propre.
+- **Câblé en vrai** dans `arbre/index.html` (script chargé + CSP `connect-src` élargie aux 2
+  hôtes nécessaires — piège CSP⇄fetch déjà documenté, évité dès l'écriture).
+
+### Honnêteté — ce qui reste à faire
+
+- Pas de vrai lip-sync phonétique (la bouche bat en rythme, pas au son exact) — pistes gratuites
+  identifiées pour la suite : Live2D (vrai lip-sync audio, technique VTuber) ou TalkingHead.js
+  (github.com/met4citizen/TalkingHead, MIT, 3D + visèmes réels).
+- Personnage **original**, pas une copie du dessin précis de Duolingo (marque déposée d'un
+  tiers — un dépôt public ne publie pas une imitation d'une marque protégée). L'esprit (mascotte
+  ronde, grands yeux) est repris, pas le dessin exact.
+- Câblé sur 1 app (arbre) + l'app installable pour l'instant, pas les 26 adresses du domaine —
+  ce domaine n'a pas de bundler, chaque app statique garde sa propre copie à coller.
+- Pas de vérification live sur le domaine réel (agent bloqué sur kd-mc.com) — prochaine étape :
+  `verif-reelle` en CI une fois déployé.
+
+Vérifié localement : `node --check` propre sur les 2 scripts + le fichier combiné d'arbre,
+manifest JSON valide, icon.svg bien formé XML, CSP mise à jour dans le même commit que l'ajout
+du script (jamais l'un sans l'autre).
+
+---
+
+## Javis : c'était Bea, pas Duo (2026-09-16, suite)
+
+Kevin : « Je parlais de Bea. » J'avais compris « Duo » (la chouette) quand il avait dit « B de
+Duolingo » — c'était **Bea**, le personnage HUMAIN. Dessin entièrement refait :
+
+- Personnage humain : visage, cheveux orange au carré avec frange, taches de rousseur, joues
+  rosées, sourcils, nez, oreilles, cou et épaules (haut violet). Fini la mascotte ronde dorée.
+- `mouthShapes` recalées sur la nouvelle géométrie (bouche centrée x≈100 y≈126 au lieu de y≈140) —
+  sinon la bouche s'anime à côté du visage.
+- **Gros plan quand il parle** (demande de Kevin « en gros plan le visage ») : `#stage` prend la
+  classe `javis-closeup` pendant que la voix joue → le visage passe à `scale(1.28)`, la
+  respiration est coupée le temps du gros plan (deux `transform` concurrents sinon).
+- Visage agrandi dans l'app : `min(46vw,220px)` → `min(52vw,250px)`.
+- Icône de l'app refaite avec le même personnage (le même dessin, mis à l'échelle 2.3).
+- 4 surfaces mises à jour ensemble : `tools/javis/javis-widget.js` (source), `arbre/javis-widget.js`
+  (copie servie), `javis/index.html` (app), `javis/icon.svg` (icône bureau).
+
+Vérifié : SVG du widget **rendu en Node puis parsé en XML** (pas juste lu) + les 7 ancres
+d'animation présentes des deux côtés, SVG inline de l'app parsé, icon.svg parsé, `node --check`
+propre partout, 5/5 suites arbre toujours vertes. arbre v3.22 → v3.23 (APP_VER + CACHE en
+lockstep, le fichier servi a changé).
+
+---
+
+## Javis = Bee, celle de Lingua (2026-09-16, correction finale)
+
+Kevin : « Bee, le personnage qu'on a créé pour apprendre les langues — Lingua. » Ce n'était ni
+Duo ni Bea de Duolingo : c'est **sa** mascotte, déjà dessinée et animée dans `lingua/bee/`.
+**J'ai dessiné deux personnages pour rien avant de chercher l'existant** — réflexe à garder :
+chercher si Kevin a déjà l'objet demandé AVANT de le créer.
+
+Le widget et l'app réutilisent maintenant :
+- **Les mêmes images** : `lingua.kd-mc.com/bee/v2/rig/` (base + aile gauche + aile droite).
+  Une seule source de vérité : si l'art de Bee change dans Lingua, Javis suit tout seul.
+- **Les mêmes classes et la même géométrie mesurée** (`bee-rig`, `rig-lid` avec `--ll-*`/`--lr-*`,
+  `disc-mouth` avec `--mo-*`) — copiées telles quelles de `lingua/index.html`.
+- **`mascotAlive()` porté fidèlement** de `lingua/app.js` : respiration, clignement naturel,
+  regard qui suit le doigt, endormissement avec « z », réaction au toucher, bouche qui parle,
+  ailes qui battent plus vite pendant la parole. Plus le gros plan pendant la parole.
+- Voix : `pitch 1.35` (claire et enjouée, comme Bee dans Lingua).
+- Icône de l'app = `lingua/bee/icon-512.png` (son icône officielle).
+
+CSP mise à jour des deux côtés : `img-src` inclut `https://lingua.kd-mc.com` (sinon les images
+de Bee seraient bloquées en silence — piège CSP⇄fetch déjà documenté).
+
+Vérifié : `node --check` propre partout, 5/5 suites arbre vertes, **`tools/lingua/verify-assets.mjs`
+vert** (38 chemins contrôlés — je n'ai rien cassé chez Bee), les 3 images du rig existent bien.
+arbre v3.23 → v3.24, javis sw v1.0 → v1.1.
+
+---
+
+## Bee : attitude, réactions, interactions (2026-09-16, suite)
+
+Kevin : « Améliore l'attitude, réactions, interactions, animations. » Réflexe appliqué cette
+fois : j'ai d'abord regardé TOUT ce que Bee savait déjà faire dans Lingua et que je n'avais pas
+repris — c'était beaucoup.
+
+### Repris de Lingua (rien réinventé)
+
+- **Toucher par ZONE** (`_rigZone`) : la tête → elle est contente et saute · le ventre → elle rit
+  et danse · les ailes → elle s'envole. Phrase différente à chaque zone (`_rxLines`), vibration
+  différente (18 ms au ventre, 10 ms ailleurs), nombre d'étincelles différent.
+- **Étincelles** (`beeSparkles`) : ✨⭐💛🐝❤️🌟 qui jaillissent.
+- **Bulle de parole** (`beeBubble`) qui apparaît à côté d'elle.
+- **Mouvements du corps entier** (`beeMove`) : danse, saut, vol, marche.
+- **Son** (`tone`) : petites notes à l'interaction, muettes si la voix est coupée.
+- **`void offsetWidth`** : l'astuce de Lingua pour relancer une animation identique.
+- **Tristesse** (`rx-triste`) : elle baisse la tête et se désature.
+
+### Attitude ajoutée (contexte assistante, pas jeu de langues)
+
+- **Elle ouvre la conversation** : salutation selon l'heure (bonjour/bonsoir/tu veilles tard) ET
+  selon l'app où elle se trouve (« On est sur ton arbre de famille. Tu cherches quelqu'un ? »).
+  Si tu n'es pas venu depuis 2 jours : « Ça fait 3 jours ! Tu m'as manqué 🍯 ».
+- **Elle réagit à la conversation** : joie + son + étincelles quand la réponse arrive, tristesse
+  quand le réseau tombe, elle réfléchit pendant l'attente.
+- **« Elle écrit… »** : trois points animés pendant qu'elle réfléchit.
+- **Elle s'ennuie** : si tu n'ouvres pas le chat, elle fait un petit geste (marche, saut, danse)
+  toutes les ~1 min — **3 fois maximum**, puis elle se tient tranquille. Pas de harcèlement.
+- **Geste de bienvenue** quand tu ouvres le panneau (coucou + son).
+- Vibration à l'envoi, gros plan pendant qu'elle parle.
+
+### Anti-divergence (leçon #142 appliquée pour de bon)
+
+L'app installable est passée de **328 lignes à 41** : ce n'est plus qu'une coquille qui charge
+`javis-widget.js` avec `JAVIS_MODE='app'`. Une seule Bee, un seul fichier de comportement —
+plus deux versions à garder synchronisées. Le mode app affiche le personnage en grand et le
+chat en plein écran, et **dit** clairement « Bee est personnelle à Kevin » si ce n'est pas lui
+(au lieu d'un écran noir inexpliqué).
+
+Vérifié : `node --check` propre, **chaque mouvement et chaque émotion demandés en JS ont bien
+leur règle CSS** (contrôle explicite JS⇄CSS — le piège « déclaré mais pas branché »), aucune
+fonction orpheline (12 contrôlées), 5/5 suites arbre vertes, `verify-assets` de Lingua vert.
+arbre v3.24 → v3.25, javis sw v1.1 → v1.2.

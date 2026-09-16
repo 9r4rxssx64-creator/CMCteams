@@ -9,9 +9,10 @@
  * Si un fix runtime tente de modifier cette source de vérité → CI rouge.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 
 import { APEX_IDENTITY, buildIdentitySection } from '../../core/apex-identity.js';
+import { featureToggles } from '../../services/auth/feature-toggles.js';
 
 describe('APEX_IDENTITY — Source de vérité hardcodée', () => {
   it('contient le nom complet de Kevin DESARZENS', () => {
@@ -162,5 +163,48 @@ describe('buildIdentitySection() — Sortie déterministe', () => {
 
   it('est déterministe (deux appels = même string)', () => {
     expect(buildIdentitySection()).toBe(buildIdentitySection());
+  });
+});
+
+describe('APEX_IDENTITY.persona — "Javis" (Kevin 2026-09-16, "Go tout")', () => {
+  it('s\'appelle Javis, ton tutoiement, 8 traits', () => {
+    expect(APEX_IDENTITY.persona.name).toBe('Javis');
+    expect(APEX_IDENTITY.persona.tone).toBe('tutoiement');
+    expect(APEX_IDENTITY.persona.traits).toHaveLength(8);
+  });
+
+  it('buildIdentitySection() mentionne le persona Javis', () => {
+    const section = buildIdentitySection();
+    expect(section).toContain('Javis');
+  });
+});
+
+describe('persona.javis — toggle ON/OFF (Kevin 2026-09-16, "que je puisse l\'activer et le désactiver quand je veux")', () => {
+  afterEach(() => {
+    featureToggles.resetDefaults('test');
+  });
+
+  it('ON par défaut (personne n\'a touché aux réglages)', () => {
+    expect(featureToggles.isEnabled('persona.javis')).toBe(true);
+    expect(buildIdentitySection()).toContain('Javis');
+  });
+
+  it('OFF global (admin Kevin) → identité neutre, plus de mention Javis', () => {
+    featureToggles.setGlobal('persona.javis', false, 'kdmc_admin');
+    expect(buildIdentitySection()).not.toContain('Javis');
+  });
+
+  it('OFF pour un user précis seulement, reste ON pour les autres (per-user > global)', () => {
+    featureToggles.setForUser('persona.javis', 'laurence_sp', false, 'kdmc_admin');
+    expect(buildIdentitySection('laurence_sp')).not.toContain('Javis');
+    expect(buildIdentitySection('kdmc_admin')).toContain('Javis');
+    expect(buildIdentitySection()).toContain('Javis'); /* pas de userId → résout global (ON) */
+  });
+
+  it('OFF ne rallonge JAMAIS la section (budget prompt système serré, marge mesurée 12 chars)', () => {
+    const on = buildIdentitySection();
+    featureToggles.setGlobal('persona.javis', false, 'kdmc_admin');
+    const off = buildIdentitySection();
+    expect(off.length).toBeLessThanOrEqual(on.length);
   });
 });

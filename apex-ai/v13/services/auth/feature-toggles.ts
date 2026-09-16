@@ -222,6 +222,9 @@ const REGISTRY: readonly FeatureToggle[] = [
 
   /* === Verbosity (Kevin 2026-05-08 — "trop verbeux Plan A/B/C") === */
   { id: 'feature.ia-verbose-plans', category: 'module', description: 'IA verbose : énumère Plan A/B/C quand ambigu (default OFF — Kevin trouve trop verbeux). ON = ancien comportement debug.', defaultEnabled: false },
+
+  /* === Persona (Kevin 2026-09-16 — "que je puisse l'activer et le désactiver quand je veux") === */
+  { id: 'persona.javis', category: 'module', description: 'Persona "Javis" (ton, 8 traits, injecté en tête du system prompt). ON par défaut, désactivable global ou par user (OFF = identité neutre "Apex AI", sans le bloc persona).', defaultEnabled: true },
 ];
 
 /* Index pour lookup O(1) */
