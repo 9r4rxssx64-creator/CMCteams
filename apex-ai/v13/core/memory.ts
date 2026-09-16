@@ -14,12 +14,13 @@
  * 10. State app (APP_VER, modules, compteurs)
  */
 
-import { buildIdentitySection } from './apex-identity.js';
-import { logger } from './logger.js';
 import {
   lireFichier as lireFichierDepot,
   listerDossier as listerDossierDepot,
 } from '../services/integrations/depot-github.js';
+
+import { buildIdentitySection } from './apex-identity.js';
+import { logger } from './logger.js';
 import { budgetForBody } from './prompt-budget.js';
 
 export interface Fact {
@@ -1393,7 +1394,7 @@ class Memory {
     /* IDENTITÉ IRRÉVOCABLE Kevin 2026-05-08 — TOUJOURS prepend en tête.
      * Apex ne peut jamais oublier qui il est, qui Kevin est, qui Laurence est,
      * ses projets, ses règles critiques. ~500-600 tokens, non droppable. */
-    const identitySection = buildIdentitySection();
+    const identitySection = buildIdentitySection(currentUser?.id);
     const baseContext = this.buildSystemPromptContext(currentUser);
 
     /* identity + baseContext = toujours injecté (identité Apex/Kevin/Laurence + tools + architecture).
