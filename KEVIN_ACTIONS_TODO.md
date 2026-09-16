@@ -63,7 +63,7 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 
 | # | Ce que tu vas chercher | Temps | Ce que ça débloque |
 |---|---|---|---|
-| **1️⃣** | **Compte Metricool** (gratuit) | ~10 min | **TikTok + Instagram + Facebook + YouTube** d'un coup, publication automatique |
+| **1️⃣** | ~~Compte Metricool~~ ✅ branché et prouvé — reste **ajouter Facebook** dans Metricool | 1 min | **TikTok + Instagram + Facebook + YouTube** d'un coup, publication automatique |
 | 2️⃣ | **Zapier** — 2 liens à taper (tu as déjà le compte) | 2 min | Facebook Pages + Instagram, sans créer d'app Meta |
 | 3️⃣ | **Telegram** — @BotFather | 2 min | Publier + lire + messages, sans aucune validation |
 | 4️⃣ | **App Meta** *(facultatif)* | ~10 min | Contrôle total via mon worker : lire les commentaires, publier finement |
@@ -72,6 +72,11 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 ---
 
 ### 1️⃣ Metricool — le seul chemin vers TikTok, et il couvre tout le reste
+
+> ✅ **FAIT le 16.09** : compte créé, marque « Kdmc » (Instagram, TikTok, YouTube), connecteur
+> Claude branché, **chaîne prouvée** : un brouillon de test est dans ton planificateur (rien
+> ne part en public, tu peux le supprimer). Il reste **un geste** :
+> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — elle n'y est toujours pas.
 
 👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
 comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
