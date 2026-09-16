@@ -1,5 +1,40 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 00:10 — « Intègre les améliorations de Bee à Lingua aussi » (lingua v2.125.0)
+
+Kevin : les progrès faits sur Bee côté Javis doivent revenir dans **Lingua**, l'app d'où elle vient.
+D'abord le tri honnête : sur les cinq améliorations du widget, **deux venaient DÉJÀ de Lingua**
+(la bouche qui suit le son, le repli sur la voix du téléphone) — on ne recopie pas ce qu'on a emprunté.
+Les **trois vraiment nouvelles** sont reparties chez elle :
+
+- **Un seul clignement pour les trois Bee** (`beeClinNaturel`, `lingua/app.js`) : la durée **varie**
+  (8 durées différentes, **110-177 ms mesuré**) et **un battement sur cinq est double** (**7/40 mesuré**).
+  Avant : trois boucles recopiées (mascotte, écran d'accueil, visage du coach) = trois versions qui
+  divergent (leçon #142). Après : une fonction, trois appels.
+- **Le saut en dessin animé** (`@keyframes rigJump`) : elle se ramasse (anticipation), s'étire en
+  montant, **s'écrase** en retombant, rebondit deux fois. Mesuré en vrai navigateur : écrasement ET
+  étirement présents, **-36 px** au point le plus haut (avant : un simple aller-retour sans déformation).
+- **Elle détourne les yeux quand elle réfléchit** (`@keyframes rxPense`) : `x 0 → -4,4`, `y 0 → -4,2`
+  **mesuré**. Le décalage vit DANS l'animation — une animation CSS gagne sur le style en ligne
+  qu'écrit le regard-qui-suit-le-doigt, donc **zéro nettoyage** (plus simple que chez le widget).
+
+**Garde** : `npm run test:lingua-bee` (`tests/verify-lingua-bee-vivante.mjs`) — vrai navigateur,
+**13 contrôles, 0 échec**, câblé dans `test:ci`. **Prouvée discriminante par sabotage** : ancien saut
+→ « aucun écrasement mesuré » + « aucun étirement mesuré » ; clignement figé à 150 ms sans double
+→ « durée trop régulière (1 valeur) » + « le double battement ne se produit pas (0/40) » ; remis → 13/0.
+**Piège de mesure rencontré** : la fonction se replanifie toute seule — l'appeler 40 fois sur le MÊME
+élément mélange les battements (premières mesures : 0-24 ms, absurde) → **un élément par battement**.
+
+Versions : `lingua/app.js` v2.124.0 → **v2.125.0**, `lingua/sw.js` → `lingua-v2.125.0` (invariant CACHE == APP_VER).
+
+**Vérification RÉELLE sur le vrai domaine** (workflow `verif-reelle`, run 35162311942, connecté) :
+`javis.kd-mc.com` répond ✅ — `fail-closed correct : Bee cachée + message clair` (session **nommée**,
+pas Face ID : c'est le comportement voulu, Bee n'apparaît que pour un admin **prouvé**). Le seul rouge
+du run ne vient pas d'ici : `kit.kd-mc.com/lire.html` — sommaire à **7** entrées alors qu'on en attend ≥ 8
+(7 modules + ≥ 1 consigne du Club) → signalé à la session propriétaire (règle « prévenir + faire rectifier »).
+⚠ `test:paquet-pages` reste rouge en local sur `apex-ai` (chunks du build v13) — préexistant, pas mien.
+
+
 ## 2026-09-16 23:45 — « Va plus loin. Enrichit. Améliore » : acquisition, fraîcheur, fidélisation du Kit/Club
 
 Kevin 23:25 : « Va plus loin. Enrichit. Améliore, etc ». Trois manques mesurés sur le business Kit/Club :

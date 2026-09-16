@@ -150,6 +150,21 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
 - Animations = **port fidèle de `mascotAlive()`** (`lingua/app.js`) : respiration, clignement
   naturel, regard qui suit le doigt, endormissement avec « z », réaction au toucher, bouche
   qui parle, ailes qui battent plus vite pendant la parole, gros plan pendant qu'elle parle.
+- **Le retour chez Lingua (Kevin 2026-09-16 « intègre les améliorations de Bee à Lingua aussi »)** :
+  les trois choses qui étaient VRAIMENT nouvelles chez Javis sont reparties dans Lingua
+  (`lingua/` v2.125.0) — le reste (bouche sur le son, repli de voix) venait déjà de là, on ne
+  recopie pas ce qu'on a emprunté. (a) **Une seule source de clignement**, `beeClinNaturel()` :
+  durée qui varie (110-177 ms **mesuré**) et **un battement sur cinq est double** (7/40 mesuré) —
+  elle remplace **trois boucles recopiées** (mascotte, écran d'accueil, visage du coach), donc
+  trois versions qui divergeaient (leçon #142). (b) **Le saut en dessin animé** : elle se ramasse,
+  s'étire en montant, s'écrase en retombant, rebondit deux fois (**-36 px** au plus haut, écrasement
+  ET étirement mesurés). (c) **Elle détourne les yeux** quand elle réfléchit (`x 0 → -4,4`,
+  `y 0 → -4,2` mesuré) — le décalage vit **dans `@keyframes rxPense`** : une animation CSS gagne
+  sur le style en ligne qu'écrit le regard-qui-suit, donc **aucun nettoyage** à faire (plus simple
+  que la version du widget). Garde : `npm run test:lingua-bee` (**13 contrôles, 0 échec**, dans
+  `test:ci`, prouvée discriminante par sabotage — ancien saut → 2 échecs, clignement figé → 2 échecs).
+  **Piège de mesure** : cette fonction se replanifie toute seule ; l'appeler 40 fois sur le MÊME
+  élément mélange les battements et donne des durées absurdes (0-24 ms) → un élément par battement.
 - Câblé sur **1 app (`arbre`) + l'app installable** pour l'instant, pas les 26 adresses du
   domaine — chaque app statique garde sa propre copie du widget (pas de bundler ici), donc
   l'étendre = copier `tools/javis/javis-widget.js` dans chaque `index.html` visé + ajouter les
