@@ -106,16 +106,32 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   d'outils, un widget embarqué sur des pages publiques ne doit **jamais** détenir de secret
   d'écriture (règle sécurité domaine public déjà en place plus haut).
 
+**Sa voix et ses lèvres (Kevin 2026-09-16 « améliore les lèvres et le reste de l'animation ») :**
+- **Elle parle avec SA voix, celle de Lingua** : `lingua.kd-mc.com/__lingua/tts?v=nova`
+  (`services/kdmc-router/worker.js`) — déjà en prod, en cache pour toujours, **aucun nouveau
+  moteur**. Injoignable (réseau, 503, 4 s sans rien) → **voix du téléphone** en repli : jamais
+  muette.
+- **La bouche suit le SON, pas un minuteur** : port de `beeLipSync` de Lingua — `AnalyserNode`
+  (`fftSize=256`), amplitude (RMS) image par image → `scaleY/scaleX` de `.disc-mouth`.
+  **Mesuré en vrai navigateur** : sur un son fort puis silencieux, elle passe de **1,20 à 0,30**
+  (70 images écrites). Un minuteur donnerait la même valeur des deux côtés — c'est exactement ce
+  que la garde distingue, prouvé par sabotage.
+- **Trois pièges iPhone, tenus par la garde** : (a) `createMediaElementSource` fait passer le son
+  par le moteur audio — si celui-ci n'a pas été **réveillé par un vrai geste**, le son est
+  **coupé** → on ne détourne rien tant que `AC.state !== 'running'` (bouche en CSS) ; (b) sans
+  `crossOrigin="anonymous"` l'analyseur ne lit que du silence ; (c) `<audio>` dépend de
+  **`media-src`**, pas d'`img-src`.
+- **Limite honnête** : c'est du lip-sync **par amplitude**, pas **par phonème** (visème par son,
+  type D-ID/HeyGen). La bouche s'ouvre juste au bon moment et de la bonne taille ; elle ne forme
+  pas un « o » sur un « o ». Pour aller plus loin un jour : **Live2D** ou **TalkingHead.js**
+  (MIT, visèmes réels) — les deux demandent un moteur d'avatar (poids), pas branchées ici.
+
 **Ce qui n'est PAS fait, honnêtement (à ne pas prétendre) :**
-- Pas de vrai lip-sync phonétique (viseme par phonème type D-ID/HeyGen/Live2D). Dans l'app
-  installable, c'est la **VRAIE VIDÉO de Bee** qui joue (`lingua/bee/live/*.mp4` : idle, hello,
-  dance, jump, fly, walk — générées depuis son dessin pour Lingua, **réutilisées telles quelles**,
-  aucun fichier dupliqué) : elle respire, vole, danse et enchaîne les clips pour de bon. Mais un
-  clip vidéo n'est pas une bouche qui suit les phonèmes — sur une page normale et en repli, c'est
-  la marionnette CSS rythmée par `SpeechSynthesisUtterance`. Pour aller plus loin un jour :
-  **Live2D** (vrai lip-sync depuis l'audio, technique des VTubers) ou **TalkingHead.js**
-  (github.com/met4citizen/TalkingHead, MIT, visèmes réels) — les deux demandent un moteur
-  d'avatar (poids supplémentaire), pas branchées ici.
+- Dans l'app installable, c'est la **VRAIE VIDÉO de Bee** qui joue (`lingua/bee/live/*.mp4` :
+  idle, hello, dance, jump, fly, walk — générées depuis son dessin pour Lingua, **réutilisées
+  telles quelles**, aucun fichier dupliqué) : elle respire, vole, danse et enchaîne les clips
+  pour de bon. Sur une page normale c'est la marionnette CSS (dessin animé au clavier), pas la
+  vidéo.
 - **Vidéo = app installable seulement**, pas le bouton flottant : 6 clips ≈ 3 Mo, on ne les
   impose pas à une page ouverte en 4G. Repli en trois temps, prouvé en vrai navigateur :
   la classe `.vid` n'est posée **qu'après `canplay`** ; un clip d'humeur absent ne tue que
@@ -148,21 +164,31 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   · `npm run test:javis-bee-reelle` — **vrai navigateur** (Chromium, app servie en local,
     Lingua détournée vers les vrais fichiers) : la vidéo est lue, `currentTime` **avance**,
     un toucher change de clip, vidéo cassée → marionnette visible, clip manquant → retour
-    au repos, non-admin → rien + message. 16 contrôles, 0 échec.
+    au repos, **la bouche suit vraiment le son** (1,20 → 0,30), voix du domaine en panne →
+    voix du téléphone, non-admin → rien + message. **22 contrôles, 0 échec**, et il est
+    **dans `test:ci`** (comme `test:maj-forcee`) : ce qui n'est pas dans la chaîne finit sauté.
     Un Chromium de CI ne décode pas le H.264 : le test **rejoue les vraies images en VP9**
     avec ffmpeg plutôt que de sauter le contrôle ; sans ffmpeg il l'annonce
     **« NON VÉRIFIÉ ICI »** au lieu d'un vert trompeur (leçon #103, le faux vert).
-- Pas vérifié sur le domaine LIVE (l'agent n'atteint pas kd-mc.com, cf. règle « J'AI INTERNET…
-  JE VÉRIFIE » — canal 4, le runner CI, reste le pas suivant via le skill `verif-reelle`).
+- **`javis.kd-mc.com` est enfin une vraie adresse** (16.09) : elle manquait à `ROUTES` **et** à
+  `APPS` du routeur, donc l'app installable n'existait nulle part sur le domaine — impossible à
+  vérifier en vrai. Ajoutée aussi au `custom_domain` (wrangler), à la sonde de surveillance et à
+  la bouée de secours. Au passage, `rotaplan` et `croupier` étaient **servis sans clé d'app** :
+  ils échappaient au périmètre en silence (pire que pas de périmètre) — bouché, `test:ci` était
+  rouge sur `main` à cause de ça.
 
 ### 6. Test mental obligatoire avant d'étendre Javis à une nouvelle app
 
 > *« Cette app a-t-elle déjà sa CSP `connect-src` ouverte vers `apis.kd-mc.com` (sinon fetch
 > silencieusement bloqué, leçon CSP⇄fetch) — et `media-src` si elle veut la vidéo (une balise
-> `<video>` n'est PAS couverte par `img-src`) ? Ai-je ajouté la page à `tests/verify-javis-bee.mjs`
+> `<video>` n'est PAS couverte par `img-src`) — et `media-src` **aussi pour sa voix**, parce
+> qu'une balise `<audio>` en dépend exactement pareil ? Ai-je ajouté la page à `tests/verify-javis-bee.mjs`
 > et recopié le widget à l'octet près ? Le bouton flottant collide-t-il avec un élément
 > `position:fixed` déjà présent (SOS, badge version, bouton propre à l'app) ? Une action qui
-> touche de vraies données part-elle bien vers Apex authentifié, jamais exécutée ici ? »*
+> touche de vraies données part-elle bien vers Apex authentifié, jamais exécutée ici ?
+> Si j'ajoute une adresse au routeur : l'ai-je mise dans `ROUTES` **ET** `APPS` **ET** le
+> `custom_domain` **ET** la sonde **ET** la bouée de secours — les cinq, sinon elle échappe au
+> périmètre ou tombe en 404 le jour d'une panne ? »*
 
 S'applique : Javis (priorité), toute app qui embarque un widget public sur le domaine.
 
