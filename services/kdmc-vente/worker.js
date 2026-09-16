@@ -47,6 +47,17 @@ const PRODUITS = {
     livre: 'https://croupier.kd-mc.com/entretien.html',
     contenu: ['entretien'],
   },
+  /* Kit IA de l'indépendant (Kevin 2026-09-16 : produit numérique NEUF, niche
+     « compétences IA pour non-techniciens »). Le contenu payant vit dans la base
+     D1 `kdmc-contenu` (binding CONTENU), JAMAIS dans le dépôt public : /lire le
+     sert module par module contre un code valide, /apercu ne sert que le module
+     marqué gratuit. */
+  'kit-ia': {
+    nom: "Kit IA de l'indépendant — 7 modules + 60 consignes prêtes à copier",
+    prix: 47, devise: 'EUR',
+    livre: 'https://kit.kd-mc.com/lire.html',
+    contenu: ['kit-ia'],
+  },
 };
 
 const JOURS_RECHERCHE = 14;      // fenêtre de réclamation
@@ -55,8 +66,15 @@ const TTL_DEMANDE = 60 * 60 * 24 * 60;    // une demande en attente : 60 jours
 const MAX_RECLAM_PAR_HEURE = 10;          // anti-balayage d'e-mails
 
 /* ── Utilitaires ─────────────────────────────────────────────────────────── */
+/* Une origine du domaine = n'importe quel sous-domaine HTTPS de kd-mc.com (les pages
+   de vente vivent sur kit.kd-mc.com, croupier.kd-mc.com…). Mesuré le 16.09 : sans
+   ça, la liste fixe renvoyait « https://kd-mc.com » à une page servie depuis un
+   sous-domaine → le navigateur bloquait l'appel (CORS), la page disait « pas de réseau ». */
+function origineDuDomaine(origin) {
+  return /^https:\/\/([a-z0-9-]+\.)*kd-mc\.com$/.test(String(origin || ''));
+}
 function cors(origin) {
-  const ok = ALLOW_ORIGINS.includes(origin);
+  const ok = ALLOW_ORIGINS.includes(origin) || origineDuDomaine(origin);
   return {
     'Access-Control-Allow-Origin': ok ? origin : ALLOW_ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -219,6 +237,29 @@ async function requireAdmin(req) {
   }
 }
 
+/* ── Contenu payant (D1) ─────────────────────────────────────────────────
+   Table `contenu` (produit, id, ordre, titre, html, gratuit, maj). Le HTML est
+   rédigé par nous, jamais par un client : il est servi tel quel. Sans binding
+   CONTENU (worker déployé sans la base), on le DIT au lieu de servir du vide. */
+async function lireContenu(env, produitId, { gratuitSeulement }) {
+  if (!env.CONTENU || typeof env.CONTENU.prepare !== 'function') {
+    return { ok: false, status: 503, error: 'contenu_indisponible', detail: 'base de contenu non branchée (binding CONTENU absent)', step: 'contenu_binding' };
+  }
+  try {
+    const sql = 'SELECT id, ordre, titre, html, gratuit FROM contenu WHERE produit = ?1' + (gratuitSeulement ? ' AND gratuit = 1' : '') + ' ORDER BY ordre';
+    const res = await env.CONTENU.prepare(sql).bind(produitId).all();
+    const lignes = (res && res.results) || [];
+    const somm = await env.CONTENU.prepare('SELECT id, ordre, titre, gratuit FROM contenu WHERE produit = ?1 ORDER BY ordre').bind(produitId).all();
+    return {
+      ok: true,
+      modules: lignes.map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, html: l.html, gratuit: !!l.gratuit })),
+      sommaire: ((somm && somm.results) || []).map((l) => ({ id: l.id, ordre: l.ordre, titre: l.titre, gratuit: !!l.gratuit })),
+    };
+  } catch (e) {
+    return { ok: false, status: 500, error: 'contenu_lecture', detail: String((e && e.message) || e).slice(0, 160), step: 'contenu_sql' };
+  }
+}
+
 /* ── Routes ──────────────────────────────────────────────────────────────── */
 export default {
   async fetch(req, env) {
@@ -230,6 +271,7 @@ export default {
     /* --- Santé : dit la VÉRITÉ sur ce qui est configuré ------------------- */
     if (p === '/health') {
       return json({
+        contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'),
         ok: true, service: 'kdmc-vente',
         paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),
         paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID),
@@ -372,6 +414,29 @@ export default {
       return json({ ok: true, produit: f.produit, debloque: prod.contenu || [] }, 200, origin);
     }
 
+    /* --- Aperçu gratuit : les modules marqués gratuits, sans code --------- */
+    if (p === '/apercu') {
+      const produitId = String(url.searchParams.get('produit') || '');
+      if (!PRODUITS[produitId]) return json({ ok: false, error: 'produit', detail: 'produit inconnu: ' + produitId, step: 'apercu_produit' }, 404, origin);
+      const r = await lireContenu(env, produitId, { gratuitSeulement: true });
+      if (!r.ok) return json(r, r.status || 500, origin);
+      return json({ ok: true, produit: produitId, modules: r.modules, sommaire: r.sommaire }, 200, origin);
+    }
+
+    /* --- Lecture payante : TOUT le produit, contre un code valide --------- */
+    if (p === '/lire') {
+      const code = String(url.searchParams.get('c') || '').trim().toUpperCase();
+      if (!code) return json({ ok: false, error: 'code', detail: 'code absent', step: 'lire_code' }, 400, origin);
+      const brut = await env.VENTES.get('code:' + code);
+      if (!brut) return json({ ok: false, error: 'invalide', detail: 'code inconnu ou expiré', step: 'lire_inconnu' }, 404, origin);
+      let f; try { f = JSON.parse(brut); } catch (_) { f = null; }
+      const prod = f && PRODUITS[f.produit];
+      if (!prod) return json({ ok: false, error: 'invalide', detail: 'fiche illisible', step: 'lire_fiche' }, 500, origin);
+      const r = await lireContenu(env, f.produit, { gratuitSeulement: false });
+      if (!r.ok) return json(r, r.status || 500, origin);
+      return json({ ok: true, produit: f.produit, nom: prod.nom, modules: r.modules, sommaire: r.sommaire }, 200, origin);
+    }
+
     /* --- Admin : la file d'attente --------------------------------------- */
     if (p === '/admin/file') {
       const g = await requireAdmin(req);
@@ -415,4 +480,4 @@ export default {
 };
 
 /* Export pour les tests hors-ligne (le worker n'en dépend pas). */
-export const __test = { PRODUITS, nouveauCode, memeMontant, nettoieEmail, emailPlausible, ALPHABET };
+export const __test = { PRODUITS, nouveauCode, memeMontant, nettoieEmail, emailPlausible, ALPHABET, origineDuDomaine, lireContenu };

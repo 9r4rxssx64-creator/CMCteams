@@ -337,3 +337,90 @@ test('chaque produit déclare ce qu\'il débloque (sinon on vend du vide)', () =
     assert.match(p.livre, /^https:\/\/[a-z-]+\.kd-mc\.com\//, `${id} : adresse de livraison invalide (${p.livre})`);
   }
 });
+
+/* ── Contenu payant en base D1 (Kit IA) ──────────────────────────────────
+   Faux D1 : même contrat que Cloudflare (prepare().bind().all()). Le contenu
+   n'est JAMAIS dans le dépôt : ces tests prouvent que le worker ne le sert que
+   contre un code valide, et que l'aperçu ne fuit pas un module payant. */
+function fauxD1(lignes) {
+  return {
+    _sql: [],
+    prepare(sql) {
+      const self = this;
+      return {
+        bind(...args) {
+          return {
+            async all() {
+              self._sql.push(sql);
+              let rows = lignes.filter((l) => l.produit === args[0]);
+              if (/gratuit = 1/.test(sql)) rows = rows.filter((l) => l.gratuit === 1);
+              rows = [...rows].sort((a, b) => a.ordre - b.ordre);
+              if (/^SELECT id, ordre, titre, gratuit /.test(sql)) rows = rows.map(({ id, ordre, titre, gratuit }) => ({ id, ordre, titre, gratuit }));
+              return { results: rows };
+            },
+          };
+        },
+      };
+    },
+  };
+}
+const KIT = [
+  { produit: 'kit-ia', id: 'm1', ordre: 1, titre: 'Module 1', html: '<h2>Gratuit</h2>', gratuit: 1 },
+  { produit: 'kit-ia', id: 'm2', ordre: 2, titre: 'Module 2', html: '<h2>PAYANT-SECRET</h2>', gratuit: 0 },
+  { produit: 'autre', id: 'x', ordre: 1, titre: 'Autre produit', html: '<h2>AUTRE</h2>', gratuit: 1 },
+];
+
+test('/apercu ne sert QUE le module gratuit du produit demandé, sans code', async () => {
+  const env = { VENTES: fauxKV(), CONTENU: fauxD1(KIT) };
+  const j = await lis(await worker.fetch(req('/apercu?produit=kit-ia'), env));
+  assert.equal(j.ok, true);
+  assert.deepEqual(j.modules.map((m) => m.id), ['m1']);
+  assert.ok(!JSON.stringify(j.modules).includes('PAYANT-SECRET'), 'un module payant a fuité dans l\'aperçu');
+  assert.ok(!JSON.stringify(j).includes('AUTRE'), 'le contenu d\'un autre produit a fuité');
+  /* Le sommaire annonce tout le kit (titres seulement, jamais le html) */
+  assert.deepEqual(j.sommaire.map((s) => s.id), ['m1', 'm2']);
+  assert.ok(j.sommaire.every((s) => !('html' in s)), 'le sommaire ne doit pas transporter de html');
+  assert.equal((await worker.fetch(req('/apercu?produit=inconnu'), env)).status, 404);
+});
+
+test('/lire sans code ou avec un code inventé ne sert RIEN ; avec un code payé, tout le kit', async () => {
+  const kv = fauxKV();
+  const env = { VENTES: kv, CONTENU: fauxD1(KIT), ...ENV_COMPLET };
+  assert.equal((await worker.fetch(req('/lire'), env)).status, 400);
+  assert.equal((await worker.fetch(req('/lire?c=AAAA-BBBB-CCCC-DDDD'), env)).status, 404);
+  const stop = monteFetch({ transactions: [tx('k@m.com', '47.00')] });
+  const { code } = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'kit-ia', email: 'k@m.com' } }), env));
+  stop();
+  assert.ok(code, 'un paiement de 47 € doit délivrer un code');
+  const j = await lis(await worker.fetch(req('/lire?c=' + code), env));
+  assert.equal(j.ok, true);
+  assert.deepEqual(j.modules.map((m) => m.id), ['m1', 'm2']);
+  assert.ok(JSON.stringify(j.modules).includes('PAYANT-SECRET'));
+  assert.ok(!JSON.stringify(j).includes('AUTRE'), 'un code du kit ne doit pas ouvrir un autre produit');
+});
+
+test('un paiement de 39 € (prix croupier) n\'ouvre PAS le kit à 47 €', async () => {
+  const env = { VENTES: fauxKV(), CONTENU: fauxD1(KIT), ...ENV_COMPLET };
+  const stop = monteFetch({ transactions: [tx('k@m.com', '39.00')] });
+  const j = await lis(await worker.fetch(req('/reclamer', { methode: 'POST', corps: { produit: 'kit-ia', email: 'k@m.com' } }), env));
+  stop();
+  assert.ok(!j.code, 'un code a été délivré pour le mauvais montant');
+});
+
+test('sans base de contenu branchée, /lire et /apercu le DISENT (503), ils ne servent pas du vide', async () => {
+  const env = { VENTES: fauxKV() };
+  const r = await worker.fetch(req('/apercu?produit=kit-ia'), env);
+  assert.equal(r.status, 503);
+  assert.match((await lis(r)).detail, /CONTENU/);
+});
+
+test('CORS : tout sous-domaine HTTPS de kd-mc.com est une origine du domaine, rien d\'autre', () => {
+  const o = __test.origineDuDomaine;
+  assert.equal(o('https://kit.kd-mc.com'), true);
+  assert.equal(o('https://croupier.kd-mc.com'), true);
+  assert.equal(o('https://kd-mc.com'), true);
+  assert.equal(o('http://kit.kd-mc.com'), false, 'pas de http');
+  assert.equal(o('https://kd-mc.com.evil.io'), false, 'suffixe piégé');
+  assert.equal(o('https://evilkd-mc.com'), false);
+  assert.equal(o(''), false);
+});
