@@ -48,6 +48,21 @@ ce projet porte trois **crons de production** (`/api/cron`), c'est le terrain de
 ne peux pas prouver qu'une coupure globale (`git.deploymentEnabled: false`) laisserait les crons vivre.
 Signalé avec la mesure ; en attendant, ce rouge n'est pas un rouge de code.
 
+**Trouvé en passant, corrigé : un workflow qui échouait 413 fois EN SILENCE.**
+`.github/workflows/clayscore-verif-prix.yml` avait **DEUX blocs `concurrency:`** (un posé le
+15/08, un second ajouté ensuite sans retirer le premier). Deux clés identiques à la racine d'un
+même document YAML = **fichier invalide** : GitHub le refusait **au démarrage**, donc **chaque
+push de chaque branche** produisait une exécution rouge avec **0 job et 0 ligne de journal** —
+413 échecs, et autant de mails chez Kevin (la règle anti-spam vise 4/jour). Invisible parce que
+ce rouge-là ne s'affiche pas comme une vérification de PR : il vit dans l'onglet Actions, sans
+journal, au milieu de 152 workflows. Doublon retiré (on garde celui qui inclut l'événement dans
+le groupe). **Prévention, pas pansement** : `npm run test:workflows-valides`
+(`tests/workflows-valides.test.mjs`, **456 contrôles**, node seul, ~50 ms) vérifie les 152
+workflows — aucune clé de racine en double, un `on:` et au moins un job chacun. **Prouvé
+discriminant** : doublon remis → sortie 1 + le fichier nommé ; retiré → sortie 0. Câblé dans
+`test:ci` **et** dans le job `gardes-depot-public` de `tests.yml` (8 gardes au lieu de 7) — parce
+que `test:ci` ne tourne dans aucun workflow GitHub, justement.
+
 **Vérification RÉELLE sur le vrai domaine** (workflow `verif-reelle`, run 35162311942, connecté) :
 `javis.kd-mc.com` répond ✅ — `fail-closed correct : Bee cachée + message clair` (session **nommée**,
 pas Face ID : c'est le comportement voulu, Bee n'apparaît que pour un admin **prouvé**). Le seul rouge
