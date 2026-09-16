@@ -1,5 +1,22 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🐝 Bee dans Lingua — les améliorations sont revenues chez elle — 2026-09-17
+
+**▶️ Essayer (une fois déployé)** : ouvre [lingua.kd-mc.com](https://lingua.kd-mc.com) — touche Bee,
+regarde-la sauter (elle se ramasse, s'étire, s'écrase, rebondit) et cligner des yeux naturellement
+(jamais deux fois pareil, et parfois deux battements coup sur coup).
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`lingua/app.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/app.js) | `beeClinNaturel()` — **un seul** clignement pour les trois Bee (mascotte, accueil, visage du coach) au lieu de trois boucles recopiées |
+| [`lingua/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/index.html) | Le saut « dessin animé » (`rigJump`) + le regard qui se détourne quand elle réfléchit (`rxPense`) |
+| [`tests/verify-lingua-bee-vivante.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-lingua-bee-vivante.mjs) | **Garde en VRAI navigateur** (dans `test:ci`) : le saut écrase ET étire (-36 px), le regard se détourne, la durée du clignement varie (110-177 ms) et 1 fois sur 5 c'est double — `npm run test:lingua-bee` |
+
+**Ce qui n'est PAS reparti, et pourquoi** : la bouche qui suit le son et le repli sur la voix du
+téléphone **venaient déjà de Lingua** — c'est Javis qui les lui avait empruntées. On ne recopie pas
+ce qu'on a emprunté (ça ferait deux versions qui divergent, leçon #142).
+
+
 ## 🤖 Javis — le personnage flottant + l'app installable — 2026-09-16
 
 **▶️ Essayer (une fois déployé)** : ouvre [arbre.kd-mc.com](https://arbre.kd-mc.com) connecté en admin — le bouton rond doré apparaît en bas à droite, au-dessus du bouton ➕ existant.

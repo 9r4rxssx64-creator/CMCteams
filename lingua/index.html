@@ -295,7 +295,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .bee-rig.rx-triste .rig-look{animation:rxTriste 1.6s ease-in-out}
 @keyframes rxTriste{0%,100%{transform:rotate(0) translateY(0);filter:none}35%,70%{transform:rotate(-7deg) translateY(4%);filter:saturate(.7) brightness(.94)}}
 .bee-rig.rx-reflechit .rig-look{animation:rxPense 2s ease-in-out infinite}
-@keyframes rxPense{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+/* Elle détourne les yeux vers le haut-gauche pendant qu'elle cherche : personne ne fixe
+   son interlocuteur en réfléchissant. Le décalage vit DANS l'animation — elle gagne sur
+   le style en ligne écrit par le regard-qui-suit, donc aucun nettoyage n'est nécessaire. */
+@keyframes rxPense{0%,100%{transform:translate(-2.4%,-2%) rotate(-4deg)}50%{transform:translate(-1%,-2.6%) rotate(4deg)}}
 .bee-rig.rx-coucou .rig-look{animation:rxCoucou 1.4s ease-in-out}
 @keyframes rxCoucou{0%,100%{transform:rotate(0)}25%{transform:rotate(-9deg)}50%{transform:rotate(7deg)}75%{transform:rotate(-5deg)}}
 /* Elle s'endort si tu la laisses tranquille : paupières fermées, souffle lent, petit « z ». */
@@ -356,7 +359,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 .bee-rig.mv-dance .rig-wr,.bee-rig.mv-fly .rig-wr{animation:wingFlapR .3s ease-in-out infinite}
 .bee-rig.mv-dance .rig-arm{animation:armWave .5s ease-in-out infinite}
 @keyframes rigDance{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-7deg) translate(-4%,-3%)}40%{transform:rotate(6deg) translate(4%,0)}60%{transform:rotate(-6deg) translate(-3%,-4%)}80%{transform:rotate(7deg) translate(3%,0)}}
-@keyframes rigJump{0%,100%{transform:translateY(0) scale(1,1)}18%{transform:translateY(2%) scale(1.05,.9)}45%{transform:translateY(-16%) scale(.97,1.06)}70%{transform:translateY(0) scale(1.04,.94)}85%{transform:translateY(-1%) scale(1,1)}}
+/* Saut « dessin animé » (remonté du widget Javis, 16.09) : elle se RAMASSE avant de partir
+   (anticipation), s'ÉTIRE en montant, s'ÉCRASE en retombant, puis REBONDIT deux fois.
+   Sans ces trois temps, un saut paraît mou — c'est la base de l'animation classique. */
+@keyframes rigJump{0%,100%{transform:translateY(0) scale(1,1)}10%{transform:translateY(4%) scale(1.09,.88)}30%{transform:translateY(-14%) scale(.93,1.12)}48%{transform:translateY(-18%) scale(.97,1.04)}66%{transform:translateY(0) scale(1.12,.86)}80%{transform:translateY(-4%) scale(.98,1.03)}92%{transform:translateY(0) scale(1.02,.98)}}
 @keyframes rigFly{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(7%,-9%) rotate(5deg)}30%{transform:translate(13%,2%) rotate(-3deg)}50%{transform:translate(0,6%) rotate(0)}70%{transform:translate(-13%,-4%) rotate(4deg)}88%{transform:translate(-6%,-10%) rotate(-4deg)}}
 @keyframes rigWalk{0%,100%{transform:translateY(0) rotate(-2.5deg)}25%{transform:translateY(-3%) rotate(0)}50%{transform:translateY(0) rotate(2.5deg)}75%{transform:translateY(-3%) rotate(0)}}
 .disc-moves{display:flex;gap:10px;margin-top:10px}
