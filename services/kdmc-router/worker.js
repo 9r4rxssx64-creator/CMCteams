@@ -57,6 +57,7 @@ const ROUTES = {
   'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
   // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
   // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'javis.kd-mc.com': '/CMCteams/javis', // Javis / Bee — l'assistant de Kevin, app installable (Kevin 2026-09-16)
   'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
   'rotaplan.kd-mc.com': '/CMCteams/shops/rotaplan',
   'kit.kd-mc.com': '/CMCteams/shops/kit-ia', // Kit IA de l'indépendant — produit numérique neuf (Kevin 2026-09-16)
@@ -124,6 +125,9 @@ const APPS = {
   'kit.kd-mc.com': 'kit',
   'rotaplan.kd-mc.com': 'rotaplan', 'croupier.kd-mc.com': 'croupier', /* manquaient depuis le 15.09 : garde périmètre rouge (mesuré 16.09) */
   'tor.kd-mc.com': 'tor',
+  'rotaplan.kd-mc.com': 'rotaplan',
+  'croupier.kd-mc.com': 'croupier',
+  'javis.kd-mc.com': 'javis',
 };
 function appDe(host) { return APPS[String(host || '').toLowerCase().replace(/:.*$/, '')] || ''; }
 

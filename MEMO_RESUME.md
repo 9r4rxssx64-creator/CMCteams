@@ -164,6 +164,39 @@ vidéo est bloquée **sans le moindre message** — on ne voit que le dessin et 
 - Bee n'est branchée que sur **l'arbre + l'app installable**, pas sur les 26 adresses du domaine.
 - Rien n'est encore vérifié sur le **site en ligne** : je ne peux pas l'atteindre d'ici, ça se fera
   par la CI une fois déployé.
+
+## 2026-09-16 (soir, 4) — Bee a SA voix, et ses lèvres suivent vraiment le son
+
+### Ce qui change
+Avant, elle parlait avec la voix du téléphone et la bouche battait « en rythme », un peu au
+hasard. Maintenant **c'est sa voix à elle** — la même que dans Lingua — et **sa bouche suit le
+son** : elle s'ouvre grand sur une syllabe forte, elle se referme dans un silence. Elle saute
+aussi comme un vrai dessin animé (elle se ramasse avant, s'étire en montant, s'écrase en
+retombant, puis rebondit), elle cligne des yeux par petites saccades naturelles, et quand elle
+réfléchit elle **regarde ailleurs** au lieu de te fixer.
+
+### Mesuré dans un vrai navigateur, pas déduit
+- la bouche passe de **1,20 (son fort) à 0,30 (silence)** — **70 images** écrites pendant
+  qu'elle parle. Un simple minuteur donnerait la même valeur des deux côtés : c'est ça, la preuve.
+- **22 contrôles OK, 0 échec** (`npm run test:javis-bee-reelle`, désormais **dans la chaîne**)
+- garde statique : **39 contrôles OK, 0 échec**
+- prouvé en cassant exprès : j'ai débranché le lien son↔bouche → le test refuse, puis j'ai remis.
+
+### Si sa voix ne répond pas
+Elle **ne reste jamais muette** : au bout de 4 secondes, elle repasse sur la voix du téléphone.
+Et si le moteur audio du téléphone n'a pas encore été réveillé par un vrai geste, on ne touche
+pas au son du tout (sinon iPhone muet) — la bouche bat en dessin.
+
+### Son adresse existe enfin : javis.kd-mc.com
+L'app installable n'avait **aucune adresse** sur ton domaine — donc rien à vérifier en ligne.
+C'est réparé (adresse + certificat + surveillance + copie de secours). Au passage j'ai trouvé
+**deux adresses qui échappaient au contrôle d'accès** (`rotaplan`, `croupier`) : elles étaient
+servies sans étiquette d'app, la chaîne de tests était **rouge sur `main`** à cause de ça. Bouché.
+
+### Honnête
+Ses lèvres suivent le **volume**, pas chaque lettre : elle ouvre la bouche au bon moment et de
+la bonne taille, mais elle ne forme pas un « o » sur un « o ». Pour ça il faudrait un moteur
+d'avatar (Live2D / TalkingHead.js) — plus lourd, pas branché.
 ## 2026-09-16 21:40 — Nouveau commerce HORS casino : choix chiffré = Lingua Premium (+ packs Créa)
 
 Recherche faite (dépôt lu + 6 sources marché citées dans le rapport) — 5 niches comparées :

@@ -84,6 +84,7 @@ const SITES = [
   'rotaplan.kd-mc.com',   /* offre B2B Rotaplan (page de vente) — ajoutée 15.09.2026 */
   'kit.kd-mc.com',        /* Kit IA (indépendants) — produit numérique, 16.09 */
   'croupier.kd-mc.com',   /* Devenir croupier — guide de métier */
+  'javis.kd-mc.com',    /* Javis — app installable de Bee */
   'tor.kd-mc.com',        /* « Tor en clair » — routée le 15.09 sans être surveillée */
   'autorisations.kd-mc.com',
   'arbre.kd-mc.com',

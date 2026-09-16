@@ -92,6 +92,25 @@ function pourLeTest(f) {
 
 /* Bee est servie par Lingua en production : on détourne vers les vrais fichiers du dépôt.
    `casse` permet de simuler un fichier absent pour éprouver le repli. */
+let voixKO = false;
+/* Un son FORT puis SILENCIEUX : si la bouche suit vraiment l'amplitude, elle doit être
+   grande ouverte pendant la 1re seconde et presque fermée ensuite. Un minuteur, lui,
+   donnerait la même chose des deux côtés — c'est ce qui distingue un VRAI lip-sync. */
+let _son = null;
+function sonDeTest() {
+  if (_son) return _son;
+  const out = join(CACHE, 'voix.mp3');
+  if (!FFMPEG) return Buffer.alloc(0);
+  if (!fs.existsSync(out)) {
+    execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
+      '-f', 'lavfi', '-i', 'sine=frequency=220:duration=1.2',
+      '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
+      '-filter_complex', '[0:a][1:a]concat=n=2:v=0:a=1',
+      '-c:a', 'libmp3lame', '-b:a', '64k', '-y', out], { stdio: 'ignore' });
+  }
+  _son = fs.readFileSync(out);
+  return _son;
+}
 async function ouvre({ casse = null } = {}) {
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
@@ -107,7 +126,15 @@ async function ouvre({ casse = null } = {}) {
       body: fs.readFileSync(f) });
   });
   await page.route('https://apis.kd-mc.com/**', (r) => r.fulfill({ status: 200,
-    contentType: 'application/json', body: JSON.stringify({ text: 'Coucou !' }) }));
+    contentType: 'application/json', body: JSON.stringify({ ok: true, provider: 'qwen', text: 'Coucou Kevin !' }) }));
+  /* Sa voix : en production c'est le domaine qui la fabrique. Ici on sert un VRAI son
+     (fort puis silencieux) pour pouvoir MESURER que la bouche suit l'amplitude —
+     et pas un minuteur. `muet: true` simule une voix injoignable (test du repli). */
+  await page.route(/lingua\.kd-mc\.com\/__lingua\/tts/, (route) => {
+    if (voixKO) return route.fulfill({ status: 503, body: 'indisponible' });
+    return route.fulfill({ status: 200, contentType: 'audio/mpeg',
+      headers: { 'access-control-allow-origin': '*' }, body: sonDeTest() });
+  });
   await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
   return { ctx, page, erreurs };
 }
@@ -184,6 +211,100 @@ if (VIDEO_TESTABLE) {
   const src = await page.locator('#javis-launcher .javis-vid').evaluate((v) => v.currentSrc);
   chk(/idle\.mp4/.test(src), `après un clip absent, elle revient au repos (${src.split('/').pop()})`);
   await ctx.close();
+}
+
+/* === 4 bis. LIP-SYNC : la bouche suit le SON, pas un minuteur ================ */
+if (FFMPEG) {
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  /* un vrai geste : sans lui le moteur audio d'un navigateur reste endormi (règle iPhone) */
+  await page.mouse.click(200, 700);
+  await dors(200);
+  const moteur = await page.evaluate(() => {
+    try { const c = new (window.AudioContext || window.webkitAudioContext)(); return c.state; }
+    catch (_) { return 'absent'; }
+  });
+  chk(moteur === 'running' || moteur === 'suspended', `moteur audio du navigateur : ${moteur}`);
+
+  /* On la fait parler comme le chat le ferait, puis on ÉCHANTILLONNE la bouche en continu.
+     Important : la bouche est remise à plat dès que le son finit — mesurer APRÈS, c'est
+     ne rien mesurer du tout. On relève donc pendant, et on découpe ensuite. */
+  const mesures = await page.evaluate(async () => {
+    const m = document.querySelector('#javis-launcher .disc-mouth');
+    const bouton = document.querySelector('#javis-launcher');
+    const form = document.querySelector('#javis-form');
+    const input = document.querySelector('#javis-input');
+    if (!m || !form || !input) return null;
+    /* la bouche est dans une couche non rendue quand la vidéo tourne : getComputedStyle y
+       répond « none ». On lit donc l'ouverture LÀ OÙ LE CODE L'ÉCRIT — le style en ligne. */
+    const ouverture = () => {
+      const st = m.getAttribute('style') || '';
+      const mm = st.match(/scaleY\(([\d.]+)\)/);
+      if (mm) return parseFloat(mm[1]);
+      const t = getComputedStyle(m).transform;
+      const mx = t && t !== 'none' ? t.match(/matrix\(([^)]+)\)/) : null;
+      return mx ? parseFloat(mx[1].split(',')[3]) : 0;
+    };
+    if (!document.querySelector('#javis-panel').classList.contains('javis-open')) bouton.click();
+    input.value = 'bonjour';
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+
+    const releves = [];
+    const t0 = performance.now();
+    while (performance.now() - t0 < 7000) {
+      releves.push({ t: performance.now(), y: ouverture(),
+        inline: /scaleY/.test(m.getAttribute('style') || '') });
+      await new Promise((r) => setTimeout(r, 30));
+      if (releves.length > 30 && releves.slice(-20).every((r) => !r.inline)
+          && releves.some((r) => r.inline)) break;            /* elle a fini de parler */
+    }
+    const pilotes = releves.filter((r) => r.inline);
+    if (!pilotes.length) return { pilote: false, n: releves.length };
+    const debut = pilotes[0].t;
+    const dans = (a, b) => pilotes.filter((r) => r.t - debut >= a && r.t - debut < b).map((r) => r.y);
+    const max = (v) => (v.length ? Math.max(...v) : 0);
+    return { pilote: true, n: pilotes.length,
+      fort: max(dans(60, 1050)),        /* le son : 1,2 s de note franche */
+      calme: max(dans(1350, 2050)) };  /* puis 0,9 s de silence          */
+  });
+  if (!mesures) { chk(false, 'bouche introuvable pour la mesure'); }
+  else {
+    chk(mesures.pilote, mesures.pilote
+      ? `la bouche est pilotée par le SON (${mesures.n} images écrites pendant qu'elle parle)`
+      : "la bouche n'est pas pilotée par le son (repli CSS — moteur audio indisponible ici)");
+    if (mesures.pilote) {
+      chk(mesures.fort > mesures.calme * 1.3,
+        `elle s'ouvre sur le son et se referme sur le silence (${mesures.fort.toFixed(2)} → ${mesures.calme.toFixed(2)})`);
+    }
+  }
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS pendant la parole');
+  await ctx.close();
+} else {
+  R.na.push("le lip-sync n'a pas pu être mesuré ici (pas de ffmpeg pour fabriquer un son de test)");
+}
+
+/* === 4 ter. voix du domaine injoignable → elle parle quand même ============== */
+{
+  voixKO = true;
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  const repli = await page.evaluate(async () => {
+    let dit = null;
+    /* on observe la voix du téléphone sans la faire vraiment parler */
+    window.speechSynthesis.speak = function (u) { dit = String(u && u.text || ''); };
+    const bouton = document.querySelector('#javis-launcher');
+    if (!document.querySelector('#javis-panel').classList.contains('javis-open')) bouton.click();
+    document.querySelector('#javis-input').value = 'bonjour';
+    document.querySelector('#javis-form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 2500));
+    return dit;
+  });
+  chk(!!repli, repli
+    ? `voix du domaine KO → elle parle avec la voix du téléphone (« ${String(repli).slice(0, 30)}… »)`
+    : 'voix du domaine KO → Bee reste MUETTE (le repli ne marche pas)');
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS malgré la voix en panne');
+  await ctx.close();
+  voixKO = false;
 }
 
 /* === 5. pas admin → Bee ne s'affiche pas (fail-closed) ====================== */

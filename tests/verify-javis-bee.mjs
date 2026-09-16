@@ -60,9 +60,11 @@ for (const { page, video } of PAGES) {
     `${page} · connect-src autorise apis.kd-mc.com (le hub IA gratuit)`);
   chk(a('connect-src').includes('api.open-meteo.com'),
     `${page} · connect-src autorise api.open-meteo.com (la météo)`);
+  /* Sa VOIX est un fichier audio servi par Lingua — donc media-src sur TOUTES les pages,
+     pas seulement celles qui jouent la vidéo. Sans lui : elle reste muette, sans message. */
+  chk(a('media-src').includes('lingua.kd-mc.com'),
+    `${page} · media-src autorise lingua.kd-mc.com (sa voix, et la vidéo le cas échéant)`);
   if (video) {
-    chk(a('media-src').includes('lingua.kd-mc.com'),
-      `${page} · media-src autorise lingua.kd-mc.com — SANS LUI la vraie vidéo est bloquée sans message`);
     chk(/JAVIS_MODE\s*=\s*'app'/.test(html), `${page} · déclare bien le mode app`);
   }
 }
@@ -92,6 +94,16 @@ chk(/canplay/.test(src), 'la vidéo ne s\'affiche qu\'après « canplay » (jama
 chk(/VID\.pret = false/.test(src), 'échec du clip de repos → retour marionnette, pas d\'écran vide');
 chk(/VID\.absent\[m\[1\]\] = 1/.test(src), 'un clip manquant ne tue que CE mouvement-là');
 chk(/if \(clip\(rig, kind/.test(src), 'les mouvements essaient la vraie vidéo avant la marionnette');
+chk(/BEE_TTS = 'https:\/\/lingua\.kd-mc\.com/.test(src),
+  'sa voix vient du domaine (aucun service tiers, aucune clé côté page)');
+chk(/crossOrigin = 'anonymous'/.test(src),
+  "la voix est demandée en crossOrigin — SANS ça l'analyse du son rend du silence et la bouche ne bouge pas");
+chk(/AC\.state !== 'running'/.test(src),
+  "moteur audio pas réveillé → on ne détourne PAS le son (sinon iPhone muet), la bouche bat en CSS");
+chk(/function voixTelephone/.test(src),
+  'voix du domaine injoignable → repli voix du téléphone, jamais muette');
+chk(/maxR < 0\.012/.test(src),
+  'amplitude plate (codec limité) → repli bouche en rythme, jamais une bouche figée');
 chk(/j\.verified === true && j\.admin === true/.test(src),
   'visibilité fail-CLOSED : Bee n\'apparaît que pour Kevin, Face ID prouvé');
 

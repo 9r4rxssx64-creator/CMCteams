@@ -50,6 +50,12 @@
      flottant reste la marionnette CSS, qui ne coûte rien en données mobiles. */
   var BEE_LIVE = 'https://lingua.kd-mc.com/bee/live/';
   var BEE_CLIPS = ['idle', 'hello', 'dance', 'jump', 'fly', 'walk'];
+  /* Sa VRAIE voix + le vrai lip-sync : le domaine sait deja fabriquer la parole
+     (routeur kd-mc.com, /__lingua/tts, cache a vie, CORS ouvert, fail-open). Un fichier
+     audio, c'est un SON QU'ON PEUT ANALYSER : la bouche s'ouvre sur l'amplitude reelle.
+     La voix du telephone (Web Speech) reste le repli : elle parle mais ne s'analyse pas. */
+  var BEE_TTS = 'https://lingua.kd-mc.com/__lingua/tts';
+  var BEE_VOIX = 'nova'; /* la meme voix que Bee dans Lingua */
   var STORAGE_HIST = 'javis_widget_history';
   var STORAGE_VOICE = 'javis_widget_voice_on';
   var MAX_HISTORY = 40;
@@ -163,9 +169,17 @@
       '.bee-rig.mv-dance .rig-wl,.bee-rig.mv-fly .rig-wl{animation:javis-wingL .3s ease-in-out infinite}' +
       '.bee-rig.mv-dance .rig-wr,.bee-rig.mv-fly .rig-wr{animation:javis-wingR .3s ease-in-out infinite}' +
       '@keyframes javis-dance{0%,100%{transform:rotate(0) translate(0,0)}20%{transform:rotate(-7deg) translate(-4%,-3%)}40%{transform:rotate(6deg) translate(4%,0)}60%{transform:rotate(-6deg) translate(-3%,-4%)}80%{transform:rotate(7deg) translate(3%,0)}}' +
-      '@keyframes javis-jump{0%,100%{transform:translateY(0) scale(1,1)}18%{transform:translateY(2%) scale(1.05,.9)}45%{transform:translateY(-16%) scale(.97,1.06)}70%{transform:translateY(0) scale(1.04,.94)}85%{transform:translateY(-1%) scale(1,1)}}' +
+      /* Saut : les 3 principes de l'animation classique — ANTICIPATION (elle se ramasse
+         avant de partir), ÉTIREMENT en montant, ÉCRASEMENT à l'atterrissage, puis un petit
+         rebond. Sans ça, un saut ressemble à un ascenseur. */
+      '@keyframes javis-jump{0%,100%{transform:translateY(0) scale(1,1)}10%{transform:translateY(4%) scale(1.09,.88)}30%{transform:translateY(-14%) scale(.93,1.12)}48%{transform:translateY(-18%) scale(.97,1.04)}66%{transform:translateY(0) scale(1.12,.86)}80%{transform:translateY(-4%) scale(.98,1.03)}92%{transform:translateY(0) scale(1.02,.98)}}' +
       '@keyframes javis-fly{0%,100%{transform:translate(0,0) rotate(0)}12%{transform:translate(7%,-9%) rotate(5deg)}30%{transform:translate(13%,2%) rotate(-3deg)}50%{transform:translate(0,6%) rotate(0)}70%{transform:translate(-13%,-4%) rotate(4deg)}88%{transform:translate(-6%,-10%) rotate(-4deg)}}' +
       '@keyframes javis-walk{0%,100%{transform:translateY(0) rotate(-2.5deg)}25%{transform:translateY(-3%) rotate(0)}50%{transform:translateY(0) rotate(2.5deg)}75%{transform:translateY(-3%) rotate(0)}}' +
+      /* Elle regarde AILLEURS quand elle cherche (comme quelqu'un qui réfléchit),
+         et revient te regarder quand elle répond. */
+      '.bee-rig.rx-reflechit .rig-look{--lx:-2.6%;--ly:-2.2%;--lr:-5deg}' +
+      /* Elle sourit un peu plus quand elle est contente. */
+      '.bee-rig.rx-joie .disc-mouth{transform:translate(-50%,-50%) scaleX(1.35) scaleY(1.15)}' +
       /* tristesse (réseau en panne) — portée de Lingua */
       '.bee-rig.rx-triste .rig-look{animation:javis-triste 1.6s ease-in-out}' +
       '@keyframes javis-triste{0%,100%{transform:rotate(0) translateY(0);filter:none}35%,70%{transform:rotate(-7deg) translateY(4%);filter:saturate(.7) brightness(.94)}}' +
@@ -246,17 +260,27 @@
     rig.classList.add('vivant');
     var lastTouch = Date.now(), dormi = false;
 
+    /* Un vrai œil ne cligne pas à intervalle régulier : la durée varie, et une fois
+       sur cinq le clignement est DOUBLE (deux battements rapprochés). C'est ce détail
+       qui fait passer un personnage de « mécanique » à « vivant ». */
+    function unClin(ms) {
+      rig.classList.add('blink');
+      setTimeout(function () { try { rig.classList.remove('blink'); } catch (_) {} }, ms);
+    }
     (function blink() {
       if (!document.contains(rig)) return;
       if (!dormi) {
-        rig.classList.add('blink');
-        setTimeout(function () { try { rig.classList.remove('blink'); } catch (_) {} }, 150);
+        var ms = 110 + Math.random() * 70;
+        unClin(ms);
+        if (Math.random() < 0.2) setTimeout(function () { if (!dormi) unClin(ms); }, ms + 90);
       }
-      setTimeout(blink, dormi ? 9000 : (2400 + Math.random() * 3400));
+      setTimeout(blink, dormi ? 9000 : (2200 + Math.random() * 3600));
     })();
 
     function suivre(cx, cy) {
       if (dormi) return;
+      /* elle cherche : elle regarde ailleurs, elle ne te fixe pas */
+      if (rig.classList.contains('rx-reflechit')) return;
       var r = rig.getBoundingClientRect();
       if (!r.width) return;
       var dx = Math.max(-1, Math.min(1, (cx - (r.left + r.width / 2)) / (r.width * 0.9)));
@@ -436,7 +460,10 @@
     setTimeout(function () { try { rig.classList.remove('rx-' + kind); } catch (_) {} }, dur || 1500);
   }
 
+  /* la voix en cours + l'arret de l'analyse du son (partages : stopTalking les nettoie) */
+  var _voixAudio = null, _lipStop = null;
   function allRigs(root) { return Array.prototype.slice.call(root.querySelectorAll('.bee-rig')); }
+  function allMouths(root) { return Array.prototype.slice.call(root.querySelectorAll('.disc-mouth')); }
   var APP_MODE = (window.JAVIS_MODE === 'app');
   function startTalking(root) {
     allRigs(root).forEach(function (r) {
@@ -451,9 +478,13 @@
     }
   }
   function stopTalking(root) {
+    if (_lipStop) { try { _lipStop(); } catch (_) {} _lipStop = null; }
     allRigs(root).forEach(function (r) {
       r.classList.remove('talk');
-      var m = r.querySelector('.disc-mouth'); if (m) m.classList.remove('talking');
+      var m = r.querySelector('.disc-mouth');
+      /* la bouche pilotee par le son porte un transform en ligne : le retirer,
+         sinon elle reste figee grande ouverte apres la derniere syllabe. */
+      if (m) { m.classList.remove('talking'); m.style.transform = ''; m.style.opacity = ''; }
     });
     if (APP_MODE) {
       document.body.classList.remove('javis-closeup');
@@ -462,27 +493,140 @@
     }
   }
   function setThinking(root, on) {
-    allRigs(root).forEach(function (r) { r.classList[on ? 'add' : 'remove']('rx-reflechit'); });
+    allRigs(root).forEach(function (r) {
+      r.classList[on ? 'add' : 'remove']('rx-reflechit');
+      /* Le regard qui suit le doigt écrit --lx/--ly/--lr EN LIGNE, et un style en ligne
+         gagne toujours sur une règle de classe : sans ce nettoyage, « elle regarde
+         ailleurs » ne se verrait jamais. On le retire pendant qu'elle cherche ; dès
+         qu'elle répond, le prochain mouvement du doigt la fait revenir vers toi. */
+      if (on) {
+        var l = r.querySelector('.rig-look');
+        if (l) { l.style.removeProperty('--lx'); l.style.removeProperty('--ly'); l.style.removeProperty('--lr'); }
+      }
+    });
   }
 
   /* ============================================================
      4. Voix (Web Speech API — gratuite, native) + intentions locales
      ============================================================ */
-  function speak(root, text) {
-    var on = true;
-    try { on = localStorage.getItem(STORAGE_VOICE) !== '0'; } catch (_) {}
-    if (!on || !('speechSynthesis' in window) || !text) return;
+  /* ============================================================
+     4 bis. SA VOIX + LE VRAI LIP-SYNC (porte de Lingua : beeLipSync)
+     ------------------------------------------------------------
+     iPhone : brancher un <audio> dans le moteur audio DETOURNE le son par ce moteur.
+     Si le moteur n'a pas ete reveille par un VRAI geste, le son serait COUPE. Donc :
+     moteur pas pret -> on n'y touche pas, la bouche bat en CSS et le son sort normalement.
+     ============================================================ */
+  var AC = null;
+  function audioUnlock() {
     try {
-      window.speechSynthesis.cancel();
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      if (AC.state !== 'running' && AC.resume) AC.resume();
+      var b = AC.createBuffer(1, 1, 22050), s = AC.createBufferSource();
+      s.buffer = b; s.connect(AC.destination); (s.start || s.noteOn).call(s, 0);
+    } catch (_) {}
+  }
+  try {
+    ['touchend', 'click', 'pointerdown', 'keydown'].forEach(function (ev) {
+      document.addEventListener(ev, audioUnlock, { passive: true });
+    });
+  } catch (_) {}
+
+  /* La bouche s'ouvre sur l'AMPLITUDE du son reel (RMS), image par image.
+     Rend une fonction d'arret, ou null si l'analyse est impossible (-> repli CSS). */
+  function lipSync(audioEl, bouches) {
+    if (!audioEl || !bouches.length) return null;
+    try { if (!AC || AC.state !== 'running') return null; } catch (_) { return null; }
+    try {
+      if (!audioEl._srcNode) audioEl._srcNode = AC.createMediaElementSource(audioEl);
+      audioEl._srcNode.connect(AC.destination);      /* le SON d'abord — jamais coupe */
+      var an = AC.createAnalyser();
+      an.fftSize = 256; an.smoothingTimeConstant = 0.55;
+      audioEl._srcNode.connect(an);
+      var buf = new Uint8Array(an.fftSize), raf = 0, maxR = 0, plat = false;
+      var t0 = Date.now();
+      bouches.forEach(function (m) { m.classList.remove('talking'); m.style.opacity = '1'; });
+      function frame() {
+        an.getByteTimeDomainData(buf);
+        var acc = 0, i;
+        for (i = 0; i < buf.length; i++) { var v = (buf[i] - 128) / 128; acc += v * v; }
+        var rms = Math.sqrt(acc / buf.length);
+        if (rms > maxR) maxR = rms;
+        var ouv = Math.max(0, Math.min(1, (rms - 0.01) * 7));
+        var t = 'translate(-50%,-50%) scaleY(' + (0.3 + ouv * 1.6).toFixed(2) +
+                ') scaleX(' + (1 + ouv * 0.4).toFixed(2) + ')';
+        bouches.forEach(function (m) { m.style.transform = t; });
+        /* amplitude plate pendant 500 ms = analyse muette (codec/navigateur) -> repli CSS */
+        if (!plat && Date.now() - t0 > 500 && maxR < 0.012) {
+          plat = true;
+          bouches.forEach(function (m) { m.style.transform = ''; m.classList.add('talking'); });
+        }
+        raf = requestAnimationFrame(frame);
+      }
+      raf = requestAnimationFrame(frame);
+      return function () {
+        try { cancelAnimationFrame(raf); } catch (_) {}
+        try { an.disconnect(); } catch (_) {}
+        bouches.forEach(function (m) {
+          try { m.classList.remove('talking'); m.style.transform = ''; m.style.opacity = ''; } catch (_) {}
+        });
+      };
+    } catch (_) { return null; }
+  }
+
+  function voixStop() {
+    if (_lipStop) { try { _lipStop(); } catch (_) {} _lipStop = null; }
+    if (_voixAudio) { try { _voixAudio.pause(); _voixAudio.src = ''; } catch (_) {} _voixAudio = null; }
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (_) {}
+  }
+
+  /* Repli : la voix du telephone. Elle parle, mais on ne peut PAS l'analyser
+     (le navigateur la joue hors du moteur audio) -> la bouche bat en rythme. */
+  function voixTelephone(root, text) {
+    if (!('speechSynthesis' in window)) { stopTalking(root); return; }
+    try {
       var u = new SpeechSynthesisUtterance(text.slice(0, 600));
-      u.lang = 'fr-FR';
-      u.rate = 1.02;
-      u.pitch = 1.35; /* Bee a une voix claire et enjouée (comme dans Lingua) */
-      u.onstart = function () { startTalking(root); };
+      u.lang = 'fr-FR'; u.rate = 1.02;
+      u.pitch = 1.35; /* voix claire et enjouee, comme Bee dans Lingua */
       u.onend = function () { stopTalking(root); };
       u.onerror = function () { stopTalking(root); };
       window.speechSynthesis.speak(u);
     } catch (_) { stopTalking(root); }
+  }
+
+  function speak(root, text) {
+    var on = true;
+    try { on = localStorage.getItem(STORAGE_VOICE) !== '0'; } catch (_) {}
+    if (!on || !text) return;
+    voixStop();
+    startTalking(root);
+
+    /* 1) SA voix (le domaine la fabrique et la garde en cache) + VRAI lip-sync :
+          la bouche suit l'amplitude du son. crossOrigin est OBLIGATOIRE pour pouvoir
+          analyser un son d'une autre adresse — sans lui, l'analyse rend du silence. */
+    var a = new Audio();
+    a.crossOrigin = 'anonymous';
+    a.preload = 'auto';
+    var repli = false;
+    function versTelephone() {
+      if (repli) return; repli = true;
+      try { a.pause(); } catch (_) {}
+      voixTelephone(root, text);
+    }
+    a.addEventListener('canplay', function () {
+      if (repli) return;
+      _lipStop = lipSync(a, allMouths(root)); /* null = moteur audio pas reveille -> bouche CSS */
+      var p = a.play();
+      if (p && p.catch) p.catch(function () { versTelephone(); });
+    }, { once: true });
+    a.addEventListener('ended', function () { stopTalking(root); }, { once: true });
+    a.addEventListener('error', versTelephone, { once: true });
+    /* le son ne vient jamais : on ne la laisse pas muette */
+    setTimeout(function () { if (!repli && a.readyState < 2) versTelephone(); }, 4000);
+    try {
+      a.src = BEE_TTS + '?v=' + BEE_VOIX + '&t=' + encodeURIComponent(text.slice(0, 600));
+      _voixAudio = a;
+      a.load();
+    } catch (_) { versTelephone(); }
   }
 
   var DOMAIN_APPS = {
