@@ -83,6 +83,12 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > ne part en public, tu peux le supprimer). Il reste **un geste** :
 > 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — **reporté à plus tard**
 > (Kevin 16.09 : « note dans les tâches à faire pour plus tard pour Facebook »). Pas pressé.
+> **17.09 12:51 — la Page « Kdmc » EXISTE** (capture Kevin : menu Facebook, profil « Kdmc » avec
+> Tableau de bord professionnel). Cause n°1 réglée. Metricool ne la voit pas encore (mesuré
+> `getBrandSettings` 17.09 : Instagram + TikTok + YouTube, pas Facebook) → il reste le clic
+> Metricool → *Connections* → Facebook, avec le profil **Kevin Mc** (admin de la Page).
+> Réglages de la Page à corriger (vus sur la capture) : bio « Viral » et catégorie
+> « Musique/groupe » ne collent pas au Kit IA → bio proposée + catégorie « Formation ».
 
 #### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
 
