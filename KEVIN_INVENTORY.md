@@ -1,5 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎬 Machine à vidéos sans visage — 12 pubs pour les 6 produits — 2026-09-17
+
+Des cartes de texte plein écran lues par la voix du domaine, collées par ffmpeg sur le runner, publiées à une adresse publique hors dépôt (release GitHub « pub-videos ») que Metricool va chercher.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/scripts.json` | Les 12 scripts publics (5 cartes, légende, hashtags) — 3 avis, 2 bureau, 2 étudiant, 2 immo, 2 kit, 1 club | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/scripts.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/scripts.json) |
+| `tools/pub/video.mjs` | Le rendu : voix du domaine par carte, ffmpeg, MP4 1080×1920 + fiche .json ; muet si la voix tombe, et il le dit | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/video.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/video.mjs) |
+| `.github/workflows/pub-videos.yml` | Le bouton « rendre les vidéos » (artifact) + « publier » (release) — [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/pub-videos.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/pub-videos.yml) |
+| `tests/pub-videos.test.mjs` | La garde : porte de vérité des scripts (8 sabotages), repli du texte, plan, commandes ffmpeg, workflow (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/pub-videos.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/pub-videos.test.mjs) |
+
 ## 🏭 Fabrique de produits — 4 nouvelles niches à vendre — 2026-09-17
 
 Un seul moteur écrit un kit complet en base privée à partir d'une fiche publique ; les 4 niches (bureau 37 €, étudiant 27 €, avis clients 17 €, immobilier 67 €) ont chacune leur page sur kit.kd-mc.com et passent par la même caisse et le même lecteur.

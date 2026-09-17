@@ -356,6 +356,31 @@ Prochaine étape réelle : choisir le nouveau commerce **hors casino** (règle K
 la plus pertinente, la plus rentable… n'hésite pas à en faire plusieurs »), puis seulement
 après, la pub.
 
+## 2026-09-17 après-midi (2) — Machine à vidéos sans visage : 12 pubs, un rendu, une adresse publique
+
+- **Le trou mesuré** (cartographie) : `tools/social` (4 800 lignes, node-canvas, espeak) n'a
+  **jamais tourné en prod**, ses dossiers de fonds/musique sont vides, et **rien ne sert un MP4
+  publiquement sur kd-mc.com** (pas de R2 public, pas de `media/`). Metricool a besoin d'une
+  adresse publique pour une vidéo.
+- **Choix** : pas de node-canvas ni de moteur de voix local. `tools/pub/video.mjs` = cartes de
+  texte plein écran (ffmpeg `drawtext` depuis un fichier, police DejaVu du runner, thème clair ou
+  sombre, marque + progression) + **la voix du domaine** `lingua.kd-mc.com/__lingua/tts?v=nova`
+  (déjà en prod, testée en live, cache à vie) par carte → `ffprobe` mesure la durée → concat
+  ré-encodé `faststart` 1080×1920 30 i/s. Voix injoignable → carte muette 3,2 s + `voix=muet`
+  dans la fiche (jamais une vidéo vide, jamais un faux vert).
+- **Hébergement** = release GitHub `pub-videos` (`softprops/action-gh-release@v2`, épinglée) :
+  `https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/<id>.mp4`.
+  Public, stable, hors historique git (0 octet de vidéo dans le dépôt). 🔴 À prouver : que
+  Metricool accepte cette adresse (redirection vers objects.githubusercontent.com) — mesure au
+  premier `createScheduledPost`.
+- **12 scripts publics** (`tools/pub/scripts.json`), 5 cartes chacun, tutoiement, zéro jargon,
+  **zéro promesse chiffrée** (porte : `%`, « gagne », « garanti », « rapporte », « prompt »
+  refusés), la dernière carte rappelle toujours le module 1 gratuit.
+- **Garde** `tests/pub-videos.test.mjs` (7 contrôles, dans `test:ci`) ; le workflow mesure
+  chaque MP4 avec ffprobe (1080×1920 + piste audio) avant de dire « rendu ».
+- Non fait ici (bac à sable sans ffmpeg) : le rendu réel → workflow `pub-videos.yml`, résultat
+  dans la ligne suivante.
+
 ## 2026-09-17 après-midi — Fabrique de produits : 4 niches de plus, un seul moteur
 
 Kevin : « Continue. Crée d'autres vidéos, d'autres niches, encore du contenu qui rapporte. Va plus
