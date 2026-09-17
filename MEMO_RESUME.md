@@ -466,8 +466,14 @@ loin. Le maximum rapidement. Innove. » Réponse côté produits (les vidéos vi
   change → refusé puis accepté ; chaque appel porte le budget module). Leçon : un refus qui
   se répète 84 fois à l'identique n'est jamais le modèle, c'est la chaîne — et un journal qui
   ne montre que le DÉBUT d'un texte refusé pour « fin manquante » cache exactement la cause.
-- 🔴 Non mesuré à cette ligne : la fabrication n°3 avec le budget doublé — voir la ligne suivante
-  quand elle est faite. 0 vente : la demande reste à prouver.
+- **Fabrication n°3 (budget 8192) : les 4 niches PUBLIÉES, 28/28 modules, chacun accepté au
+  1er essai, 0 refus** — avis-ia run 35233992749 (« PRODUIT PUBLIÉ avis-ia : 7/7 modules », 9 min),
+  bureau-ia 35234309556, etudiant-ia 35234312626, immo-ia 35234316317 (12-14 min chacun). Mesuré
+  en base D1 après coup : 28 modules de 9,7 à 14,8 Ko, **28/28 avec pièges + checklist**, 0 mot
+  « prompt », 0 trou [À COMPLÉTER], 0 lien, 0 « garanti », 28/28 renvoient à service-public.fr,
+  gratuit=1 sur m1 seulement. Lu en vrai (avis m1) : tutoiement, scène du vendredi soir, méthode,
+  6 cases. 🔴 Non mesuré : la lecture LIVE des 4 lecteurs (`audit-live.yml` lancé juste après)
+  et la demande (0 vente, pub programmée du 18 au 25.09).
 
 ## 2026-09-17 13:15 — Facebook enfin dans Metricool (4 réseaux reliés)
 
