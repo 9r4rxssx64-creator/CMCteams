@@ -17,8 +17,14 @@ position **en cache** + écriture **groupée par image**. **Mesuré sur 60 mouve
 148 écritures / 120 mesures → 2 échecs. Écouteurs `scroll`/`resize`/`orientationchange` **retirés**
 quand Bee quitte la page.
 
+**3. Elle ne cligne plus dans le vide.** Quand l'onglet n'est **pas regardé**, ses battements ne
+servaient qu'à réveiller l'iPhone. La boucle saute le travail et **repart aussitôt** au retour.
+**Mesuré : 1 battement en 9 s page cachée contre 6 page regardée** ; **sabotage** → 5 contre 4 →
+2 échecs. Piège évité : une **deuxième** boucle de relance en parallèle la ferait cligner deux
+fois plus — une seule boucle, on annule le minuteur en attente.
+
 Gardes : `test:javis-bee` **39/0** (copies identiques à l'octet, 3 fichiers) · `test:javis-bee-reelle`
-**28/0** (vrai navigateur), dont 5 contrôles neufs. Les deux nouveautés sont **prouvées
+**31/0** (vrai navigateur), dont **7 contrôles neufs**. Les deux nouveautés sont **prouvées
 discriminantes par sabotage**.
 
 **3. Toutes les apps du domaine disent maintenant quelle version elles servent.** La lecture de

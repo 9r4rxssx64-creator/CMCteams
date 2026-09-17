@@ -141,6 +141,15 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   événements arrivent **un par image**, le regroupement ne change rien et le test **ne prouve
   rien** ; il faut envoyer la rafale dans la **même tâche JS**. Les écouteurs ajoutés
   (`scroll`/`resize`/`orientationchange`) sont **retirés** quand Bee quitte la page (pas de fuite).
+- **Elle ne cligne pas dans le vide (17.09, « performe »)** : quand l'onglet n'est **pas
+  regardé** (autre app au premier plan, écran verrouillé), personne ne voit ses battements —
+  les faire quand même, c'est réveiller l'iPhone pour rien. La boucle saute le travail et
+  repasse plus tard, et elle **repart aussitôt** au retour (`visibilitychange`), sans attendre
+  le prochain tour. **Mesuré** : **1 battement en 9 s page cachée contre 6 page regardée**.
+  **Sabotage** (garde retirée) → **5 cachée contre 4 visible** → 2 échecs.
+  ⚠️ **UNE SEULE boucle** : ajouter une deuxième boucle « de relance » en parallèle la fait
+  cligner deux fois plus (erreur commise puis corrigée le 17.09) — on **annule** le minuteur
+  en attente et on relance le **même** `blink()`.
 - **Limite honnête** : c'est du lip-sync **par amplitude + forme spectrale (formants)**, pas
   **par phonème** (visème par son, type D-ID/HeyGen). Elle ouvre au bon moment, de la bonne
   taille **et de la bonne forme** — mais elle ne forme toujours pas un « o » sur un « o ».

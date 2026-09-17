@@ -401,6 +401,46 @@ if (FFMPEG) {
   await ctx.close();
 }
 
+/* === 4 sexies. ELLE NE CLIGNE PAS DANS LE VIDE (batterie iPhone) ==============
+   Kevin 2026-09-17 « performe ». Quand l'onglet n'est PAS regardé, personne ne voit ses
+   battements : les faire quand même, c'est réveiller le téléphone pour rien.
+   DISCRIMINANT : avec l'ancien code, elle continuait de cligner page cachée. */
+{
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  const m = await page.evaluate(async () => {
+    const rig = document.querySelector('#javis-launcher .bee-rig');
+    if (!rig) return null;
+    const compte = async (ms) => {
+      let n = 0;
+      const obs = new MutationObserver((l) => { l.forEach((x) => { if (x.attributeName === 'class') n++; }); });
+      obs.observe(rig, { attributes: true, attributeFilter: ['class'] });
+      await new Promise((r) => setTimeout(r, ms));
+      obs.disconnect();
+      return n;
+    };
+    /* on fait croire au widget que la page est cachée — comme quand Kevin passe à une autre app */
+    const vrai = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden');
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const cachee = await compte(9000);
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const visible = await compte(9000);
+    if (vrai) Object.defineProperty(document, 'hidden', vrai);
+    return { cachee, visible };
+  });
+  if (!m) { chk(false, 'clignement : Bee introuvable pour la mesure'); }
+  else {
+    chk(m.cachee <= 2,
+      `page pas regardée : elle s'arrête (${m.cachee} battement(s) en 9 s au lieu d'environ 8)`);
+    chk(m.visible > m.cachee,
+      `page regardée : elle recligne aussitôt (${m.visible} battement(s) en 9 s contre ${m.cachee} cachée)`);
+  }
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS sur le clignement');
+  await ctx.close();
+}
+
 /* === 4 ter. voix du domaine injoignable → elle parle quand même ============== */
 {
   voixKO = true;
