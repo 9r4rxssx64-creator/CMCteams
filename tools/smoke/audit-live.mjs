@@ -537,7 +537,15 @@ for (const s of SURFACES) {
     /* lue AVANT le `deep` : les globales sont posées au chargement, et le badge de version
        vit sur le PREMIER écran — après une navigation interne, il a déjà disparu. */
     const verServie = await lireVersionServie(page);
-    res.notes.push('version servie : ' + (verServie || '❓ non exposée par la page'));
+    /* Bee est un fichier RECOPIÉ dans plusieurs pages : sa version est indépendante de celle
+       de l'app qui la porte. On l'affiche EN PLUS quand elle est là, sinon on ne saurait pas
+       quelle Bee tourne sur une page qui, elle, annonce déjà sa propre version. */
+    const verBee = await page.evaluate(() => {
+      try { return (typeof window.JAVIS_VER === 'string' && window.JAVIS_VER.trim()) || ''; }
+      catch (e) { return ''; }
+    }).catch(() => '');
+    res.notes.push('version servie : ' + (verServie || '❓ non exposée par la page')
+      + (verBee && verBee !== verServie ? ' · Bee ' + verBee : ''));
 
     if (s.deep) { try { const d = await s.deep(page); res.notes.push('deep: ' + d.note); if (!d.ok) res.ok = false; } catch (e) { res.ok = false; res.notes.push('deep KO: ' + (e && e.message ? e.message : e)); } }
 

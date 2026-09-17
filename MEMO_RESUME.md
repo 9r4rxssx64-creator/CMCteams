@@ -29,6 +29,13 @@ Gardes : `test:javis-bee` **39/0** (copies identiques à l'octet, 3 fichiers) ·
 **28/0** (vrai navigateur), dont 5 contrôles neufs. Les deux nouveautés sont **prouvées
 discriminantes par sabotage**.
 
+**4. Bee dit maintenant SA version (`window.JAVIS_VER`, v1.3).** Le widget vit lui aussi dans
+une IIFE : sans cette ligne, impossible de savoir **quelle Bee est réellement servie** — donc
+impossible de prouver qu'une mise en ligne est passée. C'est exactement le défaut que je venais de
+signaler aux autres (m085) : je me l'applique à moi-même. Comme le widget est **recopié** dans
+plusieurs pages, sa version est **indépendante** de celle de l'app qui le porte : l'audit affiche
+les deux (`version servie : v3.26 · Bee v1.3`).
+
 **3. Toutes les apps du domaine disent maintenant quelle version elles servent.** La lecture de
 version existait dans `tools/smoke/audit-live.mjs`… **enfermée dans la branche « enquête 404 %22 »**,
 donc elle ne se déclenchait que si une requête cassait : en pratique **jamais** (erreur #28,
