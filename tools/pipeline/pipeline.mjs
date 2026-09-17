@@ -181,6 +181,29 @@ switch (cmd) {
     break;
   }
 
+
+  /* ------------------------------------------------------------------ SUIVI */
+  /* POURQUOI cette commande (ajoutée le 17.09.2026) : la règle « PRÉVENIR NE SUFFIT
+     PAS » exige qu'un message ouvert depuis plus de 2 jours porte un SUIVI DATÉ, et
+     `npm run test:messages-suivis` fait échouer le gate sinon. Mais AUCUNE commande
+     ne permettait d'en poser un : il fallait éditer le JSON à la main — donc personne
+     ne le faisait. Mesuré ce jour-là : 61 messages ouverts, 0 suivi. La règle vivait
+     dans un document sans outil pour l'appliquer (leçon #142). */
+  case 'suivi': {
+    const m = (d.messages || []).find((x) => x.id === a.id);
+    if (!m) { console.error(`  ❌ message « ${a.id} » introuvable`); process.exit(1); }
+    if (!a.action) { console.error('  ❌ --action "ce que j\'ai fait" est obligatoire'); process.exit(1); }
+    if (!Array.isArray(m.suivi)) m.suivi = [];
+    m.suivi.push({
+      date: new Date().toISOString().slice(0, 10),
+      par: a.par || a.de || '?',
+      action: a.action,
+    });
+    ecrire(d);
+    console.log(`  ✅ suivi posé sur ${a.id} (${m.suivi.length} au total).`);
+    break;
+  }
+
   /* ------------------------------------------------------------- VÉRIFIER */
   case 'verifier': {
     const pb = [];
@@ -216,6 +239,8 @@ switch (cmd) {
                          [--attend-kevin "…"] [--attend-session "…"]
   message     --de <moi> --a <lui|toutes> --sujet "…" [--corps "…"]
   clore       --id <mNNN> [--reponse "…"]
+  suivi       --id <mNNN> --action "ce que j'ai fait" [--par <moi>]
+                         (obligatoire pour tout message ouvert depuis > 2 jours)
   verifier                                   cohérence du registre (utilisé par le gate)
 `);
 }
