@@ -114,7 +114,14 @@ jobs:
           # 2e push : un commit vide qui ne change RIEN au code, avec une option de
           # push qui pose la variable attendue par le job. C'est ce qui le fait
           # partir tout seul, sans que personne ait à cliquer dans GitLab.
-          git commit --allow-empty -q -m "veille : ouvrir les adresses .onion (demande du $(date -u +%F' '%H:%M) UTC) [skip ci]"
+          #
+          # SURTOUT PAS « [skip ci] » DANS CE MESSAGE. Sur GitHub c'est le réflexe
+          # (un commit de robot ne doit pas relancer toute la CI). Ici c'est
+          # exactement l'inverse : GitLab lit lui aussi « [skip ci] » / « [ci skip] »
+          # dans le message et saute TOUT le pipeline — le commit dont le seul but
+          # est de lancer le job aurait empêché le job de partir. Vécu le 17.09 :
+          # le push est passé, la variable était posée, et rien n'a tourné.
+          git commit --allow-empty -q -m "veille : ouvrir les adresses .onion (demande du $(date -u +%F' '%H:%M) UTC)"
           echo "→ demande du job tor-adresses"
           git push "${DEPOT}" "HEAD:refs/heads/${CIBLE}" \
             -o ci.variable="TOR_ADRESSES=1" 2>&1 \

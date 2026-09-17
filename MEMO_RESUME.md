@@ -1355,6 +1355,38 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — Premier lancement réel : le commit qui devait LANCER le pipeline se sabordait
+
+Kevin a créé le secret `GITLAB_TOKEN`. J'ai déclenché le workflow (run 35238758111, **success**),
+et la publication a bien eu lieu — journal cité, `JETON: ***`, aucun jeton en clair :
+
+```
+→ publication de la branche ci-veille
+   (première publication : la branche n'existe pas encore, rien à écraser)
+ * [new branch]  HEAD -> ci-veille
+→ demande du job tor-adresses
+   b7f09cf1f..0c0146953  HEAD -> ci-veille
+```
+
+**Mais le job n'a pas pu partir.** Le commit qui porte la demande se terminait par `[skip ci]`.
+Sur GitHub c'est le réflexe (un commit de robot ne doit pas relancer toute la CI, règle anti-spam
+mails). **GitLab lit exactement la même marque** et saute **tout** le pipeline : le commit dont
+le seul but était de lancer le job lui interdisait de démarrer. Le push est passé, la variable
+`TOR_ADRESSES=1` était posée, et rien n'a tourné. Corrigé : plus de `[skip ci]` sur ce commit-là,
+et le commentaire dit pourquoi, pour que personne ne le remette « par réflexe ».
+
+**Garde** : `test:tor` contrôle maintenant la ligne `git commit --allow-empty` elle-même —
+toute marque `[skip ci]` / `[ci skip]` la fait échouer. **Prouvée discriminante** : je remets
+`[skip ci]` → sortie **1**, message *« le commit qui doit LANCER le pipeline porte « [skip ci] » :
+GitLab le lit aussi et ne lance rien »* ; je l'enlève → sortie **0**, 34 contrôles.
+
+**Ce que je ne peux TOUJOURS pas faire, et c'est ma faute** : lire le résultat. Le jeton que je
+lui ai fait créer porte `write_repository` **seulement** — il sait pousser du code, pas interroger
+l'API. Mesuré : `GET /api/v4/projects/85753352/pipelines?ref=ci-veille` → **HTTP 404** (le projet
+est privé, et sans portée API la réponse est un 404, pas un 403). Donc soit Kevin regarde la page
+du pipeline une fois, soit il refait le jeton avec `read_api` en plus — et l'aller-retour devient
+automatique pour toujours, pour ce job comme pour les suivants.
+
 ## 2026-09-17 — Le jeton GitLab : le chemin qui marche SANS le faire passer par le chat
 
 Kevin : *« Je te donne le jeton GitLab ici ? Passe par l'autre session sinon… »* → **non aux deux**,

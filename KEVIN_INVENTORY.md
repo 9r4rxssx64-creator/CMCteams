@@ -201,6 +201,7 @@ Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcrip
 | Publier vers le miroir GitLab (à la main) | [.github/workflows/publier-gitlab.yml](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/publier-gitlab.yml) — le seul chemin pour lancer un job GitLab depuis une session. Demande le secret `GITLAB_TOKEN` (collé dans GitHub → Secrets, **jamais dans une conversation**) |
 | L'outil qui ouvre vraiment les .onion | [tools/tor/verif-onion.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/verif-onion.mjs) — **ouvre le Tor Browser, laisse-le ouvert, puis `npm run tor:verif`**. Sans Tor il refuse de répondre (jamais de faux « tout est mort »). Aussi lançable par le job GitLab `tor-adresses`, à la demande |
 | La preuve navigateur (43 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
+| **Voir le résultat côté GitLab** (Kevin, 1 coup d'œil) | [pipelines de la branche ci-veille](https://gitlab.com/kdmc-group/Kdmc-project/-/pipelines?ref=ci-veille) — le rapport est l'artifact « tor-adresses.json » du job `tor-adresses`. Je ne peux pas le lire d'ici : le jeton `write_repository` sait pousser du code, pas interroger l'API (mesuré : HTTP 404) |
 
 
 > Mis à jour automatiquement par Claude à chaque commit important.

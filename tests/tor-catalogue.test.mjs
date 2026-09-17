@@ -324,6 +324,14 @@ t('le chemin qui lance la vérification est manuel, ne touche pas main, ne fuit 
   assert(filtres >= pousses,
     'un push n\'est pas filtré (' + filtres + ' filtre(s) pour ' + pousses + ' push) : le jeton peut apparaître dans le journal');
   assert(/ci\.variable="TOR_ADRESSES=1"/.test(wf), 'la demande de travail a disparu : le job ne partirait plus tout seul');
+  /* Le commit qui porte la demande ne doit PAS dire « [skip ci] ». Sur GitHub c'est le
+     réflexe (un commit de robot ne relance pas la CI) ; GitLab lit la même marque et
+     saute TOUT le pipeline. Vécu le 17.09 : premier lancement, push accepté, variable
+     posée… et rien n'a tourné, parce que le commit se sabordait lui-même. */
+  const ligneCommit = (wf.match(/git commit --allow-empty[^\n]*/) || [''])[0];
+  assert(ligneCommit, 'le commit qui porte la demande a disparu : le job ne partirait plus');
+  assert(!/\[\s*(skip\s+ci|ci\s+skip)\s*\]/i.test(ligneCommit),
+    'le commit qui doit LANCER le pipeline porte « [skip ci] » : GitLab le lit aussi et ne lance rien');
   assert(!wf.includes('verif-onion.mjs'), 'le vérificateur est nommé dans un workflow GitHub : il doit rester côté GitLab');
 });
 
