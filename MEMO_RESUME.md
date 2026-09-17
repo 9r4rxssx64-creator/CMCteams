@@ -1,5 +1,51 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
+
+**1. La bouche de Bee prend une FORME, elle ne fait plus que gonfler.** Avant, `scaleX` et
+`scaleY` étaient pilotés par **la même valeur** (le volume) : elle changeait de taille, jamais de
+forme — impossible de distinguer un « ii » d'un « ou ». Maintenant le **volume** dit combien elle
+s'ouvre et le **centre de gravité du spectre** dit quelle forme elle prend (sombre → ronde,
+clair → large et plate), **uniquement pendant la parole** (au silence : repos identique à avant,
+0 régression). **Mesuré, à volume égal** : largeur/hauteur **0,71 sur un grave** contre **0,94 sur
+un aigu**. **Sabotage** : amplitude seule → **1,05 et 1,07** (identiques) → la garde échoue. ✅
+
+**2. Son regard ne coûte plus une mesure de page par mouvement de doigt.** Chaque `pointermove`
+appelait `getBoundingClientRect()` (recalcul de mise en page forcé) + 3 écritures CSS. Maintenant :
+position **en cache** + écriture **groupée par image**. **Mesuré sur 60 mouvements d'affilée** :
+**3 écritures au lieu de 180**, **2 mesures de page au lieu de 60**. **Sabotage** : ancien code →
+148 écritures / 120 mesures → 2 échecs. Écouteurs `scroll`/`resize`/`orientationchange` **retirés**
+quand Bee quitte la page.
+
+**3. Elle ne cligne plus dans le vide.** Quand l'onglet n'est **pas regardé**, ses battements ne
+servaient qu'à réveiller l'iPhone. La boucle saute le travail et **repart aussitôt** au retour.
+**Mesuré : 1 battement en 9 s page cachée contre 6 page regardée** ; **sabotage** → 5 contre 4 →
+2 échecs. Piège évité : une **deuxième** boucle de relance en parallèle la ferait cligner deux
+fois plus — une seule boucle, on annule le minuteur en attente.
+
+Gardes : `test:javis-bee` **39/0** (copies identiques à l'octet, 3 fichiers) · `test:javis-bee-reelle`
+**31/0** (vrai navigateur), dont **7 contrôles neufs**. Les deux nouveautés sont **prouvées
+Gardes : `test:javis-bee` **39/0** (copies identiques à l'octet, 3 fichiers) · `test:javis-bee-reelle`
+**28/0** (vrai navigateur), dont 5 contrôles neufs. Les deux nouveautés sont **prouvées
+discriminantes par sabotage**.
+
+**4. Bee dit maintenant SA version (`window.JAVIS_VER`, v1.3).** Le widget vit lui aussi dans
+une IIFE : sans cette ligne, impossible de savoir **quelle Bee est réellement servie** — donc
+impossible de prouver qu'une mise en ligne est passée. C'est exactement le défaut que je venais de
+signaler aux autres (m085) : je me l'applique à moi-même. Comme le widget est **recopié** dans
+plusieurs pages, sa version est **indépendante** de celle de l'app qui le porte : l'audit affiche
+les deux (`version servie : v3.26 · Bee v1.3`).
+
+**3. Toutes les apps du domaine disent maintenant quelle version elles servent.** La lecture de
+version existait dans `tools/smoke/audit-live.mjs`… **enfermée dans la branche « enquête 404 %22 »**,
+donc elle ne se déclenchait que si une requête cassait : en pratique **jamais** (erreur #28,
+Declaration ≠ Deployment). Sortie, généralisée à **toutes** les surfaces, fail-open total.
+**Inventaire réel mesuré** (run `35231101103`) : arbre **v3.26** · World Monitor **v2.42** ·
+OSINT **v2.6** · Lingua **v2.125.1** · Créa Studio **v9.18.2** ; **muettes** : Kit (`lire.html`),
+croupier, ia, outils, shops, cujina/cocina/cuisine. Une app muette n'est **jamais** marquée en
+échec — c'est écrit, c'est tout.
+
+
 ## 2026-09-17 00:05 — Vérif RÉELLE sur le vrai domaine : tout est vert, et une sonde muette corrigée
 
 **Vérifié pour de vrai**, pas déduit : run `35164354711` (`verif-reelle.yml`, connecté en tant que
