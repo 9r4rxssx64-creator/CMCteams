@@ -155,6 +155,19 @@
       + '</ul></div>';
   }
 
+  /* Posts AVEC LIEN sur la Page Facebook : le seul format qui amène quelqu'un sur le site
+     (un Reel renvoie au profil). L'aperçu montré est l'image de la page, servie par le domaine. */
+  function sectionLiens(data) {
+    var ls = (data.liens || []).slice().sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+    if (!ls.length) return '<div class="note">Aucun post-lien programmé pour l\'instant. La routine du lundi en pose un par semaine, en faisant tourner les pages.</div>';
+    return '<div class="kdmc-card tile"><div class="meta">Format <b>post avec lien</b> sur la Page Facebook : l\'aperçu (image + titre) vient de la page elle-même, et le lien se clique — contrairement à un Reel.</div><ul class="list">'
+      + ls.map(function (l) {
+        return '<li><div class="g"><b>' + esc(l.produit) + '</b><span>' + esc(jour(l.date) + ' ' + dt(l.date).slice(-5)) + ' · facebook</span></div>'
+             + '<a href="' + esc(l.url) + '" target="_blank" rel="noopener">page ›</a>'
+             + '<a href="' + esc(l.apercu) + '" target="_blank" rel="noopener">aperçu ›</a></li>';
+      }).join('') + '</ul></div>';
+  }
+
   function sectionMarche(m) {
     if (!m) return '';
     return '<div class="kdmc-card tile"><h3>🎯 Quelle niche rapporte le plus ?</h3>'
@@ -186,12 +199,13 @@
       + '<h2 class="cat">🧰 Produits</h2>' + sectionProduits(data, live)
       + '<h2 class="cat">▶️ Commandes</h2>' + sectionCommandes(data, live)
       + '<h2 class="cat">🎬 Pub — vidéos sans visage</h2>' + sectionVideos(data)
+      + '<h2 class="cat">🔗 Pub — posts avec lien (Facebook)</h2>' + sectionLiens(data)
       + '<h2 class="cat">🎯 Marché</h2>' + sectionMarche(data.marche)
       + '<h2 class="cat">🔗 Tout ce qui existe</h2>' + sectionPages(data)
       + '<h2 class="cat">⚙️ Caisse</h2>' + sectionConfig(live);
   }
 
-  var API = { esc: esc, euro: euro, etatRun: etatRun, etatLivraison: etatLivraison, etatContenu: etatContenu, kpis: kpis, moisBarres: moisBarres, rendu: rendu, CAISSE: CAISSE };
+  var API = { esc: esc, euro: euro, etatRun: etatRun, etatLivraison: etatLivraison, etatContenu: etatContenu, kpis: kpis, moisBarres: moisBarres, rendu: rendu, sectionLiens: sectionLiens, CAISSE: CAISSE };
   global.kdmcCommerce = API;
   if (typeof module === 'object' && module && module.exports) module.exports = API;
 

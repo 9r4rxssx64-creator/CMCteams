@@ -1,23 +1,17 @@
-# Diagnostic auto-merge — PR #3883 (claude/video-review-wqnqdw)
+# Diagnostic auto-merge — PR #3898 (claude/video-review-wqnqdw)
 
-Généré le 2026-09-17 16:17 UTC par auto-merge-claude.yml.
+Généré le 2026-09-17 19:08 UTC par auto-merge-claude.yml.
 Ce fichier existe parce que le merge automatique a été REFUSÉ.
 
 ## Cause exacte renvoyée par GitHub
 ```
-X Pull request 9r4rxssx64-creator/CMCteams#3883 is not mergeable: the merge commit cannot be cleanly created.
-To have the pull request merged after all the requirements have been met, add the `--auto` flag.
-Run the following to resolve the merge conflicts locally:
-  gh pr checkout 3883 && git fetch origin main && git merge origin/main
-X Pull request 9r4rxssx64-creator/CMCteams#3883 is not mergeable: the merge commit cannot be cleanly created.
-To have the pull request merged after all the requirements have been met, add the `--auto` flag.
-Run the following to resolve the merge conflicts locally:
-  gh pr checkout 3883 && git fetch origin main && git merge origin/main
+GraphQL: Head branch is out of date. Review and try the merge again. (mergePullRequest)
+GraphQL: Head branch is out of date. Review and try the merge again. (mergePullRequest)
 ```
 
 ## État de la PR vu par GitHub
 ```json
-{"draft":false,"mergeable":false,"mergeable_state":"dirty","rebaseable":false}
+{"draft":false,"mergeable":null,"mergeable_state":"unknown","rebaseable":null}
 ```
 
 ## Revues exigées / reçues

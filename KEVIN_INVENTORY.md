@@ -1,5 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🔗 Facebook — aperçu des liens + posts-liens — 2026-09-17
+
+Sans image d'aperçu, un lien partagé est un rectangle gris. Les 6 pages du Kit en ont une maintenant.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/produits/apercus.mjs` | Fabrique les 6 images 1200×630 (charte du Kit) et pose les balises dans les pages (`npm run apercus`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/apercus.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/apercus.mjs) |
+| `shops/kit-ia/og/*.png` | Les images servies à Facebook, WhatsApp, LinkedIn | [voir le dossier](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/kit-ia/og) | — |
+| `tools/pub/liens.mjs` | Le post AVEC LIEN de la Page Facebook : texte, rotation des pages, créneau | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/liens.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/liens.mjs) |
+| `tests/apercus-liens.test.mjs` | Garde (dans test:ci) : image présente, 1200×630, balises justes | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/apercus-liens.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/apercus-liens.test.mjs) |
+
 ## 🤖 Chaîne pub AUTONOME — scripts IA → rendu → release → Metricool → mémoire — 2026-09-17
 
 Chaque lundi 08:00 UTC, la routine « Pub — vidéos de la semaine » fait tout, seule (Kevin 17.09 « tout automatique et autonome »).
