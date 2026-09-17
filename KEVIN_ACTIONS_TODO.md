@@ -40,7 +40,7 @@ Chaque ligne renvoie à sa section plus bas.
 
 | Quoi | Pourquoi |
 |---|---|
-| **Facebook dans Metricool** *(reporté « plus tard » — Kevin 16.09)* | Il faut une **Page** Facebook (pas un profil) ; les 5 causes et la marche à suivre sont dans la section Metricool. Rien ne bloque : Instagram, TikTok et YouTube publient déjà |
+| ~~Facebook dans Metricool~~ ✅ fait le 17.09 13:14 (Page Kdmc, id 1373991005790862 mesuré) | Cause réelle : session Safari du mauvais compte → onglet privé | fait |
 | Droit **Vectorize** sur le jeton Cloudflare | Sinon la mémoire RAG d'Apex ne se déploie jamais |
 | **Accès au compte Cloudflare « 9r4 »** | Il est verrouillé derrière GitHub ; j'en ai besoin pour certains réglages |
 | Passer le **dépôt en privé** | À faire **en dernier** (ça casse les pages publiées tant que ce n'est pas réglé) |
@@ -93,6 +93,10 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > connecté… ne permet pas de publier » puis « no page bound to this account » = **cause n°4**
 > (autorisation du 16.09 donnée AVANT la création de la Page). Correctif donné : Facebook →
 > Paramètres → Intégrations professionnelles → retirer Metricool → reconnecter en cochant Kdmc.
+> **13:14 — ✅ FAIT.** Vraie cause : Safari réutilisait une session Facebook du mauvais compte
+> (cause n°3). Onglet privé Safari → Metricool a redemandé l'identifiant → Page **Kdmc** branchée.
+> Mesuré `getBrandSettings` 17.09 13:15 : `facebookData: 1373991005790862`. Les 4 réseaux sont
+> reliés (Facebook, Instagram, TikTok, YouTube). Plus rien à faire côté Facebook.
 
 #### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
 
