@@ -121,9 +121,39 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   **coupé** → on ne détourne rien tant que `AC.state !== 'running'` (bouche en CSS) ; (b) sans
   `crossOrigin="anonymous"` l'analyseur ne lit que du silence ; (c) `<audio>` dépend de
   **`media-src`**, pas d'`img-src`.
-- **Limite honnête** : c'est du lip-sync **par amplitude**, pas **par phonème** (visème par son,
-  type D-ID/HeyGen). La bouche s'ouvre juste au bon moment et de la bonne taille ; elle ne forme
-  pas un « o » sur un « o ». Pour aller plus loin un jour : **Live2D** ou **TalkingHead.js**
+- **Sa bouche prend une FORME, elle ne fait plus que gonfler (17.09, Kevin « va plus loin »)** :
+  avant, `scaleX` et `scaleY` étaient pilotés par **la même valeur** (le volume) — la bouche
+  changeait de taille mais **jamais de forme**. Maintenant le **volume** dit combien elle s'ouvre
+  et le **centre de gravité du spectre** (`getByteFrequencyData`, lissé) dit quelle forme elle
+  prend : son **sombre** (graves : « o », « ou ») → bouche **ronde** ; son **clair** (aigus :
+  « i », « s ») → bouche **large et plate**. La forme n'est appliquée **que pendant la parole**
+  (au silence on retombe exactement sur l'ancien repos `scaleY 0.30 / scaleX 1.00` → 0 régression).
+  **Mesuré en vrai navigateur, à volume égal** : rapport largeur/hauteur **0,71 sur un son grave**
+  contre **0,94 sur un son aigu**. **Prouvé discriminant par sabotage** : avec l'amplitude seule,
+  les deux rapports tombent à **1,05 et 1,07** (identiques) → la garde échoue.
+- **Son regard ne coûte plus une mesure de page par mouvement de doigt (17.09, « performe »)** :
+  chaque `pointermove` appelait `getBoundingClientRect()` — ce qui **force un recalcul de mise en
+  page** — puis écrivait 3 variables CSS ; un doigt qui glisse en envoie plusieurs par image.
+  Maintenant : position **mise en cache** (re-mesurée seulement au défilement/rotation/redimension)
+  + écriture **groupée sur la prochaine image**. **Mesuré sur une rafale de 60 mouvements dans la
+  même tâche JS** : **3 écritures au lieu de 180** et **2 mesures de page au lieu de 60**.
+  **Piège de mesure** : `page.mouse.move()` de Playwright fait un aller-retour par appel — les
+  événements arrivent **un par image**, le regroupement ne change rien et le test **ne prouve
+  rien** ; il faut envoyer la rafale dans la **même tâche JS**. Les écouteurs ajoutés
+  (`scroll`/`resize`/`orientationchange`) sont **retirés** quand Bee quitte la page (pas de fuite).
+- **Elle ne cligne pas dans le vide (17.09, « performe »)** : quand l'onglet n'est **pas
+  regardé** (autre app au premier plan, écran verrouillé), personne ne voit ses battements —
+  les faire quand même, c'est réveiller l'iPhone pour rien. La boucle saute le travail et
+  repasse plus tard, et elle **repart aussitôt** au retour (`visibilitychange`), sans attendre
+  le prochain tour. **Mesuré** : **1 battement en 9 s page cachée contre 6 page regardée**.
+  **Sabotage** (garde retirée) → **5 cachée contre 4 visible** → 2 échecs.
+  ⚠️ **UNE SEULE boucle** : ajouter une deuxième boucle « de relance » en parallèle la fait
+  cligner deux fois plus (erreur commise puis corrigée le 17.09) — on **annule** le minuteur
+  en attente et on relance le **même** `blink()`.
+- **Limite honnête** : c'est du lip-sync **par amplitude + forme spectrale (formants)**, pas
+  **par phonème** (visème par son, type D-ID/HeyGen). Elle ouvre au bon moment, de la bonne
+  taille **et de la bonne forme** — mais elle ne forme toujours pas un « o » sur un « o ».
+  Pour aller plus loin un jour : **Live2D** ou **TalkingHead.js**
   (MIT, visèmes réels) — les deux demandent un moteur d'avatar (poids), pas branchées ici.
 
 **Ce qui n'est PAS fait, honnêtement (à ne pas prétendre) :**

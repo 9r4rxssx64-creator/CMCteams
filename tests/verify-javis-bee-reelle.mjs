@@ -96,20 +96,25 @@ let voixKO = false;
 /* Un son FORT puis SILENCIEUX : si la bouche suit vraiment l'amplitude, elle doit être
    grande ouverte pendant la 1re seconde et presque fermée ensuite. Un minuteur, lui,
    donnerait la même chose des deux côtés — c'est ce qui distingue un VRAI lip-sync. */
-let _son = null;
-function sonDeTest() {
-  if (_son) return _son;
-  const out = join(CACHE, 'voix.mp3');
+const _sons = new Map();
+/* `sonHz` choisit la HAUTEUR du son de test : 220 Hz = son sombre (comme un « ou »),
+   3500 Hz = son clair (comme un « ii »). Même volume des deux côtés — c'est ce qui permet
+   de mesurer que la bouche change de FORME et pas seulement de taille. */
+let sonHz = 220;
+function sonDeTest(hz = sonHz) {
+  if (_sons.has(hz)) return _sons.get(hz);
   if (!FFMPEG) return Buffer.alloc(0);
+  const out = join(CACHE, `voix-${hz}.mp3`);
   if (!fs.existsSync(out)) {
     execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
-      '-f', 'lavfi', '-i', 'sine=frequency=220:duration=1.2',
+      '-f', 'lavfi', '-i', `sine=frequency=${hz}:duration=1.2`,
       '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
       '-filter_complex', '[0:a][1:a]concat=n=2:v=0:a=1',
       '-c:a', 'libmp3lame', '-b:a', '64k', '-y', out], { stdio: 'ignore' });
   }
-  _son = fs.readFileSync(out);
-  return _son;
+  const b = fs.readFileSync(out);
+  _sons.set(hz, b);
+  return b;
 }
 async function ouvre({ casse = null } = {}) {
   const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
@@ -281,6 +286,159 @@ if (FFMPEG) {
   await ctx.close();
 } else {
   R.na.push("le lip-sync n'a pas pu être mesuré ici (pas de ffmpeg pour fabriquer un son de test)");
+}
+
+/* === 4 quater. LA BOUCHE PREND UNE FORME, elle ne fait pas que gonfler ========
+   Kevin 2026-09-17 « ameliore, enrichit, performe ». Avant, scaleX et scaleY étaient
+   pilotés par LA MÊME valeur (le volume) : la bouche gardait toujours la même forme.
+   Maintenant le VOLUME dit combien elle s'ouvre et le SPECTRE dit quelle forme elle prend.
+   Ce contrôle est DISCRIMINANT : à volume égal, un son sombre et un son clair doivent
+   donner des formes DIFFÉRENTES. Avec l'ancien code (amplitude seule), les deux rapports
+   largeur/hauteur seraient IDENTIQUES et le test échouerait. */
+if (FFMPEG) {
+  const forme = async (hz) => {
+    sonHz = hz;
+    const { ctx, page } = await ouvre();
+    await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+    await page.mouse.click(200, 700);                       /* réveille le moteur audio */
+    await dors(200);
+    const m = await page.evaluate(async () => {
+      const el = document.querySelector('#javis-launcher .disc-mouth');
+      const bouton = document.querySelector('#javis-launcher');
+      const form = document.querySelector('#javis-form');
+      const input = document.querySelector('#javis-input');
+      if (!el || !form || !input) return null;
+      const lire = () => {
+        const st = el.getAttribute('style') || '';
+        const y = st.match(/scaleY\(([\d.]+)\)/); const x = st.match(/scaleX\(([\d.]+)\)/);
+        return (y && x) ? { y: parseFloat(y[1]), x: parseFloat(x[1]) } : null;
+      };
+      if (!document.querySelector('#javis-panel').classList.contains('javis-open')) bouton.click();
+      input.value = 'bonjour';
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      const rel = []; const t0 = performance.now();
+      while (performance.now() - t0 < 6000) {
+        const v = lire(); if (v) rel.push(v);
+        await new Promise((r) => setTimeout(r, 25));
+        if (rel.length > 25 && !lire()) break;
+      }
+      if (!rel.length) return null;
+      /* on ne compare QUE les images où elle est vraiment ouverte : au repos la forme est
+         volontairement neutre (aucune régression sur l'ancien comportement). */
+      const ouverts = rel.filter((r) => r.y > 0.8);
+      if (ouverts.length < 3) return { n: rel.length, ouverts: ouverts.length };
+      const rapports = ouverts.map((r) => r.x / r.y).sort((a, b) => a - b);
+      return { n: rel.length, ouverts: ouverts.length,
+        rapport: rapports[Math.floor(rapports.length / 2)],
+        xMax: Math.max(...ouverts.map((r) => r.x)), yMax: Math.max(...ouverts.map((r) => r.y)) };
+    });
+    await ctx.close();
+    return m;
+  };
+  const grave = await forme(220);      /* son sombre — bouche ronde   */
+  const aigu = await forme(3500);      /* son clair  — bouche large   */
+  sonHz = 220;
+  if (!grave || !aigu || !grave.rapport || !aigu.rapport) {
+    R.na.push('forme de la bouche NON MESURÉE ici (le moteur audio n\'a pas fourni assez d\'images)');
+  } else {
+    chk(aigu.rapport > grave.rapport * 1.15,
+      `la bouche change de FORME selon le son : ronde sur un son grave (largeur/hauteur ${grave.rapport.toFixed(2)}), `
+      + `large sur un son aigu (${aigu.rapport.toFixed(2)})`);
+    chk(aigu.xMax > grave.xMax,
+      `elle est plus LARGE sur l'aigu que sur le grave (${aigu.xMax.toFixed(2)} contre ${grave.xMax.toFixed(2)})`);
+  }
+} else {
+  R.na.push("la forme de la bouche n'a pas pu être mesurée ici (pas de ffmpeg)");
+}
+
+/* === 4 quinquies. SON REGARD NE COÛTE PLUS UNE MESURE DE PAGE PAR MOUVEMENT ===
+   Kevin 2026-09-17 « performe ». Avant : CHAQUE pointermove appelait
+   getBoundingClientRect() — ce qui FORCE le navigateur à recalculer la mise en page —
+   puis écrivait 3 variables CSS. Un doigt qui glisse vite en envoie plusieurs par image :
+   tout ce travail en trop était jeté avant même d'être affiché.
+   Maintenant : position mise en CACHE (re-mesurée seulement au défilement/rotation) et
+   écriture GROUPÉE sur la prochaine image.
+
+   ⚠️ PIÈGE DE MESURE (vécu ici même) : `page.mouse.move()` de Playwright fait un
+   aller-retour par appel — les événements arrivent espacés, environ un par image, donc
+   le regroupement ne change RIEN et le test ne prouve rien. Il faut une VRAIE rafale :
+   on envoie les événements dans la MÊME tâche JS, comme un doigt rapide. */
+{
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  const N = 60;
+  const m = await page.evaluate(async (n) => {
+    const look = document.querySelector('#javis-launcher .rig-look');
+    const rig = document.querySelector('#javis-launcher .bee-rig');
+    if (!look || !rig) return null;
+    let mesures = 0;
+    const vrai = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function () { mesures++; return vrai.apply(this, arguments); };
+    let ecritures = 0;
+    const obs = new MutationObserver((ms) => { ecritures += ms.length; });
+    obs.observe(look, { attributes: true, attributeFilter: ['style'] });
+    /* la rafale : n événements dans la MÊME tâche — aucune image ne peut s'intercaler */
+    for (let i = 0; i < n; i++) {
+      document.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, clientX: 120 + (i % 30) * 4, clientY: 300 + (i % 17) * 5 }));
+    }
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    obs.disconnect();
+    Element.prototype.getBoundingClientRect = vrai;
+    return { mesures, ecritures };
+  }, N);
+  if (!m) { chk(false, 'regard : élément introuvable pour la mesure'); }
+  else {
+    chk(m.ecritures > 0, m.ecritures > 0
+      ? `son regard suit bien le doigt (${m.ecritures} écriture(s) après la rafale)`
+      : 'son regard ne suit plus le doigt du tout');
+    chk(m.ecritures <= 6,
+      `une seule mise à jour par image : ${m.ecritures} écriture(s) pour ${N} mouvements d'affilée (avant : ${N * 3})`);
+    chk(m.mesures <= 2,
+      `sa position n'est mesurée qu'une fois, pas à chaque mouvement : ${m.mesures} mesure(s) pour ${N} mouvements (avant : ${N})`);
+  }
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS pendant le suivi du regard');
+  await ctx.close();
+}
+
+/* === 4 sexies. ELLE NE CLIGNE PAS DANS LE VIDE (batterie iPhone) ==============
+   Kevin 2026-09-17 « performe ». Quand l'onglet n'est PAS regardé, personne ne voit ses
+   battements : les faire quand même, c'est réveiller le téléphone pour rien.
+   DISCRIMINANT : avec l'ancien code, elle continuait de cligner page cachée. */
+{
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  const m = await page.evaluate(async () => {
+    const rig = document.querySelector('#javis-launcher .bee-rig');
+    if (!rig) return null;
+    const compte = async (ms) => {
+      let n = 0;
+      const obs = new MutationObserver((l) => { l.forEach((x) => { if (x.attributeName === 'class') n++; }); });
+      obs.observe(rig, { attributes: true, attributeFilter: ['class'] });
+      await new Promise((r) => setTimeout(r, ms));
+      obs.disconnect();
+      return n;
+    };
+    /* on fait croire au widget que la page est cachée — comme quand Kevin passe à une autre app */
+    const vrai = Object.getOwnPropertyDescriptor(Document.prototype, 'hidden');
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const cachee = await compte(9000);
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+    document.dispatchEvent(new Event('visibilitychange'));
+    const visible = await compte(9000);
+    if (vrai) Object.defineProperty(document, 'hidden', vrai);
+    return { cachee, visible };
+  });
+  if (!m) { chk(false, 'clignement : Bee introuvable pour la mesure'); }
+  else {
+    chk(m.cachee <= 2,
+      `page pas regardée : elle s'arrête (${m.cachee} battement(s) en 9 s au lieu d'environ 8)`);
+    chk(m.visible > m.cachee,
+      `page regardée : elle recligne aussitôt (${m.visible} battement(s) en 9 s contre ${m.cachee} cachée)`);
+  }
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS sur le clignement');
+  await ctx.close();
 }
 
 /* === 4 ter. voix du domaine injoignable → elle parle quand même ============== */
