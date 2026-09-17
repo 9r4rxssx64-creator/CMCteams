@@ -46,7 +46,7 @@
      ligne est passee. C'est exactement le defaut que j'ai mesure sur Lingua le meme
      jour (message m085 aux autres sessions) : je me l'applique a moi-meme.
      Une ligne, aucun effet visible. L'audit LIVE du domaine la lit tout seul. */
-  var JAVIS_VER = 'v1.3';
+  var JAVIS_VER = 'v1.4';
   try { window.JAVIS_VER = JAVIS_VER; } catch (e) {}
 
   if (window.__javisWidgetLoaded) return;
@@ -588,6 +588,26 @@
 
   /* La bouche s'ouvre sur l'AMPLITUDE du son reel (RMS), image par image.
      Rend une fonction d'arret, ou null si l'analyse est impossible (-> repli CSS). */
+  /* LES VOYELLES FRANCAISES ET LA BOUCHE QU'ELLES FONT.
+     f1/f2 = les deux resonances de la voix, en Hz (valeurs de reference de la phonetique
+     du francais, voix moyenne ; elles varient d'une personne a l'autre, mais ce qui compte
+     ici c'est leur POSITION RELATIVE, et celle-la est stable).
+     x = largeur de la bouche, y = ouverture (1.00 / 0.30 = bouche au repos).
+     Lecture simple : F1 monte quand la machoire s'ouvre, F2 monte quand la langue avance.
+       « ou » : machoire fermee, langue en arriere, levres arrondies -> etroite et basse
+       « a »  : machoire grande ouverte                              -> tres ouverte
+       « i »  : machoire fermee, langue en avant, levres etirees     -> large et plate */
+  var VOYELLES = [
+    { nom: 'a',  f1: 750, f2: 1300, x: 1.15, y: 1.95 },
+    { nom: 'e',  f1: 400, f2: 2100, x: 1.45, y: 1.00 },
+    { nom: 'ai', f1: 550, f2: 1900, x: 1.32, y: 1.45 },   /* « e » ouvert, comme dans « mais » */
+    { nom: 'i',  f1: 300, f2: 2300, x: 1.62, y: 0.62 },
+    { nom: 'o',  f1: 400, f2: 800,  x: 0.80, y: 1.20 },
+    { nom: 'au', f1: 550, f2: 1000, x: 0.95, y: 1.60 },   /* « o » ouvert, comme dans « sort » */
+    { nom: 'ou', f1: 320, f2: 800,  x: 0.62, y: 0.85 },
+    { nom: 'u',  f1: 300, f2: 1750, x: 0.70, y: 0.78 }    /* le « u » francais : levres rondes */
+  ];
+
   function lipSync(audioEl, bouches) {
     if (!audioEl || !bouches.length) return null;
     try { if (!AC || AC.state !== 'running') return null; } catch (_) { return null; }
@@ -595,11 +615,17 @@
       if (!audioEl._srcNode) audioEl._srcNode = AC.createMediaElementSource(audioEl);
       audioEl._srcNode.connect(AC.destination);      /* le SON d'abord — jamais coupe */
       var an = AC.createAnalyser();
-      an.fftSize = 256; an.smoothingTimeConstant = 0.55;
+      /* 2048 et pas 256 : pour reconnaitre une VOYELLE il faut mesurer ses deux resonances
+         (F1, F2), et a 256 chaque case du spectre fait 172 Hz -- on ne distingue meme pas
+         un « ou » (F1 320) d'un « a » (F1 750). A 2048, chaque case fait ~21 Hz : la ou
+         se joue la difference entre les voyelles. Cout : une FFT de 2048 points par image,
+         negligeable pour un navigateur. */
+      an.fftSize = 2048; an.smoothingTimeConstant = 0.55;
       audioEl._srcNode.connect(an);
       var buf = new Uint8Array(an.fftSize), raf = 0, maxR = 0, plat = false;
       var fbuf = new Uint8Array(an.frequencyBinCount);   /* le SPECTRE, pas que le volume */
-      var bLis = 0.5;                                     /* brillance lissee (0 sombre, 1 claire) */
+      var hz = (AC.sampleRate || 44100) / an.fftSize;     /* largeur d'une case du spectre */
+      var cibleX = 1.0, cibleY = 0.30, derniere = '';     /* la forme visee, lissee */
       var t0 = Date.now();
       bouches.forEach(function (m) { m.classList.remove('talking'); m.style.opacity = '1'; });
       function frame() {
@@ -609,31 +635,51 @@
         var rms = Math.sqrt(acc / buf.length);
         if (rms > maxR) maxR = rms;
         var ouv = Math.max(0, Math.min(1, (rms - 0.01) * 7));
-        /* LA FORME DE LA BOUCHE, PAS SEULEMENT SA TAILLE (Kevin 2026-09-17 « va plus loin »).
-           Avant, scaleX et scaleY etaient pilotes par LA MEME valeur (le volume) : la bouche
-           grossissait et retrecissait, toujours a la meme forme -- elle ne pouvait pas faire la
-           difference entre un « ii » (large et plat) et un « ou » (rond et haut).
-           Maintenant le VOLUME dit combien elle s'ouvre, et le CENTRE DE GRAVITE DU SPECTRE dit
-           quelle forme elle prend : son sombre (graves dominants : o, ou, a) -> bouche RONDE ;
-           son clair (aigus dominants : i, e, s) -> bouche LARGE et PLATE.
-           Ce n'est toujours pas du visème par phonème (il faudrait un moteur d'avatar), mais
-           ce n'est plus une bouche qui ne fait que gonfler. Honnête : c'est une approximation
-           par formants, elle ne forme pas un « o » sur un « o ». */
+        /* DE VRAIS VISEMES : elle FORME la voyelle qu'elle prononce (Kevin 2026-09-17
+           « fais le, continu »).
+           ─────────────────────────────────────────────────────────────────────────────
+           Etape 1 (le matin) : le volume pilotait scaleX ET scaleY -> la bouche gonflait,
+             forme toujours identique.
+           Etape 2 : le centre de gravite du spectre donnait une forme « claire / sombre ».
+             Mieux, mais ca ne reconnait toujours aucun son precis.
+           Etape 3, ici : on lit les DEUX RESONANCES DE LA VOIX (les formants F1 et F2).
+             C'est la vraie methode, celle de la phonetique : F1 dit combien la machoire est
+             ouverte, F2 dit ou est la langue. Ces deux nombres suffisent a identifier une
+             voyelle. On compare (F1,F2) aux voyelles francaises de reference et on prend la
+             plus proche, puis la bouche prend LA FORME de cette voyelle.
+           Pourquoi ca suffit visuellement : ce qu'on voit d'une bouche qui parle, ce sont
+             surtout les voyelles ; les consonnes passent trop vite pour etre lues.
+           Honnete : c'est du visème PAR VOYELLE, pas par phoneme complet -- les consonnes
+             ne sont pas distinguees entre elles (un « s » et un « f » se ressemblent).
+             Mais elle forme maintenant un « ou » sur un « ou ». */
         an.getByteFrequencyData(fbuf);
-        var num = 0, den = 0;
-        for (i = 0; i < fbuf.length; i++) { num += i * fbuf[i]; den += fbuf[i]; }
-        if (den > 0) {
-          var centre = (num / den) / fbuf.length;                    /* 0 = graves, 1 = aigus */
-          var b = Math.max(0, Math.min(1, (centre - 0.05) * 3.2));   /* la voix vit dans le bas */
-          bLis = bLis * 0.7 + b * 0.3;                               /* lisse : pas de tremblement */
+        var pic = function (fMin, fMax) {          /* la resonance la plus forte d'une bande */
+          var b0 = Math.max(1, Math.round(fMin / hz)), b1 = Math.min(fbuf.length - 1, Math.round(fMax / hz));
+          var best = 0, bv = 0;
+          for (var k = b0; k <= b1; k++) { if (fbuf[k] > bv) { bv = fbuf[k]; best = k; } }
+          return bv < 24 ? 0 : best * hz;          /* trop faible = pas une resonance */
+        };
+        var F1 = pic(200, 1000), F2 = pic(900, 3000);
+        if (F1 && F2) {
+          var meilleur = null, dMin = 1e9;
+          for (i = 0; i < VOYELLES.length; i++) {
+            var v = VOYELLES[i];
+            /* en echelle logarithmique : l'oreille (et la phonetique) comparent des rapports,
+               pas des ecarts en Hz -- 100 Hz d'ecart ne pesent pas pareil a 300 et a 2300 Hz */
+            var d = Math.pow(Math.log(F1 / v.f1), 2) + Math.pow(Math.log(F2 / v.f2), 2) * 0.8;
+            if (d < dMin) { dMin = d; meilleur = v; }
+          }
+          if (meilleur) {                          /* on glisse vers la forme, on n'y saute pas */
+            cibleX = cibleX * 0.6 + meilleur.x * 0.4;
+            cibleY = cibleY * 0.6 + meilleur.y * 0.4;
+            derniere = meilleur.nom;
+          }
         }
         /* la forme ne s'applique QUE quand elle parle : au silence on retombe exactement sur
            l'ancien repos (scaleY 0.30 / scaleX 1.00) -- aucune regression sur la garde. */
-        var forme = ouv;
-        var large = 1 + (bLis - 0.5) * 0.9 * forme;
-        var haut  = 1 - (bLis - 0.5) * 0.7 * forme;
-        var t = 'translate(-50%,-50%) scaleY(' + ((0.3 + ouv * 1.6) * haut).toFixed(2) +
-                ') scaleX(' + ((1 + ouv * 0.4) * large).toFixed(2) + ')';
+        var sy = 0.30 + (cibleY - 0.30) * ouv;
+        var sx = 1.00 + (cibleX - 1.00) * ouv;
+        var t = 'translate(-50%,-50%) scaleY(' + sy.toFixed(2) + ') scaleX(' + sx.toFixed(2) + ')';
         bouches.forEach(function (m) { m.style.transform = t; });
         /* amplitude plate pendant 500 ms = analyse muette (codec/navigateur) -> repli CSS */
         if (!plat && Date.now() - t0 > 500 && maxR < 0.012) {

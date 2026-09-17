@@ -2,6 +2,19 @@
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
+**1 bis. Puis elle a appris à FORMER la voyelle qu'elle prononce — de vrais visèmes.** Kevin :
+« fais le, continu ». On ne se contente plus de « clair / sombre » : on lit les **deux résonances
+de la voix** (F1 = ouverture de la mâchoire, F2 = position de la langue), on compare aux **8
+voyelles françaises de référence**, et la bouche prend **la forme de la voyelle reconnue**.
+`fftSize` passé de 256 à **2048** — sinon une case du spectre fait 172 Hz et on ne distingue même
+pas un « ou » (F1 320) d'un « a » (F1 750). **Mesuré sur de vraies voyelles de synthèse** :
+« i » **1,47 × 0,54** · « ou » **0,71 × 0,71** · « a » **1,11 × 1,56** — le triangle vocalique
+correct. **Sabotage** (retour à l'étape « couleur du son ») : les trois donnent **la même bouche**
+(0,68×1,99 · 0,66×2,02 · 0,66×2,02) → **3 échecs**. Bee **v1.4**.
+**Reste honnête** : visèmes **par voyelle**, pas par phonème — les consonnes ne sont pas
+distinguées entre elles. Le palier au-dessus (Live2D / TalkingHead) **remplacerait Bee par un
+autre personnage** : exclu.
+
 **1. La bouche de Bee prend une FORME, elle ne fait plus que gonfler.** Avant, `scaleX` et
 `scaleY` étaient pilotés par **la même valeur** (le volume) : elle changeait de taille, jamais de
 forme — impossible de distinguer un « ii » d'un « ou ». Maintenant le **volume** dit combien elle
