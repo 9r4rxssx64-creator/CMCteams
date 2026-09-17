@@ -3,6 +3,15 @@
 **Date** : 2026-09-10 · **Version** : `v1.1.288`
 **Règle appliquée** : *une fonction non listée est une fonction non testée*. Aucun « etc. ».
 
+
+> **17/09/2026 — toutes les fonctions testées EN RÉEL.** Le harnais `messaging-app/tools/fonctions-reelles.mjs`
+> (`npm run test:fonctions-reelles`) exécute chaque ligne de cette cartographie dans un vrai Chromium (19 vues via
+> `K.sv`, 179 boutons cliqués, 0 mort) et contre le vrai `api-worker.js` (103 routes, base D1 simulée), et ajoute
+> **F79…F85** (sondes : Face ID virtuel, aller-retour E2E, cliquet, WebRTC, clé push, crons, sauvegarde chiffrée
+> re-déchiffrée). Résultat mesuré : **83 ✅ · 2 ❌ · 0 ⚪ / 85** — tableau complet dans `06-FONCTIONS-REELLES.md`.
+> Les 2 ❌ : le coffre à clés `lib/key-vault.js` n'est chargé par aucune balise (F36, P1) ; `PATCH /api/conversations/:id`
+> → 500 (F30, P2). Une fonction non listée ici reste une fonction non testée — la liste est désormais la même des deux côtés.
+
 **Colonne « Couverture »** :
 ✅ = un test nommé cible explicitement cette fonction · 🟡 = couverte indirectement (le fichier
 est mesuré par la couverture globale, mais aucun test ne porte son nom) · ❌ = aucun test.
