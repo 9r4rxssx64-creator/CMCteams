@@ -14,6 +14,7 @@
    Une seule source : tools/produits/catalogue.json (+ le kit et le lecteur).
      node tools/produits/apercus.mjs            écrit les PNG + les balises
      node tools/produits/apercus.mjs --verifier  code 1 si une page n'a pas son aperçu
+   node tools/produits/apercus.mjs --en-ligne  code 1 si une page/un aperçu n'est pas servi (CI : réseau)
    Dernière ligne : « APERÇUS n/n ». */
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -103,11 +104,15 @@ ${p.prix ? `<div class="prix">${p.avant ? `<div class="avant">${p.avant} €</di
 </body></html>`;
 }
 
+/* L'adresse publique d'un aperçu — UNE seule vérité (balises, post-lien, contrôle
+   en ligne la lisaient chacun de leur côté : trois façons de se tromper). */
+export function urlApercu(p) { return BASE + 'og/' + p.slug + '.png'; }
+
 /* Les balises à poser dans la page (une seule vérité : ce tableau).
    `html` sert à ne PAS dupliquer ce que la page déclare déjà (og:title, og:url…) :
    mesuré le 17.09, lire.html n'avait AUCUNE balise og — pas même un og:type où s'ancrer. */
 export function balises(p, html = '') {
-  const img = BASE + 'og/' + p.slug + '.png';
+  const img = urlApercu(p);
   const manque = (k) => !new RegExp('property="' + k + '"').test(html);
   const base = [];
   if (manque('og:type')) base.push(`<meta property="og:type" content="website">`);
@@ -147,9 +152,46 @@ export function cspAccepteLaPropreImage(html) {
   return !m || /'self'/.test(m[1]);
 }
 
+/* Contrôle EN LIGNE (réseau obligatoire → CI, l'agent est derrière un pare-feu) :
+   chaque page ET son aperçu doivent répondre 200, et l'image doit vraiment être
+   un PNG 1200×630 — une page d'erreur servie en 200 passerait un simple code HTTP. */
+export function adressesEnLigne(pages = pagesOg()) {
+  return pages.flatMap((p) => [{ quoi: p.slug + ' (page)', url: p.url, png: false },
+                               { quoi: p.slug + ' (aperçu)', url: urlApercu(p), png: true }]);
+}
+
+export function taillePng(buf) {
+  const d = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+  if (d.length < 24 || d.readUInt32BE(0) !== 0x89504e47) return null;
+  return { largeur: d.readUInt32BE(16), hauteur: d.readUInt32BE(20) };
+}
+
+export async function enLigne(pages = pagesOg(), log = console.log, cherche = fetch) {
+  const pbs = [];
+  for (const a of adressesEnLigne(pages)) {
+    let code = 0, taille = null, detail = '';
+    try {
+      const r = await cherche(a.url, { redirect: 'follow' });
+      code = r.status;
+      if (code === 200 && a.png) {
+        taille = taillePng(Buffer.from(await r.arrayBuffer()));
+        if (!taille) detail = ' — ce n\'est pas un PNG';
+        else if (taille.largeur !== LARGEUR || taille.hauteur !== HAUTEUR) detail = ' — ' + taille.largeur + '×' + taille.hauteur + ' au lieu de ' + LARGEUR + '×' + HAUTEUR;
+        else detail = ' — PNG ' + taille.largeur + '×' + taille.hauteur;
+      }
+    } catch (e) { code = 0; detail = ' — ' + (e && e.message ? e.message : e); }
+    const bon = code === 200 && (!a.png || (taille && taille.largeur === LARGEUR && taille.hauteur === HAUTEUR));
+    log('  ' + (bon ? 'OK  ' : 'KO  ') + 'HTTP ' + code + ' ' + a.url + detail);
+    if (!bon) pbs.push(a.quoi + ' : ' + a.url + ' répond HTTP ' + code + detail);
+  }
+  log('EN LIGNE ' + (adressesEnLigne(pages).length - pbs.length) + '/' + adressesEnLigne(pages).length + (pbs.length ? ' — ' + pbs.length + ' problème(s)' : ''));
+  return pbs;
+}
+
 export async function principal(argv = process.argv.slice(2), log = console.log) {
   const pages = pagesOg();
   const verifier = argv.includes('--verifier');
+  if (argv.includes('--en-ligne')) return (await enLigne(pages, log)).length ? 1 : 0;
   let ok = 0; const pbs = [];
 
   if (!verifier) {

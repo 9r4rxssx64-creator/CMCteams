@@ -16,7 +16,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { INTERDIT, SANS_ACCENT } from './video.mjs';
-import { pagesOg } from '../produits/apercus.mjs';
+import { pagesOg, urlApercu } from '../produits/apercus.mjs';
 import { lire as lireProgrammation, planCreneaux, FICHIER as PROG } from './programmation.mjs';
 
 /* Les pages qu'on met en avant : les produits + la page mère. L'espace membres (lire.html)
@@ -71,7 +71,7 @@ export function prepare(prog, { maintenant = new Date(), pages = ciblesLien() } 
     _doc: 'GÉNÉRÉ par pub-videos.yml (liens.mjs --prepare) : le post AVEC LIEN que la routine programme sur la Page Facebook. Un Reel ne rend pas le lien cliquable ; celui-ci oui. Aucun secret.',
     marque: prog.marque, fuseau: prog.fuseau, reseau: 'facebook',
     produit: cible.slug, titre: cible.titre, url: cible.url, texte,
-    apercu: 'https://kit.kd-mc.com/og/' + cible.slug + '.png',
+    apercu: urlApercu(cible),
     creneau: planCreneaux(creneauxPris(prog), 1, maintenant)[0],
   };
 }
