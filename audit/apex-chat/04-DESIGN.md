@@ -116,3 +116,20 @@ pas des cases cochées après coup, c'est visible dans la structure.
 Les deux points à surveiller sont des **dettes mesurées, pas des défauts** : 1 428 styles en
 ligne et 62 couleurs hors palette. Aucun ne casse quoi que ce soit aujourd'hui ; les deux
 rendront le prochain changement de thème plus cher qu'il ne devrait.
+
+
+---
+
+## Mesures UX du 2026-09-17 (Chromium 375×812, session simulée) et correctifs
+
+| Point | Avant (mesuré) | Après |
+|---|---|---|
+| Nom du contact dans l'en-tête de conversation | **14 px** de large à 375 (6 boutons de 44 px) | ≥ 96 px (🔎 et 📹 dans ⋯ sous 420 px) |
+| Heure sur bulle envoyée | gris sur or **1,86:1**, 8,6 px | `rgba(8,8,15,.72)`, 0,72 em |
+| Toasts | jusqu'à 194 empilés, cliquables, sur l'en-tête | 3 max, dédoublonnés, non cliquables, sous l'en-tête |
+| ✕ des modales | dessiné sur le bouton « Inviter » du topbar (`.modal` non positionnée) | dans la modale |
+| Pastille « ← KDMC » | z-index 1200 au-dessus des modales | 150 |
+| Geste retour iOS | quittait l'app (0 `pushState`) | ferme la modale, puis la conversation |
+| Écran code SMS | ni renvoi, ni délai, ni aide | « Renvoyer (60 s) », « valable 5 min », lien aide |
+| Erreur réseau au login | « Failed to fetch » | « Réseau indisponible — vérifie le Wi-Fi ou la 4G » |
+| Reste (P2/P3) | rail d'outils 40 px (10 boutons), réglages 41 lignes plates, 41 `div[onclick]` sans `role`, focus non piégé, polices 9,6 px (bnav) | consigné, non corrigé |

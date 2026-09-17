@@ -23,6 +23,16 @@ export default defineConfig({
     // tests/serve-https.sh). Certificat auto-signé → ignoreHTTPSErrors.
     baseURL: 'https://localhost:4173',
     ignoreHTTPSErrors: true,
+    // Audit 17/09/2026 : `ignoreHTTPSErrors` ne couvre que les requêtes de la PAGE. Le
+    // script d'un Service Worker est chargé par le processus navigateur, qui refusait le
+    // certificat auto-signé (« SecurityError … An unknown error occurred when fetching the
+    // script ») → aucun SW n'a jamais tourné dans ces tests. Chromium a besoin du drapeau ;
+    // WebKit ignore les args (le test SW l'annonce en annotation si le SW n'y démarre pas).
+    launchOptions: { args: ['--ignore-certificate-errors'] },
+    // Les tests mockent l'API avec page.route() ; un Service Worker actif fait ses propres
+    // fetch, que page.route() n'intercepte pas (6 tests cassés dès que le SW a marché).
+    // Par défaut le SW est donc bloqué ; seul le test qui le vérifie l'autorise (test.use).
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

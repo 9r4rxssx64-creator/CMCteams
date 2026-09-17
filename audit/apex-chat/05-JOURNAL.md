@@ -150,3 +150,43 @@ même message ; cause trouvée en rejouant la sonde pas à pas en local — elle
 (`#acName`) remplacé le 05/09 par prénom + nom (`#acPrenom`/`#acNom`). **Défaut de la sonde**,
 corrigé dans `tools/smoke/audit-live.mjs`. **Non vérifié depuis la session** : le verdict en
 ligne après cette correction — il est dans le check-run du balayage déclenché par le push.
+
+---
+
+## Passe 3 — 2026-09-17 — décisions, hypothèses, non-vérifié
+
+| Décision | Pourquoi |
+|---|---|
+| Lancer les 5 passes CI **avant** de lire une ligne de code | Elles sont longues ; leur verdict sur `main` intact sert de référence (tout était vert). |
+| 7 sous-agents en parallèle, **lecture seule**, puis vérification par moi de chaque finding | Un sous-agent sur-cote (règle #83) : 5 « findings » écartés avec preuve (voir 03). |
+| SW en **module** plutôt qu'un fichier généré par script | Un générateur = un fichier de plus à oublier de régénérer (c'est exactement ce qui est arrivé à `sw.js`) ; le module est le montage natif, gardé par test. |
+| Bloquer le SW dans les tests e2e mockés, l'autoriser dans le seul test qui le vérifie | `page.route` n'intercepte pas les fetch d'un SW : 6 tests cassés dès que le SW a marché. Le test SW est strict sur Chromium, **annoncé** (annotation) sur WebKit. |
+| Chiffrer la sauvegarde avec une clé dérivée de `JWT_SIGN_KEY` | Règle « pas de nouveau secret par app » ; HKDF isole l'usage. Outil de déchiffrement livré (une sauvegarde sans restauration n'en est pas une). |
+| **Ne pas patcher** les règles Firebase `/apex` | Apex v13 s'y connecte lui-même en anonyme ; bloquer = casser. Correctif réel = jetons par rôle. Reporté à Kevin comme P0 domaine. |
+| `e2e_strict` appliqué mais **OFF par défaut** | Activer d'office casserait les conversations dont la clé du pair n'est pas encore publiée. Kevin l'allume dans l'admin quand il veut. |
+| Liens d'invitation vers `apex-chat.kd-mc.com` | C'est l'adresse officielle (canonical, CGU, routeur) et github.io cessera de répondre le jour où le dépôt passe en privé. |
+| `check-phone` garde le prénom (« re-bonjour Marie ») mais perd `admin_authorized` et gagne un plafond | Le prénom est l'UX voulue ; le statut admin n'a rien à faire avant preuve de possession. |
+
+**Erreur commise et corrigée** : Strix lancé **sans `--input target`** → il a scanné la cible par défaut (World
+Monitor), 15 $ pour une autre app. Relancé sur `messaging-app`. La règle est notée (leçon #271). Le résultat
+de ce second run n'était pas disponible à l'écriture de ce journal.
+
+**Hypothèses** :
+- H4 : WebKit (Playwright) fait tourner un SW module sur certificat auto-signé — **non prouvé localement**
+  (pas de WebKit ici) ; le run CI 4 voies le dira, le test l'annote plutôt que d'échouer.
+- H5 : GitHub Pages (via le routeur) renvoie un `ETag` stable sur `HEAD` — sinon la page est relue au plus
+  toutes les 10 min (dégradé sûr, jamais bloqué).
+- H6 : `APEX_CHAT_KV` est lié en production (wrangler.toml le dit) — sinon les « soins » tournent comme avant.
+
+**Non vérifié** : le rendu iPhone réel (icône PNG, bandeau d'installation, clavier) ; la suppression de compte sur
+la vraie base (testée sur mocks D1/R2, pas en prod) ; le déchiffrement d'une sauvegarde réelle de R2 avec le vrai
+secret ; le comportement des liens d'invitation via le routeur (query string) ; Vonage en production.
+
+**Faux vert commis et corrigé (17/09, 17:55 UTC)** : j'avais annoncé « 1 341 tests verts » sur la foi d'un
+`vitest run` local **sans `--coverage`**. La CI (`messaging-app-tests.yml`, run `35255340099`) lance
+`vitest run --coverage`, et le cliquet par fichier de `ConversationDO.js` a rougi : 99,02 / 96,36 / 88,09 / 99,13
+contre 99,3 / 96,4 / 89,7 / 99,3. Cause racine : mon code neuf (alarme de flush, E2E strict) était couvert, mais il a
+grossi le dénominateur pendant que **six rappels d'erreur `.catch(...)` anciens n'avaient jamais été déclenchés**
+par aucun test. Correctif = `tests/unit/conversation-do-rappels-erreur.test.js` (6 tests : config qui plante,
+`read` en panne D1, push d'appel en échec, web-push qui rejette, `setAlarm` qui rejette, télémétrie qui rejette)
+→ mesuré **100 / 98,18 / 100 / 100**, cliquet remonté à cette mesure. 71 fichiers · 1 347 tests. Leçon #272.

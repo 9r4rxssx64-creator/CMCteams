@@ -17,7 +17,7 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
   ],
   use: {
-    baseURL: process.env.APEX_CHAT_URL || 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/',
+    baseURL: process.env.APEX_CHAT_URL || 'https://apex-chat.kd-mc.com/',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

@@ -9,4 +9,4 @@ Disallow: /CMCteams/messaging-app/diag.html
 Disallow: /CMCteams/messaging-app/force-update.html
 Disallow: /CMCteams/messaging-app/force-logout.html
 
-Sitemap: https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/sitemap.xml
+Sitemap: https://apex-chat.kd-mc.com/sitemap.xml

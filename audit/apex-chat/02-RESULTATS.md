@@ -233,3 +233,28 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 | Secrets dans le dépôt | **0** |
 | Passes obligatoires | **exécutées le 10/09** — live Apex Chat ✅ **20/20 après correction** (prod HTTP 200) · live domaine ✅ (1 surface KO hors périmètre) · **scan sécu exécuté, lu et trié** (§ 6.5) · pentest IA tué par le délai (1 MEDIUM non lisible) · **second avis : trouvé ÉTEINT (0 succès/100), réparé** |
 | Tests navigateur réellement lancés en CI | ~~3 fichiers sur 22~~ → **22 / 22** (corrigé le 10/09, § 6.4 : `messaging-app-tests.yml` les lance sur 4 navigateurs ; premier run 4 voies vertes `34520911544`) |
+
+---
+
+## 7. Passe 3 — 2026-09-17 (v1.1.289 → v1.1.290) — mesures
+
+| Passe | Résultat mesuré | Preuve |
+|---|---|---|
+| Live domaine (`audit-live.yml`) | ✅ 28/28 surfaces dont Apex Chat | run `35238418129` |
+| Parcours live Apex Chat (`apex-chat-e2e.yml`, 2 clients) | ✅ | run `35238420921` |
+| Tests CI (`messaging-app-tests.yml`, vitest + 4 navigateurs) | ✅ sur `main` avant correctifs | run `35238423613` |
+| Scan sécu outillé (`security-suite.yml`, détail `messaging-app`) | 11 signalements Semgrep (5 WARNING dont 4 `missing-integrity` sur `dns-prefetch`/`preconnect`, 1 CORS déjà trié) + gitleaks faux positifs (PEM strip, jeton de test) | run `35238487325` |
+| Pentest IA (`strix-scan.yml`) | ⚠️ lancé **sans `target`** → cible par défaut `worldmonitor` : 1 **CRITICAL** hors périmètre (Firebase `/apex` anonyme) ; **relancé sur `messaging-app`** (résultat après ce rapport) | runs `35238490127`, puis le suivant |
+| Prod D1 (`system_config`, lu via MCP Cloudflare) | `ADMIN_MODE=B`, `KEVIN_INVISIBLE_ADMIN=false`, `e2e_strict` absent ; 7 utilisateurs, 3 conversations, 40 messages, 2 admins | requête SQL du 17/09 |
+| Unitaires locaux avant | 63 fichiers · 1245 tests · couverture 94,31 / 86,00 / 99,05 / 95,96 | `vitest run --coverage` |
+| Unitaires locaux après | **70 fichiers · 1341 tests** (96 tests neufs, 7 fichiers de garde) — ⚠️ mesuré **sans** `--coverage` | `vitest run` |
+| CI `messaging-app-tests.yml` sur la branche | ❌ run `35255340099` : cliquet `ConversationDO.js` sous le seuil (fonctions 88,09 % < 89,7 %) — six `.catch` jamais exercés | `vitest run --coverage` |
+| Unitaires locaux après correctif | **71 fichiers · 1347 tests**, `ConversationDO.js` 100 / 98,18 / 100 / 100, cliquet remonté ; tous seuils par fichier tenus | `vitest run --coverage` (sortie `EXIT=0`) |
+| e2e Chromium local après | **56 / 56** (dont SW actif + cache peuplé) | `playwright test --project=chromium-desktop` |
+| Boot (Chromium 375×812, API mockée) | LCP 116 ms (login) / 88 ms (liste) ; 0 exception ; 0 mutation DOM et 0 rendu au repos sur 3 vues ; 7–8 minuteries, aucune ≤ 1 s | passe perf |
+| Chat 1 000 messages | rendu 84 ms ; 20 messages entrants 8,6 ms/msg ; 0 fuite DOM après 20 cycles | passe perf |
+| Trafic de version | **6 × 841 Ko en 65 s** avant → HEAD + empreinte après | passe perf |
+| WebSocket injoignable | **337 connexions / 5 min, 194 toasts** avant → backoff respecté, 3 toasts max après | passe UX |
+| Cibles < 44 px à 375 | conversation 18/33, réglages 2/43 (mesuré avant) — en-tête corrigé, rail d'outils reste 40 px | passe UX |
+| Navigation | 211 clics, 0 exception ; 2 boutons morts (📞 Contacts) corrigés | passe UX |
+| `lint` | `echo 'no eslint config yet'` — **no-op** (inchangé, P3) | `npm run lint` |

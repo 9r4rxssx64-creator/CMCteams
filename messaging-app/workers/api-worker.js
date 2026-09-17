@@ -51,6 +51,18 @@ const CORS_HEADERS = {
 
 const json = makeJson(CORS_HEADERS);
 
+// Audit 17/09/2026 (P1) : 18 handlers faisaient `await request.json()` sans garde → un corps
+// mal formé levait une SyntaxError attrapée par le catch GLOBAL = réponse 500 « erreur interne »
+// + une entrée dans la file de télémétrie, pour une faute du client. readJson() lève une
+// BadJsonError que le catch global traduit en 400 `bad_json`, sans télémétrie.
+class BadJsonError extends Error {
+  constructor(cause) { super('Corps de requête JSON invalide'); this.name = 'BadJsonError'; this.cause = cause; }
+}
+async function readJson(request) {
+  try { return await request.json(); }
+  catch (e) { throw new BadJsonError(e); }
+}
+
 // err() — règle CLAUDE.md "détailler les erreurs partout" :
 // message = soft (user), detail = cause EXACTE (diagnostic). detail accepte string ou objet.
 function err(message, status = 400, code = 'error', detail) {
@@ -433,6 +445,18 @@ async function handleCheckPhone(request, env) {
   if (!phoneNorm || !/^\+?\d{8,15}$/.test(phoneNorm)) {
     return err('Numéro invalide', 400, 'phone_invalid', { received: body.phone, normalized: phoneNorm });
   }
+  // Audit 17/09/2026 (P2) : oracle d'énumération sans plafond (« ce numéro existe-t-il ? »
+  // + prénom + statut admin, en boucle, sans être connecté). Plafond 30/h par adresse IP,
+  // même table que l'OTP (clé préfixée pour ne pas consommer le quota SMS).
+  try {
+    const ipHash = 'cp:' + (await sha256(request.headers.get('CF-Connecting-IP') || 'unknown')).slice(0, 60);
+    const hourKey = new Date().toISOString().slice(0, 13);
+    const rl = await env.APEX_CHAT_DB.prepare('SELECT count FROM ratelimit_otp WHERE ip_hash=? AND hour_key=?').bind(ipHash, hourKey).first();
+    if (rl && rl.count >= 30) return err('Trop de tentatives, réessaie dans 1h', 429, 'rate_limit');
+    await env.APEX_CHAT_DB.prepare(
+      'INSERT OR REPLACE INTO ratelimit_otp (ip_hash, hour_key, count) VALUES (?, ?, COALESCE((SELECT count FROM ratelimit_otp WHERE ip_hash=? AND hour_key=?),0)+1)'
+    ).bind(ipHash, hourKey, ipHash, hourKey).run();
+  } catch (e) { console.warn('[check-phone] rate-limit indisponible :', e && e.message); }
   try {
     const user = await env.APEX_CHAT_DB.prepare(
       'SELECT id, pseudo, real_name, first_name, admin_authorized, status FROM users WHERE phone=?'
@@ -446,11 +470,11 @@ async function handleCheckPhone(request, env) {
     if (!first && user.real_name) {
       first = String(user.real_name).trim().split(/\s+/)[0] || '';
     }
+    // admin_authorized n'est plus renvoyé avant preuve de possession du numéro (OTP).
     return json({
       ok: true,
       exists: true,
       first_name: first || user.pseudo || '',
-      admin_authorized: !!user.admin_authorized,
     });
   } catch (e) {
     return err('Erreur lookup phone', 500, 'lookup_failed', { detail: e?.message });
@@ -516,7 +540,7 @@ export async function handleTrustedCircle(request, env, method) {
 }
 
 export async function handleSendOtp(request, env) {
-  const { phone, name } = await request.json();
+  const { phone, name } = await readJson(request);
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
   // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
   // Exception : admin Kevin reconnu via téléphone secret peut ne pas avoir 2 tokens
@@ -1078,7 +1102,7 @@ export async function handleTestCleanup(request, env) {
 export async function handleSsoFromApex(request, env) {
   // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
   // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
-  const { apex_token, apex_uid, name, phone } = await request.json();
+  const { apex_token, apex_uid, name, phone } = await readJson(request);
   if (!apex_token || !apex_uid) return err('Token Apex manquant', 400);
 
   // Vérification HMAC HS256 du token Apex
@@ -1228,6 +1252,85 @@ async function handleGetMe(request, env) {
   return json({ ok: true, user });
 }
 
+// ----------------------------------------------------------------------------
+//  RGPD (audit 17/09/2026, P0 commercial) — export serveur + suppression de compte
+//  Avant : l'export ne couvrait que le téléphone (JSON local) et AUCUNE route ne
+//  permettait à un utilisateur de supprimer son compte (le lien des CGU pointait dans
+//  le vide). Art. 15/17/20 RGPD.
+// ----------------------------------------------------------------------------
+const RGPD_USER_PUBLIC_COLS = ['id', 'pseudo', 'real_name', 'display_name', 'first_name', 'last_name', 'phone', 'email',
+  'bio', 'avatar_url', 'created_at', 'last_seen', 'premium_until', 'premium_plan', 'language', 'timezone', 'address',
+  'city', 'country', 'job', 'birth_date', 'status', 'source', 'invited_by', 'last_geo_label', 'last_device_label'];
+
+export async function handleExportMe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+  const DB = env.APEX_CHAT_DB;
+  const uid = auth.sub;
+  const out = { exported_at: Date.now(), user_id: uid, note: 'Messages : contenu chiffré tel que stocké (le serveur ne détient pas la clé quand le chiffrement de bout en bout est actif).' };
+  const q = async (sql, ...args) => { try { return (await DB.prepare(sql).bind(...args).all()).results || []; } catch (e) { return { error: e && e.message }; } };
+  try {
+    const u = await DB.prepare('SELECT * FROM users WHERE id=?').bind(uid).first();
+    if (!u) return err('Compte introuvable', 404, 'user_not_found');
+    out.profile = {}; for (const k of RGPD_USER_PUBLIC_COLS) if (u[k] !== undefined) out.profile[k] = u[k];
+    out.conversations = await q('SELECT c.id, c.type, c.name, c.created_at, m.role, m.joined_at FROM conversation_members m JOIN conversations c ON c.id = m.conv_id WHERE m.user_id=?', uid);
+    out.messages_sent = await q('SELECT id, conv_id, ciphertext, mime, ts, edited_at, deleted_at FROM messages WHERE sender_id=? ORDER BY ts LIMIT 100000', uid);
+    out.contacts = await q('SELECT contact_id, nickname, mutual_at, blocked_at, created_at FROM contacts WHERE user_id=?', uid);
+    out.invitations_sent = await q('SELECT code, sent_via, accepted_at, created_at, expires_at FROM invitations WHERE inviter_id=?', uid);
+    out.media = await q('SELECT id, mime, size, uploaded_at, expires_at FROM media WHERE owner_id=?', uid);
+    out.push_devices = await q('SELECT device_id, device_name, user_agent, created_at, last_seen FROM push_subscriptions WHERE user_id=?', uid);
+    out.connections = await q('SELECT device, os, browser, country, city, first_seen, last_seen FROM connections WHERE user_id=?', uid);
+    out.cgu_acceptances = await q('SELECT version, accepted_at, implicit FROM cgu_acceptances WHERE user_id=?', uid);
+    out.reports_made = await q('SELECT id, target_user_id, reason, ts, status FROM signalements WHERE reporter_id=?', uid);
+  } catch (e) { return err('Export impossible pour le moment', 500, 'export_failed', e); }
+  try { await auditLog(env, uid, 'rgpd_export', 'user', uid, {}, null, request.headers.get('user-agent') || ''); } catch (_) {}
+  return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="apex-chat-mes-donnees-${new Date().toISOString().slice(0, 10)}.json"` } });
+}
+
+export async function handleDeleteMe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+  const uid = auth.sub;
+  if (uid === 'kdmc_admin' || auth.is_admin) return err('Un compte administrateur ne se supprime pas par cette voie', 403, 'admin_protected');
+  const body = await readJson(request).catch(() => ({}));
+  if (String(body.confirm || '').trim().toUpperCase() !== 'SUPPRIMER') {
+    return err('Écris SUPPRIMER pour confirmer', 400, 'confirm_required');
+  }
+  const DB = env.APEX_CHAT_DB;
+  const now = Date.now();
+  const done = { media: 0, rows: {} };
+  const run = async (label, sql, ...args) => { try { const r = await DB.prepare(sql).bind(...args).run(); done.rows[label] = (r && r.meta && r.meta.changes) || 0; } catch (e) { done.rows[label] = 'erreur: ' + (e && e.message); } };
+  try {
+    // 1) Médias R2 (fichiers) puis lignes
+    try {
+      const media = (await DB.prepare('SELECT r2_key, thumbnail_r2_key FROM media WHERE owner_id=?').bind(uid).all()).results || [];
+      for (const m of media) {
+        for (const k of [m.r2_key, m.thumbnail_r2_key]) if (k && env.APEX_CHAT_MEDIA) { try { await env.APEX_CHAT_MEDIA.delete(k); done.media++; } catch (_) {} }
+      }
+    } catch (_) {}
+    await run('media', 'DELETE FROM media WHERE owner_id=?', uid);
+    // 2) Messages envoyés : contenu effacé (tombstone : les autres voient « message supprimé »)
+    await run('messages', 'UPDATE messages SET ciphertext=NULL, deleted_at=? WHERE sender_id=? AND deleted_at IS NULL', now, uid);
+    // 3) Liens et appareils
+    await run('conversation_members', 'DELETE FROM conversation_members WHERE user_id=?', uid);
+    await run('contacts', 'DELETE FROM contacts WHERE user_id=? OR contact_id=?', uid, uid);
+    await run('push_subscriptions', 'DELETE FROM push_subscriptions WHERE user_id=?', uid);
+    await run('connections', 'DELETE FROM connections WHERE user_id=?', uid);
+    await run('user_activity', 'DELETE FROM user_activity WHERE user_id=?', uid);
+    await run('invitations', 'DELETE FROM invitations WHERE inviter_id=? AND accepted_at IS NULL', uid);
+    // 4) Compte : anonymisé (l'id reste pour l'intégrité des références), numéro libéré
+    await run('users', `UPDATE users SET status='deleted', phone=NULL, phone_hash=NULL, email=NULL, real_name=NULL, display_name=NULL,
+      first_name=NULL, last_name=NULL, bio=NULL, avatar_url=NULL, address=NULL, city=NULL, country=NULL, job=NULL, birth_date=NULL,
+      last_ip_hash=NULL, last_user_agent=NULL, last_lat=NULL, last_lng=NULL, last_geo_label=NULL, last_device_label=NULL,
+      identity_key_pub=NULL, prekey_signed=NULL, kdmc_uid=NULL, pseudo=?, last_force_logout_at=?, updated_at=? WHERE id=?`,
+      'supprime_' + uid.slice(0, 8), now, now, uid);
+    // 5) KV : quotas / demandes premium
+    try { if (env.APEX_CHAT_KV) { const l = await env.APEX_CHAT_KV.list({ prefix: 'quota:' + uid }); for (const k of (l.keys || [])) await env.APEX_CHAT_KV.delete(k.name); } } catch (_) {}
+  } catch (e) { return err('Suppression incomplète, réessaie ou contacte l\'assistance', 500, 'delete_failed', e); }
+  try { await auditLog(env, uid, 'rgpd_delete_account', 'user', uid, done, null, request.headers.get('user-agent') || ''); } catch (_) {}
+  return json({ ok: true, deleted: true, details: done });
+}
+
 // Acceptation CGU (RGPD trace immutable)
 async function handleCguAccept(request, env) {
   const body = await request.json().catch(() => ({}));
@@ -1350,10 +1453,17 @@ export async function handleUpdateMe(request, env) {
   return json({ ok: true, user });
 }
 
-async function handleGetPublicUser(pseudoOrId, env) {
+async function handleGetPublicUser(pseudoOrId, env, request) {
   // v1.1.164 — accepte id OU pseudo (frontend résout les peers via leur id).
   // Retourne real_name + display_name + first_name + last_name + avatar_url
   // pour K._displayName + K._getAvatar côté frontend.
+  // Audit 17/09/2026 (P2) : cette route répondait SANS jeton → l'état civil (nom, prénom,
+  // bio) de tout inscrit se lisait par son pseudo, sans être connecté. Le client envoie
+  // toujours son jeton (index.html, _fetchPeerProfile) : on l'exige.
+  if (request) {
+    const auth = await getAuthUser(request, env);
+    if (!auth) return err('Non authentifié', 401);
+  }
   const user = await env.APEX_CHAT_DB.prepare(
     `SELECT id, pseudo, real_name, display_name, first_name, last_name,
             avatar_url, bio, last_seen
@@ -1461,7 +1571,18 @@ async function handleListConversations(request, env) {
   // AUTO-RÉPARATION à l'ouverture de l'app (Kevin : « ça doit être auto, partout »).
   // Idempotent : une fois les doublons fusionnés (status='deleted'), la détection
   // les exclut → no-op. Best-effort, ne bloque jamais la liste. v1.1.179.
+  // Audit 17/09/2026 (P1 perf) : ces 6 « soins » (≥ 18 requêtes D1, boucles N+1) tournaient
+  // à CHAQUE appel — et chaque client appelle cette route toutes les 60 s. Ils restent
+  // automatiques mais au plus une fois toutes les 10 minutes (verrou KV), sinon on sert la
+  // liste directement. Sans KV (tests, panne) : comportement d'avant.
+  let healDue = true;
   try {
+    if (env.APEX_CHAT_KV) {
+      if (await env.APEX_CHAT_KV.get('heal:convlist')) healDue = false;
+      else await env.APEX_CHAT_KV.put('heal:convlist', String(Date.now()), { expirationTtl: 600 });
+    }
+  } catch (_) { healDue = true; }
+  if (healDue) try {
     // v1.1.195 — si c'est Kevin (admin) et que kdmc_admin n'a pas encore son VRAI
     // numéro (placeholder), on le lui donne MAINTENANT depuis sa session existante
     // (sans re-login) → résout les stubs local_+<numéro> dans la même requête.
@@ -1684,7 +1805,13 @@ async function handleMediaGet(id, request, env) {
   const obj = await env.APEX_CHAT_MEDIA.get(row.r2_key);
   if (!obj) return err('Média absent du stockage', 404, 'r2_miss');
   const h = new Headers();
-  h.set('Content-Type', row.mime || obj.httpMetadata?.contentType || 'application/octet-stream');
+  const mime = String(row.mime || obj.httpMetadata?.contentType || 'application/octet-stream').toLowerCase();
+  h.set('Content-Type', mime);
+  // Audit 17/09/2026 (P2) : un fichier envoyé comme text/html était servi tel quel depuis
+  // l'origine de l'API (XSS stocké possible). Tout ce qui n'est pas image/audio/vidéo est
+  // servi en pièce jointe, jamais rendu ; nosniff empêche le navigateur de « deviner ».
+  h.set('X-Content-Type-Options', 'nosniff');
+  if (!/^(image|audio|video)\//.test(mime) || /svg/.test(mime)) h.set('Content-Disposition', 'attachment');
   h.set('Cache-Control', 'private, max-age=31536000');
   // (l'en-tête CORS est posé par applyCors selon l'origine — audit P2b)
   return new Response(obj.body, { status: 200, headers: h });
@@ -1694,7 +1821,7 @@ export async function handleCreateConversation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { type, name, members } = await request.json();
+  const { type, name, members } = await readJson(request);
   if (!['dm', 'group', 'community', 'channel'].includes(type)) return err('Type invalide');
   if (!Array.isArray(members) || members.length < 1) return err('Membres requis');
   const DB = env.APEX_CHAT_DB;
@@ -2636,6 +2763,12 @@ async function handleAdminDiag(request, env) {
   const q = (url.searchParams.get('q') || '').trim();
   const out = { ok: true, q, ts: Date.now(), me: { sub: auth.sub, is_admin: !!auth.is_admin }, totals: {}, users: [], conversations: [] };
   try {
+    // Audit 17/09/2026 : la sauvegarde quotidienne dit ici si elle a réussi (et quand)
+    try {
+      const bk = await DB.prepare("SELECT key, value FROM system_config WHERE key IN ('backup_last_ok','backup_last_error')").all();
+      out.backup = {};
+      for (const r of (bk.results || [])) { try { out.backup[r.key] = JSON.parse(r.value); } catch (_) { out.backup[r.key] = r.value; } }
+    } catch (_) { out.backup = null; }
     out.totals.users = (await DB.prepare('SELECT COUNT(*) c FROM users').first())?.c ?? null;
     out.totals.users_deleted = (await DB.prepare("SELECT COUNT(*) c FROM users WHERE status='deleted'").first())?.c ?? null;
     out.totals.conversations = (await DB.prepare('SELECT COUNT(*) c FROM conversations').first())?.c ?? null;
@@ -2766,7 +2899,7 @@ async function handleCreateInvitation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { phone, name, sent_via } = await request.json();
+  const { phone, name, sent_via } = await readJson(request);
   if (!phone) return err('Numéro requis');
 
   const config = await getModeConfig(env);
@@ -2786,7 +2919,7 @@ async function handleCreateInvitation(request, env) {
   const normalizedPhone = normPhone(phone);
   const phoneHash = await sha256(normalizedPhone);
   const niceName = (name || '').trim() || 'ami';
-  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
   const expiresAt = Date.now() + 7 * 86400000;
 
@@ -2881,7 +3014,10 @@ async function handleResolveInvitation(code, env) {
   if (!inv) return err('Invitation invalide', 404);
   if (inv.expires_at < Date.now()) return err('Invitation expirée', 410);
   if (inv.accepted_at) return err('Invitation déjà acceptée', 410);
-  return json({ ok: true, invitation: inv });
+  // Audit 17/09/2026 (P2) : route sans jeton — on ne renvoie que ce que la page utilise
+  // (magic_token, qui invite, avatar), jamais l'empreinte du numéro invité ni les ids internes.
+  const { code: c, inviter_pseudo, inviter_avatar, magic_token, expires_at, sent_via } = inv;
+  return json({ ok: true, invitation: { code: c, inviter_pseudo, inviter_avatar, magic_token, expires_at, sent_via } });
 }
 
 // ============================================================================
@@ -2892,7 +3028,7 @@ async function handleAdminCommand(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { command, params, confirm_token } = await request.json();
+  const { command, params, confirm_token } = await readJson(request);
   const destructive = ['kickUser', 'banUser', 'unbanUser', 'deleteConv', 'exportConv', 'forceLogout'];
 
   if (destructive.includes(command) && !confirm_token) {
@@ -3074,7 +3210,7 @@ export async function handleAdminWhitelistBulk(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { entries } = await request.json();
+  const { entries } = await readJson(request);
   if (!Array.isArray(entries) || entries.length === 0) return err('entries requis (array de {phone, name?})');
   if (entries.length > 100) return err('Max 100 numéros par batch');
 
@@ -3121,7 +3257,7 @@ export async function handleAdminWhitelistBulk(request, env) {
         exp: Math.floor(Date.now() / 1000) + 7 * 86400
       }, env.JWT_SIGN_KEY);
 
-      const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
+      const code = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
       await env.APEX_CHAT_DB.prepare(
         `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
          VALUES (?, ?, ?, 'admin-bulk', ?, ?, ?)`
@@ -3159,7 +3295,7 @@ export async function handleAdminInviteMagic(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { phone, name, pseudo } = await request.json();
+  const { phone, name, pseudo } = await readJson(request);
   if (!phone) return err('Numéro requis');
   const normalizedPhone = String(phone).replace(/[^\d+]/g, '');
   if (!normalizedPhone.startsWith('+') || normalizedPhone.length < 10) {
@@ -3209,7 +3345,7 @@ export async function handleAdminInviteMagic(request, env) {
   }, env.JWT_SIGN_KEY);
 
   // Code court pour SMS (utilisable aussi)
-  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
   await env.APEX_CHAT_DB.prepare(
     `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
@@ -3235,7 +3371,7 @@ export async function handleAdminInviteMagic(request, env) {
 
 // Auth via magic link (pas d'OTP requis — admin a pré-autorisé)
 export async function handleMagicLogin(request, env) {
-  const { magic_token } = await request.json();
+  const { magic_token } = await readJson(request);
   if (!magic_token) return err('Token requis');
 
   const payload = await verifyJWT(magic_token, env.JWT_SIGN_KEY);
@@ -3766,6 +3902,12 @@ async function handleAdminGetToggles(request, env) {
     const v = config['FEATURE_' + key.toUpperCase()];
     toggles[key] = v === undefined ? true : (v === 'true' || v === '1' || v === true);
   }
+  // Audit 17/09/2026 (P1) : ces deux interrupteurs affichaient « ON » par défaut sans
+  // rien piloter. kevin_invisible reflète le drapeau réellement lu (KEVIN_INVISIBLE_ADMIN,
+  // 'false' en prod) ; e2e_strict est OFF tant qu'il n'a pas été activé explicitement
+  // (il est désormais appliqué par le ConversationDO quand il est ON).
+  toggles.kevin_invisible = config.KEVIN_INVISIBLE_ADMIN === 'true';
+  toggles.e2e_strict = config.FEATURE_E2E_STRICT === 'true' || config.FEATURE_E2E_STRICT === '1';
   return json({ ok: true, toggles });
 }
 
@@ -3773,7 +3915,7 @@ export async function handleAdminSetToggle(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { feature, enabled, user_id } = await request.json();
+  const { feature, enabled, user_id } = await readJson(request);
   if (!feature) return err('feature requis');
 
   if (user_id) {
@@ -3785,12 +3927,13 @@ export async function handleAdminSetToggle(request, env) {
     ).bind(user_id, feature, enabled ? 1 : 0, Date.now(), auth.sub).run();
   } else {
     // Global toggle
-    const key = 'FEATURE_' + feature.toUpperCase();
+    // kevin_invisible pilote le drapeau réellement lu par le code (KEVIN_INVISIBLE_ADMIN)
+    const key = feature === 'kevin_invisible' ? 'KEVIN_INVISIBLE_ADMIN' : 'FEATURE_' + feature.toUpperCase();
     await env.APEX_CHAT_DB.prepare(
       `INSERT INTO system_config (key, value, updated_at, updated_by)
        VALUES (?, ?, ?, ?)
        ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
-    ).bind(key, String(enabled), Date.now(), auth.sub).run();
+    ).bind(key, String(!!enabled), Date.now(), auth.sub).run();
   }
 
   await auditLog(env, auth.sub, 'admin_toggle_set', user_id ? 'user' : 'global', user_id || feature,
@@ -3905,7 +4048,7 @@ export async function handleAddMember(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { user_id, role } = await request.json();
+  const { user_id, role } = await readJson(request);
   if (!user_id) return err('user_id requis');
 
   // Vérifier que auth est owner ou admin de la conv
@@ -4064,7 +4207,7 @@ async function handleUpdateConv(convId, request, env) {
   ).bind(convId, auth.sub).first();
   if (!me || !['owner', 'admin'].includes(me.role)) return err('Droits insuffisants', 403);
 
-  const { name, description, avatar_url, disappearing_seconds } = await request.json();
+  const { name, description, avatar_url, disappearing_seconds } = await readJson(request);
   const updates = [];
   const values = [];
   if (name !== undefined) { updates.push('name=?'); values.push(name); }
@@ -4088,7 +4231,7 @@ export async function handleCreateStory(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { ciphertext, mime } = await request.json();
+  const { ciphertext, mime } = await readJson(request);
   if (!ciphertext) return err('ciphertext requis');
   if (ciphertext.length > 200000) return err('Story trop volumineuse (max 200KB)', 413);
 
@@ -4154,7 +4297,7 @@ export async function handleCreatePoll(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { conv_id, msg_id, question, options, multi_choice, anonymous, closes_at } = await request.json();
+  const { conv_id, msg_id, question, options, multi_choice, anonymous, closes_at } = await readJson(request);
   if (!conv_id || !msg_id || !question || !Array.isArray(options) || options.length < 2) {
     return err('question + 2 options minimum requis');
   }
@@ -4181,7 +4324,7 @@ export async function handleVotePoll(pollId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { option_indexes } = await request.json();
+  const { option_indexes } = await readJson(request);
   if (!Array.isArray(option_indexes) || option_indexes.length === 0) return err('option_indexes requis');
 
   const poll = await env.APEX_CHAT_DB.prepare('SELECT * FROM polls WHERE id=?').bind(pollId).first();
@@ -4226,7 +4369,7 @@ export async function handleCreateTimeCapsule(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { recipient_id, conv_id, ciphertext, mime, open_at, preview } = await request.json();
+  const { recipient_id, conv_id, ciphertext, mime, open_at, preview } = await readJson(request);
   if (!recipient_id || !ciphertext || !open_at) return err('recipient_id + ciphertext + open_at requis');
   if (ciphertext.length > 200000) return err('Capsule trop volumineuse (max 200KB)', 413);
 
@@ -4306,7 +4449,7 @@ async function handleCreateLetter(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { conv_id, ciphertext, delay_hours } = await request.json();
+  const { conv_id, ciphertext, delay_hours } = await readJson(request);
   if (!conv_id || !ciphertext) return err('conv_id + ciphertext requis');
 
   // Vérifier membership
@@ -4469,7 +4612,7 @@ async function handleIAChat(request, env) {
   // Sans auth, n'importe qui pouvait épuiser le quota/facturer. Réservé aux users connectés.
   const user = await getAuthUser(request, env);
   if (!user) return err('Unauthorized', 401);
-  const { messages, systemPrompt, context } = await request.json();
+  const { messages, systemPrompt, context } = await readJson(request);
   if (!Array.isArray(messages) || messages.length === 0) return err('messages required');
 
   const sysPrompt = systemPrompt || `Tu es Apex, l'assistant IA d'Apex Chat (messagerie privee).
@@ -5408,7 +5551,7 @@ export async function handleSignalement(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { target_user_id, conv_id, msg_id, reason, description } = await request.json();
+  const { target_user_id, conv_id, msg_id, reason, description } = await readJson(request);
   if (!target_user_id || !reason) return err('target_user_id + reason requis');
 
   const id = crypto.randomUUID();
@@ -5575,12 +5718,14 @@ const _workerHandler = {
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
       if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
+      if (path === '/api/users/me' && method === 'DELETE') return await handleDeleteMe(request, env);
+      if (path === '/api/users/me/export' && method === 'GET') return await handleExportMe(request, env);
       if (path === '/api/users/me/avatar' && method === 'POST') return await handleUploadMyAvatar(request, env);
       if (path === '/api/admin/user-toggles' && method === 'POST') return await handleAdminSetUserToggle(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
       if (path === '/api/cgu/accept' && method === 'POST') return await handleCguAccept(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
-      if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
+      if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env, request);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
       if (adminUserMatch && method === 'GET') return await handleAdminGetFullUser(adminUserMatch[1], request, env);
 
@@ -5745,6 +5890,9 @@ const _workerHandler = {
 
       return err('Route inconnue', 404);
     } catch (e) {
+      if (e instanceof BadJsonError) {
+        return err('Corps de requête invalide (JSON attendu)', 400, 'bad_json', { detail: e.cause && e.cause.message, path });
+      }
       console.error('API error', path, method, e.message, e.stack);
       // Push télémétrie vers Apex
       ctx.waitUntil(env.TELEMETRY_QUEUE?.send({
@@ -6003,22 +6151,101 @@ export async function sendPushToUser(userId, payload, env) {
   }
 }
 
-export async function performDailyBackup(env) {
-  // Backup D1 vers R2 (logique simplifiée — production utiliserait wrangler d1 export)
+// ----------------------------------------------------------------------------
+//  Sauvegarde quotidienne D1 → R2 (audit 17/09/2026, P1)
+//  Avant : 5 tables sur 27, JSON EN CLAIR (téléphones, noms, e-mails) dans le bucket des
+//  médias, jamais vérifiée, jamais purgée (un fichier de plus par jour, pour toujours),
+//  échec avalé par console.error. Maintenant : toutes les tables, chiffrement AES-GCM-256
+//  (clé dérivée du secret JWT_SIGN_KEY, aucun nouveau secret à créer), refus d'écrire en
+//  clair, rotation 14 jours, résultat écrit dans system_config (backup_last_ok /
+//  backup_last_error) et visible dans /api/admin/diag. Déchiffrement : tools/backup-decrypt.mjs.
+// ----------------------------------------------------------------------------
+export const BACKUP_RETENTION_DAYS = 14;
+export const BACKUP_TABLES_FALLBACK = ['users', 'conversations', 'conversation_members', 'messages', 'audit_log',
+  'contacts', 'invitations', 'push_subscriptions', 'system_config', 'connections', 'media', 'cgu_acceptances'];
+
+/** Clé AES-GCM-256 dérivée (HKDF-SHA256) du secret JWT — même dérivation dans tools/backup-decrypt.mjs. */
+export async function backupKeyFromSecret(secret) {
+  const ikm = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode('apex-chat-backup'), info: new TextEncoder().encode('d1-backup-v1') },
+    ikm, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+
+function _b64(bytes) {
+  let s = ''; const u = new Uint8Array(bytes);
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+export async function encryptBackup(json, secret) {
+  const key = await backupKeyFromSecret(secret);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(json));
+  return JSON.stringify({ v: 1, alg: 'AES-GCM-256/HKDF-SHA256', iv: _b64(iv), ct: _b64(ct) });
+}
+
+async function _noteBackup(env, key, value) {
   try {
-    const tables = ['users', 'conversations', 'conversation_members', 'messages', 'audit_log'];
-    const backup = { ts: Date.now(), tables: {} };
+    await env.APEX_CHAT_DB.prepare(
+      'INSERT OR REPLACE INTO system_config (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)'
+    ).bind(key, String(value).slice(0, 2000), Date.now(), 'cron-backup').run();
+  } catch (e) { console.warn('[backup] system_config non écrit :', e && e.message); }
+}
+
+export async function performDailyBackup(env, now = new Date()) {
+  const dateKey = now.toISOString().slice(0, 10);
+  try {
+    if (!env.APEX_CHAT_MEDIA) throw new Error('bucket R2 absent (APEX_CHAT_MEDIA)');
+    if (!env.JWT_SIGN_KEY) throw new Error('JWT_SIGN_KEY absent : refus d\'écrire une sauvegarde en clair');
+    // 1) Toutes les tables (lues dans le schéma réel ; repli sur la liste connue)
+    let tables = [];
+    try {
+      const rows = await env.APEX_CHAT_DB.prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name <> 'd1_migrations'"
+      ).all();
+      tables = (rows.results || []).map(r => r.name).filter(Boolean);
+    } catch (_) { /* repli ci-dessous */ }
+    if (!tables.length) tables = BACKUP_TABLES_FALLBACK;
+    const backup = { ts: now.getTime(), version: 2, tables: {} };
+    let rowsTotal = 0;
     for (const t of tables) {
-      const stmt = await env.APEX_CHAT_DB.prepare(`SELECT * FROM ${t} LIMIT 100000`).all();
-      backup.tables[t] = stmt.results || [];
+      if (!/^[a-z_][a-z0-9_]*$/i.test(t)) continue;
+      try {
+        const stmt = await env.APEX_CHAT_DB.prepare(`SELECT * FROM ${t} LIMIT 100000`).all();
+        backup.tables[t] = stmt.results || [];
+        rowsTotal += backup.tables[t].length;
+      } catch (e) { backup.tables[t] = { error: e && e.message }; }
     }
-    const dateKey = new Date().toISOString().slice(0, 10);
-    await env.APEX_CHAT_MEDIA?.put(`backups/d1-${dateKey}.json`, JSON.stringify(backup), {
-      httpMetadata: { contentType: 'application/json' }
-    });
-    console.log('Daily backup done', dateKey);
+    // 2) Chiffrement avant toute écriture
+    const enc = await encryptBackup(JSON.stringify(backup), env.JWT_SIGN_KEY);
+    const key = `backups/d1-${dateKey}.json.enc`;
+    await env.APEX_CHAT_MEDIA.put(key, enc, { httpMetadata: { contentType: 'application/json' } });
+    // 3) Vérification : relire et contrôler la taille
+    const back = await env.APEX_CHAT_MEDIA.get(key);
+    const backText = back ? await back.text() : '';
+    if (!back || backText.length !== enc.length) throw new Error(`relecture R2 incohérente (${backText.length}/${enc.length} octets)`);
+    // 4) Rotation : tout fichier backups/d1-<date>.* plus vieux que 14 jours est supprimé
+    //    (y compris les anciens .json EN CLAIR : ils disparaissent en 14 jours au plus)
+    const purged = [];
+    try {
+      const listed = await env.APEX_CHAT_MEDIA.list({ prefix: 'backups/d1-' });
+      const limit = now.getTime() - BACKUP_RETENTION_DAYS * 86400000;
+      for (const o of (listed && listed.objects) || []) {
+        const m = /^backups\/d1-(\d{4}-\d{2}-\d{2})\./.exec(o.key);
+        if (m && Date.parse(m[1]) < limit) { await env.APEX_CHAT_MEDIA.delete(o.key); purged.push(o.key); }
+      }
+    } catch (e) { console.warn('[backup] rotation partielle :', e && e.message); }
+    await _noteBackup(env, 'backup_last_ok', JSON.stringify({ ts: now.getTime(), key, tables: Object.keys(backup.tables).length, rows: rowsTotal, bytes: enc.length, purged: purged.length }));
+    console.log('Daily backup done', key, tables.length, 'tables', rowsTotal, 'rows');
+    return { ok: true, key, tables: tables.length, rows: rowsTotal, purged };
   } catch (e) {
-    console.error('Daily backup failed', e.message);
+    console.error('Daily backup failed', e && e.message);
+    await _noteBackup(env, 'backup_last_error', JSON.stringify({ ts: now.getTime(), date: dateKey, error: e && e.message }));
+    try {
+      await env.TELEMETRY_QUEUE?.send({ sentinel: 'backup-failed', severity: 'err', msg: e && e.message, ts: Date.now() });
+    } catch (_) {}
+    return { ok: false, error: e && e.message };
   }
 }
 
