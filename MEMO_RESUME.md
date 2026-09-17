@@ -518,8 +518,11 @@ loin. Le maximum rapidement. Innove. » Réponse côté produits (les vidéos vi
   en base D1 après coup : 28 modules de 9,7 à 14,8 Ko, **28/28 avec pièges + checklist**, 0 mot
   « prompt », 0 trou [À COMPLÉTER], 0 lien, 0 « garanti », 28/28 renvoient à service-public.fr,
   gratuit=1 sur m1 seulement. Lu en vrai (avis m1) : tutoiement, scène du vendredi soir, méthode,
-  6 cases. 🔴 Non mesuré : la lecture LIVE des 4 lecteurs (`audit-live.yml` lancé juste après)
-  et la demande (0 vente, pub programmée du 18 au 25.09).
+  6 cases. **Lecture LIVE prouvée** (run audit-live 35237160649, vrai Chromium sur le vrai domaine,
+  4 lecteurs ajoutés à `tools/smoke/audit-live.mjs`) : `lire.html?produit=<id>` sans code → « 7
+  modules du bon produit, 6 verrous, module 1 = titre du catalogue » pour bureau-ia, etudiant-ia,
+  avis-ia, immo-ia ; les 4 pages de vente : prix affiché = PayPal = caisse (run 35235946219).
+  🔴 Non mesuré : la demande (0 vente ; pub programmée du 18 au 25.09).
 
 ## 2026-09-17 13:15 — Facebook enfin dans Metricool (4 réseaux reliés)
 
