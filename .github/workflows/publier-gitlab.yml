@@ -32,6 +32,14 @@ on:
         description: "Lancer le job qui ouvre les adresses .onion à travers Tor"
         type: boolean
         default: true
+      publier:
+        description: "Publier la branche (décocher pour SEULEMENT relire un résultat déjà lancé)"
+        type: boolean
+        default: true
+      lire_resultat:
+        description: "Attendre le pipeline GitLab et rapatrier le rapport (exige un jeton read_api)"
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -76,6 +84,7 @@ jobs:
           echo "Cible acceptée : ${CIBLE}"
 
       - name: Pousser vers le miroir, puis demander le travail
+        if: ${{ inputs.publier }}
         env:
           JETON: ${{ secrets.GITLAB_TOKEN }}
           CIBLE: ${{ inputs.branche_gitlab }}
@@ -130,3 +139,65 @@ jobs:
           echo ""
           echo "Demandé. Le rapport daté (vivant / protégé / injoignable, adresse par"
           echo "adresse) sera l'artifact « tor-adresses.json » du pipeline GitLab."
+
+      # LE RETOUR — c'est la moitié qui manquait le 17.09 : le travail partait, et
+      # personne ne pouvait lire le résultat depuis une session (un jeton de portée
+      # « write_repository » pousse du code mais n'interroge pas l'API : réponse 404,
+      # indistinguable d'un projet inexistant). Avec un jeton qui porte AUSSI
+      # « read_api », l'aller-retour se ferme tout seul : Kevin n'a rien à regarder.
+      #
+      # Le jeton part dans un EN-TÊTE, jamais dans l'URL : une URL se retrouve dans
+      # les journaux, dans les redirections et dans les messages d'erreur de curl.
+      - name: Lire le résultat côté GitLab (rapport rapatrié ici)
+        if: ${{ inputs.lire_resultat }}
+        env:
+          JETON: ${{ secrets.GITLAB_TOKEN }}
+          CIBLE: ${{ inputs.branche_gitlab }}
+        run: |
+          set -uo pipefail
+          API="https://gitlab.com/api/v4/projects/85753352"
+          lire() { curl -sS -o /tmp/rep.json -w '%{http_code}' -H "PRIVATE-TOKEN: ${JETON}" "$1"; }
+          CODE=$(lire "${API}/pipelines?ref=${CIBLE}&per_page=1")
+          if [ "${CODE}" != "200" ]; then
+            echo "::error title=Lecture GitLab impossible (HTTP ${CODE})::Le jeton ne peut pas INTERROGER l'API."
+            echo "Ce que ça veut dire, simplement :"
+            echo "  401 ou 403 : le jeton est expiré ou révoqué."
+            echo "  404        : il pousse du code mais n'a pas la portée « read_api »"
+            echo "               (sur un projet privé, GitLab répond 404 et pas 403)."
+            echo "Le correctif est UN geste, une fois : GitLab, Kdmc-project, Settings,"
+            echo "Access tokens, nouveau jeton Maintainer avec write_repository ET read_api,"
+            echo "puis le recoller dans GitHub, Secrets, GITLAB_TOKEN."
+            echo "La publication, elle, a fonctionné : le travail est bien parti."
+            exit 1
+          fi
+          PID=$(python3 -c "import json;d=json.load(open('/tmp/rep.json'));print(d[0]['id'] if d else '')")
+          if [ -z "${PID}" ]; then echo "Aucun pipeline sur la branche ${CIBLE}."; exit 1; fi
+          echo "Pipeline ${PID} sur ${CIBLE}"
+          for i in $(seq 1 20); do
+            lire "${API}/pipelines/${PID}" >/dev/null
+            ETAT=$(python3 -c "import json;print(json.load(open('/tmp/rep.json')).get('status',''))")
+            echo "  etat : ${ETAT}"
+            case "${ETAT}" in
+              created|waiting_for_resource|preparing|pending|running) sleep 30 ;;
+              *) break ;;
+            esac
+          done
+          lire "${API}/pipelines/${PID}/jobs" >/dev/null
+          python3 -c "import json;[print('  job',j['name'],'->',j['status'],'id',j['id']) for j in json.load(open('/tmp/rep.json'))]" || true
+          JOB=$(python3 -c "import json;w=[j for j in json.load(open('/tmp/rep.json')) if j['name']=='tor-adresses'];print(w[0]['id'] if w else '')")
+          if [ -z "${JOB}" ]; then
+            echo "::warning::Le job « tor-adresses » n'apparait pas dans ce pipeline."
+            echo "Cause la plus probable : la variable TOR_ADRESSES n'a pas ete posee,"
+            echo "ou le commit portait une marque [skip ci] que GitLab lit aussi."
+            exit 1
+          fi
+          echo ""
+          echo "=== Rapport tor-adresses.json ==="
+          CODE=$(curl -sS -o /tmp/tor.json -w '%{http_code}' -H "PRIVATE-TOKEN: ${JETON}" "${API}/jobs/${JOB}/artifacts/tor-adresses.json")
+          if [ "${CODE}" = "200" ]; then
+            python3 -c "import json;print(json.dumps(json.load(open('/tmp/tor.json')),ensure_ascii=False,indent=2)[:60000])" || cat /tmp/tor.json
+          else
+            echo "Artifact non recuperable (HTTP ${CODE}) : le job n'a peut-etre pas fini,"
+            echo "ou il a echoue avant de produire le rapport. Voir son journal cote GitLab."
+            exit 1
+          fi

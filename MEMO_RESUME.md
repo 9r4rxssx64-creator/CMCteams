@@ -1295,6 +1295,28 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — L'aller-retour se ferme : le résultat GitLab revient TOUT SEUL ici
+
+Kevin : « Fait. » Le chaînon qui manquait n'était pas le départ du travail — c'était le
+**retour**. Le workflow sait maintenant lire lui-même le résultat côté GitLab et le
+**recopier dans son journal** : Kevin n'a plus rien à regarder.
+
+- Deux interrupteurs : **Publier** (décochable → mode « relire seulement ») et
+  **Lire le résultat**. Le workflow attend la fin du pipeline (20 essais × 30 s = 10 min
+  au plus), liste les jobs, puis rapatrie l'artifact `tor-adresses.json` et l'imprime.
+- **Le jeton part dans un EN-TÊTE, jamais dans une URL.** Une URL se retrouve dans les
+  journaux, dans les redirections et dans les messages d'erreur de curl — donc en clair,
+  sur un dépôt public.
+- **Message d'erreur qui dit quoi faire** (règle « détailler la cause exacte ») : 401/403 =
+  jeton mort ; **404 = le jeton pousse du code mais n'a pas `read_api`** (sur un projet
+  privé GitLab répond 404, pas 403 — rien ne distingue « pas le droit » de « n'existe pas »,
+  d'où le piège).
+- **Garde renforcée, et ma 1ʳᵉ version n'était PAS discriminante** (encore) : elle se
+  contentait de « il y a une ligne avec l'en-tête quelque part » → j'ai saboté, elle est
+  restée verte. Corrigée : elle contrôle **chaque** ligne `curl` du workflow, une par une
+  (même leçon que le filtre du jeton au push). **Re-prouvée par sabotage** : jeton remis
+  dans l'URL → sortie **1** avec la ligne fautive citée ; restauré → **34 contrôles, 0 échec**.
+
 ## 2026-09-17 — Premier lancement réel : le commit qui devait LANCER le pipeline se sabordait
 
 Kevin a créé le secret `GITLAB_TOKEN`. J'ai déclenché le workflow (run 35238758111, **success**),
