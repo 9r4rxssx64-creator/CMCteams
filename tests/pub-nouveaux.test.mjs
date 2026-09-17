@@ -116,15 +116,19 @@ test('ajouts : format strict, refus des doublons (post, vidéo, créneau), tri p
 });
 
 test('--prepare : ce que la routine lit = vidéos rendues NON encore programmées, MP4 public, titre = 1ʳᵉ ligne, un créneau libre chacune', () => {
+  /* Ids VOLONTAIREMENT absents de programmation.json (« neuf-01 ») : en CI, le mode « programmer »
+     enregistre d'abord les vrais posts puis relance cette garde — un id réel (immo-04) y serait
+     déjà programmé et le contrôle tomberait (vécu run 35261379713). */
   const prog = P.lire();
   const index = { rendu: '2026-09-17T18:00:00.000Z', videos: [
-    { id: 'immo-04', produit: 'immo-ia', page: 'https://kit.kd-mc.com/immo.html', titre: 'Un mandat qui traîne.', legende: 'x'.repeat(80), hashtags: ['#immobilier', '#ia', '#mandat'], duree: 24.5, voix: 'domaine' },
-    { id: 'club-03', produit: 'club-ia', page: 'https://kit.kd-mc.com/#club', titre: 'Lundi, un client râle.', legende: 'y'.repeat(80), hashtags: ['#club', '#ia', '#artisan'], duree: 22, voix: 'domaine' },
+    { id: 'neuf-01', produit: 'immo-ia', page: 'https://kit.kd-mc.com/immo.html', titre: 'Un mandat qui traîne.', legende: 'x'.repeat(80), hashtags: ['#immobilier', '#ia', '#mandat'], duree: 24.5, voix: 'domaine' },
+    { id: 'neuf-02', produit: 'club-ia', page: 'https://kit.kd-mc.com/#club', titre: 'Lundi, un client râle.', legende: 'y'.repeat(80), hashtags: ['#club', '#ia', '#artisan'], duree: 22, voix: 'domaine' },
     { id: prog.posts[0].video, produit: 'avis-ia', page: 'https://kit.kd-mc.com/avis.html', titre: 'déjà programmée', legende: 'z'.repeat(80), hashtags: ['#a', '#b', '#c'], duree: 20, voix: 'domaine' },
   ] };
+  assert.ok(!prog.posts.some((p) => /^neuf-/.test(p.video)), 'le jeu de test ne doit jamais entrer dans programmation.json');
   const a = P.prepare(index, prog, { maintenant: new Date('2026-09-17T18:00:00Z') });
-  assert.deepEqual(a.videos.map((v) => v.id), ['immo-04', 'club-03'], 'une vidéo déjà programmée n\'est pas reproposée');
-  assert.equal(a.videos[0].mp4, 'https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/immo-04.mp4');
+  assert.deepEqual(a.videos.map((v) => v.id), ['neuf-01', 'neuf-02'], 'une vidéo déjà programmée n\'est pas reproposée');
+  assert.equal(a.videos[0].mp4, 'https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/neuf-01.mp4');
   assert.equal(a.videos[0].titre, 'Un mandat qui traîne.');
   assert.deepEqual(a.videos.map((v) => v.creneau), P.planCreneaux(prog.posts, 2, new Date('2026-09-17T18:00:00Z')));
   assert.equal(a.marque, 7000185); assert.deepEqual(a.reseaux, ['facebook', 'instagram', 'tiktok', 'youtube']);

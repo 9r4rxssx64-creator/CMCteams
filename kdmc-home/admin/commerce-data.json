@@ -267,6 +267,28 @@
       "post": 377602979,
       "date": "2026-09-26T12:00:00+02:00",
       "legende": "Lundi matin, une consigne nouvelle t'attend : un client mécontent, un devis à relancer, un planning à refaire. La situat"
+    },
+    {
+      "id": "immo-04",
+      "produit": "immo-ia",
+      "page": "https://kit.kd-mc.com/immo.html",
+      "theme": "clair",
+      "cartes": 5,
+      "mp4": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/immo-04.mp4",
+      "post": 377714810,
+      "date": "2026-09-28T10:00:00+02:00",
+      "legende": "Trois acheteurs qui relancent pendant une visite, ça arrive tous les jours. Tu dictes l'essentiel du bien, l'assistant I"
+    },
+    {
+      "id": "club-03",
+      "produit": "club-ia",
+      "page": "https://kit.kd-mc.com/#club",
+      "theme": "sombre",
+      "cartes": 5,
+      "mp4": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/club-03.mp4",
+      "post": 377677711,
+      "date": "2026-09-28T12:00:00+02:00",
+      "legende": "Le devis est parti, le client se tait, et tu n'oses pas relancer. Le Club IA au Boulot te donne la consigne à copier pou"
     }
   ],
   "programmation": {
@@ -339,7 +361,7 @@
       "ic": "🎬",
       "nom": "Vidéos de pub (release)",
       "url": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/index.json",
-      "quoi": "14 MP4 publics"
+      "quoi": "16 MP4 publics"
     },
     {
       "ic": "📅",
