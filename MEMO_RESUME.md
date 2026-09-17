@@ -62,6 +62,16 @@ second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
+**0. Javis a maintenant DEUX personnages au choix : Bee ou Bourricot l'âne.** Kevin :
+« intègre l'âne de Lingua, avoir le choix ». Les deux existaient **déjà dans Lingua** (dessins et
+les 6 clips) : réutilisés tels quels, **aucun fichier dupliqué**. Choix à un doigt dans l'en-tête,
+**retenu**, changement **sans recharger**. **Mesuré en vrai navigateur** : on tape la pastille →
+`donkey/rig/base.webp` s'affiche, **0 aile** (l'âne n'en a pas : lui en donner = 2 images fantômes),
+paupière à **39,3 %** contre **29,6 %** pour l'abeille (sa géométrie, pas celle de Bee), nom
+« Bourricot », choix retenu, et **il est vivant (4 battements en 9 s)**. **Sabotage** : j'enlève la
+remise en vie → « l'âne est figé » → échec. Bee **v1.5**. Gardes : `test:javis-bee` **51/0**
+(12 contrôles neufs : chaque fichier des DEUX personnages), `test:javis-bee-reelle` **42/0**.
+
 **1 bis. Puis elle a appris à FORMER la voyelle qu'elle prononce — de vrais visèmes.** Kevin :
 « fais le, continu ». On ne se contente plus de « clair / sombre » : on lit les **deux résonances
 de la voix** (F1 = ouverture de la mâchoire, F2 = position de la langue), on compare aux **8
@@ -591,8 +601,11 @@ loin. Le maximum rapidement. Innove. » Réponse côté produits (les vidéos vi
   en base D1 après coup : 28 modules de 9,7 à 14,8 Ko, **28/28 avec pièges + checklist**, 0 mot
   « prompt », 0 trou [À COMPLÉTER], 0 lien, 0 « garanti », 28/28 renvoient à service-public.fr,
   gratuit=1 sur m1 seulement. Lu en vrai (avis m1) : tutoiement, scène du vendredi soir, méthode,
-  6 cases. 🔴 Non mesuré : la lecture LIVE des 4 lecteurs (`audit-live.yml` lancé juste après)
-  et la demande (0 vente, pub programmée du 18 au 25.09).
+  6 cases. **Lecture LIVE prouvée** (run audit-live 35237160649, vrai Chromium sur le vrai domaine,
+  4 lecteurs ajoutés à `tools/smoke/audit-live.mjs`) : `lire.html?produit=<id>` sans code → « 7
+  modules du bon produit, 6 verrous, module 1 = titre du catalogue » pour bureau-ia, etudiant-ia,
+  avis-ia, immo-ia ; les 4 pages de vente : prix affiché = PayPal = caisse (run 35235946219).
+  🔴 Non mesuré : la demande (0 vente ; pub programmée du 18 au 25.09).
 
 ## 2026-09-17 13:15 — Facebook enfin dans Metricool (4 réseaux reliés)
 
@@ -1302,6 +1315,72 @@ Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écar
   presse-papier, pseudo sans rien de personnel, 6 onglets sans débordement horizontal.
 - 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
   mise en garde « t'y connecter dit qui tu es »).
+
+## 2026-09-17 — Vérification de mes documents, liens, accès et outils (demande de Kevin)
+
+Tout mesuré, rien supposé. Deux vraies trouvailles, dont une qui me concernait directement.
+
+**🔴 TROUVAILLE PRINCIPALE — `test:ci` n'est exécuté par AUCUN workflow GitHub.** Un `grep`
+naïf renvoie 7 fichiers ; en filtrant les commentaires, **0 ligne l'exécute**. Seul le job
+`tests` de GitLab le lance — et GitLab est injoignable sans jeton. Donc toute garde câblée
+*uniquement* dans `test:ci` ne tourne **nulle part** : faux vert (leçon #103). Vérifiées comme
+telles : `test:docs-frais`, `test:maj-forcee`, `test:departs-integrity`, `test:messages-suivis`,
+et **`test:tor` — la mienne**. Corrigé : `test:tor` rejoint le job `gardes-depot-public` de
+`tests.yml`, le seul qui tourne vraiment sur chaque PR/push (8 gardes, node seul, ~20 s) ;
+les 9 gardes de ce job re-testées une par une **sans `node_modules`**. Je n'ai pas touché aux
+gardes des autres sessions — message `m087` déposé pour qu'elles décident elles-mêmes.
+
+**🟠 TROUVAILLE ANNEXE — `test:pipeline-sessions` est aveugle en CI.** Il est déjà dans ce job
+et passe au vert sur `main`… alors qu'il **échoue en local**. Cause : `tests.yml` fait son
+checkout **sans `fetch-depth`** → aucune branche distante visible → la garde ne contrôle rien.
+En local elle signale 2 branches actives non inscrites (`claude/printify-order-config-…`,
+`claude/worker-config-…`) — à leurs propriétaires.
+
+**Accès réels (re-mesurés)** : `api.github.com` 200 · `raw.githubusercontent.com` 301 ·
+`gitlab.com` 301 · npm 200. **Bloqués** : `kd-mc.com`, `tor.kd-mc.com`, `api.cloudflare.com`,
+`bbc.com`, `torproject.org`, `proton.me`, `nytimes.com`, `securedrop.org` → **HTTP 000**.
+
+**Liens donnés à Kevin** : les 3 fichiers cités répondent 200 sur `main` ; les deux pages à
+cliquer répondent 302 (GitLab, redirection login) et 403 (GitHub, page privée) — normal, elles
+existent et demandent sa session ; je ne peux pas les ouvrir à sa place.
+
+**Outils** : 9/9 scripts npm promis existent · 7/7 fichiers existent · `publier-gitlab.yml`
+**enregistré et actif** côté GitHub (id 360625774, déclenchable par l'API) · 99 skills ·
+21 commandes · 155 workflows actifs · 218 scripts npm.
+
+**Documents** : les 8 documents racine sont là. Deux dérives, sans gravité et déjà signalées
+par le document lui-même : `CLAUDE.md` cite `CMC v9.891` alors que le code est en **v9.903**,
+et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une vieille session).
+
+**État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
+`main` pour mon dernier commit : **success**.
+
+## 2026-09-17 — Le jeton GitLab : le chemin qui marche SANS le faire passer par le chat
+
+Kevin : *« Je te donne le jeton GitLab ici ? Passe par l'autre session sinon… »* → **non aux deux**,
+et mesuré plutôt que supposé.
+
+- **Le chat est exclu** : une conversation se garde, se résume, se relit. Un jeton collé ici est un
+  jeton publié — et il faudrait le recoller à chaque session.
+- **L'autre session ne peut rien** (mesuré) : elle tourne dans le **même environnement**
+  (`env_01MyGX…`) que moi, donc les mêmes variables ; et `ETAT-INFRA` note les **deux jetons GitLab
+  révoqués (401)**. Le renvoyer là-bas lui aurait coûté un aller-retour pour rien.
+- **Ce que l'agent atteint vraiment** (re-mesuré, la leçon #135 avait vieilli) : `gitlab.com` ✅,
+  `api.github.com` ✅, le registre npm ✅ — mais `bbc.com`, `torproject.org`, `proton.me`,
+  `nytimes.com`, `securedrop.org` → **HTTP 000, tous bloqués**. Donc même vérifier les *sources* du
+  catalogue est hors de portée d'ici.
+- **Livré** : `.github/workflows/publier-gitlab.yml` — strictement **à la main**, il publie CE dépôt
+  vers SON miroir GitLab (c'est bien « publier ce dépôt » → GitHub est la bonne destination ; le job
+  qui ouvre les .onion, lui, reste côté GitLab). Il **refuse** toute cible `main`/`master` (les deux
+  lignées n'ont pas d'ancêtre commun), **filtre le jeton** dans la sortie de *chaque* push, et pose
+  `-o ci.variable="TOR_ADRESSES=1"` → le job part **tout seul**, sans clic dans GitLab.
+- **Kevin n'a qu'UN geste, une seule fois** : créer un jeton `write_repository` sur le seul projet
+  Kdmc-project, et le coller dans **GitHub → Secrets → `GITLAB_TOKEN`** (un champ fait pour ça,
+  masqué à vie). Ensuite je déclenche, pour toujours, sans que personne ne manipule le jeton.
+- **Garde** : `test:tor` passe de 33 à **34 contrôles** — à la main uniquement, aucun cron, aucun
+  déclencheur ouvert, refus de `main`, jeton filtré sur *chaque* push. **Ma première version n'était
+  pas discriminante** (elle ne voyait qu'un des deux pushes : sabotage → vert) ; corrigée en comptant
+  filtres ≥ pushes, re-prouvée par sabotage (« 1 filtre pour 2 push » → échec).
 
 ## 2026-09-15 — Tor en clair v1.4 : j'ai essayé d'ouvrir les .onion pour de vrai, et voilà où ça bute
 
