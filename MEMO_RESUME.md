@@ -1396,6 +1396,24 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — Deuxième essai : **15/20** adresses .onion répondent (et le chiffre BOUGE)
+
+**Mesuré** (run 35245673292, artefact rapatrié, `simule: false`). Au premier passage : **13/20**.
+Au second, avec le **deuxième essai** ajouté :
+
+```
+15 vivantes  · Tor Project et The Guardian ont répondu DU DEUXIÈME ESSAI
+ 5 muettes   · New York Times, ProPublica, The Intercept, Bellingcat, Privacy International
+```
+
+**La preuve que « muette » ≠ « morte »** est dans les chiffres eux-mêmes : **DuckDuckGo**, qui
+avait répondu du premier coup la fois d'avant, a eu besoin de **deux tentatives** cette fois. Un
+circuit Tor se construit au hasard et cale souvent depuis un centre de données — c'est exactement
+pour ça que le rapport dit **« injoignable »** et jamais « mort ».
+
+Page **v1.6** : les 15 noms, les 5 muettes nommées, et le va-et-vient expliqué en clair. Le bouton
+**« Prouver l'adresse »** reste la vérité : c'est l'organisation elle-même qui publie son adresse.
+
 ## 2026-09-17 — Jusqu'où va vraiment le jeton GitLab : **1 projet, mais 35 secrets de CI lisibles**
 
 **Mesuré** (run 35244805920, lecture seule, aucune valeur affichée) :
