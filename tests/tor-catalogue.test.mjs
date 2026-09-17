@@ -304,6 +304,29 @@ t('sa destination est écrite, et ce n\'est pas GitHub Actions', () => {
 /* ── Le vérificateur d'adresse est la protection la plus forte de l'outil (c'est lui qui
    voit la fausse adresse). Il doit exister, et surtout garder la comparaison de préfixe :
    sans elle, il ne détecte plus les imitations, qui sont TOUTE la menace. ── */
+t('le chemin qui lance la vérification est manuel, ne touche pas main, ne fuit pas le jeton', () => {
+  /* Une session Claude n'a aucun jeton GitLab (mesuré 17.09). Le seul chemin est un
+     workflow que JE déclenche et qui publie le dépôt vers son miroir. Trois choses ne
+     doivent jamais bouger : il reste strictement à la main (un cron = le volume qui a
+     fait suspendre le compte), il ne pousse jamais la lignée GitHub sur main GitLab
+     (les deux lignées n'ont pas d'ancêtre commun), et le jeton n'apparaît nulle part. */
+  const wf = readFileSync(new URL('../.github/workflows/publier-gitlab.yml', import.meta.url), 'utf8');
+  assert(/^on:\s*\n\s+workflow_dispatch:/m.test(wf), 'le déclencheur n\'est plus « à la main » uniquement');
+  assert(!/\bschedule:|\bcron:/.test(wf), 'une tâche programmée est apparue : c\'est exactement ce qui a fait suspendre le compte');
+  assert(!/pull_request_target|issue_comment/.test(wf), 'un déclencheur ouvert à un inconnu est apparu');
+  assert(/case .*CIBLE.*in[\s\S]{0,200}main\|master/.test(wf), 'le refus de pousser sur main a disparu');
+  /* CHAQUE push doit être filtré, pas seulement le premier : git affiche l'URL
+     distante dans ses messages, et l'URL porte le jeton. Une seule ligne oubliée
+     et le jeton part en clair dans un journal public. */
+  const pousses = (wf.match(/git push[^\n]*\$\{DEPOT\}|git push --force-with-lease "\$\{DEPOT\}"/g) || []).length;
+  const filtres = (wf.match(/sed -e "s#\$\{JETON\}#\*\*\*#g"/g) || []).length;
+  assert(pousses > 0, 'plus aucun push vers le miroir : le chemin est mort');
+  assert(filtres >= pousses,
+    'un push n\'est pas filtré (' + filtres + ' filtre(s) pour ' + pousses + ' push) : le jeton peut apparaître dans le journal');
+  assert(/ci\.variable="TOR_ADRESSES=1"/.test(wf), 'la demande de travail a disparu : le job ne partirait plus tout seul');
+  assert(!wf.includes('verif-onion.mjs'), 'le vérificateur est nommé dans un workflow GitHub : il doit rester côté GitLab');
+});
+
 t('le vérificateur d\'adresse existe et est utilisable', () => {
   assert(html.includes('id="verif"'), 'le bloc de vérification a disparu');
   assert(html.includes('id="qverif"') && html.includes('id="rverif"'), 'le champ ou le résultat a disparu');
