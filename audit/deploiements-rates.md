@@ -7,6 +7,19 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 17/09/2026 10:17 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `7aa4e5b5` · **Run** : `35208999638`
+- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35208999638
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+##[error]Process completed with exit code 128.
+```
+
 ## ❌ Auto-merge Claude branches into main — 16/09/2026 23:52 UTC
 
 - **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `6fd533f3` · **Run** : `35163818774`
@@ -464,19 +477,6 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 - **Branche** : `claude/security-review-4j3mct` · **Commit** : `2349c285` · **Run** : `35010053679`
 - **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
 - **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35010053679
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 15/09/2026 18:53 UTC
-
-- **Branche** : `claude/security-review-4j3mct` · **Commit** : `e4ab59d4` · **Run** : `35008885433`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35008885433
 - **Ce que la machine a dit** :
 
 ```
