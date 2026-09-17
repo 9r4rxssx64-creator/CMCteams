@@ -217,50 +217,91 @@ describe('sendPushToUser', () => {
   });
 });
 
-describe('performDailyBackup', () => {
-  it('success backup → R2 put 1 fichier', async () => {
-    const env = {
-      APEX_CHAT_DB: {
-        prepare: () => ({
-          bind: function () { return this; },
-          all: async () => ({ results: [{ id: 'x' }] }),
-        }),
-      },
-      APEX_CHAT_MEDIA: { put: vi.fn(async () => ({})) },
+describe('performDailyBackup — chiffrée, complète, vérifiée, avec rotation (audit 17/09/2026)', () => {
+  const SECRET = 'jwt-test-secret';
+  function makeR2(existing = []) {
+    const store = new Map(existing.map((k) => [k, 'ancien']));
+    return {
+      store,
+      put: vi.fn(async (k, body) => { store.set(k, body); }),
+      get: vi.fn(async (k) => (store.has(k) ? { text: async () => store.get(k) } : null)),
+      list: vi.fn(async () => ({ objects: [...store.keys()].map((key) => ({ key })) })),
+      delete: vi.fn(async (k) => { store.delete(k); }),
     };
-    await performDailyBackup(env);
-    expect(env.APEX_CHAT_MEDIA.put).toHaveBeenCalled();
+  }
+  function makeDB(tables = ['users', 'messages']) {
+    const written = [];
+    return {
+      written,
+      prepare: (sql) => ({
+        _args: [],
+        bind: function (...a) { this._args = a; return this; },
+        all: async () => (sql.includes('sqlite_master') ? { results: tables.map((name) => ({ name })) } : { results: [{ id: 'x' }, { id: 'y' }] }),
+        run: async function () { written.push({ sql, args: this._args }); return { success: true }; },
+        first: async () => null,
+      }),
+    };
+  }
+  async function decrypt(enc) {
+    const blob = JSON.parse(enc);
+    const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+    const ikm = await crypto.subtle.importKey('raw', new TextEncoder().encode(SECRET), 'HKDF', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode('apex-chat-backup'), info: new TextEncoder().encode('d1-backup-v1') }, ikm, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(blob.iv) }, key, b64(blob.ct))));
+  }
+
+  it('écrit UN fichier .json.enc chiffré, avec TOUTES les tables du schéma, et note backup_last_ok', async () => {
+    const env = { APEX_CHAT_DB: makeDB(['users', 'messages', 'contacts']), APEX_CHAT_MEDIA: makeR2(), JWT_SIGN_KEY: SECRET };
+    const r = await performDailyBackup(env, new Date('2026-09-17T03:00:00Z'));
+    expect(r.ok).toBe(true);
+    expect(env.APEX_CHAT_MEDIA.put).toHaveBeenCalledTimes(1);
     const [key, body] = env.APEX_CHAT_MEDIA.put.mock.calls[0];
-    expect(key).toMatch(/^backups\/d1-/);
-    const parsed = JSON.parse(body);
-    expect(parsed.tables.users).toEqual([{ id: 'x' }]);
+    expect(key).toBe('backups/d1-2026-09-17.json.enc');
+    expect(body).not.toContain('"users"');                 // rien en clair
+    const clair = await decrypt(body);
+    expect(Object.keys(clair.tables)).toEqual(['users', 'messages', 'contacts']);
+    expect(clair.tables.contacts).toEqual([{ id: 'x' }, { id: 'y' }]);
+    const note = env.APEX_CHAT_DB.written.find((w) => w.args[0] === 'backup_last_ok');
+    expect(note).toBeTruthy();
+    expect(JSON.parse(note.args[1])).toMatchObject({ key, tables: 3, rows: 6 });
   });
 
-  it('DB throw → catch silent', async () => {
-    const env = {
-      APEX_CHAT_DB: {
-        prepare: () => ({
-          bind: function () { return this; },
-          all: async () => { throw new Error('db fail'); },
-        }),
-      },
-      APEX_CHAT_MEDIA: { put: vi.fn() },
-    };
+  it('rotation : les fichiers de plus de 14 jours (chiffrés OU anciens en clair) sont supprimés', async () => {
+    const r2 = makeR2(['backups/d1-2026-08-01.json', 'backups/d1-2026-09-10.json.enc', 'backups/d1-2026-09-16.json.enc']);
+    const env = { APEX_CHAT_DB: makeDB(), APEX_CHAT_MEDIA: r2, JWT_SIGN_KEY: SECRET };
+    const r = await performDailyBackup(env, new Date('2026-09-17T03:00:00Z'));
+    expect(r.purged.sort()).toEqual(['backups/d1-2026-08-01.json']);
+    expect(r2.store.has('backups/d1-2026-09-10.json.enc')).toBe(true);
+    expect(r2.store.has('backups/d1-2026-09-16.json.enc')).toBe(true);
+  });
+
+  it('sans JWT_SIGN_KEY : REFUSE d\'écrire en clair, note backup_last_error, prévient la télémétrie', async () => {
+    const env = { APEX_CHAT_DB: makeDB(), APEX_CHAT_MEDIA: makeR2(), TELEMETRY_QUEUE: { send: vi.fn(async () => {}) } };
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    await expect(performDailyBackup(env)).resolves.toBeUndefined();
+    const r = await performDailyBackup(env);
     spy.mockRestore();
+    expect(r.ok).toBe(false);
+    expect(env.APEX_CHAT_MEDIA.put).not.toHaveBeenCalled();
+    expect(env.APEX_CHAT_DB.written.some((w) => w.args[0] === 'backup_last_error')).toBe(true);
+    expect(env.TELEMETRY_QUEUE.send).toHaveBeenCalledWith(expect.objectContaining({ sentinel: 'backup-failed' }));
   });
 
-  it('R2 undefined → catch silent', async () => {
-    const env = {
-      APEX_CHAT_DB: {
-        prepare: () => ({
-          bind: function () { return this; },
-          all: async () => ({ results: [] }),
-        }),
-      },
-    };
-    await expect(performDailyBackup(env)).resolves.toBeUndefined();
+  it('relecture R2 incohérente → échec noté (la sauvegarde n\'est pas déclarée réussie)', async () => {
+    const r2 = makeR2();
+    r2.get = vi.fn(async () => ({ text: async () => 'tronqué' }));
+    const env = { APEX_CHAT_DB: makeDB(), APEX_CHAT_MEDIA: r2, JWT_SIGN_KEY: SECRET };
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await performDailyBackup(env);
+    spy.mockRestore();
+    expect(r.ok).toBe(false);
+    expect(r.error).toMatch(/relecture/);
+  });
+
+  it('R2 absent → échec propre (résout, ne lève pas)', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const r = await performDailyBackup({ APEX_CHAT_DB: makeDB(), JWT_SIGN_KEY: SECRET });
+    spy.mockRestore();
+    expect(r.ok).toBe(false);
   });
 });
 
