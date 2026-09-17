@@ -69,25 +69,54 @@ for (const { page, video } of PAGES) {
   }
 }
 
-/* --- 3. tout fichier cité existe vraiment --------------------------------- */
-const rigBase = (src.match(/BEE_BASE = '([^']+)'/) || [])[1] || '';
-const liveBase = (src.match(/BEE_LIVE = '([^']+)'/) || [])[1] || '';
-chk(rigBase.startsWith('https://lingua.kd-mc.com/'), `images de Bee servies par Lingua : ${rigBase}`);
-chk(liveBase.startsWith('https://lingua.kd-mc.com/'), `vidéos de Bee servies par Lingua : ${liveBase}`);
+/* --- 3. tout fichier cité existe vraiment, POUR LES DEUX PERSONNAGES --------
+   Kevin 2026-09-17 : « intègre l'âne de Lingua, avoir le choix ». Depuis, le widget ne
+   cite plus des chemins en dur mais une TABLE de mascottes. On la lit et on vérifie
+   CHAQUE personnage — c'est précisément là qu'un fichier manquant se cacherait, parce
+   qu'on ne regarde jamais le personnage qu'on n'utilise pas soi-même.
+   Piège réel évité : l'âne n'a PAS d'ailes ; si on lui en déclarait, ce serait deux 404
+   silencieux à chaque affichage. Le test l'exige explicitement. */
 const localDe = (url) => 'lingua/' + url.replace('https://lingua.kd-mc.com/', '');
+const LINGUA = (src.match(/var LINGUA = '([^']+)'/) || [])[1] || '';
+chk(LINGUA === 'https://lingua.kd-mc.com/', `les dessins viennent de Lingua : ${LINGUA || '(introuvable)'}`);
 
-for (const m of src.matchAll(/BEE_BASE \+ '([a-z-]+\.webp)/g)) {
-  const f = localDe(rigBase) + m[1];
-  chk(existsSync(f), existsSync(f) ? `image présente : ${f}` : `IMAGE ABSENTE (404 garanti) : ${f}`);
-}
-const clips = ((src.match(/BEE_CLIPS = \[([^\]]+)\]/) || [])[1] || '')
+const tableM = (src.match(/var MASCOTTES = \[([\s\S]*?)\n  \];/) || [])[1] || '';
+const mascottes = [...tableM.matchAll(
+  /\{\s*id:\s*'([a-z]+)',\s*rig:\s*'([^']+)',\s*live:\s*'([^']+)',\s*nom:\s*'([^']+)'[\s\S]*?pieces:\s*\[([^\]]*)\]/g
+)].map((m) => ({ id: m[1], rig: m[2], live: m[3], nom: m[4],
+  pieces: m[5].split(',').map((x) => x.trim().replace(/'/g, '')).filter(Boolean) }));
+chk(mascottes.length === 2, `2 personnages proposés : ${mascottes.map((m) => m.nom).join(' + ') || '(aucun)'}`);
+chk(mascottes.some((m) => m.id === 'bee') && mascottes.some((m) => m.id === 'donkey'),
+  'les deux personnages de Lingua sont là : Bee et Bourricot');
+
+const clips = ((src.match(/var CLIPS = \[([^\]]+)\]/) || [])[1] || '')
   .split(',').map((c) => c.trim().replace(/'/g, '')).filter(Boolean);
 chk(clips.length >= 1, `clips déclarés : ${clips.join(', ') || '(aucun)'}`);
-for (const c of clips) {
-  const f = localDe(liveBase) + c + '.mp4';
-  chk(existsSync(f), existsSync(f) ? `clip présent : ${f}` : `CLIP ABSENT (404 garanti) : ${f}`);
-}
 chk(clips.includes('idle'), 'le clip de repos « idle » existe (c\'est le repli de tous les autres)');
+
+for (const M of mascottes) {
+  const dossierRig = `lingua/${M.rig}/rig/`;
+  const base = `${dossierRig}base.webp`;
+  chk(existsSync(base), existsSync(base) ? `${M.nom} : dessin présent (${base})`
+                                        : `${M.nom} : DESSIN ABSENT (404 garanti) : ${base}`);
+  for (const piece of M.pieces) {
+    const f = `${dossierRig}${piece}.webp`;
+    chk(existsSync(f), existsSync(f) ? `${M.nom} : pièce « ${piece} » présente`
+                                     : `${M.nom} : PIÈCE ABSENTE (404 garanti) : ${f}`);
+  }
+  for (const c of clips) {
+    const f = `lingua/${M.live}/live/${c}.mp4`;
+    chk(existsSync(f), existsSync(f) ? `${M.nom} : clip « ${c} » présent`
+                                     : `${M.nom} : CLIP ABSENT (404 garanti) : ${f}`);
+  }
+}
+const ane = mascottes.find((m) => m.id === 'donkey');
+chk(ane && ane.pieces.length === 0,
+  "l'âne n'a pas d'ailes déclarées (lui en donner = 2 images inexistantes chargées à chaque fois)");
+chk(/\.bee-rig\[data-mascot="donkey"\]/.test(src),
+  "l'âne a SA géométrie (yeux et bouche mesurés sur SON dessin, pas ceux de l'abeille)");
+chk(/javis_mascotte/.test(src), 'le choix du personnage est retenu d\'une fois sur l\'autre');
+chk(/javis-mpick/.test(src), 'le choix se fait à un doigt depuis le panneau');
 
 /* --- 4. la discipline de repli est bien dans le code, pas juste promise ---- */
 chk(/canplay/.test(src), 'la vidéo ne s\'affiche qu\'après « canplay » (jamais de trou noir)');

@@ -2,6 +2,29 @@
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
+**0. Javis a maintenant DEUX personnages au choix : Bee ou Bourricot l'âne.** Kevin :
+« intègre l'âne de Lingua, avoir le choix ». Les deux existaient **déjà dans Lingua** (dessins et
+les 6 clips) : réutilisés tels quels, **aucun fichier dupliqué**. Choix à un doigt dans l'en-tête,
+**retenu**, changement **sans recharger**. **Mesuré en vrai navigateur** : on tape la pastille →
+`donkey/rig/base.webp` s'affiche, **0 aile** (l'âne n'en a pas : lui en donner = 2 images fantômes),
+paupière à **39,3 %** contre **29,6 %** pour l'abeille (sa géométrie, pas celle de Bee), nom
+« Bourricot », choix retenu, et **il est vivant (4 battements en 9 s)**. **Sabotage** : j'enlève la
+remise en vie → « l'âne est figé » → échec. Bee **v1.5**. Gardes : `test:javis-bee` **51/0**
+(12 contrôles neufs : chaque fichier des DEUX personnages), `test:javis-bee-reelle` **42/0**.
+
+**1 bis. Puis elle a appris à FORMER la voyelle qu'elle prononce — de vrais visèmes.** Kevin :
+« fais le, continu ». On ne se contente plus de « clair / sombre » : on lit les **deux résonances
+de la voix** (F1 = ouverture de la mâchoire, F2 = position de la langue), on compare aux **8
+voyelles françaises de référence**, et la bouche prend **la forme de la voyelle reconnue**.
+`fftSize` passé de 256 à **2048** — sinon une case du spectre fait 172 Hz et on ne distingue même
+pas un « ou » (F1 320) d'un « a » (F1 750). **Mesuré sur de vraies voyelles de synthèse** :
+« i » **1,47 × 0,54** · « ou » **0,71 × 0,71** · « a » **1,11 × 1,56** — le triangle vocalique
+correct. **Sabotage** (retour à l'étape « couleur du son ») : les trois donnent **la même bouche**
+(0,68×1,99 · 0,66×2,02 · 0,66×2,02) → **3 échecs**. Bee **v1.4**.
+**Reste honnête** : visèmes **par voyelle**, pas par phonème — les consonnes ne sont pas
+distinguées entre elles. Le palier au-dessus (Live2D / TalkingHead) **remplacerait Bee par un
+autre personnage** : exclu.
+
 **1. La bouche de Bee prend une FORME, elle ne fait plus que gonfler.** Avant, `scaleX` et
 `scaleY` étaient pilotés par **la même valeur** (le volume) : elle changeait de taille, jamais de
 forme — impossible de distinguer un « ii » d'un « ou ». Maintenant le **volume** dit combien elle
@@ -1232,6 +1255,33 @@ Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écar
   presse-papier, pseudo sans rien de personnel, 6 onglets sans débordement horizontal.
 - 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
   mise en garde « t'y connecter dit qui tu es »).
+
+## 2026-09-17 — Le jeton GitLab : le chemin qui marche SANS le faire passer par le chat
+
+Kevin : *« Je te donne le jeton GitLab ici ? Passe par l'autre session sinon… »* → **non aux deux**,
+et mesuré plutôt que supposé.
+
+- **Le chat est exclu** : une conversation se garde, se résume, se relit. Un jeton collé ici est un
+  jeton publié — et il faudrait le recoller à chaque session.
+- **L'autre session ne peut rien** (mesuré) : elle tourne dans le **même environnement**
+  (`env_01MyGX…`) que moi, donc les mêmes variables ; et `ETAT-INFRA` note les **deux jetons GitLab
+  révoqués (401)**. Le renvoyer là-bas lui aurait coûté un aller-retour pour rien.
+- **Ce que l'agent atteint vraiment** (re-mesuré, la leçon #135 avait vieilli) : `gitlab.com` ✅,
+  `api.github.com` ✅, le registre npm ✅ — mais `bbc.com`, `torproject.org`, `proton.me`,
+  `nytimes.com`, `securedrop.org` → **HTTP 000, tous bloqués**. Donc même vérifier les *sources* du
+  catalogue est hors de portée d'ici.
+- **Livré** : `.github/workflows/publier-gitlab.yml` — strictement **à la main**, il publie CE dépôt
+  vers SON miroir GitLab (c'est bien « publier ce dépôt » → GitHub est la bonne destination ; le job
+  qui ouvre les .onion, lui, reste côté GitLab). Il **refuse** toute cible `main`/`master` (les deux
+  lignées n'ont pas d'ancêtre commun), **filtre le jeton** dans la sortie de *chaque* push, et pose
+  `-o ci.variable="TOR_ADRESSES=1"` → le job part **tout seul**, sans clic dans GitLab.
+- **Kevin n'a qu'UN geste, une seule fois** : créer un jeton `write_repository` sur le seul projet
+  Kdmc-project, et le coller dans **GitHub → Secrets → `GITLAB_TOKEN`** (un champ fait pour ça,
+  masqué à vie). Ensuite je déclenche, pour toujours, sans que personne ne manipule le jeton.
+- **Garde** : `test:tor` passe de 33 à **34 contrôles** — à la main uniquement, aucun cron, aucun
+  déclencheur ouvert, refus de `main`, jeton filtré sur *chaque* push. **Ma première version n'était
+  pas discriminante** (elle ne voyait qu'un des deux pushes : sabotage → vert) ; corrigée en comptant
+  filtres ≥ pushes, re-prouvée par sabotage (« 1 filtre pour 2 push » → échec).
 
 ## 2026-09-15 — Tor en clair v1.4 : j'ai essayé d'ouvrir les .onion pour de vrai, et voilà où ça bute
 

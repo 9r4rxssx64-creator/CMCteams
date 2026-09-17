@@ -46,20 +46,46 @@
      ligne est passee. C'est exactement le defaut que j'ai mesure sur Lingua le meme
      jour (message m085 aux autres sessions) : je me l'applique a moi-meme.
      Une ligne, aucun effet visible. L'audit LIVE du domaine la lit tout seul. */
-  var JAVIS_VER = 'v1.3';
+  var JAVIS_VER = 'v1.5';
   try { window.JAVIS_VER = JAVIS_VER; } catch (e) {}
 
   if (window.__javisWidgetLoaded) return;
   window.__javisWidgetLoaded = true;
 
   var AI_ENDPOINT = 'https://apis.kd-mc.com/ai';
-  var BEE_BASE = 'https://lingua.kd-mc.com/bee/v2/rig/'; /* la source de vérité du dessin */
-  /* Les VRAIES videos de Bee, générées depuis son dessin (Replicate) et déjà en ligne
-     pour Lingua. On les RÉUTILISE : aucun fichier dupliqué (leçon #142). Elles ne sont
-     chargées QUE dans l'app dédiée (mode plein écran) : sur une page normale le bouton
-     flottant reste la marionnette CSS, qui ne coûte rien en données mobiles. */
-  var BEE_LIVE = 'https://lingua.kd-mc.com/bee/live/';
-  var BEE_CLIPS = ['idle', 'hello', 'dance', 'jump', 'fly', 'walk'];
+  /* LE CHOIX DU PERSONNAGE (Kevin 2026-09-17 : « integre l'ane de Lingua, avoir le choix »).
+     Les DEUX personnages existent DEJA dans Lingua -- dessins ET videos. On les reutilise
+     tels quels : aucun fichier duplique (lecon #142). Si leur dessin evolue chez Lingua,
+     Javis suit tout seul.
+     UN SEUL point de verite ici, comme MASCOTS dans lingua/app.js : dossier des images,
+     dossier des clips, prenom, genre, et les PIECES articulees.
+     ⚠ L'ANE N'A PAS D'AILES : ses `pieces` sont vides. Les lui ajouter chargerait deux
+       images inexistantes -- un 404 silencieux a chaque affichage (constate dans Lingua,
+       c'est pour ca que RIG_PIECES existe la-bas).
+     ⚠ Bee : ses IMAGES sont dans `bee/v2/` (le dessin « vive » choisi par Kevin) mais ses
+       CLIPS sont dans `bee/` : deux dossiers differents, d'ou les deux champs.
+     Les VIDEOS ne sont chargees QUE dans l'app dediee (plein ecran) : sur une page normale
+     le bouton flottant reste la marionnette CSS, qui ne coute rien en donnees mobiles. */
+  var LINGUA = 'https://lingua.kd-mc.com/';
+  var MASCOTTES = [
+    { id: 'bee', rig: 'bee/v2', live: 'bee', nom: 'Bee', titre: "Bee l'abeille",
+      emoji: '\uD83D\uDC1D', pieces: ['wing-l', 'wing-r'], gen: 'f' },
+    { id: 'donkey', rig: 'donkey', live: 'donkey', nom: 'Bourricot', titre: "Bourricot l'\u00e2ne",
+      emoji: '\uD83E\uDECF', pieces: [], gen: 'm' }
+  ];
+  var CLIPS = ['idle', 'hello', 'dance', 'jump', 'fly', 'walk'];
+  var MASC_CLE = 'javis_mascotte';
+  function mascCfg() {
+    var id = 'bee';
+    try { var v = localStorage.getItem(MASC_CLE); if (v) id = v; } catch (e) {}
+    for (var i = 0; i < MASCOTTES.length; i++) { if (MASCOTTES[i].id === id) return MASCOTTES[i]; }
+    return MASCOTTES[0];                       /* valeur inconnue -> on retombe sur Bee */
+  }
+  function rigBase(m) { return LINGUA + (m || mascCfg()).rig + '/rig/'; }
+  function liveBase(m) { return LINGUA + (m || mascCfg()).live + '/live/'; }
+  /* Accord en genre, comme dans Lingua : Bee est une abeille, Bourricot un ane.
+     Sans ca on lit « Bourricot est prete » -- faux et moche. */
+  function MG(f, m) { return mascCfg().gen === 'm' ? m : f; }
   /* Sa VRAIE voix + le vrai lip-sync : le domaine sait deja fabriquer la parole
      (routeur kd-mc.com, /__lingua/tts, cache a vie, CORS ouvert, fail-open). Un fichier
      audio, c'est un SON QU'ON PEUT ANALYSER : la bouche s'ouvre sur l'amplitude reelle.
@@ -99,18 +125,37 @@
   /* ============================================================
      1. Bee — la MÊME marionnette que dans Lingua (beeRigHTML)
      ============================================================ */
+  /* LE CHOIX, A UN DOIGT (Kevin : « avoir le choix des personnages »). Deux pastilles dans
+     l'en-tete : on tape, le personnage change PARTOUT tout de suite (bouton flottant, mini
+     portrait, video) et le choix est retenu pour les prochaines fois. Cibles de 44 px comme
+     partout ailleurs sur le domaine (regle iPhone). */
+  function boutonsMascottes() {
+    var id = mascCfg().id, h = '';
+    for (var i = 0; i < MASCOTTES.length; i++) {
+      var M = MASCOTTES[i];
+      h += '<button type="button" class="javis-mpick' + (M.id === id ? ' on' : '') +
+           '" data-masc="' + M.id + '" title="' + M.titre + '" aria-label="' + M.titre +
+           '" aria-pressed="' + (M.id === id ? 'true' : 'false') + '">' + M.emoji + '</button>';
+    }
+    return h;
+  }
+
   function buildBeeRig(avecVideo) {
+    var M = mascCfg(), B = rigBase(M), ailes = '';
+    for (var i = 0; i < M.pieces.length; i++) {
+      ailes += '<img class="rig-piece rig-' + (M.pieces[i] === 'wing-l' ? 'wl' : 'wr') + '" src="' +
+               B + M.pieces[i] + '.webp" alt="" onerror="this.remove()">';
+    }
     return (
-      '<div class="bee-rig" data-mascot="bee" data-art="vive">' +
+      '<div class="bee-rig" data-mascot="' + M.id + '"' + (M.id === 'bee' ? ' data-art="vive"' : '') + '>' +
       '<div class="rig-look">' +
-      '<img class="rig-base" src="' + BEE_BASE + 'base.webp" alt="Bee">' +
-      '<img class="rig-piece rig-wl" src="' + BEE_BASE + 'wing-l.webp" alt="" onerror="this.remove()">' +
-      '<img class="rig-piece rig-wr" src="' + BEE_BASE + 'wing-r.webp" alt="" onerror="this.remove()">' +
+      '<img class="rig-base" src="' + B + 'base.webp" alt="' + M.nom + '">' +
+      ailes +
       '<div class="rig-lid ll"></div><div class="rig-lid lr"></div>' +
       '<div class="disc-mouth"></div>' +
       '<div class="rig-zzz">z</div>' +
       '</div>' +
-      (avecVideo ? '<video class="javis-vid" src="' + BEE_LIVE + 'idle.mp4" autoplay loop muted playsinline preload="auto"></video>' : '') +
+      (avecVideo ? '<video class="javis-vid" src="' + liveBase(M) + 'idle.mp4" autoplay loop muted playsinline preload="auto"></video>' : '') +
       '</div>'
     );
   }
@@ -137,6 +182,14 @@
       '--ll-l:28.1%;--ll-t:29.6%;--ll-w:15.5%;--ll-h:15.0%;' +
       '--lr-l:56.3%;--lr-t:29.7%;--lr-w:15.5%;--lr-h:15.5%;' +
       '--mo-l:51.1%;--mo-t:54.9%}' +
+      /* L'ANE : geometrie MESUREE sur SON dessin dans lingua/index.html, recopiee a
+         l'identique. Ses yeux sont plus petits et plus bas que ceux de Bee, sa bouche
+         plus bas encore : reutiliser les valeurs de l'abeille lui mettrait les
+         paupieres sur le front. */
+      '.bee-rig[data-mascot="donkey"]{--lid:rgb(231,160,64);' +
+      '--ll-l:34.3%;--ll-t:39.3%;--ll-w:7.5%;--ll-h:9.5%;' +
+      '--lr-l:54.0%;--lr-t:38.6%;--lr-w:8.0%;--lr-h:10.5%;' +
+      '--mo-l:51%;--mo-t:58.9%}' +
       '.rig-lid{position:absolute;background:var(--lid,rgb(253,225,87));border:0;border-radius:46%;opacity:0;pointer-events:none;transition:opacity .05s}' +
       '.rig-lid.ll{left:var(--ll-l);top:var(--ll-t);width:var(--ll-w);height:var(--ll-h)}' +
       '.rig-lid.lr{left:var(--lr-l);top:var(--lr-t);width:var(--lr-w);height:var(--lr-h)}' +
@@ -227,7 +280,11 @@
       '#javis-head .javis-mini{width:46px;height:46px;flex:0 0 auto;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px rgba(246,183,60,.45)}' +
       '#javis-head b{color:#f6b73c;font-size:15px}' +
       '#javis-head span{display:block;color:#c9b98a;font-size:11px}' +
-      '#javis-close{margin-left:auto;background:none;border:0;color:#c9b98a;font-size:20px;line-height:1;padding:6px;cursor:pointer}' +
+      '#javis-masc{margin-left:auto;display:flex;gap:6px}' +
+      '.javis-mpick{width:44px;height:44px;border-radius:12px;border:2px solid transparent;background:rgba(246,183,60,.10);' +
+      'font-size:20px;line-height:1;cursor:pointer;padding:0;color:inherit}' +
+      '.javis-mpick.on{border-color:#f6b73c;background:rgba(246,183,60,.22)}' +
+      '#javis-close{background:none;border:0;color:#c9b98a;font-size:20px;line-height:1;padding:6px;cursor:pointer}' +
       '#javis-msgs{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch}' +
       '.javis-bub{max-width:88%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word}' +
       '.javis-bub.me{align-self:flex-end;background:#3a2c16;color:#f7efd9;border-bottom-right-radius:4px}' +
@@ -471,7 +528,7 @@
       var m = String(v.getAttribute('src') || '').match(/\/live\/([a-z]+)\.mp4/);
       if (VID.pret && m && m[1] !== 'idle') {
         VID.absent[m[1]] = 1;                  /* ce mouvement-là seulement */
-        try { v.src = BEE_LIVE + 'idle.mp4'; var q = v.play(); if (q && q.catch) q.catch(function () {}); } catch (_) {}
+        try { v.src = liveBase() + 'idle.mp4'; var q = v.play(); if (q && q.catch) q.catch(function () {}); } catch (_) {}
         return;
       }
       VID.pret = false;
@@ -483,12 +540,12 @@
   function clip(rig, nom, secs) {
     if (!VID.pret || !rig) return false;
     var v = rig.querySelector('.javis-vid');
-    if (!v || !nom || VID.absent[nom] || BEE_CLIPS.indexOf(nom) < 0) return false;
-    try { v.src = BEE_LIVE + nom + '.mp4'; v.loop = true; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (_) { return false; }
+    if (!v || !nom || VID.absent[nom] || CLIPS.indexOf(nom) < 0) return false;
+    try { v.src = liveBase() + nom + '.mp4'; v.loop = true; var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (_) { return false; }
     if (VID.retour) clearTimeout(VID.retour);
     if (nom !== 'idle') {
       VID.retour = setTimeout(function () {
-        try { if (!VID.pret) return; v.src = BEE_LIVE + 'idle.mp4'; var q = v.play(); if (q && q.catch) q.catch(function () {}); } catch (_) {}
+        try { if (!VID.pret) return; v.src = liveBase() + 'idle.mp4'; var q = v.play(); if (q && q.catch) q.catch(function () {}); } catch (_) {}
       }, Math.max(2, secs || 4) * 1000);
     }
     return true;
@@ -588,6 +645,26 @@
 
   /* La bouche s'ouvre sur l'AMPLITUDE du son reel (RMS), image par image.
      Rend une fonction d'arret, ou null si l'analyse est impossible (-> repli CSS). */
+  /* LES VOYELLES FRANCAISES ET LA BOUCHE QU'ELLES FONT.
+     f1/f2 = les deux resonances de la voix, en Hz (valeurs de reference de la phonetique
+     du francais, voix moyenne ; elles varient d'une personne a l'autre, mais ce qui compte
+     ici c'est leur POSITION RELATIVE, et celle-la est stable).
+     x = largeur de la bouche, y = ouverture (1.00 / 0.30 = bouche au repos).
+     Lecture simple : F1 monte quand la machoire s'ouvre, F2 monte quand la langue avance.
+       « ou » : machoire fermee, langue en arriere, levres arrondies -> etroite et basse
+       « a »  : machoire grande ouverte                              -> tres ouverte
+       « i »  : machoire fermee, langue en avant, levres etirees     -> large et plate */
+  var VOYELLES = [
+    { nom: 'a',  f1: 750, f2: 1300, x: 1.15, y: 1.95 },
+    { nom: 'e',  f1: 400, f2: 2100, x: 1.45, y: 1.00 },
+    { nom: 'ai', f1: 550, f2: 1900, x: 1.32, y: 1.45 },   /* « e » ouvert, comme dans « mais » */
+    { nom: 'i',  f1: 300, f2: 2300, x: 1.62, y: 0.62 },
+    { nom: 'o',  f1: 400, f2: 800,  x: 0.80, y: 1.20 },
+    { nom: 'au', f1: 550, f2: 1000, x: 0.95, y: 1.60 },   /* « o » ouvert, comme dans « sort » */
+    { nom: 'ou', f1: 320, f2: 800,  x: 0.62, y: 0.85 },
+    { nom: 'u',  f1: 300, f2: 1750, x: 0.70, y: 0.78 }    /* le « u » francais : levres rondes */
+  ];
+
   function lipSync(audioEl, bouches) {
     if (!audioEl || !bouches.length) return null;
     try { if (!AC || AC.state !== 'running') return null; } catch (_) { return null; }
@@ -595,11 +672,17 @@
       if (!audioEl._srcNode) audioEl._srcNode = AC.createMediaElementSource(audioEl);
       audioEl._srcNode.connect(AC.destination);      /* le SON d'abord — jamais coupe */
       var an = AC.createAnalyser();
-      an.fftSize = 256; an.smoothingTimeConstant = 0.55;
+      /* 2048 et pas 256 : pour reconnaitre une VOYELLE il faut mesurer ses deux resonances
+         (F1, F2), et a 256 chaque case du spectre fait 172 Hz -- on ne distingue meme pas
+         un « ou » (F1 320) d'un « a » (F1 750). A 2048, chaque case fait ~21 Hz : la ou
+         se joue la difference entre les voyelles. Cout : une FFT de 2048 points par image,
+         negligeable pour un navigateur. */
+      an.fftSize = 2048; an.smoothingTimeConstant = 0.55;
       audioEl._srcNode.connect(an);
       var buf = new Uint8Array(an.fftSize), raf = 0, maxR = 0, plat = false;
       var fbuf = new Uint8Array(an.frequencyBinCount);   /* le SPECTRE, pas que le volume */
-      var bLis = 0.5;                                     /* brillance lissee (0 sombre, 1 claire) */
+      var hz = (AC.sampleRate || 44100) / an.fftSize;     /* largeur d'une case du spectre */
+      var cibleX = 1.0, cibleY = 0.30, derniere = '';     /* la forme visee, lissee */
       var t0 = Date.now();
       bouches.forEach(function (m) { m.classList.remove('talking'); m.style.opacity = '1'; });
       function frame() {
@@ -609,31 +692,51 @@
         var rms = Math.sqrt(acc / buf.length);
         if (rms > maxR) maxR = rms;
         var ouv = Math.max(0, Math.min(1, (rms - 0.01) * 7));
-        /* LA FORME DE LA BOUCHE, PAS SEULEMENT SA TAILLE (Kevin 2026-09-17 « va plus loin »).
-           Avant, scaleX et scaleY etaient pilotes par LA MEME valeur (le volume) : la bouche
-           grossissait et retrecissait, toujours a la meme forme -- elle ne pouvait pas faire la
-           difference entre un « ii » (large et plat) et un « ou » (rond et haut).
-           Maintenant le VOLUME dit combien elle s'ouvre, et le CENTRE DE GRAVITE DU SPECTRE dit
-           quelle forme elle prend : son sombre (graves dominants : o, ou, a) -> bouche RONDE ;
-           son clair (aigus dominants : i, e, s) -> bouche LARGE et PLATE.
-           Ce n'est toujours pas du visème par phonème (il faudrait un moteur d'avatar), mais
-           ce n'est plus une bouche qui ne fait que gonfler. Honnête : c'est une approximation
-           par formants, elle ne forme pas un « o » sur un « o ». */
+        /* DE VRAIS VISEMES : elle FORME la voyelle qu'elle prononce (Kevin 2026-09-17
+           « fais le, continu »).
+           ─────────────────────────────────────────────────────────────────────────────
+           Etape 1 (le matin) : le volume pilotait scaleX ET scaleY -> la bouche gonflait,
+             forme toujours identique.
+           Etape 2 : le centre de gravite du spectre donnait une forme « claire / sombre ».
+             Mieux, mais ca ne reconnait toujours aucun son precis.
+           Etape 3, ici : on lit les DEUX RESONANCES DE LA VOIX (les formants F1 et F2).
+             C'est la vraie methode, celle de la phonetique : F1 dit combien la machoire est
+             ouverte, F2 dit ou est la langue. Ces deux nombres suffisent a identifier une
+             voyelle. On compare (F1,F2) aux voyelles francaises de reference et on prend la
+             plus proche, puis la bouche prend LA FORME de cette voyelle.
+           Pourquoi ca suffit visuellement : ce qu'on voit d'une bouche qui parle, ce sont
+             surtout les voyelles ; les consonnes passent trop vite pour etre lues.
+           Honnete : c'est du visème PAR VOYELLE, pas par phoneme complet -- les consonnes
+             ne sont pas distinguees entre elles (un « s » et un « f » se ressemblent).
+             Mais elle forme maintenant un « ou » sur un « ou ». */
         an.getByteFrequencyData(fbuf);
-        var num = 0, den = 0;
-        for (i = 0; i < fbuf.length; i++) { num += i * fbuf[i]; den += fbuf[i]; }
-        if (den > 0) {
-          var centre = (num / den) / fbuf.length;                    /* 0 = graves, 1 = aigus */
-          var b = Math.max(0, Math.min(1, (centre - 0.05) * 3.2));   /* la voix vit dans le bas */
-          bLis = bLis * 0.7 + b * 0.3;                               /* lisse : pas de tremblement */
+        var pic = function (fMin, fMax) {          /* la resonance la plus forte d'une bande */
+          var b0 = Math.max(1, Math.round(fMin / hz)), b1 = Math.min(fbuf.length - 1, Math.round(fMax / hz));
+          var best = 0, bv = 0;
+          for (var k = b0; k <= b1; k++) { if (fbuf[k] > bv) { bv = fbuf[k]; best = k; } }
+          return bv < 24 ? 0 : best * hz;          /* trop faible = pas une resonance */
+        };
+        var F1 = pic(200, 1000), F2 = pic(900, 3000);
+        if (F1 && F2) {
+          var meilleur = null, dMin = 1e9;
+          for (i = 0; i < VOYELLES.length; i++) {
+            var v = VOYELLES[i];
+            /* en echelle logarithmique : l'oreille (et la phonetique) comparent des rapports,
+               pas des ecarts en Hz -- 100 Hz d'ecart ne pesent pas pareil a 300 et a 2300 Hz */
+            var d = Math.pow(Math.log(F1 / v.f1), 2) + Math.pow(Math.log(F2 / v.f2), 2) * 0.8;
+            if (d < dMin) { dMin = d; meilleur = v; }
+          }
+          if (meilleur) {                          /* on glisse vers la forme, on n'y saute pas */
+            cibleX = cibleX * 0.6 + meilleur.x * 0.4;
+            cibleY = cibleY * 0.6 + meilleur.y * 0.4;
+            derniere = meilleur.nom;
+          }
         }
         /* la forme ne s'applique QUE quand elle parle : au silence on retombe exactement sur
            l'ancien repos (scaleY 0.30 / scaleX 1.00) -- aucune regression sur la garde. */
-        var forme = ouv;
-        var large = 1 + (bLis - 0.5) * 0.9 * forme;
-        var haut  = 1 - (bLis - 0.5) * 0.7 * forme;
-        var t = 'translate(-50%,-50%) scaleY(' + ((0.3 + ouv * 1.6) * haut).toFixed(2) +
-                ') scaleX(' + ((1 + ouv * 0.4) * large).toFixed(2) + ')';
+        var sy = 0.30 + (cibleY - 0.30) * ouv;
+        var sx = 1.00 + (cibleX - 1.00) * ouv;
+        var t = 'translate(-50%,-50%) scaleY(' + sy.toFixed(2) + ') scaleX(' + sx.toFixed(2) + ')';
         bouches.forEach(function (m) { m.style.transform = t; });
         /* amplitude plate pendant 500 ms = analyse muette (codec/navigateur) -> repli CSS */
         if (!plat && Date.now() - t0 > 500 && maxR < 0.012) {
@@ -907,10 +1010,11 @@
     var wrap = document.createElement('div');
     wrap.id = 'javis-root';
     wrap.innerHTML =
-      '<button id="javis-launcher" type="button" aria-label="Parler à Bee">' + buildBeeRig(APP_MODE) + '</button>' +
-      '<div id="javis-panel" role="dialog" aria-label="Bee">' +
+      '<button id="javis-launcher" type="button" aria-label="Parler à ' + mascCfg().nom + '">' + buildBeeRig(APP_MODE) + '</button>' +
+      '<div id="javis-panel" role="dialog" aria-label="' + mascCfg().nom + '">' +
       '<div id="javis-head"><div class="javis-mini">' + buildBeeRig() + '</div>' +
-      '<div><b>Bee</b><span>Ton assistante · gratuit d\'abord</span></div>' +
+      '<div><b>' + mascCfg().nom + '</b><span>Ton assistant' + MG('e', '') + ' · gratuit d\'abord</span></div>' +
+      '<div id="javis-masc" role="group" aria-label="Choisir le personnage">' + boutonsMascottes() + '</div>' +
       '<button id="javis-close" type="button" aria-label="Fermer">✕</button></div>' +
       '<div id="javis-msgs"></div>' +
       '<form id="javis-form"><textarea id="javis-input" placeholder="Demande-moi n\'importe quoi…" rows="1"></textarea>' +
@@ -921,6 +1025,44 @@
     if (APP_MODE) document.body.classList.add('javis-app');
 
     allRigs(wrap).forEach(function (r) { mascotAlive(r, { sommeil: 120000 }); });
+
+    /* CHANGER DE PERSONNAGE SANS RECHARGER LA PAGE. On reconstruit les deux dessins (le
+       bouton flottant et le petit portrait de l'en-tete), on les REMET EN VIE -- sinon on
+       aurait une image fixe : la respiration, le clignement et le regard sont poses sur
+       l'element, qui vient d'etre remplace -- et on remet la video au repos du nouveau
+       personnage. Le choix est retenu pour les prochaines fois. */
+    function changeMascotte(id) {
+      try { localStorage.setItem(MASC_CLE, id); } catch (e) {}
+      var M = mascCfg();
+      var lanceur = wrap.querySelector('#javis-launcher');
+      var mini = wrap.querySelector('#javis-head .javis-mini');
+      if (lanceur) { lanceur.innerHTML = buildBeeRig(APP_MODE); lanceur.setAttribute('aria-label', 'Parler à ' + M.nom); }
+      if (mini) mini.innerHTML = buildBeeRig();
+      var titre = wrap.querySelector('#javis-head b');
+      if (titre) titre.textContent = M.nom;
+      var sous = wrap.querySelector('#javis-head span');
+      if (sous) sous.textContent = 'Ton assistant' + MG('e', '') + ' · gratuit d\'abord';
+      var pan = wrap.querySelector('#javis-panel');
+      if (pan) pan.setAttribute('aria-label', M.nom);
+      var zone = wrap.querySelector('#javis-masc');
+      if (zone) zone.innerHTML = boutonsMascottes();
+      allRigs(wrap).forEach(function (r) { mascotAlive(r, { sommeil: 120000 }); });
+      if (APP_MODE) {
+        VID.pret = false; VID.absent = {};
+        var g = wrap.querySelector('#javis-launcher .bee-rig');
+        if (g) initVideo(g);
+      }
+    }
+    var zoneMasc = wrap.querySelector('#javis-masc');
+    if (zoneMasc) zoneMasc.addEventListener('click', function (e) {
+      var b = e.target && e.target.closest ? e.target.closest('.javis-mpick') : null;
+      if (!b) return;
+      var id = b.getAttribute('data-masc');
+      if (!id || id === mascCfg().id) return;
+      changeMascotte(id);
+      var r = wrap.querySelector('#javis-launcher .bee-rig');
+      if (r) react(r, 'coucou', 1400);              /* il dit bonjour en arrivant */
+    });
     /* Dans l'app : on branche la vraie vidéo, et elle vit d'elle-même entre deux phrases
        (elle vole, marche, danse) — porté de la vue Discussion de Lingua. */
     if (APP_MODE) {

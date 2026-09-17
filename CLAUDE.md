@@ -121,16 +121,45 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   **coupé** → on ne détourne rien tant que `AC.state !== 'running'` (bouche en CSS) ; (b) sans
   `crossOrigin="anonymous"` l'analyseur ne lit que du silence ; (c) `<audio>` dépend de
   **`media-src`**, pas d'`img-src`.
-- **Sa bouche prend une FORME, elle ne fait plus que gonfler (17.09, Kevin « va plus loin »)** :
-  avant, `scaleX` et `scaleY` étaient pilotés par **la même valeur** (le volume) — la bouche
-  changeait de taille mais **jamais de forme**. Maintenant le **volume** dit combien elle s'ouvre
-  et le **centre de gravité du spectre** (`getByteFrequencyData`, lissé) dit quelle forme elle
-  prend : son **sombre** (graves : « o », « ou ») → bouche **ronde** ; son **clair** (aigus :
-  « i », « s ») → bouche **large et plate**. La forme n'est appliquée **que pendant la parole**
-  (au silence on retombe exactement sur l'ancien repos `scaleY 0.30 / scaleX 1.00` → 0 régression).
-  **Mesuré en vrai navigateur, à volume égal** : rapport largeur/hauteur **0,71 sur un son grave**
-  contre **0,94 sur un son aigu**. **Prouvé discriminant par sabotage** : avec l'amplitude seule,
-  les deux rapports tombent à **1,05 et 1,07** (identiques) → la garde échoue.
+- **DEUX personnages au choix : Bee ou Bourricot l'âne (17.09, Kevin « intègre l'âne de Lingua,
+  avoir le choix des personnages »)** — les deux existaient **déjà dans Lingua** (dessins **et**
+  les 6 clips vidéo) : on les **réutilise tels quels**, aucun fichier dupliqué (leçon #142), et si
+  leur art évolue chez Lingua, Javis suit tout seul. **Un seul point de vérité** dans le widget
+  (`MASCOTTES`), comme `MASCOTS` dans `lingua/app.js` : dossier des images, dossier des clips,
+  prénom, genre, pièces articulées. Choix **à un doigt** dans l'en-tête du panneau (pastilles 44 px),
+  **retenu** (`javis_mascotte`), et le changement se fait **sans recharger la page**.
+  **Trois pièges, tous tenus par la garde** : (a) **l'âne n'a PAS d'ailes** — lui en déclarer =
+  deux images inexistantes chargées à chaque affichage (c'est pourquoi `RIG_PIECES` existe chez
+  Lingua) ; (b) **sa géométrie est la sienne** (paupières/bouche mesurées sur SON dessin dans
+  `lingua/index.html`, recopiées à l'identique — **mesuré en vrai : paupière à 39,3 % contre
+  29,6 % pour l'abeille**) ; (c) **il faut le REMETTRE EN VIE** après le changement — respiration,
+  clignement et regard sont posés sur l'élément, qui vient d'être remplacé : sans ça on obtient
+  une **image collée**. **Prouvé discriminant par sabotage** : mise en vie retirée → « l'âne est
+  figé » → échec. Bee : ses **images** sont dans `bee/v2/`, ses **clips** dans `bee/` — deux
+  dossiers différents, d'où les deux champs. Gardes : `test:javis-bee` **51/0** (les deux
+  personnages, chaque fichier cité vérifié) · `test:javis-bee-reelle` **42/0**.
+- **Elle FORME la voyelle qu'elle prononce — de vrais visèmes (17.09, Kevin « fais le, continu »)** :
+  trois étapes dans la journée. (1) le matin, `scaleX` et `scaleY` étaient pilotés par **la même
+  valeur** (le volume) → la bouche gonflait, forme toujours identique. (2) le centre de gravité du
+  spectre a donné une forme « claire/sombre » — mieux, mais ça n'identifie **aucun son précis**.
+  (3) **la vraie méthode, celle de la phonétique** : on lit les **deux résonances de la voix**
+  (**F1**, qui dit l'ouverture de la mâchoire, et **F2**, qui dit la position de la langue), on
+  compare le couple `(F1,F2)` — **en échelle logarithmique**, parce que l'oreille compare des
+  rapports, pas des écarts en Hz — aux **8 voyelles françaises de référence** (table `VOYELLES`),
+  et la bouche prend **la forme de la voyelle reconnue**. `fftSize` **2048 et non 256** : à 256
+  une case du spectre fait **172 Hz**, on ne distingue même pas un « ou » (F1 320) d'un « a »
+  (F1 750) ; à 2048 elle fait **~21 Hz**. La forme n'est appliquée **que pendant la parole**
+  (au silence : repos `scaleY 0.30 / scaleX 1.00` → **0 régression**).
+  **Mesuré en vrai navigateur, sur de vraies voyelles de synthèse** (chacune faite de ses deux
+  résonances) : « **i** » **1,47 × 0,54** (la plus large et plate) · « **ou** » **0,71 × 0,71**
+  (la plus étroite) · « **a** » **1,11 × 1,56** (la plus ouverte) — le triangle vocalique correct.
+  **Prouvé discriminant par sabotage** : avec l'étape (2), les trois voyelles donnent **la même
+  bouche** (0,68×1,99 · 0,66×2,02 · 0,66×2,02) → **3 échecs**.
+  **Honnête** : c'est du visème **par voyelle**, pas par phonème complet — les consonnes ne sont
+  pas distinguées entre elles (un « s » et un « f » se ressemblent). Ce qu'on lit sur une bouche
+  qui parle, ce sont surtout les voyelles ; les consonnes passent trop vite. Mais elle forme
+  désormais **un « ou » sur un « ou »** — ce que la ligne précédente de ce document disait
+  justement qu'elle **ne savait pas faire**.
 - **Son regard ne coûte plus une mesure de page par mouvement de doigt (17.09, « performe »)** :
   chaque `pointermove` appelait `getBoundingClientRect()` — ce qui **force un recalcul de mise en
   page** — puis écrivait 3 variables CSS ; un doigt qui glisse en envoie plusieurs par image.
@@ -150,11 +179,11 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   ⚠️ **UNE SEULE boucle** : ajouter une deuxième boucle « de relance » en parallèle la fait
   cligner deux fois plus (erreur commise puis corrigée le 17.09) — on **annule** le minuteur
   en attente et on relance le **même** `blink()`.
-- **Limite honnête** : c'est du lip-sync **par amplitude + forme spectrale (formants)**, pas
-  **par phonème** (visème par son, type D-ID/HeyGen). Elle ouvre au bon moment, de la bonne
-  taille **et de la bonne forme** — mais elle ne forme toujours pas un « o » sur un « o ».
-  Pour aller plus loin un jour : **Live2D** ou **TalkingHead.js**
-  (MIT, visèmes réels) — les deux demandent un moteur d'avatar (poids), pas branchées ici.
+- **Limite honnête (à jour)** : elle reconnaît les **voyelles** (visèmes par formants), pas les
+  **consonnes** — un « s », un « f » et un « ch » lui font la même bouche, et il n'y a pas de
+  fermeture de lèvres sur un « m »/« p »/« b ». Le palier au-dessus demanderait un vrai moteur
+  d'avatar (**Live2D**, **TalkingHead.js**) — mais **ils remplaceraient Bee par un autre
+  personnage**, ce qui est exclu : Bee est la mascotte de Kevin, pas un avatar générique.
 
 **Ce qui n'est PAS fait, honnêtement (à ne pas prétendre) :**
 - Dans l'app installable, c'est la **VRAIE VIDÉO de Bee** qui joue (`lingua/bee/live/*.mp4` :

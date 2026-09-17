@@ -104,13 +104,26 @@ let sonHz = 220;
 function sonDeTest(hz = sonHz) {
   if (_sons.has(hz)) return _sons.get(hz);
   if (!FFMPEG) return Buffer.alloc(0);
-  const out = join(CACHE, `voix-${hz}.mp3`);
+  const out = join(CACHE, `voix-${String(hz).replace(/[^\w-]/g, '_')}.mp3`);
   if (!fs.existsSync(out)) {
-    execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
-      '-f', 'lavfi', '-i', `sine=frequency=${hz}:duration=1.2`,
-      '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
-      '-filter_complex', '[0:a][1:a]concat=n=2:v=0:a=1',
-      '-c:a', 'libmp3lame', '-b:a', '64k', '-y', out], { stdio: 'ignore' });
+    /* `hz` peut être un nombre (un son simple) OU « F1+F2 » : une VOYELLE de synthèse, faite
+       de ses deux résonances mélangées. C'est ce qui permet de vérifier qu'elle forme la
+       bonne bouche sur un « ou » et sur un « i » — pas seulement qu'elle réagit au volume. */
+    const paires = String(hz).split('+').map(Number);
+    if (paires.length === 2) {
+      execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
+        '-f', 'lavfi', '-i', `sine=frequency=${paires[0]}:duration=1.2`,
+        '-f', 'lavfi', '-i', `sine=frequency=${paires[1]}:duration=1.2`,
+        '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
+        '-filter_complex', '[0:a][1:a]amix=inputs=2:normalize=0[v];[v][2:a]concat=n=2:v=0:a=1',
+        '-c:a', 'libmp3lame', '-b:a', '128k', '-y', out], { stdio: 'ignore' });
+    } else {
+      execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
+        '-f', 'lavfi', '-i', `sine=frequency=${hz}:duration=1.2`,
+        '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
+        '-filter_complex', '[0:a][1:a]concat=n=2:v=0:a=1',
+        '-c:a', 'libmp3lame', '-b:a', '64k', '-y', out], { stdio: 'ignore' });
+    }
   }
   const b = fs.readFileSync(out);
   _sons.set(hz, b);
@@ -288,16 +301,21 @@ if (FFMPEG) {
   R.na.push("le lip-sync n'a pas pu être mesuré ici (pas de ffmpeg pour fabriquer un son de test)");
 }
 
-/* === 4 quater. LA BOUCHE PREND UNE FORME, elle ne fait pas que gonfler ========
-   Kevin 2026-09-17 « ameliore, enrichit, performe ». Avant, scaleX et scaleY étaient
-   pilotés par LA MÊME valeur (le volume) : la bouche gardait toujours la même forme.
-   Maintenant le VOLUME dit combien elle s'ouvre et le SPECTRE dit quelle forme elle prend.
-   Ce contrôle est DISCRIMINANT : à volume égal, un son sombre et un son clair doivent
-   donner des formes DIFFÉRENTES. Avec l'ancien code (amplitude seule), les deux rapports
-   largeur/hauteur seraient IDENTIQUES et le test échouerait. */
+/* === 4 quater. ELLE FORME LA VOYELLE QU'ELLE PRONONCE (vrais visèmes) =========
+   Kevin 2026-09-17 « fais le, continu ». On ne teste plus « clair contre sombre » : on lui
+   envoie de VRAIES VOYELLES de synthèse — chacune faite de ses deux résonances (F1, F2),
+   exactement ce que la phonétique utilise pour identifier une voyelle — et on vérifie que
+   sa bouche prend LA BONNE FORME :
+     « i »  (300 + 2300) → la plus LARGE et la plus plate
+     « ou » (320 + 800)  → la plus ÉTROITE
+     « a »  (750 + 1300) → la plus OUVERTE
+   POURQUOI C'EST DISCRIMINANT : avec l'étape précédente (couleur du son), l'ouverture
+   suivait la brillance — « ou » et « o » auraient été les plus ouverts et « a » au milieu.
+   Exiger que « a » soit le PLUS ouvert ET que « i » soit le PLUS large ne peut être vrai
+   que si elle identifie vraiment la voyelle. */
 if (FFMPEG) {
-  const forme = async (hz) => {
-    sonHz = hz;
+  const forme = async (voyelle) => {
+    sonHz = voyelle.hz;
     const { ctx, page } = await ouvre();
     await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
     await page.mouse.click(200, 700);                       /* réveille le moteur audio */
@@ -322,33 +340,39 @@ if (FFMPEG) {
         await new Promise((r) => setTimeout(r, 25));
         if (rel.length > 25 && !lire()) break;
       }
-      if (!rel.length) return null;
-      /* on ne compare QUE les images où elle est vraiment ouverte : au repos la forme est
-         volontairement neutre (aucune régression sur l'ancien comportement). */
-      const ouverts = rel.filter((r) => r.y > 0.8);
+      /* on ne regarde QUE les images où elle est vraiment en train de prononcer :
+         au repos la forme est volontairement neutre (aucune régression). */
+      const ouverts = rel.filter((r) => r.y > 0.45 || r.x < 0.92 || r.x > 1.08);
       if (ouverts.length < 3) return { n: rel.length, ouverts: ouverts.length };
-      const rapports = ouverts.map((r) => r.x / r.y).sort((a, b) => a - b);
+      const med = (v) => v.slice().sort((a, b) => a - b)[Math.floor(v.length / 2)];
       return { n: rel.length, ouverts: ouverts.length,
-        rapport: rapports[Math.floor(rapports.length / 2)],
-        xMax: Math.max(...ouverts.map((r) => r.x)), yMax: Math.max(...ouverts.map((r) => r.y)) };
+        x: med(ouverts.map((r) => r.x)), y: med(ouverts.map((r) => r.y)) };
     });
     await ctx.close();
     return m;
   };
-  const grave = await forme(220);      /* son sombre — bouche ronde   */
-  const aigu = await forme(3500);      /* son clair  — bouche large   */
+  const V = [
+    { nom: 'i', hz: '300+2300' },
+    { nom: 'ou', hz: '320+800' },
+    { nom: 'a', hz: '750+1300' }
+  ];
+  const vus = {};
+  for (const v of V) vus[v.nom] = await forme(v);
   sonHz = 220;
-  if (!grave || !aigu || !grave.rapport || !aigu.rapport) {
-    R.na.push('forme de la bouche NON MESURÉE ici (le moteur audio n\'a pas fourni assez d\'images)');
+  const ok = V.every((v) => vus[v.nom] && typeof vus[v.nom].x === 'number');
+  if (!ok) {
+    R.na.push("les visèmes n'ont pas pu être mesurés ici (le moteur audio n'a pas fourni assez d'images)");
   } else {
-    chk(aigu.rapport > grave.rapport * 1.15,
-      `la bouche change de FORME selon le son : ronde sur un son grave (largeur/hauteur ${grave.rapport.toFixed(2)}), `
-      + `large sur un son aigu (${aigu.rapport.toFixed(2)})`);
-    chk(aigu.xMax > grave.xMax,
-      `elle est plus LARGE sur l'aigu que sur le grave (${aigu.xMax.toFixed(2)} contre ${grave.xMax.toFixed(2)})`);
+    const d = (n) => `${n} ${vus[n].x.toFixed(2)}×${vus[n].y.toFixed(2)}`;
+    chk(vus.i.x > vus.ou.x * 1.2,
+      `« i » est la bouche la plus LARGE, « ou » la plus étroite (${d('i')} contre ${d('ou')})`);
+    chk(vus.a.y > vus.i.y * 1.3 && vus.a.y > vus.ou.y * 1.3,
+      `« a » est la bouche la plus OUVERTE (${d('a')} contre ${d('i')} et ${d('ou')})`);
+    chk(vus.ou.x < vus.a.x,
+      `« ou » arrondit les lèvres, « a » ne les arrondit pas (${vus.ou.x.toFixed(2)} contre ${vus.a.x.toFixed(2)})`);
   }
 } else {
-  R.na.push("la forme de la bouche n'a pas pu être mesurée ici (pas de ffmpeg)");
+  R.na.push("les visèmes n'ont pas pu être mesurés ici (pas de ffmpeg)");
 }
 
 /* === 4 quinquies. SON REGARD NE COÛTE PLUS UNE MESURE DE PAGE PAR MOUVEMENT ===
@@ -438,6 +462,71 @@ if (FFMPEG) {
       `page regardée : elle recligne aussitôt (${m.visible} battement(s) en 9 s contre ${m.cachee} cachée)`);
   }
   chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS sur le clignement');
+  await ctx.close();
+}
+
+/* === 4 septies. LE CHOIX DU PERSONNAGE : Bee ou Bourricot l'âne ==============
+   Kevin 2026-09-17 : « intègre l'âne de Lingua, avoir le choix des personnages ».
+   On ne vérifie pas que le code existe — on TAPE sur la pastille et on regarde ce qui
+   change vraiment : le dessin, la géométrie du visage, le nom, et la mémoire du choix. */
+{
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  await page.evaluate(() => { const b = document.querySelector('#javis-launcher'); if (b) b.click(); });
+  await dors(400);
+  const avant = await page.evaluate(() => {
+    const r = document.querySelector('#javis-launcher .bee-rig');
+    const img = r && r.querySelector('.rig-base');
+    return { masc: r && r.getAttribute('data-mascot'), src: img && img.getAttribute('src'),
+      ailes: r ? r.querySelectorAll('.rig-piece').length : -1,
+      nom: (document.querySelector('#javis-head b') || {}).textContent,
+      pastilles: document.querySelectorAll('#javis-masc .javis-mpick').length,
+      oeil: r ? getComputedStyle(r).getPropertyValue('--ll-t').trim() : '' };
+  });
+  chk(avant.pastilles === 2, `deux personnages proposés dans le panneau (${avant.pastilles} pastille(s))`);
+  chk(avant.masc === 'bee' && avant.ailes === 2,
+    `au départ c'est Bee, avec ses 2 ailes (${avant.masc}, ${avant.ailes} pièce(s))`);
+
+  await page.evaluate(() => {
+    const b = document.querySelector('#javis-masc .javis-mpick[data-masc="donkey"]');
+    if (b) b.click();
+  });
+  await dors(600);
+  const apres = await page.evaluate(() => {
+    const r = document.querySelector('#javis-launcher .bee-rig');
+    const img = r && r.querySelector('.rig-base');
+    let retenu = ''; try { retenu = localStorage.getItem('javis_mascotte') || ''; } catch (e) {}
+    return { masc: r && r.getAttribute('data-mascot'), src: img && img.getAttribute('src'),
+      ailes: r ? r.querySelectorAll('.rig-piece').length : -1,
+      nom: (document.querySelector('#javis-head b') || {}).textContent, retenu,
+      oeil: r ? getComputedStyle(r).getPropertyValue('--ll-t').trim() : '',
+      anime: r ? r.className : '' };
+  });
+  chk(apres.masc === 'donkey', `un doigt suffit : on passe à l'âne (${apres.masc})`);
+  chk(!!apres.src && apres.src !== avant.src && /\/donkey\/rig\/base\.webp$/.test(apres.src),
+    `c'est VRAIMENT son dessin qui s'affiche (${String(apres.src).replace('https://lingua.kd-mc.com/', '')})`);
+  chk(apres.ailes === 0, `l'âne n'a pas d'ailes : aucune image fantôme chargée (${apres.ailes} pièce(s))`);
+  chk(apres.oeil && apres.oeil !== avant.oeil,
+    `son visage a SA géométrie, pas celle de l'abeille (paupière à ${apres.oeil} contre ${avant.oeil})`);
+  chk(apres.nom === 'Bourricot', `il est appelé par son nom (${apres.nom})`);
+  chk(apres.retenu === 'donkey', `le choix est retenu pour la prochaine fois (${apres.retenu})`);
+
+  /* il doit être VIVANT, pas une image collée : la mise en vie est posée sur l'élément,
+     qui vient d'être remplacé — c'est l'oubli classique. */
+  await dors(1200);
+  const vivant = await page.evaluate(async () => {
+    const r = document.querySelector('#javis-launcher .bee-rig');
+    if (!r) return 0;
+    let n = 0;
+    const obs = new MutationObserver((l) => { n += l.length; });
+    obs.observe(r, { attributes: true, attributeFilter: ['class'] });
+    await new Promise((res) => setTimeout(res, 9000));
+    obs.disconnect();
+    return n;
+  });
+  chk(vivant > 0, vivant > 0 ? `et il est VIVANT (${vivant} battement(s) en 9 s, pas une image collée)`
+                             : "l'âne est figé : la mise en vie n'a pas été refaite après le changement");
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS au changement de personnage');
   await ctx.close();
 }
 
