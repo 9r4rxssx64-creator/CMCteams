@@ -385,6 +385,13 @@ après, la pub.
   dans `tests/produits-fabrique-navigateur.test.mjs` (test:ci seulement), la garde du workflow
   tourne nue. Leçon : « le runner a X » se mesure, ne se suppose pas (règle Kevin 17.09 « vérifie
   toujours tout réellement »).
+- **Deuxième lancement (run 35217571808) : 0/12** — ffmpeg refusait chaque carte, et mon journal
+  ne gardait que 3 lignes d'erreur (la cause était au-dessus). Reproduit EN LOCAL avec le vrai
+  ffmpeg (binaire npm `@ffmpeg-installer`, registre autorisé) : `drawbox` lit `w` comme la largeur
+  de la BOÎTE, pas de l'image → `(w-192)` explose ; c'est `iw`/`ih`. Corrigé + le journal garde
+  maintenant les 12 dernières lignes utiles + une ligne par voix. **Preuve locale de bout en bout**
+  (voix muette ici, l'egress bloque le domaine) : `avis-01.mp4` 1080×1920, 30 i/s, piste aac,
+  16,1 s, 256 Ko ; image extraite et regardée : texte lisible, marque, barre, compteur 1/5.
 
 ## 2026-09-17 après-midi — Fabrique de produits : 4 niches de plus, un seul moteur
 

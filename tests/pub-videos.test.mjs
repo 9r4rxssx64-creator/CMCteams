@@ -65,6 +65,7 @@ test('commandes ffmpeg : 1080×1920 à 30 i/s, texte lu depuis un fichier (aucun
   assert.ok(vf.includes('textfile=/tmp/t.txt') && vf.includes('fontcolor=0x0D0F14'), 'texte sombre sur fond clair, depuis un fichier');
   assert.ok(vf.includes("text='kit.kd-mc.com'") && vf.includes("text='2 / 5'"), 'marque + numéro de carte');
   assert.ok(vf.includes('fade=t=out:st=3.15'), 'fondu de sortie calé sur la durée');
+  assert.ok(vf.includes('drawbox=x=96:y=ih-140:w=(iw-192)*0.4') && !/drawbox=[^,]*\bw=\(w-/.test(vf), 'drawbox doit mesurer l\'IMAGE (iw/ih), pas la boîte (mesuré le 17.09 : `(w-192)` plante le filtre)');
   assert.ok(a.includes('/tmp/v.mp3') && !a.includes('anullsrc=r=24000:cl=mono'));
   assert.ok(a.includes('yuv420p') || vf.includes('format=yuv420p'), 'yuv420p sinon iPhone/TikTok refusent');
   const m = V.argsCarte({ carte: { ...carte, muet: true }, n: 5, theme: 'sombre', marque: 'kit.kd-mc.com', fichierTexte: '/tmp/t.txt', audio: null, sortie: '/tmp/c.mp4' });
