@@ -123,7 +123,7 @@ de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié �
 second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
 ## 2026-09-17 17:30 — Apex Chat v1.1.290 : audit complet passe 3, « stable et commercialisable »
 
-**Suite 17:55 UTC** : la CI de tests a rougi sur la branche (cliquet de couverture `ConversationDO.js`, j'avais mesuré en local **sans** `--coverage` — faux vert, leçon #272). Corrigé par 6 tests qui déclenchent les rappels d'erreur jamais exercés → 100 / 98,18 / 100 / 100, cliquet remonté, **71 fichiers · 1 347 tests**. PR #3890 ouverte par le robot ; second avis Qodo lancé dessus.
+**Suite 17:55 UTC** : la CI de tests a rougi sur la branche (cliquet de couverture `ConversationDO.js`, j'avais mesuré en local **sans** `--coverage` — faux vert, leçon #272). Corrigé par 6 tests qui déclenchent les rappels d'erreur jamais exercés → 100 / 98,18 / 100 / 100, cliquet remonté, **71 fichiers · 1 347 tests**. PR #3890 ouverte par le robot ; second avis Qodo lancé dessus. **18:05** : deuxième rouge CI, cette fois sur les deux voies iPhone (52 tests) — un drapeau Chromium posé dans le `use` global de Playwright empêchait WebKit de démarrer ; déplacé par projet (leçon #273).
 
 **Ce qui a été fait** (branche `claude/audit-apex-chat-commercial-1709`, 9 commits, 1 341 tests verts, 56/56 e2e Chromium) :
 - **P0 vie privée** : deux numéros réels en clair dans le workflow de déploiement (dépôt public) → secrets ; garde étendu à toute l'app + workflows.
