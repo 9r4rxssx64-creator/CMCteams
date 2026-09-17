@@ -121,6 +121,23 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   **coupé** → on ne détourne rien tant que `AC.state !== 'running'` (bouche en CSS) ; (b) sans
   `crossOrigin="anonymous"` l'analyseur ne lit que du silence ; (c) `<audio>` dépend de
   **`media-src`**, pas d'`img-src`.
+- **DEUX personnages au choix : Bee ou Bourricot l'âne (17.09, Kevin « intègre l'âne de Lingua,
+  avoir le choix des personnages »)** — les deux existaient **déjà dans Lingua** (dessins **et**
+  les 6 clips vidéo) : on les **réutilise tels quels**, aucun fichier dupliqué (leçon #142), et si
+  leur art évolue chez Lingua, Javis suit tout seul. **Un seul point de vérité** dans le widget
+  (`MASCOTTES`), comme `MASCOTS` dans `lingua/app.js` : dossier des images, dossier des clips,
+  prénom, genre, pièces articulées. Choix **à un doigt** dans l'en-tête du panneau (pastilles 44 px),
+  **retenu** (`javis_mascotte`), et le changement se fait **sans recharger la page**.
+  **Trois pièges, tous tenus par la garde** : (a) **l'âne n'a PAS d'ailes** — lui en déclarer =
+  deux images inexistantes chargées à chaque affichage (c'est pourquoi `RIG_PIECES` existe chez
+  Lingua) ; (b) **sa géométrie est la sienne** (paupières/bouche mesurées sur SON dessin dans
+  `lingua/index.html`, recopiées à l'identique — **mesuré en vrai : paupière à 39,3 % contre
+  29,6 % pour l'abeille**) ; (c) **il faut le REMETTRE EN VIE** après le changement — respiration,
+  clignement et regard sont posés sur l'élément, qui vient d'être remplacé : sans ça on obtient
+  une **image collée**. **Prouvé discriminant par sabotage** : mise en vie retirée → « l'âne est
+  figé » → échec. Bee : ses **images** sont dans `bee/v2/`, ses **clips** dans `bee/` — deux
+  dossiers différents, d'où les deux champs. Gardes : `test:javis-bee` **51/0** (les deux
+  personnages, chaque fichier cité vérifié) · `test:javis-bee-reelle` **42/0**.
 - **Elle FORME la voyelle qu'elle prononce — de vrais visèmes (17.09, Kevin « fais le, continu »)** :
   trois étapes dans la journée. (1) le matin, `scaleX` et `scaleY` étaient pilotés par **la même
   valeur** (le volume) → la bouche gonflait, forme toujours identique. (2) le centre de gravité du

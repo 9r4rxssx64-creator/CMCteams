@@ -2,6 +2,16 @@
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
+**0. Javis a maintenant DEUX personnages au choix : Bee ou Bourricot l'âne.** Kevin :
+« intègre l'âne de Lingua, avoir le choix ». Les deux existaient **déjà dans Lingua** (dessins et
+les 6 clips) : réutilisés tels quels, **aucun fichier dupliqué**. Choix à un doigt dans l'en-tête,
+**retenu**, changement **sans recharger**. **Mesuré en vrai navigateur** : on tape la pastille →
+`donkey/rig/base.webp` s'affiche, **0 aile** (l'âne n'en a pas : lui en donner = 2 images fantômes),
+paupière à **39,3 %** contre **29,6 %** pour l'abeille (sa géométrie, pas celle de Bee), nom
+« Bourricot », choix retenu, et **il est vivant (4 battements en 9 s)**. **Sabotage** : j'enlève la
+remise en vie → « l'âne est figé » → échec. Bee **v1.5**. Gardes : `test:javis-bee` **51/0**
+(12 contrôles neufs : chaque fichier des DEUX personnages), `test:javis-bee-reelle` **42/0**.
+
 **1 bis. Puis elle a appris à FORMER la voyelle qu'elle prononce — de vrais visèmes.** Kevin :
 « fais le, continu ». On ne se contente plus de « clair / sombre » : on lit les **deux résonances
 de la voix** (F1 = ouverture de la mâchoire, F2 = position de la langue), on compare aux **8
