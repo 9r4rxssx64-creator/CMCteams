@@ -150,6 +150,9 @@ prévenu de rien (accès annuel payé en une fois = zéro relance = zéro renouv
   (leur `.catch` affiche « Inscrit ! » quand même — leçon #103, le faux vert). Il faut la vraie clé publique
   (EmailJS → Account → General → « Public Key », publique par conception) : 1 copier-coller de Kevin, puis je
   la pose aux 7 endroits. Le service `service_318elaz` et le gabarit restent 🔴 non vérifiés jusque-là.
+  **→ 17.09 : Kevin a collé la vraie clé** (`nUso3vcsGadvrWTtC` — l'ancienne `nUsorWTtC` en était visiblement une copie
+  tronquée : mêmes 4 premiers et 5 derniers caractères). Posée aux **8 endroits** (`services/kdmc-vente/worker.js`,
+  `tools/club/semaine.mjs`, 6 boutiques `emailjs.init`). Preuve d'envoi réel : ci-dessous, section 17.09.
 - **MESURÉ sur le vrai domaine (audit-live run 35162308998, après fusion #3831)** : `kit.kd-mc.com/` ✅ **vitrine Club
   réelle : 1 consigne « Répondre à un avis négatif sans t'énerver »** (lue par le vrai worker sur la vraie base) ·
   `pour/index.html` ✅ **47 métiers listés** (le routeur sert bien le sous-dossier) · `pour/plombier.html` ✅ **5 situations,
