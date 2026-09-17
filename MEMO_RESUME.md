@@ -25,6 +25,8 @@ fois plus — une seule boucle, on annule le minuteur en attente.
 
 Gardes : `test:javis-bee` **39/0** (copies identiques à l'octet, 3 fichiers) · `test:javis-bee-reelle`
 **31/0** (vrai navigateur), dont **7 contrôles neufs**. Les deux nouveautés sont **prouvées
+Gardes : `test:javis-bee` **39/0** (copies identiques à l'octet, 3 fichiers) · `test:javis-bee-reelle`
+**28/0** (vrai navigateur), dont 5 contrôles neufs. Les deux nouveautés sont **prouvées
 discriminantes par sabotage**.
 
 **3. Toutes les apps du domaine disent maintenant quelle version elles servent.** La lecture de
