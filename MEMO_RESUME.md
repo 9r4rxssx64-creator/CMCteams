@@ -1396,6 +1396,28 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — Le jeton GitLab portait « api » (la clé de toute la boîte) — resserré
+
+**Mesuré** (run 35243309740), et c'était pire que prévu. Le jeton « Kdmc project » portait :
+`api, read_api, self_rotate, read_repository, write_repository, read_registry, write_registry,
+ai_features`. **`api` seul donne l'écriture sur TOUT le projet** : réglages, membres, variables
+de CI (donc les autres secrets), suppression de branches. Pour un jeton rangé dans un secret
+GitHub d'un dépôt **public**, c'est bien trop. Il n'a besoin que de deux choses : **pousser du
+code** et **lire un résultat de pipeline**. Fin prévue le 2027-01-31 — au moins il expire.
+
+**GitLab ne sait pas modifier les portées d'un jeton existant** : il faut en créer un neuf et
+révoquer l'ancien. C'est l'ORDRE qui rend l'opération sûre, et il est écrit dans le workflow :
+**créer → vérifier que le neuf marche vraiment → l'installer dans le secret → révoquer l'ancien.**
+À la moindre anicroche avant la fin, le neuf est révoqué et **l'ancien reste en place** : on ne se
+met jamais dehors soi-même. L'écriture du secret passe par `gh secret set` (chiffrement géré par
+l'outil) avec `APEX_GITHUB_PAT` ; PAT absent → on s'arrête **avant** d'avoir touché à quoi que ce soit.
+
+**Garde apprise au passage** : elle vérifiait « chaque ligne `curl` » — mais une commande coupée
+sur trois lignes n'est pas trois commandes. Elle **recolle** maintenant les continuations avant de
+contrôler, et accepte n'importe quelle variable de jeton (`${JETON}`, `${NEUF}`). **Prouvée
+discriminante** : en-tête retiré de la création du jeton → sortie **1** avec la commande fautive
+citée ; restauré → **35 contrôles, 0 échec**.
+
 ## 2026-09-17 — « Change les autorisations du jeton GitLab » : d'abord MESURER ce qu'il porte
 
 On ne resserre pas des autorisations qu'on n'a jamais lues. Le workflow sait maintenant

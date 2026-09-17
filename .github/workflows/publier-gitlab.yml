@@ -44,6 +44,10 @@ on:
         description: "Dire ce que le jeton porte vraiment (portées, date de fin) — aucune valeur affichée"
         type: boolean
         default: false
+      resserrer_jeton:
+        description: "Remplacer le jeton par un jeton MINIMAL (write_repository + read_api) et révoquer l'ancien"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -95,6 +99,84 @@ jobs:
             exit 0
           fi
           python3 -c "import json;d=json.load(open('/tmp/jeton.json'));print('nom           :',d.get('name'));print('portees       :',', '.join(d.get('scopes') or []) or '(aucune)');print('actif         :',d.get('active'),'| revoque :',d.get('revoked'));print('cree le       :',(d.get('created_at') or '')[:10],'| expire le :',d.get('expires_at') or '(jamais - a eviter)');print('derniere util :',(d.get('last_used_at') or '')[:10] or '(jamais)')"
+
+      # RESSERRER LES AUTORISATIONS — mesuré le 17.09 : le jeton portait « api »,
+      # c'est-à-dire la clé de toute la boîte (réglages du projet, membres, variables
+      # de CI, suppression de branches…). Or il n'a besoin que de DEUX choses :
+      # pousser du code, et lire un résultat de pipeline.
+      #
+      # GitLab ne sait pas modifier les portées d'un jeton existant : il faut en créer
+      # un neuf et révoquer l'ancien. L'ORDRE est ce qui rend l'opération sûre —
+      # créer, VÉRIFIER que le neuf marche, l'installer, et seulement ALORS révoquer.
+      # Si quoi que ce soit échoue avant la fin, l'ancien jeton est toujours en place
+      # et la chaîne continue de fonctionner : on ne se met jamais dehors soi-même.
+      - name: Resserrer les autorisations du jeton (création, vérification, bascule, révocation)
+        if: ${{ inputs.resserrer_jeton }}
+        env:
+          JETON: ${{ secrets.GITLAB_TOKEN }}
+          PAT: ${{ secrets.APEX_GITHUB_PAT }}
+        run: |
+          set -uo pipefail
+          API="https://gitlab.com/api/v4"
+          PROJ=85753352
+          MINI='write_repository read_api'
+
+          if [ -z "${PAT}" ]; then
+            echo "::error::Le secret APEX_GITHUB_PAT est absent : je ne peux pas réécrire GITLAB_TOKEN."
+            echo "Rien n'a été touché, l'ancien jeton fonctionne toujours."
+            exit 1
+          fi
+
+          echo "→ 1/5 état de l'ancien jeton"
+          CODE=$(curl -sS -o /tmp/vieux.json -w '%{http_code}' -H "PRIVATE-TOKEN: ${JETON}" "${API}/personal_access_tokens/self")
+          if [ "${CODE}" != "200" ]; then
+            echo "::error::Impossible de lire le jeton actuel (HTTP ${CODE}) — rien touché."; exit 1
+          fi
+          VIEUX_ID=$(python3 -c "import json;print(json.load(open('/tmp/vieux.json'))['id'])")
+          python3 -c "import json;d=json.load(open('/tmp/vieux.json'));print('   avant :',', '.join(d['scopes']))"
+
+          echo "→ 2/5 création d'un jeton minimal (${MINI})"
+          FIN=$(date -u -d '+364 days' +%F)
+          CODE=$(curl -sS -o /tmp/neuf.json -w '%{http_code}' -X POST \
+            -H "PRIVATE-TOKEN: ${JETON}" -H "Content-Type: application/json" \
+            -d "{\"name\":\"cmcteams-veille (minimal)\",\"scopes\":[\"write_repository\",\"read_api\"],\"expires_at\":\"${FIN}\",\"access_level\":40}" \
+            "${API}/projects/${PROJ}/access_tokens")
+          if [ "${CODE}" != "201" ]; then
+            echo "::error::GitLab refuse de créer le jeton minimal (HTTP ${CODE})."
+            python3 -c "print(open('/tmp/neuf.json').read()[:400])" || true
+            echo "Rien n'a été touché : l'ancien jeton fonctionne toujours."
+            exit 1
+          fi
+          NEUF=$(python3 -c "import json;print(json.load(open('/tmp/neuf.json'))['token'])")
+          echo "::add-mask::${NEUF}"
+          NEUF_ID=$(python3 -c "import json;print(json.load(open('/tmp/neuf.json'))['id'])")
+          rm -f /tmp/neuf.json
+
+          echo "→ 3/5 vérification du jeton neuf AVANT de basculer"
+          CODE=$(curl -sS -o /tmp/v1.json -w '%{http_code}' -H "PRIVATE-TOKEN: ${NEUF}" "${API}/personal_access_tokens/self")
+          OK1=$(python3 -c "import json;d=json.load(open('/tmp/v1.json'));print('oui' if sorted(d.get('scopes',[]))==['read_api','write_repository'] else 'non')" 2>/dev/null || echo non)
+          CODE2=$(curl -sS -o /dev/null -w '%{http_code}' -H "PRIVATE-TOKEN: ${NEUF}" "${API}/projects/${PROJ}/pipelines?per_page=1")
+          echo "   portées exactes : ${OK1} | lecture des pipelines : HTTP ${CODE2}"
+          if [ "${CODE}" != "200" ] || [ "${OK1}" != "oui" ] || [ "${CODE2}" != "200" ]; then
+            echo "::error::Le jeton neuf ne fait pas ce qu'il faut — je le révoque et je garde l'ancien."
+            curl -sS -o /dev/null -X DELETE -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects/${PROJ}/access_tokens/${NEUF_ID}" || true
+            exit 1
+          fi
+
+          echo "→ 4/5 installation dans le secret GitHub"
+          if ! printf '%s' "${NEUF}" | GH_TOKEN="${PAT}" gh secret set GITLAB_TOKEN --repo "${GITHUB_REPOSITORY}" 2>/tmp/gh.txt; then
+            echo "::error::Écriture du secret refusée — le jeton neuf est révoqué, l'ancien reste en place."
+            sed -e "s#${PAT}#***#g" -e "s#${NEUF}#***#g" /tmp/gh.txt || true
+            curl -sS -o /dev/null -X DELETE -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects/${PROJ}/access_tokens/${NEUF_ID}" || true
+            exit 1
+          fi
+          echo "   secret GITLAB_TOKEN réécrit"
+
+          echo "→ 5/5 révocation de l'ancien jeton (id ${VIEUX_ID})"
+          CODE=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects/${PROJ}/access_tokens/${VIEUX_ID}")
+          echo "   révocation : HTTP ${CODE}"
+          echo ""
+          echo "Fait. Le jeton ne porte plus que write_repository + read_api, et expire le ${FIN}."
 
       - name: Refuser toute cible dangereuse
         env:
