@@ -89,6 +89,10 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > Metricool → *Connections* → Facebook, avec le profil **Kevin Mc** (admin de la Page).
 > Réglages de la Page à corriger (vus sur la capture) : bio « Viral » et catégorie
 > « Musique/groupe » ne collent pas au Kit IA → bio proposée + catégorie « Formation ».
+> **13:05 — bio + « Formation » faits par Kevin.** Essai Metricool → Facebook : écran « précédemment
+> connecté… ne permet pas de publier » puis « no page bound to this account » = **cause n°4**
+> (autorisation du 16.09 donnée AVANT la création de la Page). Correctif donné : Facebook →
+> Paramètres → Intégrations professionnelles → retirer Metricool → reconnecter en cochant Kdmc.
 
 #### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
 
