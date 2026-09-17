@@ -51,6 +51,18 @@ const CORS_HEADERS = {
 
 const json = makeJson(CORS_HEADERS);
 
+// Audit 17/09/2026 (P1) : 18 handlers faisaient `await request.json()` sans garde → un corps
+// mal formé levait une SyntaxError attrapée par le catch GLOBAL = réponse 500 « erreur interne »
+// + une entrée dans la file de télémétrie, pour une faute du client. readJson() lève une
+// BadJsonError que le catch global traduit en 400 `bad_json`, sans télémétrie.
+class BadJsonError extends Error {
+  constructor(cause) { super('Corps de requête JSON invalide'); this.name = 'BadJsonError'; this.cause = cause; }
+}
+async function readJson(request) {
+  try { return await request.json(); }
+  catch (e) { throw new BadJsonError(e); }
+}
+
 // err() — règle CLAUDE.md "détailler les erreurs partout" :
 // message = soft (user), detail = cause EXACTE (diagnostic). detail accepte string ou objet.
 function err(message, status = 400, code = 'error', detail) {
@@ -516,7 +528,7 @@ export async function handleTrustedCircle(request, env, method) {
 }
 
 export async function handleSendOtp(request, env) {
-  const { phone, name } = await request.json();
+  const { phone, name } = await readJson(request);
   if (!phone || !/^\+?\d{8,15}$/.test(phone)) return err('Numéro invalide', 400);
   // Règle Kevin : prénom + nom obligatoires (2 tokens ≥2 chars), sécurité anti-impersonation
   // Exception : admin Kevin reconnu via téléphone secret peut ne pas avoir 2 tokens
@@ -1078,7 +1090,7 @@ export async function handleTestCleanup(request, env) {
 export async function handleSsoFromApex(request, env) {
   // P0 FIX (audit) : SSO avec vérification réelle JWT Apex
   // Kevin doit signer avec APEX_SSO_SIGN_KEY (HMAC HS256 partagée Apex ↔ Apex Chat)
-  const { apex_token, apex_uid, name, phone } = await request.json();
+  const { apex_token, apex_uid, name, phone } = await readJson(request);
   if (!apex_token || !apex_uid) return err('Token Apex manquant', 400);
 
   // Vérification HMAC HS256 du token Apex
@@ -1694,7 +1706,7 @@ export async function handleCreateConversation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { type, name, members } = await request.json();
+  const { type, name, members } = await readJson(request);
   if (!['dm', 'group', 'community', 'channel'].includes(type)) return err('Type invalide');
   if (!Array.isArray(members) || members.length < 1) return err('Membres requis');
   const DB = env.APEX_CHAT_DB;
@@ -2766,7 +2778,7 @@ async function handleCreateInvitation(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { phone, name, sent_via } = await request.json();
+  const { phone, name, sent_via } = await readJson(request);
   if (!phone) return err('Numéro requis');
 
   const config = await getModeConfig(env);
@@ -2892,7 +2904,7 @@ async function handleAdminCommand(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { command, params, confirm_token } = await request.json();
+  const { command, params, confirm_token } = await readJson(request);
   const destructive = ['kickUser', 'banUser', 'unbanUser', 'deleteConv', 'exportConv', 'forceLogout'];
 
   if (destructive.includes(command) && !confirm_token) {
@@ -3074,7 +3086,7 @@ export async function handleAdminWhitelistBulk(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { entries } = await request.json();
+  const { entries } = await readJson(request);
   if (!Array.isArray(entries) || entries.length === 0) return err('entries requis (array de {phone, name?})');
   if (entries.length > 100) return err('Max 100 numéros par batch');
 
@@ -3159,7 +3171,7 @@ export async function handleAdminInviteMagic(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { phone, name, pseudo } = await request.json();
+  const { phone, name, pseudo } = await readJson(request);
   if (!phone) return err('Numéro requis');
   const normalizedPhone = String(phone).replace(/[^\d+]/g, '');
   if (!normalizedPhone.startsWith('+') || normalizedPhone.length < 10) {
@@ -3235,7 +3247,7 @@ export async function handleAdminInviteMagic(request, env) {
 
 // Auth via magic link (pas d'OTP requis — admin a pré-autorisé)
 export async function handleMagicLogin(request, env) {
-  const { magic_token } = await request.json();
+  const { magic_token } = await readJson(request);
   if (!magic_token) return err('Token requis');
 
   const payload = await verifyJWT(magic_token, env.JWT_SIGN_KEY);
@@ -3773,7 +3785,7 @@ export async function handleAdminSetToggle(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth || !auth.is_admin) return err('Admin requis', 403);
 
-  const { feature, enabled, user_id } = await request.json();
+  const { feature, enabled, user_id } = await readJson(request);
   if (!feature) return err('feature requis');
 
   if (user_id) {
@@ -3905,7 +3917,7 @@ export async function handleAddMember(convId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { user_id, role } = await request.json();
+  const { user_id, role } = await readJson(request);
   if (!user_id) return err('user_id requis');
 
   // Vérifier que auth est owner ou admin de la conv
@@ -4064,7 +4076,7 @@ async function handleUpdateConv(convId, request, env) {
   ).bind(convId, auth.sub).first();
   if (!me || !['owner', 'admin'].includes(me.role)) return err('Droits insuffisants', 403);
 
-  const { name, description, avatar_url, disappearing_seconds } = await request.json();
+  const { name, description, avatar_url, disappearing_seconds } = await readJson(request);
   const updates = [];
   const values = [];
   if (name !== undefined) { updates.push('name=?'); values.push(name); }
@@ -4088,7 +4100,7 @@ export async function handleCreateStory(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { ciphertext, mime } = await request.json();
+  const { ciphertext, mime } = await readJson(request);
   if (!ciphertext) return err('ciphertext requis');
   if (ciphertext.length > 200000) return err('Story trop volumineuse (max 200KB)', 413);
 
@@ -4154,7 +4166,7 @@ export async function handleCreatePoll(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { conv_id, msg_id, question, options, multi_choice, anonymous, closes_at } = await request.json();
+  const { conv_id, msg_id, question, options, multi_choice, anonymous, closes_at } = await readJson(request);
   if (!conv_id || !msg_id || !question || !Array.isArray(options) || options.length < 2) {
     return err('question + 2 options minimum requis');
   }
@@ -4181,7 +4193,7 @@ export async function handleVotePoll(pollId, request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { option_indexes } = await request.json();
+  const { option_indexes } = await readJson(request);
   if (!Array.isArray(option_indexes) || option_indexes.length === 0) return err('option_indexes requis');
 
   const poll = await env.APEX_CHAT_DB.prepare('SELECT * FROM polls WHERE id=?').bind(pollId).first();
@@ -4226,7 +4238,7 @@ export async function handleCreateTimeCapsule(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { recipient_id, conv_id, ciphertext, mime, open_at, preview } = await request.json();
+  const { recipient_id, conv_id, ciphertext, mime, open_at, preview } = await readJson(request);
   if (!recipient_id || !ciphertext || !open_at) return err('recipient_id + ciphertext + open_at requis');
   if (ciphertext.length > 200000) return err('Capsule trop volumineuse (max 200KB)', 413);
 
@@ -4306,7 +4318,7 @@ async function handleCreateLetter(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { conv_id, ciphertext, delay_hours } = await request.json();
+  const { conv_id, ciphertext, delay_hours } = await readJson(request);
   if (!conv_id || !ciphertext) return err('conv_id + ciphertext requis');
 
   // Vérifier membership
@@ -4469,7 +4481,7 @@ async function handleIAChat(request, env) {
   // Sans auth, n'importe qui pouvait épuiser le quota/facturer. Réservé aux users connectés.
   const user = await getAuthUser(request, env);
   if (!user) return err('Unauthorized', 401);
-  const { messages, systemPrompt, context } = await request.json();
+  const { messages, systemPrompt, context } = await readJson(request);
   if (!Array.isArray(messages) || messages.length === 0) return err('messages required');
 
   const sysPrompt = systemPrompt || `Tu es Apex, l'assistant IA d'Apex Chat (messagerie privee).
@@ -5408,7 +5420,7 @@ export async function handleSignalement(request, env) {
   const auth = await getAuthUser(request, env);
   if (!auth) return err('Non authentifié', 401);
 
-  const { target_user_id, conv_id, msg_id, reason, description } = await request.json();
+  const { target_user_id, conv_id, msg_id, reason, description } = await readJson(request);
   if (!target_user_id || !reason) return err('target_user_id + reason requis');
 
   const id = crypto.randomUUID();
@@ -5745,6 +5757,9 @@ const _workerHandler = {
 
       return err('Route inconnue', 404);
     } catch (e) {
+      if (e instanceof BadJsonError) {
+        return err('Corps de requête invalide (JSON attendu)', 400, 'bad_json', { detail: e.cause && e.cause.message, path });
+      }
       console.error('API error', path, method, e.message, e.stack);
       // Push télémétrie vers Apex
       ctx.waitUntil(env.TELEMETRY_QUEUE?.send({
