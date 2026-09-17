@@ -277,27 +277,55 @@
       setTimeout(blink, dormi ? 9000 : (2200 + Math.random() * 3600));
     })();
 
-    function suivre(cx, cy) {
-      if (dormi) return;
-      /* elle cherche : elle regarde ailleurs, elle ne te fixe pas */
-      if (rig.classList.contains('rx-reflechit')) return;
-      var r = rig.getBoundingClientRect();
-      if (!r.width) return;
-      var dx = Math.max(-1, Math.min(1, (cx - (r.left + r.width / 2)) / (r.width * 0.9)));
-      var dy = Math.max(-1, Math.min(1, (cy - (r.top + r.height / 2)) / (r.height * 0.9)));
+    /* SON REGARD NE DOIT PAS COUTER UNE MESURE DE PAGE PAR MOUVEMENT DE DOIGT
+       (Kevin 2026-09-17 « performe »). Avant : chaque evenement pointermove appelait
+       getBoundingClientRect() -- ce qui FORCE le navigateur a recalculer la mise en page --
+       puis ecrivait 3 variables CSS. Un doigt qui glisse envoie jusqu'a ~120 evenements par
+       seconde : autant de recalculs, pour au mieux 60 images affichees. La moitie du travail
+       ne servait a rien, et sur iPhone ca se sent.
+       Maintenant : (a) sa position est MISE EN CACHE et seulement re-mesuree quand elle peut
+       avoir bouge (defilement, rotation, redimensionnement) ; (b) l'ecriture est groupee sur
+       la PROCHAINE IMAGE (requestAnimationFrame) -- au plus une par image, jamais deux. */
+    var rRig = null, pend = 0, cxL = 0, cyL = 0;
+    function majRect() { rRig = null; }
+    function ecrire() {
+      pend = 0;
+      if (dormi || rig.classList.contains('rx-reflechit')) return;
+      if (!rRig || !rRig.width) { rRig = rig.getBoundingClientRect(); }
+      var r = rRig; if (!r.width) return;
+      var dx = Math.max(-1, Math.min(1, (cxL - (r.left + r.width / 2)) / (r.width * 0.9)));
+      var dy = Math.max(-1, Math.min(1, (cyL - (r.top + r.height / 2)) / (r.height * 0.9)));
       look.style.setProperty('--lx', (dx * 3.2).toFixed(2) + '%');
       look.style.setProperty('--ly', (dy * 2.2).toFixed(2) + '%');
       look.style.setProperty('--lr', (dx * 4.5).toFixed(2) + 'deg');
     }
+    function suivre(cx, cy) {
+      if (dormi) return;
+      /* elle cherche : elle regarde ailleurs, elle ne te fixe pas */
+      if (rig.classList.contains('rx-reflechit')) return;
+      cxL = cx; cyL = cy;
+      if (!pend) pend = requestAnimationFrame(ecrire);
+    }
     function onMove(e) { var p = (e.touches && e.touches[0]) || e; if (p) suivre(p.clientX, p.clientY); reveille(); }
     document.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('scroll', majRect, { passive: true });
+    window.addEventListener('resize', majRect, { passive: true });
+    window.addEventListener('orientationchange', majRect, { passive: true });
 
     function reveille() {
       lastTouch = Date.now();
       if (dormi) { dormi = false; rig.classList.remove('dort'); react(rig, 'coucou', 1500); }
     }
     (function veille() {
-      if (!document.contains(rig)) { document.removeEventListener('pointermove', onMove); return; }
+      if (!document.contains(rig)) {
+        /* elle a quitte la page : on retire TOUT ce qu'on a pose, sinon ca fuit */
+        document.removeEventListener('pointermove', onMove);
+        window.removeEventListener('scroll', majRect);
+        window.removeEventListener('resize', majRect);
+        window.removeEventListener('orientationchange', majRect);
+        if (pend) { try { cancelAnimationFrame(pend); } catch (_) {} pend = 0; }
+        return;
+      }
       if (!dormi && Date.now() - lastTouch > (opts.sommeil || 120000)) {
         dormi = true;
         rig.classList.add('dort');
@@ -543,6 +571,8 @@
       an.fftSize = 256; an.smoothingTimeConstant = 0.55;
       audioEl._srcNode.connect(an);
       var buf = new Uint8Array(an.fftSize), raf = 0, maxR = 0, plat = false;
+      var fbuf = new Uint8Array(an.frequencyBinCount);   /* le SPECTRE, pas que le volume */
+      var bLis = 0.5;                                     /* brillance lissee (0 sombre, 1 claire) */
       var t0 = Date.now();
       bouches.forEach(function (m) { m.classList.remove('talking'); m.style.opacity = '1'; });
       function frame() {
@@ -552,8 +582,31 @@
         var rms = Math.sqrt(acc / buf.length);
         if (rms > maxR) maxR = rms;
         var ouv = Math.max(0, Math.min(1, (rms - 0.01) * 7));
-        var t = 'translate(-50%,-50%) scaleY(' + (0.3 + ouv * 1.6).toFixed(2) +
-                ') scaleX(' + (1 + ouv * 0.4).toFixed(2) + ')';
+        /* LA FORME DE LA BOUCHE, PAS SEULEMENT SA TAILLE (Kevin 2026-09-17 « va plus loin »).
+           Avant, scaleX et scaleY etaient pilotes par LA MEME valeur (le volume) : la bouche
+           grossissait et retrecissait, toujours a la meme forme -- elle ne pouvait pas faire la
+           difference entre un « ii » (large et plat) et un « ou » (rond et haut).
+           Maintenant le VOLUME dit combien elle s'ouvre, et le CENTRE DE GRAVITE DU SPECTRE dit
+           quelle forme elle prend : son sombre (graves dominants : o, ou, a) -> bouche RONDE ;
+           son clair (aigus dominants : i, e, s) -> bouche LARGE et PLATE.
+           Ce n'est toujours pas du visème par phonème (il faudrait un moteur d'avatar), mais
+           ce n'est plus une bouche qui ne fait que gonfler. Honnête : c'est une approximation
+           par formants, elle ne forme pas un « o » sur un « o ». */
+        an.getByteFrequencyData(fbuf);
+        var num = 0, den = 0;
+        for (i = 0; i < fbuf.length; i++) { num += i * fbuf[i]; den += fbuf[i]; }
+        if (den > 0) {
+          var centre = (num / den) / fbuf.length;                    /* 0 = graves, 1 = aigus */
+          var b = Math.max(0, Math.min(1, (centre - 0.05) * 3.2));   /* la voix vit dans le bas */
+          bLis = bLis * 0.7 + b * 0.3;                               /* lisse : pas de tremblement */
+        }
+        /* la forme ne s'applique QUE quand elle parle : au silence on retombe exactement sur
+           l'ancien repos (scaleY 0.30 / scaleX 1.00) -- aucune regression sur la garde. */
+        var forme = ouv;
+        var large = 1 + (bLis - 0.5) * 0.9 * forme;
+        var haut  = 1 - (bLis - 0.5) * 0.7 * forme;
+        var t = 'translate(-50%,-50%) scaleY(' + ((0.3 + ouv * 1.6) * haut).toFixed(2) +
+                ') scaleX(' + ((1 + ouv * 0.4) * large).toFixed(2) + ')';
         bouches.forEach(function (m) { m.style.transform = t; });
         /* amplitude plate pendant 500 ms = analyse muette (codec/navigateur) -> repli CSS */
         if (!plat && Date.now() - t0 > 500 && maxR < 0.012) {
