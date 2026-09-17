@@ -1253,6 +1253,45 @@ Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écar
 - 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
   mise en garde « t'y connecter dit qui tu es »).
 
+## 2026-09-17 — Vérification de mes documents, liens, accès et outils (demande de Kevin)
+
+Tout mesuré, rien supposé. Deux vraies trouvailles, dont une qui me concernait directement.
+
+**🔴 TROUVAILLE PRINCIPALE — `test:ci` n'est exécuté par AUCUN workflow GitHub.** Un `grep`
+naïf renvoie 7 fichiers ; en filtrant les commentaires, **0 ligne l'exécute**. Seul le job
+`tests` de GitLab le lance — et GitLab est injoignable sans jeton. Donc toute garde câblée
+*uniquement* dans `test:ci` ne tourne **nulle part** : faux vert (leçon #103). Vérifiées comme
+telles : `test:docs-frais`, `test:maj-forcee`, `test:departs-integrity`, `test:messages-suivis`,
+et **`test:tor` — la mienne**. Corrigé : `test:tor` rejoint le job `gardes-depot-public` de
+`tests.yml`, le seul qui tourne vraiment sur chaque PR/push (8 gardes, node seul, ~20 s) ;
+les 9 gardes de ce job re-testées une par une **sans `node_modules`**. Je n'ai pas touché aux
+gardes des autres sessions — message `m087` déposé pour qu'elles décident elles-mêmes.
+
+**🟠 TROUVAILLE ANNEXE — `test:pipeline-sessions` est aveugle en CI.** Il est déjà dans ce job
+et passe au vert sur `main`… alors qu'il **échoue en local**. Cause : `tests.yml` fait son
+checkout **sans `fetch-depth`** → aucune branche distante visible → la garde ne contrôle rien.
+En local elle signale 2 branches actives non inscrites (`claude/printify-order-config-…`,
+`claude/worker-config-…`) — à leurs propriétaires.
+
+**Accès réels (re-mesurés)** : `api.github.com` 200 · `raw.githubusercontent.com` 301 ·
+`gitlab.com` 301 · npm 200. **Bloqués** : `kd-mc.com`, `tor.kd-mc.com`, `api.cloudflare.com`,
+`bbc.com`, `torproject.org`, `proton.me`, `nytimes.com`, `securedrop.org` → **HTTP 000**.
+
+**Liens donnés à Kevin** : les 3 fichiers cités répondent 200 sur `main` ; les deux pages à
+cliquer répondent 302 (GitLab, redirection login) et 403 (GitHub, page privée) — normal, elles
+existent et demandent sa session ; je ne peux pas les ouvrir à sa place.
+
+**Outils** : 9/9 scripts npm promis existent · 7/7 fichiers existent · `publier-gitlab.yml`
+**enregistré et actif** côté GitHub (id 360625774, déclenchable par l'API) · 99 skills ·
+21 commandes · 155 workflows actifs · 218 scripts npm.
+
+**Documents** : les 8 documents racine sont là. Deux dérives, sans gravité et déjà signalées
+par le document lui-même : `CLAUDE.md` cite `CMC v9.891` alors que le code est en **v9.903**,
+et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une vieille session).
+
+**État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
+`main` pour mon dernier commit : **success**.
+
 ## 2026-09-17 — Le jeton GitLab : le chemin qui marche SANS le faire passer par le chat
 
 Kevin : *« Je te donne le jeton GitLab ici ? Passe par l'autre session sinon… »* → **non aux deux**,
