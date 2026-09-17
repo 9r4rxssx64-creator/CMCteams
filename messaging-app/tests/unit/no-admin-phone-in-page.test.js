@@ -83,6 +83,27 @@ describe('Vie privée — aucun numéro de téléphone réel dans le dépôt', (
     expect(fautifs, 'Un numéro non listé est apparu dans les tests :\n' + fautifs.join('\n')).toEqual([]);
   });
 
+  // 17/09/2026 (audit P0) : deux numéros RÉELS vivaient en clair dans
+  // `.github/workflows/deploy-apex-chat.yml` sous un commentaire disant « jamais dans le
+  // repo ». Ce garde ne regardait que la page et les tests → il passait au vert. Il couvre
+  // désormais TOUT le dossier de l'app (code, workers, docs, config) et TOUS les workflows.
+  it("ni le reste de l'app, ni les workflows GitHub ne portent un numéro réel", () => {
+    const racines = [APP, join(APP, '..', '.github', 'workflows')];
+    const exclus = /\/(node_modules|coverage|test-results|playwright-report|tests)\//;
+    const fautifs = [];
+    const walk = (dir) => {
+      for (const n of readdirSync(dir)) {
+        const p = join(dir, n);
+        if (statSync(p).isDirectory()) { if (!exclus.test(p + '/')) walk(p); continue; }
+        if (!/\.(m?js|html|md|toml|ya?ml|json|sh|txt|sql)$/.test(n)) continue;
+        const t = inconnus(readFileSync(p, 'utf8'), [...EXEMPLES_PAGE, ...FIXTURES_TESTS]);
+        if (t.length) fautifs.push(`${p.replace(APP + '/', '')} → ${t.join(', ')}`);
+      }
+    };
+    for (const r of racines) walk(r);
+    expect(fautifs, 'Numéro réel trouvé hors des exemples autorisés :\n' + fautifs.join('\n')).toEqual([]);
+  });
+
   it('garde discriminant : un numéro inconnu est bien détecté', () => {
     expect(inconnus('appelle le +33 6 55 44 33 22 ce soir', EXEMPLES_PAGE)).toEqual(['+33 6…']);
     expect(inconnus('appelle le 0698765432', EXEMPLES_PAGE)).toEqual([]); // exemple autorisé
