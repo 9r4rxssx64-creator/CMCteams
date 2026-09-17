@@ -110,7 +110,17 @@ function sonDeTest(hz = sonHz) {
        de ses deux résonances mélangées. C'est ce qui permet de vérifier qu'elle forme la
        bonne bouche sur un « ou » et sur un « i » — pas seulement qu'elle réagit au volume. */
     const paires = String(hz).split('+').map(Number);
-    if (paires.length === 2) {
+    if (String(hz).startsWith('bruit')) {
+      /* une FRICATIVE de synthèse : du souffle, c'est-à-dire du bruit dont on a coupé tout
+         le grave. C'est exactement ce qu'est un « s » ou un « ch » — aucune résonance
+         basse, toute l'énergie en haut du spectre. */
+      const f = Number(String(hz).split('-')[1] || 3500);
+      execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
+        '-f', 'lavfi', '-i', 'anoisesrc=c=white:r=44100:d=1.2:a=0.9',
+        '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
+        '-filter_complex', `[0:a]highpass=f=${f}:poles=2,highpass=f=${f}:poles=2,volume=6[v];[v][1:a]concat=n=2:v=0:a=1`,
+        '-c:a', 'libmp3lame', '-b:a', '192k', '-y', out], { stdio: 'ignore' });
+    } else if (paires.length === 2) {
       execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
         '-f', 'lavfi', '-i', `sine=frequency=${paires[0]}:duration=1.2`,
         '-f', 'lavfi', '-i', `sine=frequency=${paires[1]}:duration=1.2`,
@@ -118,11 +128,15 @@ function sonDeTest(hz = sonHz) {
         '-filter_complex', '[0:a][1:a]amix=inputs=2:normalize=0[v];[v][2:a]concat=n=2:v=0:a=1',
         '-c:a', 'libmp3lame', '-b:a', '128k', '-y', out], { stdio: 'ignore' });
     } else {
+      /* `volume=3` : une VOYELLE de test est faite de DEUX tons mélangés, donc deux fois
+         plus forte qu'un ton seul (mesuré : poids 0.50 contre 0.76). Sans ce rattrapage on
+         ne comparerait pas des FORMES de bouche mais des volumes. Reste à -12 dBFS : aucun
+         écrêtage, donc aucune harmonique parasite qui fausserait le spectre. */
       execFileSync(FFMPEG, ['-hide_banner', '-v', 'error',
         '-f', 'lavfi', '-i', `sine=frequency=${hz}:duration=1.2`,
         '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono:d=0.9',
-        '-filter_complex', '[0:a][1:a]concat=n=2:v=0:a=1',
-        '-c:a', 'libmp3lame', '-b:a', '64k', '-y', out], { stdio: 'ignore' });
+        '-filter_complex', '[0:a]volume=3[v];[v][1:a]concat=n=2:v=0:a=1',
+        '-c:a', 'libmp3lame', '-b:a', '128k', '-y', out], { stdio: 'ignore' });
     }
   }
   const b = fs.readFileSync(out);
@@ -279,7 +293,12 @@ if (FFMPEG) {
     const pilotes = releves.filter((r) => r.inline);
     if (!pilotes.length) return { pilote: false, n: releves.length };
     const debut = pilotes[0].t;
-    const dans = (a, b) => pilotes.filter((r) => r.t - debut >= a && r.t - debut < b).map((r) => r.y);
+    /* on mesure l'ECART AU REPOS (0.30), pas la hauteur : depuis qu'elle reconnaît les
+       consonnes, un son grave lui fait FERMER les lèvres (0.10) — c'est-à-dire s'éloigner
+       du repos vers le BAS. Mesurer « le maximum de y » ne verrait rien de ce mouvement,
+       alors que c'est exactement le même phénomène : la bouche est pilotée par le son. */
+    const dans = (a, b) => pilotes.filter((r) => r.t - debut >= a && r.t - debut < b)
+      .map((r) => Math.abs(r.y - 0.30));
     const max = (v) => (v.length ? Math.max(...v) : 0);
     return { pilote: true, n: pilotes.length,
       fort: max(dans(60, 1050)),        /* le son : 1,2 s de note franche */
@@ -292,7 +311,7 @@ if (FFMPEG) {
       : "la bouche n'est pas pilotée par le son (repli CSS — moteur audio indisponible ici)");
     if (mesures.pilote) {
       chk(mesures.fort > mesures.calme * 1.3,
-        `elle s'ouvre sur le son et se referme sur le silence (${mesures.fort.toFixed(2)} → ${mesures.calme.toFixed(2)})`);
+        `sa bouche BOUGE sur le son et revient au repos sur le silence (écart au repos ${mesures.fort.toFixed(2)} → ${mesures.calme.toFixed(2)})`);
     }
   }
   chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS pendant la parole');
@@ -341,8 +360,9 @@ if (FFMPEG) {
         if (rel.length > 25 && !lire()) break;
       }
       /* on ne regarde QUE les images où elle est vraiment en train de prononcer :
-         au repos la forme est volontairement neutre (aucune régression). */
-      const ouverts = rel.filter((r) => r.y > 0.45 || r.x < 0.92 || r.x > 1.08);
+         au repos la forme est volontairement neutre (aucune régression).
+         `y < 0.22` compte aussi : une FERMETURE (m/b/p) est plus fermée que le repos. */
+      const ouverts = rel.filter((r) => r.y > 0.45 || r.y < 0.22 || r.x < 0.92 || r.x > 1.08);
       if (ouverts.length < 3) return { n: rel.length, ouverts: ouverts.length };
       const med = (v) => v.slice().sort((a, b) => a - b)[Math.floor(v.length / 2)];
       return { n: rel.length, ouverts: ouverts.length,
@@ -354,7 +374,9 @@ if (FFMPEG) {
   const V = [
     { nom: 'i', hz: '300+2300' },
     { nom: 'ou', hz: '320+800' },
-    { nom: 'a', hz: '750+1300' }
+    { nom: 'a', hz: '750+1300' },
+    { nom: 's', hz: 'bruit-3500' },   /* une FRICATIVE : du souffle, aucune résonance grave */
+    { nom: 'm', hz: 150 }             /* une FERMETURE : un bourdonnement étouffé, tout en bas */
   ];
   const vus = {};
   for (const v of V) vus[v.nom] = await forme(v);
@@ -370,6 +392,26 @@ if (FFMPEG) {
       `« a » est la bouche la plus OUVERTE (${d('a')} contre ${d('i')} et ${d('ou')})`);
     chk(vus.ou.x < vus.a.x,
       `« ou » arrondit les lèvres, « a » ne les arrondit pas (${vus.ou.x.toFixed(2)} contre ${vus.a.x.toFixed(2)})`);
+
+    /* --- LES CONSONNES (v1.6) -------------------------------------------------------
+       Deux postures que l'on lit VRAIMENT sur une bouche, en plus des voyelles :
+         « s » (du souffle, tout en haut du spectre)     -> une FENTE : étirée, presque fermée
+         « m » (un bourdonnement étouffé, tout en bas)   -> les LÈVRES SE TOUCHENT
+       DISCRIMINANT : avec la version voyelles-seules, ni l'un ni l'autre n'a de couple
+       (F1,F2) exploitable — aucune forme n'est appliquée, la bouche reste au repos exact
+       (1.00 × 0.30). Exiger que « m » soit PLUS FERMÉ que le repos est donc impossible
+       à satisfaire sans la reconnaissance des consonnes. */
+    const cons = ['s', 'm'].every((n) => vus[n] && typeof vus[n].x === 'number');
+    if (!cons) {
+      R.na.push("les consonnes n'ont pas pu être mesurées ici (pas assez d'images)");
+    } else {
+      chk(vus.m.y < 0.22,
+        `« m » FERME vraiment les lèvres — plus que le repos 0.30 (${d('m')})`);
+      chk(vus.m.y < vus.s.y * 0.7,
+        `la fermeture « m » est plus fermée que la fente « s » (${d('m')} contre ${d('s')})`);
+      chk(vus.s.y < vus.a.y * 0.4 && vus.s.x > 1.1,
+        `« s » fait une FENTE étirée, pas une bouche ouverte (${d('s')} contre ${d('a')})`);
+    }
   }
 } else {
   R.na.push("les visèmes n'ont pas pu être mesurés ici (pas de ffmpeg)");

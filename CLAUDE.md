@@ -137,7 +137,7 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   une **image collée**. **Prouvé discriminant par sabotage** : mise en vie retirée → « l'âne est
   figé » → échec. Bee : ses **images** sont dans `bee/v2/`, ses **clips** dans `bee/` — deux
   dossiers différents, d'où les deux champs. Gardes : `test:javis-bee` **51/0** (les deux
-  personnages, chaque fichier cité vérifié) · `test:javis-bee-reelle` **42/0**.
+  personnages, chaque fichier cité vérifié) · `test:javis-bee-reelle` **45/0**.
 - **Elle FORME la voyelle qu'elle prononce — de vrais visèmes (17.09, Kevin « fais le, continu »)** :
   trois étapes dans la journée. (1) le matin, `scaleX` et `scaleY` étaient pilotés par **la même
   valeur** (le volume) → la bouche gonflait, forme toujours identique. (2) le centre de gravité du
@@ -179,11 +179,36 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
   ⚠️ **UNE SEULE boucle** : ajouter une deuxième boucle « de relance » en parallèle la fait
   cligner deux fois plus (erreur commise puis corrigée le 17.09) — on **annule** le minuteur
   en attente et on relance le **même** `blink()`.
-- **Limite honnête (à jour)** : elle reconnaît les **voyelles** (visèmes par formants), pas les
-  **consonnes** — un « s », un « f » et un « ch » lui font la même bouche, et il n'y a pas de
-  fermeture de lèvres sur un « m »/« p »/« b ». Le palier au-dessus demanderait un vrai moteur
-  d'avatar (**Live2D**, **TalkingHead.js**) — mais **ils remplaceraient Bee par un autre
-  personnage**, ce qui est exclu : Bee est la mascotte de Kevin, pas un avatar générique.
+- **Ses lèvres se FERMENT maintenant au milieu d'un mot (17.09, Kevin « va plus loin », v1.6)** :
+  la ligne précédente de ce document disait qu'elle ne distinguait **pas les consonnes**. C'est
+  fait — pas consonne par consonne (personne ne lit ça sur des lèvres), mais par **posture**, et
+  il n'y en a que deux qui ne sont pas des voyelles : la **fente** d'une fricative (s/ch/f) et la
+  **fermeture** des lèvres (m/b/p). Chacune se reconnaît à la **forme du spectre**, jamais au
+  volume : une fricative, c'est du souffle — presque toute l'énergie **en haut** ; une fermeture,
+  un bourdonnement étouffé — presque tout **en bas** ; une voyelle a ses deux résonances **au
+  milieu**. **Mesuré en vrai navigateur** : « **m** » **0,98 × 0,10** (plus fermée que le repos
+  0,30) · « **s** » **1,28 × 0,26** (une fente étirée) · « **a** » **1,11 × 1,55** — voyelles
+  **inchangées** (0 régression). **Prouvé discriminant par sabotage** : consonnes retirées, un
+  « s » est joué comme la voyelle « **ai** » (1,31 × 1,23) et un « m » comme un « **ou** »
+  (0,67 × 0,78) → **2 échecs**. Ce n'était donc pas qu'un manque : c'était **faux**.
+  **Trois pièges, tous payés comptant** : (a) ⚠️ **`getByteFrequencyData` ne rend pas de
+  l'énergie, elle rend des décibels** ramenés sur 0-255 — additionner ces octets, c'est
+  additionner des logarithmes, et une bande **10 000 fois plus faible** (inaudible) pèse encore
+  la moitié du score ; c'est exactement ce qui classait le « s » en voyelle. On **repasse en
+  énergie réelle** (`10^(octet × 0,027451)`, le facteur constant se simplifie dans un rapport) ;
+  (b) **une bouche fermée ne fait pas de bruit** — pilotée par le volume de l'instant, la
+  fermeture du « m » de « maman » serait **invisible** : on garde une trace de la parole en
+  cours (`presence`) qui retombe en ~1/3 de seconde, donc au **vrai silence** on revient
+  exactement au repos (`scaleY 0.30 / scaleX 1.00`) ; (c) **le test doit comparer des formes,
+  pas des volumes** : une voyelle de test est faite de **deux** tons mélangés, donc deux fois
+  plus forte qu'un ton seul (mesuré : poids 0,50 contre 0,76) → `volume=3` sur les tons simples,
+  et la garde d'amplitude mesure désormais l'**écart au repos** (0,20 → 0,06) et non « le
+  maximum de y », puisqu'un son grave éloigne du repos **vers le bas**.
+- **Limite honnête (à jour)** : trois familles — **voyelle / fente / fermeture**, pas un phonème
+  par phonème : un « s » et un « f » font toujours la même bouche, **comme chez un vrai visage**.
+  Le palier au-dessus demanderait un vrai moteur d'avatar (**Live2D**, **TalkingHead.js**) —
+  mais **ils remplaceraient Bee par un autre personnage**, ce qui est exclu : Bee est la
+  mascotte de Kevin, pas un avatar générique.
 
 **Ce qui n'est PAS fait, honnêtement (à ne pas prétendre) :**
 - Dans l'app installable, c'est la **VRAIE VIDÉO de Bee** qui joue (`lingua/bee/live/*.mp4` :
@@ -239,7 +264,7 @@ futurs qui parlent directement à Kevin ou à un utilisateur final.
     Lingua détournée vers les vrais fichiers) : la vidéo est lue, `currentTime` **avance**,
     un toucher change de clip, vidéo cassée → marionnette visible, clip manquant → retour
     au repos, **la bouche suit vraiment le son** (1,20 → 0,30), voix du domaine en panne →
-    voix du téléphone, non-admin → rien + message. **22 contrôles, 0 échec**, et il est
+    voix du téléphone, non-admin → rien + message. **45 contrôles, 0 échec**, et il est
     **dans `test:ci`** (comme `test:maj-forcee`) : ce qui n'est pas dans la chaîne finit sauté.
     Un Chromium de CI ne décode pas le H.264 : le test **rejoue les vraies images en VP9**
     avec ffmpeg plutôt que de sauter le contrôle ; sans ffmpeg il l'annonce
