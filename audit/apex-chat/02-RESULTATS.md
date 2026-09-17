@@ -259,6 +259,10 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 | Tempête de télémétrie (locale, Firebase refusé) | **3 636 connexions en ~2 min** avant → **≤ 3 puis pause 5 min** après (test e2e) | proxy de session + Playwright |
 | e2e local après correctifs Qodo | `retour-modale-et-effacement.spec.js` **3/3** Chromium | `playwright test` |
 | Version servie lisible par l'audit live | `window.APEX_CHAT_VERSION` + `[data-ver]` sur le splash, concordance avec la barre — test e2e réel (4/4 dans le spec, 12/12 en répétition ×3) | `playwright test` |
+| Boucle IndexedDB (locale, `indexedDB.open` refusé) | **7,9 Mo de journal en 2 min, rechargement impossible** avant → **≤ 3 avertissements**, `lg()` vivant après (test e2e) | trace locale + Playwright |
+| Suite `retour-modale-et-effacement.spec.js` | **6 tests, 12/12** en répétition ×2 (Chromium) | `playwright test --repeat-each=2` |
+| Second avis Qodo sur #3894 | run `35258517353` ✅ : 1 point valide (effacement bloqué), corrigé ; « ticket #33 » = faux positif récurrent → corps de PR du bot reformulé | commentaires PR |
+| Passes d'amélioration (sous-agents, chiffrées) | UX/UI : **110 vues × 3 largeurs, 259 captures**, 6 P0 / 21 P1 / 11 P2 / 4 P3 · Code/archi : 16 orphelines (14,6 Ko), 0 doublon, `getAuthUser` 2–5 requêtes D1 × 83 handlers, 42 `catch` vides, 17/19 vues sans e2e, `npm audit` 0 vulnérabilité — annexes `annexes/2026-09-17-*.md` | scripts exécutés, sorties en annexe |
 | e2e Chromium local après | **56 / 56** (dont SW actif + cache peuplé) | `playwright test --project=chromium-desktop` |
 | Boot (Chromium 375×812, API mockée) | LCP 116 ms (login) / 88 ms (liste) ; 0 exception ; 0 mutation DOM et 0 rendu au repos sur 3 vues ; 7–8 minuteries, aucune ≤ 1 s | passe perf |
 | Chat 1 000 messages | rendu 84 ms ; 20 messages entrants 8,6 ms/msg ; 0 fuite DOM après 20 cycles | passe perf |
