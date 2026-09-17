@@ -33,7 +33,7 @@ import { pathToFileURL } from 'node:url';
 export const DB_ID = 'd28c6ec0-21e4-46b8-a3dc-49f282e3a036';   // kdmc-contenu (pas un secret)
 export const PRODUIT = 'club-ia';
 export const KIT = 'kit-ia';
-export const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUsorWTtC' };
+export const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUso3vcsGadvrWTtC' };
 export const LIRE = 'https://kit.kd-mc.com/lire.html';
 export const EMAIL_KEVIN = 'kevin.desarzens@gmail.com';
 export const MODELE_DEFAUT = 'claude-opus-5';

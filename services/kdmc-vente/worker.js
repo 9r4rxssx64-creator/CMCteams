@@ -233,7 +233,7 @@ async function delivre(env, { produitId, email, source, txId }) {
 
 /* EmailJS (clé privée EMAILJS_PRIVATE_KEY poussée par le workflow ; le service et le
    gabarit sont ceux déjà utilisés par les boutiques). Renvoie true/false, ne lève jamais. */
-const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUsorWTtC' };
+const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUso3vcsGadvrWTtC' };
 async function envoieCode(env, { email, produit, code }) {
   if (!env.EMAILJS_PRIVATE_KEY) return false;
   try {
