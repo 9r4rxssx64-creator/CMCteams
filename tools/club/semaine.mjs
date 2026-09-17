@@ -33,7 +33,7 @@ import { pathToFileURL } from 'node:url';
 export const DB_ID = 'd28c6ec0-21e4-46b8-a3dc-49f282e3a036';   // kdmc-contenu (pas un secret)
 export const PRODUIT = 'club-ia';
 export const KIT = 'kit-ia';
-export const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUso3vcsGadvrWTtC' };
+export const EMAILJS = { service: 'service_4s16z8l', template: 'template_fzva9uf', user: 'nUso3vcsGadvrWTtC' };
 export const LIRE = 'https://kit.kd-mc.com/lire.html';
 export const EMAIL_KEVIN = 'kevin.desarzens@gmail.com';
 export const MODELE_DEFAUT = 'claude-opus-5';
@@ -186,13 +186,13 @@ export async function redige(env, prompt, retour) {
 }
 
 /* ── E-mails (EmailJS, côté serveur, au mieux — jamais bloquant) ─────────── */
-export async function envoieEmail(env, { to, message }, log = () => {}) {
+export async function envoieEmail(env, { to, message, title }, log = () => {}) {
   if (!env.EMAILJS_PRIVATE_KEY) return false;
   try {
     const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ service_id: EMAILJS.service, template_id: EMAILJS.template, user_id: EMAILJS.user,
-        accessToken: env.EMAILJS_PRIVATE_KEY, template_params: { to_email: to, store: 'kd-mc.com', message } }),
+        accessToken: env.EMAILJS_PRIVATE_KEY, template_params: { to_email: to, store: 'kd-mc.com', name: 'kd-mc.com', from_name: 'kd-mc.com', title: title || 'Club IA au Boulot', message } }),
     });
     if (!r.ok) {
       /* Cause EXACTE dans le journal (jamais la clé) : EmailJS répond en texte clair

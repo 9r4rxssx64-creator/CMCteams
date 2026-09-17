@@ -28,7 +28,7 @@ Chaque ligne renvoie à sa section plus bas.
 |---|---|---|
 | **Rien à faire pour le Kit IA** (kit.kd-mc.com, 47 €) : il est construit, le contenu est en base, la caisse tourne. Tu peux le LIRE et me dire ce que tu changes | Ton premier produit numérique neuf, hors casino, vendable | 0 min |
 | **Club IA au Boulot (59 €/an)** : rien à faire non plus, la routine du lundi tourne seule. Si tu veux l'arrêter : dis-le, je coupe la routine | Le revenu RÉCURRENT (accès annuel + nouveauté chaque semaine) | 0 min |
-| **E-mails du Kit / Club (EmailJS) — 1 interrupteur à basculer** : ta vraie clé est posée partout et acceptée (mesuré le 17.09, run 35208725397). Il reste UN réglage de ton compte EmailJS que je ne peux pas toucher (c'est ton compte) : ouvre [EmailJS → Account → Security](https://dashboard.emailjs.com/admin/account/security) et active **« Allow EmailJS API for non-browser applications »**. Sans ça, EmailJS répond `HTTP 403 API access from non-browser environments is currently disabled` à tout envoi fait par la caisse ou par la machine du lundi (ce sont des serveurs, pas un navigateur). Dis-moi « fait » et je relance l'essai moi-même. Les formulaires des 6 boutiques, eux, partent depuis le navigateur : pas concernés par ce blocage | Codes d'achat, point du lundi, rappels J-14 | 1 clic |
+| ~~E-mails du Kit / Club / boutiques (EmailJS)~~ ✅ interrupteur basculé par Kevin le 17.09 (mesuré : plus de 403). Troisième couche trouvée derrière : le service `service_318elaz` n'existe pas dans ton compte (`HTTP 400 The service ID not found`). J'ai basculé la caisse, la machine du lundi et les 4 boutiques clonées sur ton vrai service `service_4s16z8l` + gabarit `template_fzva9uf` (ceux de La Détente et Chez Lolo). **Preuve : run 35212409745 « Essai d'e-mail à Kevin : ENVOYÉ »** (tu as reçu ce mail). Dis-moi juste si la mise en page du mail te va | Codes d'achat, point du lundi, rappels J-14, formulaires des boutiques | fait |
 | *(facultatif)* Vérifier dans EmailJS que le gabarit `template_newsletter` affiche bien le champ `message` | Sinon le code d'accès n'arrive pas par e-mail (il reste affiché à l'écran) | 2 min |
 | ~~Compte Metricool~~ ✅ fait le 16.09 (Instagram + TikTok + YouTube prouvés) | Le seul chemin vers TikTok — **Facebook reporté « plus tard »** (Kevin 16.09), voir ⚪ | fait |
 | **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |
@@ -83,6 +83,12 @@ existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
 > ne part en public, tu peux le supprimer). Il reste **un geste** :
 > 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — **reporté à plus tard**
 > (Kevin 16.09 : « note dans les tâches à faire pour plus tard pour Facebook »). Pas pressé.
+> **17.09 12:51 — la Page « Kdmc » EXISTE** (capture Kevin : menu Facebook, profil « Kdmc » avec
+> Tableau de bord professionnel). Cause n°1 réglée. Metricool ne la voit pas encore (mesuré
+> `getBrandSettings` 17.09 : Instagram + TikTok + YouTube, pas Facebook) → il reste le clic
+> Metricool → *Connections* → Facebook, avec le profil **Kevin Mc** (admin de la Page).
+> Réglages de la Page à corriger (vus sur la capture) : bio « Viral » et catégorie
+> « Musique/groupe » ne collent pas au Kit IA → bio proposée + catégorie « Formation ».
 
 #### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
 

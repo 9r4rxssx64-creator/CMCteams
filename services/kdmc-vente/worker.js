@@ -233,7 +233,7 @@ async function delivre(env, { produitId, email, source, txId }) {
 
 /* EmailJS (clé privée EMAILJS_PRIVATE_KEY poussée par le workflow ; le service et le
    gabarit sont ceux déjà utilisés par les boutiques). Renvoie true/false, ne lève jamais. */
-const EMAILJS = { service: 'service_318elaz', template: 'template_newsletter', user: 'nUso3vcsGadvrWTtC' };
+const EMAILJS = { service: 'service_4s16z8l', template: 'template_fzva9uf', user: 'nUso3vcsGadvrWTtC' };
 async function envoieCode(env, { email, produit, code }) {
   if (!env.EMAILJS_PRIVATE_KEY) return false;
   try {
@@ -244,7 +244,8 @@ async function envoieCode(env, { email, produit, code }) {
         service_id: EMAILJS.service, template_id: EMAILJS.template, user_id: EMAILJS.user,
         accessToken: env.EMAILJS_PRIVATE_KEY,
         template_params: {
-          to_email: email, store: 'kd-mc.com',
+          to_email: email, store: 'kd-mc.com', name: 'kd-mc.com', from_name: 'kd-mc.com',
+          title: 'Ton accès : ' + produit.nom,
           message: 'Merci pour ton achat : ' + produit.nom + '.\nTon code d\'accès : ' + code +
             '\nOuvre ton accès ici : ' + produit.livre + '?c=' + code +
             '\nGarde ce message : le code ouvre ton accès sur tous tes appareils.',
