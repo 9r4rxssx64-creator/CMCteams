@@ -56,6 +56,34 @@ function clesRacine(texte) {
   return cles;
 }
 
+/* 5. (ajouté le 17/09/2026, mesuré) un scalaire NON cité qui contient « : » (deux-points +
+   espace) est du YAML invalide : « mapping values are not allowed here ». Vécu sur
+   `- name: À programmer (ce que la routine lit : MP4 …)` dans pub-videos.yml → GitHub
+   répondait « Workflow does not have 'workflow_dispatch' trigger » alors que la garde 1-4
+   était verte. On lit chaque `clé: valeur` hors bloc littéral ; une valeur qui ne commence
+   ni par une citation, ni par |, >, [, {, ${{ … et qui contient encore « : » = problème. */
+function scalairesInvalides(texte) {
+  const lignes = texte.split('\n');
+  const pbs = [];
+  let profondeurBloc = null;
+  lignes.forEach((l, i) => {
+    if (profondeurBloc !== null) {
+      const vide = l.trim() === '';
+      const indent = l.length - l.trimStart().length;
+      if (!vide && indent <= profondeurBloc) profondeurBloc = null;
+      else return;
+    }
+    if (/^\s*#/.test(l) || l.trim() === '') return;
+    const m = /^(\s*)(?:- )?(["']?)([A-Za-z_][\w-]*)\2\s*:\s(.*)$/.exec(l);
+    if (!m) return;
+    const v = m[4].replace(/\s+#.*$/, '').trim();
+    if (/^[|>][-+0-9]*$/.test(v)) { profondeurBloc = m[1].length + (/^\s*- /.test(l) ? 2 : 0); return; }
+    if (v === '' || /^["'\[{&*!]/.test(v) || v.startsWith('${{')) return;
+    if (/:\s/.test(v) || /:$/.test(v)) pbs.push(`ligne ${i + 1} : « ${l.trim().slice(0, 70)} » — valeur non citée qui contient « : » (YAML invalide, GitHub refuse le fichier)`);
+  });
+  return pbs;
+}
+
 const fichiers = readdirSync(DOSSIER).filter((f) => /\.ya?ml$/.test(f)).sort();
 if (!fichiers.length) { console.error('❌ aucun workflow trouvé'); process.exit(1); }
 
@@ -78,9 +106,13 @@ for (const f of fichiers) {
   if (!cles.includes('jobs')) pb.push(`${f} — pas de « jobs: »`);
   else if (!/^\s{2}[A-Za-z_][\w-]*\s*:/m.test(texte.slice(texte.indexOf('\njobs:')))) pb.push(`${f} — « jobs: » sans aucun job`);
   else ok++;
+
+  const sc = scalairesInvalides(texte);
+  if (sc.length) pb.push(`${f} — ${sc.join(' ; ')}`);
+  else ok++;
 }
 
-console.log(`\n  Les ${fichiers.length} workflows démarrent (clés uniques, on:, jobs:)\n`);
+console.log(`\n  Les ${fichiers.length} workflows démarrent (clés uniques, on:, jobs:, scalaires cités)\n`);
 if (pb.length) {
   for (const p of pb) console.log(`  ❌ ${p}`);
   console.log(`\n${ok} contrôle(s) OK, ${pb.length} échec(s)\n`);

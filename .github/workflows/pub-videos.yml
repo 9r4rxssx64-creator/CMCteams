@@ -163,7 +163,7 @@ jobs:
             [ "$C" = "200" ] || { echo "ÉCHEC : $U répond HTTP $C"; exit 1; }
           done
 
-      - name: À programmer (ce que la routine lit : MP4 publics + créneaux libres)
+      - name: "À programmer (ce que la routine lit : MP4 publics + créneaux libres)"
         if: ${{ inputs.nouveaux != '' && inputs.programmer == '' }}
         shell: bash -eo pipefail {0}
         run: |
