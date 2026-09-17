@@ -715,3 +715,145 @@ sur les entrées SSO (SQL/NoSQL/XXE/timing : rien). **Ce qu'il n'a pas testé** 
 authentifiés (OTP), conversations, invitations, WebSocket, admin — il n'avait pas de compte.
 Le run montre encore **654 erreurs de flux LLM** (« Error streaming response ») : le scan a
 fini quand même, mais c'est du temps et de l'argent perdus côté fournisseur.
+
+---
+
+## Passe 3 — 2026-09-17 : « fais ton audit, améliore, va plus loin, stable et commercialisable »
+
+**Version auditée** : `v1.1.289` → **livrée `v1.1.290`**. Méthode : 7 passes en parallèle (architecture,
+sécurité vérifiée, commercialisable, performance/stabilité mesurée en vrai navigateur, UX/a11y à 375 px,
+tests/backend/docs, plus les passes CI live). Chaque finding ci-dessous a été **re-vérifié dans le code
+par moi avant d'agir** ; les faux positifs des passes sont listés en fin de section.
+
+### [P0] Deux numéros de téléphone RÉELS en clair dans un workflow d'un dépôt public — ✅ CORRIGÉ
+- **Axe** : vie privée · **Fichier** : `.github/workflows/deploy-apex-chat.yml:256,262` (commit `39b2d74` du 11/09)
+- **Preuve** : `push_if_set "KEVIN_PHONE_E164" "+33…"` et `push_if_set "LAURENCE_PHONE_E164" "+33…"` sous un commentaire
+  affirmant « numéros lus depuis des SECRETS GitHub, jamais dans le repo ». Le garde `no-admin-phone-in-page` ne
+  regardait que la page et les tests → vert.
+- **Impact** : le numéro admin est la moitié de l'ancienne attaque « numéro + 000000 » (fermée par
+  `ADMIN_BYPASS_REQUIRE_MFA=true`), et c'est une donnée personnelle publiée pour toujours dans l'historique git.
+- **Cause racine** : un raccourci pris le 11/09 (valeur en dur « pour que ça marche ») + un garde qui ne couvrait
+  pas l'endroit où la fuite pouvait naître.
+- **Correctif** : `${{ secrets.KEVIN_PHONE_E164 }}` / `${{ secrets.LAURENCE_PHONE_E164 }}` (secret vide = le secret
+  Cloudflare existant reste en place, zéro régression) ; garde étendu à **tout** `messaging-app/` et `.github/workflows/`
+  (prouvé discriminant : ancien workflow → 1 échec). **Reste** : l'historique git public contient toujours les deux
+  valeurs (réécrire l'historique est interdit ici) — les numéros sont à considérer comme connus.
+
+### [P0] Le Service Worker ne tournait pas : zéro cache, zéro hors-ligne, aucune notification affichée — ✅ CORRIGÉ
+- **Axe** : stabilité/fonctionnalité · **Fichier** : `sw.js:20`, `index.html:465`, `lib/sw-handlers.js:15`
+- **Preuve (Chromium réel, deux passes indépendantes)** : `import() is disallowed on ServiceWorkerGlobalScope` →
+  repli « minimal » : `caches.keys() = []`, offline = `ERR_FAILED`, `handlePush = () => {}`. Les 346 lignes de
+  handlers « 100 % couvertes » ne s'exécutaient jamais en production ; `CACHE_VERSION` y traînait à v1.1.285.
+- **Cause racine** : hypothèse fausse en commentaire (« dynamic import marche en SW ») + aucun test ne chargeait
+  `sw.js` ; le test e2e « SW enregistré » acceptait **vrai ou faux** (faux vert, leçon #103) ; en plus, sous le
+  runner Playwright le SW ne pouvait pas se charger (certificat auto-signé refusé par le processus navigateur).
+- **Correctif** : SW **module** (`import` statique + `register({type:'module'})`, Safari/iOS ≥ 16.4 = le plancher
+  du Web Push iPhone) ; versions alignées et gardées (`sw-module.test.js`) ; test e2e strict (SW actif **et** cache
+  peuplé, mesuré 3 caches `apex-chat-v1.1.290-*`) ; `--ignore-certificate-errors` pour Chromium ; les autres tests
+  e2e bloquent le SW (`page.route` n'intercepte pas ses fetch — 6 tests cassés dès que le SW a marché).
+- **Non vérifié ici** : WebKit (pas de navigateur WebKit local) — le test l'annonce en annotation ; la CI 4 voies dira.
+
+### [P1] Deux routes appelées sans le préfixe `/api` → 404 : micro muet, description d'image jamais faite — ✅ CORRIGÉ
+`index.html:11515,11791` appelaient `/ai/voice-transcribe` et `/ai/image-describe` ; le worker ne sert que `/api/ai/…`.
+Garde `api-routes-front-vs-worker.test.js` : chaque route littérale de la page existe dans le routeur (53 chemins).
+
+### [P1] `K._doTranslate` défini deux fois — la seconde écrasait la première — ✅ CORRIGÉ
+Le bouton « 🌐 Traduire » de l'outil appelait la version `(text, lang)` sans argument. Renommée `_doTranslateForm` ;
+garde `no-duplicate-definitions.test.js` (0 doublon `K.x =`, 0 `function x(` en double dans le worker).
+
+### [P1] Jusqu'à 9 messages ACQUITTÉS perdus si le Durable Object est évincé — ✅ CORRIGÉ
+`ConversationDO.js` : `alarm()` existait, `setAlarm` n'était appelé nulle part, la fermeture ne vidait rien. Chaque
+message arme une alarme 5 s, la fermeture vide le buffer, un flush en panne se réarme (5 tests).
+
+### [P1] Corps JSON invalide → 500 « erreur interne » + télémétrie, sur 18 routes — ✅ CORRIGÉ
+`readJson()` → 400 `bad_json` ; test « `{` » sur 14 routes : jamais 500, jamais de télémétrie.
+
+### [P1] Sauvegarde quotidienne : 5 tables sur 27, EN CLAIR (téléphones, noms) dans le bucket des médias, jamais vérifiée, jamais purgée — ✅ CORRIGÉ
+Toutes les tables, AES-GCM-256 (clé HKDF du secret JWT existant : aucun secret à créer), refus d'écrire en clair,
+relecture de contrôle, rotation 14 j (les anciens `.json` en clair disparaissent avec), `backup_last_ok/_error` dans
+`system_config` et `/api/admin/diag`, outil `tools/backup-decrypt.mjs`. **Reste** : les fichiers en clair déjà
+présents dans R2 restent lisibles par l'admin jusqu'à 14 jours ; l'export chiffré GitHub (`apex-chat-d1-backup.yml`)
+reste manuel.
+
+### [P1] Interrupteurs admin décoratifs : `e2e_strict` lu nulle part, `kevin_invisible` ≠ la clé réellement lue — ✅ CORRIGÉ
+`e2e_strict` est maintenant **appliqué** par le DO (message non `E2E…:` refusé quand ON ; OFF par défaut, zéro
+régression) ; `kevin_invisible` lit/écrit `KEVIN_INVISIBLE_ADMIN`. **Mesuré en prod (D1)** : `KEVIN_INVISIBLE_ADMIN='false'`,
+`ADMIN_MODE='B'` — Kevin **n'est pas** membre invisible des conversations aujourd'hui, contrairement au README.
+
+### [P1] Échecs de migration D1 invisibles (`| tail || warning` sans pipefail) — ✅ CORRIGÉ
+Le déploiement échoue désormais sur toute erreur autre que « colonne/table déjà là » ; + étape de vérification live
+après déploiement (`/api/health` réel, version comparée) ; résumé sans variables inexistantes.
+
+### [P1] Performance : la page complète (841 Ko) retéléchargée toutes les ~11 s (≈ 83 Mo/h) — ✅ CORRIGÉ
+Vérification de version par `HEAD` + empreinte (ETag/Last-Modified) ; relecture complète seulement si changement,
+au plus toutes les 10 min sinon ; intervalle 60 s (+ focus/visibilité, règle MAJ auto tenue).
+
+### [P1] Coût : un appel LLM par message reçu ET par ouverture de conversation (réponses suggérées) — ✅ CORRIGÉ
+Cache client par message (50), rien quand l'onglet est caché. **[P1 perf]** `/api/conversations` : 6 « soins »
+(≥ 18 requêtes D1) à chaque appel, appelé toutes les 60 s par chaque client → au plus une fois / 10 min (verrou KV).
+
+### [P0 UX] Tempête de toasts + reconnexions WebSocket sans backoff — ✅ CORRIGÉ
+Mesuré : 337 connexions en 5 min, 194 toasts empilés, le bouton Retour absorbé. `_wsDiagnose` remettait `_wsRetry`
+à 0 ; toasts dédoublonnés, plafonnés à 3, `pointer-events:none`, sous l'en-tête.
+
+### [P1 UX] Nom du contact réduit à 14 px à 375 (6 boutons) ; retour iOS quittait l'app ; 📞 de Contacts mort ; heure des bulles 1,86:1 — ✅ CORRIGÉS
+Recherche et vidéo dans le menu ⋯ sur écran étroit (nom ≥ 96 px) ; `pushState`/`popstate` (modale puis liste) ;
+`_callContact` au lieu de `_startCall` (id de contact ≠ id de conversation) ; `.msg.me .msg-time` lisible, 0.72em.
+P2 : ✕ des modales (`.modal{position:relative}`), pastille KDMC sous les modales, « écrit… » regroupé, quota
+localStorage tronqué au lieu d'effacé, fenêtre push avec délai maximal 3 s.
+
+### [P2] Sécurité worker — ✅ CORRIGÉS
+`GET /api/users/:pseudo` sans jeton révélait l'état civil → jeton requis ; `check-phone` = oracle d'énumération sans
+plafond → 30/h par IP, `admin_authorized` retiré ; médias servis avec le `Content-Type` d'upload → `nosniff` +
+pièce jointe hors image/audio/vidéo ; codes d'invitation 30⁴ → 30⁸ et résolution sans empreinte du numéro ;
+CSP `connect-src https:` → liste blanche des hôtes réellement appelés (garde `csp-connect-src.test.js`) + `media-src`.
+
+### [P0 commercial] Pas de suppression de compte, export local seulement, lien CGU mort — ✅ CORRIGÉ
+`DELETE /api/users/me` (confirmation « SUPPRIMER », médias R2 effacés, messages rendus illisibles, liens/appareils
+supprimés, compte anonymisé, numéro libéré, admin protégé) ; `GET /api/users/me/export` (JSON téléchargeable, toutes
+les tables liées) ; boutons Réglages ; `?action=delete-account` réparé ; CGU/charte versionnées (`K.CGU_VERSION`,
+re-acceptation à chaque changement) et rendues cohérentes (Firebase retiré, effacement « immédiat »).
+
+### [P0 commercial] Onboarding SMS sans renvoi de code ni délai — ✅ CORRIGÉ (partiel)
+Bouton « Renvoyer le code » (60 s), délai 5 min affiché, lien aide, erreurs réseau en français. **Reste (décision
+Kevin)** : le fournisseur SMS n'est pas confirmé en production (Vonage « trial » d'après les docs), et le repli
+TextBelt (clé publique partagée, 1 SMS/jour) est encore dans le code.
+
+### [P1 commercial] Pas d'aide, pas de mentions légales, signalement inaccessible, icône iOS SVG — ✅ CORRIGÉS
+`aide.html` (10 questions), `mentions.html`, bouton « ⚠️ Signaler » dans ⋯ (route serveur existante), bandeau
+« Installer » iOS (3 gestes, ✕ mémorisé), icônes PNG 180/192/512 générées depuis le SVG (`apple-touch-icon` PNG).
+
+### [P0 domaine — HORS Apex Chat, trouvé par Strix aujourd'hui] Firebase `/apex` lisible ET modifiable avec un jeton anonyme — ⛔ NON CORRIGÉ (décision Kevin)
+- **Preuve** : run Strix `35238490127` (lancé par erreur sur la cible par défaut `kdmc-home/worldmonitor`) :
+  « n'importe qui obtient un jeton Firebase **anonyme** par le même parcours que l'app, puis **lit et modifie** une
+  large partie de `/apex` : profil admin, abonnements push, boîte admin, journal d'audit, contenu de conversations ».
+- **Cause racine, confirmée dans `firebase-rules-apex.json`** : `/apex .read auth != null`, `/apex/$key .write
+  auth != null` — un jeton anonyme satisfait `auth != null`. La limite était **écrite** dans CLAUDE.md (« l'auth
+  anonyme reste ouverte à tous → durcissement fort = custom-tokens par rôle ») ; Strix la prouve **exploitable en ligne**.
+- **Pourquoi pas de patch aveugle** : Apex v13 se synchronise lui-même avec ce jeton anonyme (repli) ; bloquer les
+  anonymes bloque Apex. Le vrai correctif = jetons signés par rôle (worker `apex-auth`) puis règles `auth.token.role`.
+  C'est un chantier Apex, pas Apex Chat — à lancer **en priorité** (voir rapport).
+
+### Faux positifs écartés (avec preuve)
+- « Raccourcis du manifest (#new/#contacts/#calls/#invite) jamais câblés » — faux : `index.html:16180` les route au
+  boot (la passe cherchait la forme quotée `'#new'`).
+- « 19 `onclick` interpolés = JS-in-attribut exploitable » — non : `JSON.stringify` + entité du délimiteur, aucun
+  breakout (vérifié).
+- « Numéro réel dans `index.html` » — non : exemples pédagogiques (`+33 6 12 34 56 78`) ; les vrais étaient dans le
+  workflow (finding P0 ci-dessus).
+- « `PEM BEGIN PRIVATE KEY` dans push-worker » — un `.replace()` qui retire l'en-tête d'une variable d'environnement.
+- Semgrep `missing-integrity` sur `unpkg` (cgu/privacy/index) : balises `dns-prefetch`/`preconnect`, pas de script
+  chargé depuis unpkg au boot → recommandation, pas faille. `cors-misconfiguration` (`lib/cors.js:78`) : liste blanche
+  d'origines, déjà trié le 10/09.
+
+### Ce qui reste ouvert (chiffré, par priorité)
+| Prio | Reste | Effort |
+|---|---|---|
+| **P0** | Firebase `/apex` ouvert aux jetons anonymes (chantier Apex, custom-tokens) | L |
+| **P0** | Récupération des clés E2E sur un nouveau téléphone (phrase 12 mots + sauvegarde chiffrée serveur) — sans ça, changer d'iPhone = perdre l'historique | L (4–6 j) |
+| **P0** | Paiement réel (Kevin sans Stripe : Paddle/Lemon Squeezy = TVA + factures incluses) + CGV + rétractation | M (2–3 j) |
+| **P1** | Confirmer Vonage en production, retirer TextBelt, sortir `sms-worker.js` mort | S + action Kevin |
+| **P1** | Blocage côté serveur (aujourd'hui local : le bloqué voit encore la présence) | M |
+| **P2** | 165 assertions « 200 ou 4xx » dans les tests du worker ; 19 vues admin sans test de rendu ; Face ID jamais prouvé sur WebKit | M |
+| **P2** | 16 fonctions mortes dans `index.html`, `crypto.js` redondant, `key-vault.js` jamais chargé | S |
+| **P3** | `lint` = no-op, `retry:1` vitest, 54 `setTimeout` réels dans les tests, files sans DLQ, index D1 manquants | S |

@@ -1,6 +1,6 @@
 # Apex Chat — 00 · Inventaire réel
 
-**Date de mesure** : 2026-09-10 · **Version auditée** : `v1.1.288`
+**Date de mesure** : 2026-09-10, re-mesuré le 2026-09-17 · **Version auditée** : `v1.1.288` → `v1.1.290`
 **Méthode** : lecture des fichiers + commandes exécutées. Aucune valeur estimée.
 **Statuts** : ✅ VÉRIFIÉ (commande exécutée) · 🟡 DÉDUIT (lecture) · 🔴 SUPPOSÉ
 
@@ -150,3 +150,20 @@ jamais des `[vars]` — donc absents du dépôt.
 - **`e2e_strict`** (chiffrement de bout en bout imposé ou non côté serveur) : la valeur vit en
   base (`system_config`), pas dans le dépôt. Elle décide si les messages sont stockés chiffrés
   ou en clair — c'est une inconnue qui compte, elle est reportée au `05-JOURNAL.md`.
+
+
+---
+
+## Re-mesure du 2026-09-17 (v1.1.290)
+
+| Mesure | Valeur |
+|---|---|
+| `index.html` | 16 300+ lignes, 841 Ko brut / 232 Ko gzip, 15 blocs `<script>` (9 modules `lib/`), 1 428 `style=`, 138 `innerHTML` (621 `esc(`), 115 `catch(_){}` vides |
+| `workers/api-worker.js` | ≈ 6 300 lignes après correctifs ; **96 couples méthode/chemin** (71 exacts + 25 motifs) — pas 64 comme écrit le 10/09 |
+| Fichiers de tests | **70** vitest (1 341 tests) · 19 specs `tests/e2e` (4 navigateurs) · 3 specs `e2e/` (prod) |
+| Pages statiques | `index`, `cgu`, `privacy`, **`mentions` (nouveau)**, **`aide` (nouveau)**, `diag`, `force-update`, `force-logout` |
+| Icônes | `icons/icon-{180,192,512}.png` (nouveaux, générés depuis `icon.svg`) + SVG |
+| Service Worker | `sw.js` **module** (import statique de `lib/sw-handlers.js`), 3 caches `apex-chat-v1.1.290-*` mesurés |
+| Prod D1 (lu le 17/09) | 7 utilisateurs · 3 conversations · 40 messages · `ADMIN_MODE=B` · `KEVIN_INVISIBLE_ADMIN=false` |
+| Adresse officielle | `https://apex-chat.kd-mc.com/` (routeur → GitHub Pages) ; `APEX_CHAT_BASE_URL` alignée |
+| `lib/` non chargés en prod | `key-vault.js` (jamais importé), `crypto.js` (wrapper redondant) — P2 |

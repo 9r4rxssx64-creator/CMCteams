@@ -121,6 +121,24 @@ et le tableau de bord suivent.
 **Piège vu** : le domaine a **deux** admins — `admin.kd-mc.com` (worker kdmc-access, code seul, pas
 de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié → le tableau vit dans le
 second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
+## 2026-09-17 17:30 — Apex Chat v1.1.290 : audit complet passe 3, « stable et commercialisable »
+
+**Ce qui a été fait** (branche `claude/audit-apex-chat-commercial-1709`, 9 commits, 1 341 tests verts, 56/56 e2e Chromium) :
+- **P0 vie privée** : deux numéros réels en clair dans le workflow de déploiement (dépôt public) → secrets ; garde étendu à toute l'app + workflows.
+- **P0 stabilité** : le **Service Worker ne tournait pas** (import() interdit dans un SW classique → repli sans cache, sans hors-ligne, **sans notification affichée**). SW module, versions alignées, test e2e qui exige un cache peuplé (mesuré 3 caches).
+- **P1** : micro et description d'image en 404 (`/ai/…` sans `/api`) ; `K._doTranslate` défini deux fois ; jusqu'à 9 messages acquittés perdables (DO sans alarme) ; JSON invalide → 500 ; sauvegarde quotidienne en clair et incomplète → chiffrée, complète, vérifiée, purgée à 14 j ; interrupteurs admin décoratifs (`e2e_strict` désormais appliqué, `kevin_invisible` sur la vraie clé) ; migrations D1 dont l'échec était masqué ; page de 841 Ko retéléchargée toutes les 11 s ; un appel LLM par message reçu.
+- **P0/P1 UX** (mesurés à 375 px) : tempête de toasts + reconnexions WS sans backoff, nom du contact à 14 px, retour iOS qui quittait l'app, 📞 de Contacts mort, heure des bulles 1,86:1.
+- **Commercialisable** : suppression de compte (`DELETE /api/users/me`, cascade) et export RGPD serveur ; CGU/charte versionnées et cohérentes ; `aide.html`, `mentions.html` ; renvoi du code SMS (60 s) ; signalement côté utilisateur ; bandeau « Installer » iOS ; icônes PNG ; erreurs réseau en français ; CSP en liste blanche ; liens d'invitation sur `apex-chat.kd-mc.com`.
+- **Passes CI** : audit-live 28/28, apex-chat-e2e ✅, messaging-app-tests ✅, security-suite lu et trié (faux positifs), Strix **lancé par erreur sur World Monitor** (cible par défaut) puis relancé sur `messaging-app`.
+
+**⛔ P0 hors Apex Chat, trouvé par Strix (à décider par Kevin)** : Firebase `/apex` est lisible ET modifiable avec un
+jeton **anonyme** (règles `auth != null`, l'anonyme y satisfait) — profil admin, abonnements push, audit, conversations.
+Pas de patch aveugle (Apex v13 s'y connecte en anonyme) : correctif = jetons par rôle. Détail dans
+`audit/apex-chat/03-FINDINGS.md`.
+
+**Reste chiffré** : récupération des clés E2E sur nouveau téléphone (L), paiement réel Paddle/Lemon Squeezy + CGV (M),
+Vonage à confirmer en prod + retirer TextBelt (S + Kevin), blocage côté serveur (M), 165 assertions molles + 19 vues
+admin sans test (M), 16 fonctions mortes (S), lint no-op (S).
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
