@@ -267,15 +267,30 @@
       rig.classList.add('blink');
       setTimeout(function () { try { rig.classList.remove('blink'); } catch (_) {} }, ms);
     }
-    (function blink() {
+    /* ELLE NE CLIGNE PAS DANS LE VIDE (Kevin 2026-09-17 « performe »). Quand l'onglet n'est
+       PAS regarde (autre app au premier plan, ecran verrouille), personne ne voit ces
+       battements : les faire quand meme, c'est reveiller l'iPhone pour rien. On saute le
+       travail et on repasse plus tard -- et elle repart des que la page redevient visible,
+       sans attendre le prochain tour. UNE SEULE boucle (surtout pas une deuxieme en
+       parallele : elles se marcheraient dessus et elle clignerait deux fois plus). */
+    var tBlink = 0;
+    function blink() {
       if (!document.contains(rig)) return;
+      if (document.hidden) { tBlink = setTimeout(blink, 10000); return; }
       if (!dormi) {
         var ms = 110 + Math.random() * 70;
         unClin(ms);
         if (Math.random() < 0.2) setTimeout(function () { if (!dormi) unClin(ms); }, ms + 90);
       }
-      setTimeout(blink, dormi ? 9000 : (2200 + Math.random() * 3600));
-    })();
+      tBlink = setTimeout(blink, dormi ? 9000 : (2200 + Math.random() * 3600));
+    }
+    blink();
+    function onVisible() {
+      if (document.hidden || !document.contains(rig)) return;
+      try { clearTimeout(tBlink); } catch (_) {}
+      tBlink = setTimeout(blink, 400);          /* elle repart tout de suite */
+    }
+    document.addEventListener('visibilitychange', onVisible);
 
     /* SON REGARD NE DOIT PAS COUTER UNE MESURE DE PAGE PAR MOUVEMENT DE DOIGT
        (Kevin 2026-09-17 « performe »). Avant : chaque evenement pointermove appelait
@@ -323,6 +338,8 @@
         window.removeEventListener('scroll', majRect);
         window.removeEventListener('resize', majRect);
         window.removeEventListener('orientationchange', majRect);
+        document.removeEventListener('visibilitychange', onVisible);
+        try { clearTimeout(tBlink); } catch (_) {}
         if (pend) { try { cancelAnimationFrame(pend); } catch (_) {} pend = 0; }
         return;
       }
