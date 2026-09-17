@@ -15,7 +15,8 @@
     "test:e2e:iphone": "playwright test --project=iphone-safari",
     "test:e2e:install": "playwright install --with-deps",
     "test:all": "npm run test && npm run test:e2e",
-    "test:runtime-admin": "node tests/runtime-admin-server-only.mjs"
+    "test:runtime-admin": "node tests/runtime-admin-server-only.mjs",
+    "test:fonctions-reelles": "node tools/fonctions-reelles.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
