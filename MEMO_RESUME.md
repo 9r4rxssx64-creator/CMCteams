@@ -1396,6 +1396,34 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — LE POINT FAIBLE EST FERMÉ : les 20 adresses .onion ont été VRAIMENT ouvertes
+
+Le trou déclaré depuis le 15.09 (« les 20 adresses n'ont jamais été ouvertes ») est comblé,
+avec des chiffres, pas une intention. Rapport rapatrié automatiquement dans le journal GitHub
+(run 35242294789) : **20 adresses, 368 s, `"simule": false`, 13 vivantes.**
+
+- **Vivantes (13)** : Ahmia · DuckDuckGo · BBC News · BBC Learning English · Deutsche Welle ·
+  Radio Free Europe · Voice of America · CIA · Facebook (500 — le serveur répond, l'adresse vit) ·
+  Proton Mail · Riseup · Systemli · Qubes OS.
+- **Muettes (7)** : Tor Project, The Guardian, NYT, ProPublica, The Intercept, Bellingcat,
+  Privacy International.
+
+**Et j'ai refusé d'appeler ça « 7 adresses mortes ».** Ce sont sept services notoirement vivants ;
+un `000` sur Tor veut dire « le circuit n'a pas abouti dans le temps imparti », pas « l'adresse
+n'existe plus » — et un circuit se construit au hasard, il cale souvent depuis un centre de
+données. Annoncer la mort sur un seul essai, c'est le faux verdict de la leçon #268 **retourné
+contre l'adresse** au lieu du réseau.
+
+**Correctif** : deuxième essai (circuit neuf, 90 s) sur les seules adresses muettes, et le rapport
+ne dit plus `morts` mais `injoignables`, avec la réserve écrite dedans : *« non ouverte depuis CE
+runner après 2 essais ; ce n'est pas une preuve que l'adresse est morte »*. **Garde** : `test:tor`
+passe à **35 contrôles** et exige la 2ᵉ passe + le vocabulaire honnête. **Prouvée discriminante** :
+2ᵉ passe retirée → sortie **1** (« un seul timeout redeviendrait un verdict ») ; remise → 35/0.
+
+**Page `tor.kd-mc.com` v1.5** : la phrase « elles n'ont pas encore été ouvertes » est remplacée par
+le résultat daté, avec la réserve. **Vérifié en vrai Chromium à 375 px** : v1.5 affichée, 0 exception
+JS, 0 débordement latéral, les 3 formulations présentes, l'ancienne phrase absente.
+
 ## 2026-09-17 — L'aller-retour se ferme : le résultat GitLab revient TOUT SEUL ici
 
 Kevin : « Fait. » Le chaînon qui manquait n'était pas le départ du travail — c'était le
