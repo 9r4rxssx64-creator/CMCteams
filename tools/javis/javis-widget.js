@@ -39,6 +39,16 @@
  */
 (function () {
   'use strict';
+
+  /* SA VERSION DOIT ETRE LISIBLE DE DEHORS (Kevin 2026-09-17 « va plus loin »).
+     Tout ce fichier vit dans une IIFE : sans cette ligne, rien ne permet de savoir
+     QUELLE Bee est reellement servie -- donc impossible de prouver qu'une mise en
+     ligne est passee. C'est exactement le defaut que j'ai mesure sur Lingua le meme
+     jour (message m085 aux autres sessions) : je me l'applique a moi-meme.
+     Une ligne, aucun effet visible. L'audit LIVE du domaine la lit tout seul. */
+  var JAVIS_VER = 'v1.3';
+  try { window.JAVIS_VER = JAVIS_VER; } catch (e) {}
+
   if (window.__javisWidgetLoaded) return;
   window.__javisWidgetLoaded = true;
 
