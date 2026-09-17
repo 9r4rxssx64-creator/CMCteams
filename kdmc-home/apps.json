@@ -120,6 +120,10 @@
     "croupier.kd-mc.com": {
       "icon": "🃏",
       "name": "Devenir croupier"
+    },
+    "javis.kd-mc.com": {
+      "name": "Javis (Bee)",
+      "icon": "🐝"
     }
   }
 }

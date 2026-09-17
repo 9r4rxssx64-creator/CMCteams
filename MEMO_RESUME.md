@@ -56,6 +56,13 @@ Surface ajoutée à `audit-live.mjs` (verrou + JSON servi). 🔴 Non mesuré ici
 domaine** (après fusion sur main + Pages) et le jeton `APEX_GITHUB_PAT` a-t-il le droit `workflow`
 (sinon « GitHub HTTP 403 » s'affiche tel quel dans le toast).
 
+**3. « Fais pareil » — la pub suit la niche.** Deux scripts de plus sur ce que le marché désigne :
+`immo-03` (mail de prospection vendeur) et `club-02` (« lundi matin, une consigne nouvelle »).
+Portes de vérité passées, rendus par `pub-videos.yml` (run 35240238639, **vert**, MP4 publiés sur la
+release), **programmés dans Metricool** ven 26.09 10h (immo-03, post 377602953) et 12h (club-02, post
+377602979), 4 réseaux, publication automatique → **14 vidéos, 14 programmées**. `programmation.json`
+et le tableau de bord suivent.
+
 **Piège vu** : le domaine a **deux** admins — `admin.kd-mc.com` (worker kdmc-access, code seul, pas
 de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié → le tableau vit dans le
 second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
