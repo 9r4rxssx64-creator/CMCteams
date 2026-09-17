@@ -834,6 +834,46 @@ TextBelt (clé publique partagée, 1 SMS/jour) est encore dans le code.
   anonymes bloque Apex. Le vrai correctif = jetons signés par rôle (worker `apex-auth`) puis règles `auth.token.role`.
   C'est un chantier Apex, pas Apex Chat — à lancer **en priorité** (voir rapport).
 
+### [P1] Tempête de télémétrie : Firebase injoignable → boucle sans fin de requêtes — ✅ CORRIGÉ (v1.1.291)
+- **Axe** : stabilité / batterie · **Fichier** : `messaging-app/index.html` (`_escalateToApex`, `_safeCatch`, `_logTelemetry`)
+- **Preuve** : mesuré en vrai Chromium le 17/09 pendant un test local, Firebase refusé par le proxy → **3 636 connexions
+  en ~2 min (≈ 30/s)** signalées par le proxy de session.
+- **Cause racine** : l'échec du `POST …/ax_telemetry_in.json` était rattrapé par `_safeCatch('silent')`, qui appelle
+  `_logTelemetry('err')`, qui rappelle `_escalateToApex` → récursion asynchrone infinie dès que Firebase est hors de
+  portée (hors-ligne, réseau d'entreprise, CSP, panne Firebase). Le `.catch(()=>{})` posé par l'appelant ne protégeait
+  de rien : la boucle passait par l'intérieur.
+- **Correctif** : coupe-circuit `K._telemetryGate` — jamais d'auto-rappel dans le `catch`, plafond 10 envois/min,
+  silence 5 min après 3 échecs consécutifs, rien hors-ligne. Journal local conservé (200 entrées).
+- **Test** : `tests/e2e/retour-modale-et-effacement.spec.js` (« télémétrie : Firebase injoignable… ») — 5 erreurs
+  d'affilée → **≤ 3 requêtes** puis pause ; ancien code → centaines. **Effort** S · **Régression** : la télémétrie
+  Apex reçoit au plus 10 entrées/min par appareil (voulu).
+
+### [P2] Second avis Qodo (PR #3890) : historique des modales incohérent au geste Retour — ✅ CORRIGÉ (v1.1.291)
+- **Preuve** : lecture confirmée — `K._closeModal` vidait le DOM sans retirer l'entrée `{modal:true}` ; le Retour suivant
+  consommait une entrée morte (rien à l'écran) et la modale suivante ne recréait pas la sienne (`state.modal` encore vrai).
+- **Correctif** : fermeture par bouton → `history.back()` avec drapeau `_modalBackPending` (popstate sait que c'est nous,
+  pas de seconde fermeture ni de retour à la liste). **Test** e2e réel : ouvrir/fermer au ✕ → entrée retirée ; modale
+  suivante → entrée recréée ; Retour → fermée. **Effort** S.
+
+### [P2] Second avis Qodo (PR #3890) : effacement IndexedDB non attendu à la suppression de compte — ✅ CORRIGÉ (v1.1.291)
+- **Preuve mesurée** : en vrai Chromium, `deleteDatabase('apex_chat_idb')` restait **`blocked`** (l'app rouvre sa
+  connexion à la volée) et la page rechargeait avec la base encore là, alors que l'écran annonçait un effacement local.
+- **Correctif** : `K._wipeLocalDatabases()` — verrou `_idbWiping` (plus aucune réouverture), fermeture de la connexion,
+  `onversionchange` qui ferme (pratique standard), attente du **vrai** succès avec plafond 3 s/base. **Test** e2e réel :
+  base présente avant, absente au retour de la fonction. **Effort** S.
+
+### Second avis indépendant — ce qui a été trié sans correctif
+- **Qodo « ticket #33 non conforme »** : faux positif — le corps de la PR cite « erreur #33 » (une règle CLAUDE.md), que
+  l'outil a pris pour l'issue GitHub n° 33.
+- **Qodo n'a pas relu 39 fichiers** (« token budget »), dont `api-worker.js`, `ConversationDO.js`, `sw.js` : le second
+  avis couvre **`index.html` et les workflows**, pas le worker. Dit tel quel, pas maquillé.
+- **Gitleaks `generic-api-key` `api-worker.js:1306`** : faux positif — `thumbnail_r2_key FROM media` est un nom de
+  colonne SQL dans `handleDeleteMe`. Empreinte ajoutée à `.gitleaksignore` (racine) avec la justification.
+- **SonarCloud « Quality Gate failed — Security Rating C on new code »** : 🔴 **non lisible depuis l'agent**
+  (`sonarcloud.io` → 403 proxy). Lien pour Kevin dans le rapport ; à relire depuis un runner CI.
+- **CodeRabbit** : « Review skipped — bot user detected » (la PR est ouverte par le robot de fusion) → pas de
+  troisième avis. **Vercel** : « 100 déploiements/jour dépassés » sur `tools/agent` — sans rapport avec Apex Chat.
+
 ### Faux positifs écartés (avec preuve)
 - « Raccourcis du manifest (#new/#contacts/#calls/#invite) jamais câblés » — faux : `index.html:16180` les route au
   boot (la passe cherchait la forme quotée `'#new'`).

@@ -251,6 +251,13 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 | CI `messaging-app-tests.yml` sur la branche | ❌ run `35255340099` : cliquet `ConversationDO.js` sous le seuil (fonctions 88,09 % < 89,7 %) — six `.catch` jamais exercés | `vitest run --coverage` |
 | Unitaires locaux après correctif | **71 fichiers · 1347 tests**, `ConversationDO.js` 100 / 98,18 / 100 / 100, cliquet remonté ; tous seuils par fichier tenus | `vitest run --coverage` (sortie `EXIT=0`) |
 | CI e2e 4 voies sur `703cc23db` | ❌ run `35256174034` : `tests` ✅, `chromium-desktop` ✅, `pixel-android` ✅, **`iphone-safari` ❌ 52, `iphone-se` ❌ 52** — WebKit ne démarre pas avec le drapeau Chromium posé en global (annotations du check-run) | `playwright test --project=…` (CI) |
+| CI e2e 4 voies sur `14ef3cb53` (drapeau par projet) | ✅ runs `35256809407` et `35256814524` : `tests` ✅, **iphone-safari ✅, iphone-se ✅**, chromium ✅, pixel ✅ | `messaging-app-tests.yml` |
+| e2e contre la **production** (`apex-chat-e2e.yml`) | ✅ run `35256269640` — « Prod OK (HTTP 200) », 3 scénarios (smoke, deux clients, push) | annotations du check-run |
+| Audit LIVE de toutes les surfaces (`audit-live.yml`) | ✅ run `35256272025` — rc=0, **40 pages OK, 0 bloquante** ; Apex Chat : 1 requête tierce tolérée, 2 lignes de console (CSP `frame-ancestors` en meta) ; « version servie : non exposée par la page » (amélioration à faire) | check-run |
+| Fusion | PR **#3890** fusionnée 18:03 UTC (`d4a2697f2`), PR **#3892** (WebKit) fusionnée ; `deploy-apex-chat.yml` sur main ✅ `35256806578` (worker v1.1.290 en ligne) | API GitHub |
+| Second avis indépendant | Qodo run `35256337495` ✅ sur #3890 : 2 findings confirmés et corrigés (modales, IndexedDB), 1 faux positif (ticket #33), 39 fichiers non relus (budget) | commentaires PR |
+| Tempête de télémétrie (locale, Firebase refusé) | **3 636 connexions en ~2 min** avant → **≤ 3 puis pause 5 min** après (test e2e) | proxy de session + Playwright |
+| e2e local après correctifs Qodo | `retour-modale-et-effacement.spec.js` **3/3** Chromium | `playwright test` |
 | e2e Chromium local après | **56 / 56** (dont SW actif + cache peuplé) | `playwright test --project=chromium-desktop` |
 | Boot (Chromium 375×812, API mockée) | LCP 116 ms (login) / 88 ms (liste) ; 0 exception ; 0 mutation DOM et 0 rendu au repos sur 3 vues ; 7–8 minuteries, aucune ≤ 1 s | passe perf |
 | Chat 1 000 messages | rendu 84 ms ; 20 messages entrants 8,6 ms/msg ; 0 fuite DOM après 20 cycles | passe perf |

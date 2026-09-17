@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.290",
+  "softwareVersion": "v1.1.291",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -463,7 +463,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.290';
+const __APEX_CHAT_VERSION__ = 'v1.1.291';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 60s (HEAD/ETag)
 if('serviceWorker' in navigator){
@@ -666,7 +666,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.290</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.291</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -680,7 +680,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.290</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.291</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -827,12 +827,22 @@ function ls(key, value){
 
 // IndexedDB shadow store
 let _idb = null;
+let _idbWiping = false;   // suppression de compte en cours : plus aucune (ré)ouverture (sinon deleteDatabase reste « blocked »)
 async function idbOpen(){
   if(_idb) return _idb;
+  if(_idbWiping) throw new Error('idb: effacement local en cours');
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('apex_chat_idb', 1);
     req.onerror = () => reject(req.error);
-    req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+    req.onsuccess = () => {
+      const db = req.result;
+      // Une suppression demandée pendant l'ouverture (compte effacé) : on ne garde pas la connexion.
+      if(_idbWiping){ try{ db.close(); }catch(_){} reject(new Error('idb: effacement local en cours')); return; }
+      // deleteDatabase() prévient les connexions ouvertes par `versionchange` : on se ferme aussitôt,
+      // sinon la suppression reste « blocked » tant que la page vit (mesuré en vrai Chromium).
+      db.onversionchange = () => { try{ db.close(); }catch(_){} if(_idb === db) _idb = null; };
+      _idb = db; resolve(_idb);
+    };
     req.onupgradeneeded = () => {
       const db = req.result;
       if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
@@ -910,7 +920,18 @@ function _logTelemetry(severity, sentinel, payload){
   }
 }
 
+// Audit 17/09/2026 (mesuré en vrai Chromium, Firebase injoignable) : l'échec du POST passait par
+// _safeCatch → _logTelemetry → _escalateToApex → échec → … : 3 636 requêtes en 2 min (~30/s),
+// hors-ligne, réseau bloqué ou Firebase en panne. Coupe-circuit : jamais d'auto-rappel, plafond
+// 10 envois / minute, et après 3 échecs consécutifs on se tait 5 min (compteur exposé pour l'admin).
+K._telemetryGate = { sent: [], failures: 0, pausedUntil: 0 };
 async function _escalateToApex(severity, sentinel, payload){
+  const g = K._telemetryGate, now = Date.now();
+  if(now < g.pausedUntil) return;
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  g.sent = g.sent.filter((t) => now - t < 60000);
+  if(g.sent.length >= 10) return;
+  g.sent.push(now);
   try{
     const entry = {
       id: 'apexchat_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
@@ -923,11 +944,18 @@ async function _escalateToApex(severity, sentinel, payload){
       ts: Date.now(),
       processed: false
     };
-    await fetch(FIREBASE_URL + '/apex/ax_telemetry_in.json', {
+    const r = await fetch(FIREBASE_URL + '/apex/ax_telemetry_in.json', {
       method: 'POST',
       body: JSON.stringify(entry)
     });
-  }catch(e){_safeCatch('silent',e)}
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    g.failures = 0;
+  }catch(e){
+    // JAMAIS _safeCatch ici (c'est lui qui nous appelle) : journal local seulement + pause.
+    g.failures++;
+    if(g.failures >= 3){ g.pausedUntil = Date.now() + 5 * 60 * 1000; g.failures = 0; }
+    try{ console.warn('[apex-chat] télémétrie non envoyée :', e && e.message, g.pausedUntil ? '(pause 5 min)' : ''); }catch(_){}
+  }
 }
 
 function _runSentinels(){
@@ -12280,9 +12308,37 @@ K._deleteMyAccountGo = async function(){
     toast('✅ Compte supprimé. À bientôt peut-être.', 'ok', 4000);
     // efface tout ce qui est local (dont les clés de chiffrement) sans confirmation supplémentaire
     try{ for(const k of Object.keys(localStorage)){ if(k.startsWith(PERSIST_PREFIX) || k.startsWith('draft_') || /^(crypto_|ratchet_|user_pin|user_unlock|apex_chat_)/.test(k)) localStorage.removeItem(k); } }catch(_){}
-    try{ if(window.indexedDB && indexedDB.databases){ const dbs = await indexedDB.databases(); for(const d of dbs){ if(d && d.name) indexedDB.deleteDatabase(d.name); } } }catch(_){}
+    // Second avis indépendant (Qodo, PR #3890) : deleteDatabase() était lancé sans fermer notre
+    // connexion ni attendre → suppression « bloquée » possible, page rechargée avec la base encore là
+    // alors que l'écran annonçait un effacement local. On ferme, on attend chaque suppression
+    // (succès / erreur / bloquée), plafond 3 s par base pour ne jamais rester coincé.
+    await K._wipeLocalDatabases();
     setTimeout(() => location.replace(location.pathname), 1200);
   }catch(e){ toast('Suppression impossible : ' + K._humanError(e), 'err', 7000); }
+};
+
+/** Efface toutes les bases IndexedDB locales et ATTEND leur suppression (jamais plus de 3 s chacune). */
+K._wipeLocalDatabases = async function(){
+  if(!window.indexedDB) return { deleted: [], blocked: [] };
+  const out = { deleted: [], blocked: [] };
+  // 1) plus aucune réouverture (l'app persiste en continu ; une connexion rouverte pendant la
+  //    suppression la laisse « blocked » — mesuré en vrai Chromium), puis on ferme la nôtre.
+  try{ if(typeof _idbWiping !== 'undefined') _idbWiping = true; }catch(_){}
+  try{ if(typeof _idb !== 'undefined' && _idb){ _idb.close(); _idb = null; } }catch(_){}
+  const names = ['apex_chat_idb'];
+  try{ if(indexedDB.databases){ for(const d of await indexedDB.databases()){ if(d && d.name && !names.includes(d.name)) names.push(d.name); } } }catch(_){}
+  // 2) on attend le VRAI succès : « blocked » n'est pas une fin (la suppression aboutit dès que la
+  //    dernière connexion se ferme) ; plafond 3 s par base pour ne jamais rester coincé.
+  await Promise.all(names.map((n) => new Promise((resolve) => {
+    let done = false;
+    const fin = (how) => { if(done) return; done = true; (how === 'ok' ? out.deleted : out.blocked).push(n); resolve(); };
+    try{
+      const rq = indexedDB.deleteDatabase(n);
+      rq.onsuccess = () => fin('ok'); rq.onerror = () => fin('erreur');
+    }catch(_){ fin('erreur'); }
+    setTimeout(() => fin('délai'), 3000);
+  })));
+  return out;
 };
 
 // Audit 17/09/2026 (PWA) : sur iPhone, Safari n'a pas de bouton « Installer » — on explique
@@ -14752,13 +14808,28 @@ K._showModal = function(title, html, opts){
   setTimeout(() => { const dlg = host.querySelector('.modal'); if (dlg) dlg.focus(); }, 30);
 };
 
-K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
+// Second avis indépendant (Qodo, PR #3890, 17/09/2026) : fermer une modale par son bouton ✕
+// laissait l'entrée d'historique { modal:true } en place → le geste Retour suivant la consommait
+// sans rien changer à l'écran, et la modale suivante ne recréait pas d'entrée (state.modal encore
+// vrai). Désormais une fermeture par bouton retire aussi l'entrée (history.back()), et popstate
+// sait que c'est nous : pas de seconde fermeture, pas de retour à la liste par erreur.
+K._modalBackPending = false;   // un history.back() lancé par _closeModal est en vol
+K._modalPopClosing = false;    // _closeModal appelé depuis popstate (l'entrée est déjà consommée)
+K._closeModal = function(){
+  const host = $('#modal-host');
+  const had = !!(host && host.innerHTML);
+  if(host) host.innerHTML = '';
+  try{
+    if(had && !K._modalPopClosing && history.state && history.state.modal){ K._modalBackPending = true; history.back(); }
+  }catch(_){}
+};
 // Audit 17/09/2026 (P1 UX) : geste retour iOS / bouton Android — ferme la modale ouverte,
 // sinon revient à la liste depuis une conversation, sans jamais quitter l'app d'un coup.
 window.addEventListener('popstate', () => {
   try{
+    if(K._modalBackPending){ K._modalBackPending = false; return; }   // c'est notre propre back()
     const host = $('#modal-host');
-    if(host && host.innerHTML){ K._closeModal(); return; }
+    if(host && host.innerHTML){ K._modalPopClosing = true; try{ K._closeModal(); } finally { K._modalPopClosing = false; } return; }
     if(K.view === 'chat'){ K.view = 'chats'; K.render(); }
   }catch(_e){ _safeCatch('silent', _e); }
 });
