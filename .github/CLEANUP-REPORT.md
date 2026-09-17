@@ -1,14 +1,15 @@
 # Compte-rendu du menage automatique
 
-Genere le 2026-09-17 06:43 UTC par auto-merge-claude.yml.
+Genere le 2026-09-17 10:05 UTC par auto-merge-claude.yml.
 
 ## Branches
 
+- supprimee `auto-deploy/apex-v13-build-34459553212` (``)
 
 | vues | supprimees | gardees |
 |---:|---:|---:|
 | 0
-0 | 0 | 133 |
+0 | 1 | 132 |
 
 Echecs de suppression : **0**
 
