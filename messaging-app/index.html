@@ -830,6 +830,9 @@ function ls(key, value){
 // IndexedDB shadow store
 let _idb = null;
 let _idbWiping = false;   // suppression de compte en cours : plus aucune (ré)ouverture (sinon deleteDatabase reste « blocked »)
+// Effacement resté bloqué lors d'une suppression de compte (autre onglet) → on le termine AVANT toute ouverture.
+let _idbWipePending = false;
+try{ _idbWipePending = !!localStorage.getItem('apex_chat_wipe_pending'); if(_idbWipePending) _idbWiping = true; }catch(_){}
 async function idbOpen(){
   if(_idb) return _idb;
   if(_idbWiping) throw new Error('idb: effacement local en cours');
@@ -861,7 +864,18 @@ async function idbSet(key, value){
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error);
     });
-  }catch(e){ _safeCatch('idbSet', e); }
+  }catch(e){ _idbNoteError('idbSet', e); }
+}
+
+// Audit 17/09/2026 (mesuré en vrai Chromium, journal de 7,9 Mo en 2 min) : l'échec d'idbSet partait à
+// `_safeCatch` → `_logTelemetry` → `ls('telemetry')` → `idbSet` → échec → … boucle infinie et CPU à 100 %
+// dès qu'IndexedDB refuse (navigation privée Safari, quota, effacement en cours). La copie IndexedDB est
+// « au mieux » : on le note 3 fois dans la console, jamais dans la chaîne de télémétrie, et on continue.
+let _idbErrs = 0;
+function _idbNoteError(ctx, e){
+  _idbErrs++;
+  if(_idbErrs > 3) return;
+  try{ console.warn('[apex-chat:' + ctx + ']', e && e.message); if(_idbErrs === 3) console.warn('[apex-chat] IndexedDB indisponible : l\'app continue avec la mémoire locale seule (plus de messages).'); }catch(_){}
 }
 
 async function idbGet(key){
@@ -12314,8 +12328,11 @@ K._deleteMyAccountGo = async function(){
     // connexion ni attendre → suppression « bloquée » possible, page rechargée avec la base encore là
     // alors que l'écran annonçait un effacement local. On ferme, on attend chaque suppression
     // (succès / erreur / bloquée), plafond 3 s par base pour ne jamais rester coincé.
-    await K._wipeLocalDatabases();
-    setTimeout(() => location.replace(location.pathname), 1200);
+    const wiped = await K._wipeLocalDatabases();
+    if(wiped.blocked.length){
+      toast('Une autre fenêtre d\'Apex Chat est encore ouverte : ferme-la. Les données locales restantes seront effacées au prochain démarrage.', 'warn', 7000);
+    }
+    setTimeout(() => location.replace(location.pathname), wiped.blocked.length ? 4000 : 1200);
   }catch(e){ toast('Suppression impossible : ' + K._humanError(e), 'err', 7000); }
 };
 
@@ -12340,8 +12357,18 @@ K._wipeLocalDatabases = async function(){
     }catch(_){ fin('erreur'); }
     setTimeout(() => fin('délai'), 3000);
   })));
+  // Second avis Qodo (PR #3894) : une base encore « bloquée » après 3 s (autre onglet, ancienne fenêtre)
+  // n'est PAS un effacement : on le dit, et on le REFAIT au prochain démarrage (drapeau lu avant toute
+  // ouverture de base). Rien n'est annoncé effacé s'il ne l'est pas.
+  try{
+    if(out.blocked.length){ localStorage.setItem('apex_chat_wipe_pending', '1'); }
+    else { localStorage.removeItem('apex_chat_wipe_pending'); if(typeof _idbWiping !== 'undefined') _idbWiping = false; }
+  }catch(_){}
   return out;
 };
+// Effacement resté bloqué à la dernière suppression de compte (autre onglet ouvert) → on le termine dès le
+// chargement, avant que l'app n'ouvre quoi que ce soit (_idbWiping est déjà levé par la lecture du drapeau).
+try{ if(typeof _idbWipePending !== 'undefined' && _idbWipePending){ K._wipeLocalDatabases().then((w) => { try{ console.warn('[apex-chat] effacement local repris au démarrage :', JSON.stringify(w)); }catch(_){} }).catch(() => {}); } }catch(_){}
 
 // Audit 17/09/2026 (PWA) : sur iPhone, Safari n'a pas de bouton « Installer » — on explique
 // les 3 gestes une fois, seulement hors app installée, et on n'insiste jamais (✕ mémorisé).

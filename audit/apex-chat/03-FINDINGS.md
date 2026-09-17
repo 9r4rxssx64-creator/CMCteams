@@ -848,6 +848,23 @@ TextBelt (clé publique partagée, 1 SMS/jour) est encore dans le code.
   d'affilée → **≤ 3 requêtes** puis pause ; ancien code → centaines. **Effort** S · **Régression** : la télémétrie
   Apex reçoit au plus 10 entrées/min par appareil (voulu).
 
+### [P1] IndexedDB qui refuse → boucle infinie erreur → télémétrie → écriture → erreur (CPU à 100 %) — ✅ CORRIGÉ (v1.1.291)
+- **Preuve** : mesuré en vrai Chromium le 17/09 : journal de **7,9 Mo en 2 min**, page qui ne se recharge plus, pendant
+  un test où IndexedDB refusait d'ouvrir.
+- **Cause racine** : `ls()` copie chaque écriture en IndexedDB (`idbSet`) ; l'échec partait à `_safeCatch` → `_logTelemetry`
+  → `ls('telemetry')` → `idbSet` → échec → … Déclencheurs réels : **navigation privée Safari**, quota plein, effacement de
+  compte en cours. Même famille que la tempête de télémétrie : un rattrapeur d'erreur qui écrit par le chemin qui a échoué.
+- **Correctif** : `_idbNoteError` — 3 avertissements console au plus, jamais la chaîne de télémétrie ; l'app continue avec la
+  mémoire locale seule. **Test** e2e réel : `indexedDB` remplacé par un objet qui refuse, 20 écritures → ≤ 6 avertissements,
+  `lg()` fonctionne toujours. **Effort** S.
+
+### [P2] Second avis Qodo (PR #3894) : effacement resté « bloqué » annoncé comme fait — ✅ CORRIGÉ (v1.1.291)
+- **Point valide** : après 3 s, une base encore bloquée (autre onglet) était traitée comme effacée, la page rechargée.
+- **Correctif** : drapeau `apex_chat_wipe_pending` + message clair (« une autre fenêtre est encore ouverte ») + **reprise de
+  l'effacement au démarrage suivant**, avant toute ouverture de base (`_idbWiping` levé dès la lecture du drapeau ;
+  `onversionchange` ferme nos connexions). **Test** e2e réel en 2 temps (connexion étrangère qui bloque → drapeau et base
+  encore là, pas de mensonge ; rechargement → donnée de l'ancien compte disparue, drapeau levé).
+
 ### [P2] Second avis Qodo (PR #3890) : historique des modales incohérent au geste Retour — ✅ CORRIGÉ (v1.1.291)
 - **Preuve** : lecture confirmée — `K._closeModal` vidait le DOM sans retirer l'entrée `{modal:true}` ; le Retour suivant
   consommait une entrée morte (rien à l'écran) et la modale suivante ne recréait pas la sienne (`state.modal` encore vrai).
