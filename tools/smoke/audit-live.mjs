@@ -303,9 +303,20 @@ const SURFACES = [
             if (u < 5 || !note) return { ok:false, note:'🇲🇨 cours monégasque incomplet : ' + u + ' unités, note honnête ' + note };
           }
         } catch (e) { mc = ' · 🇲🇨 sonde monégasque indispo'; }
-        // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt)
-        const ver = await page.evaluate(() => { const b = document.querySelector('.ver, .version, [data-ver]'); return b ? b.textContent.trim() : (window.APP_VER || ''); }).catch(() => '');
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts + (ver ? ' · version servie ' + ver : '') };
+        // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt).
+        // 17/09 : cette sonde ne disait RIEN et personne ne s'en apercevait — le faux vert de la
+        // leçon #103. Deux défauts : (a) si l'élément trouvé était VIDE, l'ancien code renvoyait ''
+        // et ne regardait JAMAIS window.APP_VER, qui est pourtant la source (`var APP_VER` en tête
+        // de lingua/app.js, script classique donc global) ; (b) une version non lue s'affichait
+        // comme une LIGNE EN MOINS, indistinguable d'un contrôle réussi. Corrigé : APP_VER d'abord,
+        // l'élément en repli, et on ÉCRIT « ❓ non lue » plutôt que de se taire.
+        const ver = await page.evaluate(() => {
+          const g = (typeof window.APP_VER === 'string' && window.APP_VER.trim()) || '';
+          if (g) return g;
+          const b = document.querySelector('.ver, .version, [data-ver]');
+          return b && b.textContent.trim() ? b.textContent.trim() : '';
+        }).catch(() => '');
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts + ' · version servie ' + (ver || '❓ non lue') };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
