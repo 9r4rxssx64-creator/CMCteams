@@ -196,7 +196,9 @@ jobs:
           if [ -n "${{ inputs.programmer }}" ]; then MSG="Pub auto : programmation Metricool enregistrée ($(date -u +%G-%V))"; else MSG="Pub auto : nouveaux scripts ${{ steps.nouveaux.outputs.ids }} rendus et publiés ($(date -u +%G-%V))"; fi
           git commit -m "$MSG" -m "Écrit par pub-videos.yml (routine hebdomadaire « Pub — vidéos de la semaine »). Scripts passés par la porte de vérité, MP4 sur la release pub-videos."
           git push -u origin "$BR"
-          if ! gh pr view "$BR" --json number >/dev/null 2>&1; then
+          # `gh pr view` renvoie aussi une PR FUSIONNÉE (vécu run 35261664161 : aucune PR ouverte
+          # pour la mémoire, car la PR de la semaine était déjà fusionnée) → on cherche une PR OUVERTE.
+          if [ "$(gh pr list --head "$BR" --state open --json number --jq length)" = "0" ]; then
             gh pr create --base main --head "$BR" --title "Pub auto — $(date -u +%G-%V)" --body "$MSG. Fichiers : tools/pub/scripts.json, tools/pub/programmation.json, kdmc-home/admin/commerce-data.json. Rien de payant, aucun secret."
           fi
           echo "PUB AUTO POUSSÉE : $BR"
