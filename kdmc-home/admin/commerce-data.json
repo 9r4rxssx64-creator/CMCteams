@@ -291,7 +291,15 @@
       "legende": "Le devis est parti, le client se tait, et tu n'oses pas relancer. Le Club IA au Boulot te donne la consigne à copier pou"
     }
   ],
-  "liens": [],
+  "liens": [
+    {
+      "produit": "kit",
+      "post": 377824824,
+      "date": "2026-09-29T10:00:00+02:00",
+      "url": "https://kit.kd-mc.com/",
+      "apercu": "https://kit.kd-mc.com/og/kit.png"
+    }
+  ],
   "programmation": {
     "marque": 7000185,
     "planning": "https://app.metricool.com/planner/calendar?blogId=7000185",
