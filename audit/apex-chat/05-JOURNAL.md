@@ -190,3 +190,10 @@ grossi le dénominateur pendant que **six rappels d'erreur `.catch(...)` anciens
 par aucun test. Correctif = `tests/unit/conversation-do-rappels-erreur.test.js` (6 tests : config qui plante,
 `read` en panne D1, push d'appel en échec, web-push qui rejette, `setAlarm` qui rejette, télémétrie qui rejette)
 → mesuré **100 / 98,18 / 100 / 100**, cliquet remonté à cette mesure. 71 fichiers · 1 347 tests. Leçon #272.
+
+**Deuxième faux vert (17/09, 18:05 UTC)** : le run `35256174034` de `messaging-app-tests.yml` a rougi sur les deux
+voies **iPhone (WebKit)** — 52 tests — alors que Chromium et Pixel étaient verts. Cause : le drapeau Chromium
+`--ignore-certificate-errors` (ajouté pour que le Service Worker accepte le certificat local) était dans le `use`
+global de Playwright et partait aussi à WebKit, qui ne démarre pas avec. Je n'ai pas de WebKit en local : je n'avais
+vu que Chromium. Correctif : drapeau posé **par projet Chromium** ; WebKit garde `ignoreHTTPSErrors`. Leçon #273.
+
