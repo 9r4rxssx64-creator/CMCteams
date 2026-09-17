@@ -36,8 +36,10 @@ export const CARTE_MUETTE = 3.2;
 export function lireScripts(url = SCRIPTS) { return JSON.parse(readFileSync(url, 'utf8')); }
 
 /* ── Vérité du script (avant tout rendu) ─────────────────────────────────── */
-const SANS_ACCENT = /\b(ca|deja|prepare[sz]?|reponses?|telephone|precise?s?|tres|apres|ecrite?s?|reunions?|systeme|probleme|premiere|derniere|verifie[sz]?|numero|equipe|meme|etre|ete|prete?s?|regles?|genere|cree[sz]?|creer|resume|releve|decris|realise)\b/gi;
-const INTERDIT = /\bprompts?\b|garanti|\b\d+ ?%|gagne[sz]? \d|rapporte|revenu|tvA|urssaf|article L/i;
+export const SANS_ACCENT = /\b(ca|deja|prepare[sz]?|reponses?|telephone|precise?s?|tres|apres|ecrite?s?|reunions?|systeme|probleme|premiere|derniere|verifie[sz]?|numero|equipe|meme|etre|ete|prete?s?|regles?|genere|cree[sz]?|creer|resume|releve|decris|realise)\b/gi;
+/* Exporté : les posts-liens Facebook (tools/pub/liens.mjs) passent la MÊME porte de vérité —
+   un mot interdit ne doit pas dépendre de l'endroit où le texte est écrit (leçon #142). */
+export const INTERDIT = /\bprompts?\b|garanti|\b\d+ ?%|gagne[sz]? \d|rapporte|revenu|tvA|urssaf|article L/i;
 export function valideScript(v, { produits = [] } = {}) {
   const e = [];
   if (!/^[a-z]+-\d{2}$/.test(String(v.id || ''))) e.push('id attendu « niche-01 »');

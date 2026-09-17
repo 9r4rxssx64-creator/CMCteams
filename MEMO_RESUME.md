@@ -1,5 +1,39 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 21:00 — « Fais Facebook maintenant que tu as les accès » : l'aperçu des liens, et le seul format qui amène du trafic
+
+**Mesuré d'abord, avant de coder** : `getBrandSettings` → Facebook connecté (Page `1373991005790862`),
+et les **16 posts déjà programmés le portent déjà** (`facebook` en PENDING). Donc « brancher Facebook »
+était déjà fait — ce qui restait, c'est ce qui rend Facebook **utile**.
+
+**Le trou trouvé (mesuré, pas supposé)** : **0 des 6 pages du Kit** n'avait d'image d'aperçu
+(`og:image`), alors que les 5 boutiques POD en ont une depuis le début. Conséquence : tout lien du
+Kit partagé sur Facebook, WhatsApp, iMessage ou LinkedIn s'affichait en **rectangle gris**.
+
+**Livré :**
+- **`tools/produits/apercus.mjs`** — les 6 images d'aperçu, **1200×630**, générées par Chromium
+  depuis un gabarit dans la charte RÉELLE du Kit (bleu `#2456D6`, Manrope — la même que la page qui
+  s'ouvre après le clic, pour qu'on la reconnaisse). Mesuré : Manrope chargée sur les 6, 41 à 58 Ko.
+  Les balises sont posées dans les pages entre deux marques, sans jamais dupliquer ce qui existait
+  déjà (`lire.html` n'avait AUCUNE balise og : elle a reçu le jeu complet, `immo.html` seulement ce
+  qui manquait). Une niche future créée par la fabrique a son aperçu automatiquement.
+- **`tools/pub/liens.mjs`** — le **post AVEC LIEN** sur la Page : un Reel ne rend pas le lien
+  cliquable (il renvoie au profil), c'est ce format-là qui amène quelqu'un sur kit.kd-mc.com. Texte
+  construit depuis le catalogue + l'accroche de l'aperçu, **même porte de vérité que les vidéos**
+  (`INTERDIT` et `SANS_ACCENT` sont maintenant exportés par `video.mjs` — une seule liste de mots
+  interdits, leçon #142), **rotation** des pages (jamais deux fois la même avant que les autres y
+  soient passées), et un créneau jamais partagé avec une vidéo.
+- **`pub-videos.yml`** gagne deux modes (`lien` / `programmer_lien`) : le mode `lien` **refuse de
+  préparer un post si l'aperçu ne répond pas HTTP 200** — sans image, le post ne se clique pas.
+- **Tableau de bord Commerce** : tuile « 🔗 Pub — posts avec lien », avec la page et son aperçu
+  cliquables ; le vide dit ce qui va se passer au lieu d'être blanc.
+
+**Gardes** : `test:apercus-liens` (6 contrôles : image présente, 1200×630 exactement, poids, balises
+= ce que les sources produisent, jamais de doublon d'og:title, CSP qui accepte l'image, textes
+lisibles) **prouvée discriminante** — image retirée → 3 échecs, `summary_large_image` retiré → 2 ;
++ 2 contrôles de rotation et de vérité du post-lien ; + la tuile du tableau de bord. Total vert :
+**74 contrôles hors ligne + 20 en vrai navigateur**.
+
 ## 2026-09-17 18:30 — « Tu as tout prévu ? création auto régulière, mise en ligne, pub, tout automatique » → la chaîne pub est maintenant AUTONOME
 
 **Réponse honnête donnée à Kevin** : avant ce soir, seule la consigne du Club (lundi 07:00) tournait seule. Les scripts de pub, le rendu et la programmation Metricool étaient faits à la main par moi. Plus maintenant.
@@ -18,7 +52,7 @@
 
 **Premier tour RÉEL, fait par moi à la place de la routine (17.09 18h-20h)** : run [35244488043](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35244488043) vert en 2 min — 2 scripts neufs (immo-04 « Trois acheteurs te relancent pendant ta visite. », club-03 « Ton devis est parti mardi. Toujours aucune réponse. »), rendus 21 s et 19 s, MP4 HTTP 200 sur la release, `a-programmer.json`, branche `claude/pub-auto-2026-38`, PR #3884. **Trois défauts trouvés et corrigés dans la foulée** : (1) le nom d'une étape contenait « : » non cité → YAML invalide, GitHub répondait « Workflow does not have workflow_dispatch trigger » et `test:workflows-valides` était vert (il ne parse pas) → contrôle 5 ajouté (620/0, discriminant) ; (2) immo-04 est sorti **sans accents** (« prepare tes reponses ») → la porte de vérité refuse désormais un mot courant sans accent (16 contrôles), la consigne au modèle l'exige, le script corrigé à la main et re-rendu ; (3) `tests/pub-nouveaux` attendait « immo-04 » en dur → aurait rougi chaque lundi quand scripts.json grandit → ids calculés (vérifié avec le fichier des deux branches). Posts Metricool : immo-04 = 377714810 (lun 28.09 10 h, re-rendu accentué run 35254598310 vert), club-03 = 377677711 (28.09 12 h) ; mémoire enregistrée par le mode `programmer` du workflow (run 35261664161, « PROGRAMMATION ENREGISTRÉE 2 »), rapatriée dans cette branche : **16 vidéos, 16 programmées** du 18 au 28.09. **4ᵉ défaut trouvé au passage** : `gh pr view` renvoie aussi une PR fusionnée → le workflow croyait sa PR ouverte et n'en créait pas → `gh pr list --state open`. **Ce que la routine fera seule lundi 21.09** : la même chose, sans moi.
 
-**Limites honnêtes** : (a) une routine à session NEUVE tourne **sans aucun connecteur** (la plateforme refuse `connectors` : « not available for this organization », et le 1ᵉʳ essai a été créé avec l'avertissement « stores no MCP connectors ») → Metricool serait absent. **Solution retenue** : la routine réveille CETTE session (video-review, `persistent_session_id`), qui détient Metricool ET les outils GitHub Actions. **Mesuré par une session-sonde neuve (session_01KYuwpjHWSBYAQuLJP6SFX, 16h02)** : Metricool présent (9 outils), mais **AUCUN outil GitHub `actions_run_trigger` / `get_job_logs`** → la routine du Club (session neuve) aurait échoué lundi à son 1ᵉʳ réveil ; elle a été **recréée elle aussi sur cette session** (trig_01NRF9EF7ijFiENxU1KPDSHk, 07:00 UTC ; l'ancienne trig_01EAY5… supprimée). Les deux routines envoient leur bilan à Kevin par Gmail (une routine liée à une session n'a pas de notification push). Si cette session est un jour archivée, les deux routines échouent — à savoir ; (b) la fusion de la PR `claude/pub-auto-*` dépend du robot auto-merge, comme toutes les branches `claude/*` ; (c) Facebook reste « plus tard » (Kevin 16.09) : les posts Facebook sont créés mais le réseau n'est pas branché.
+**Limites honnêtes** : (a) une routine à session NEUVE tourne **sans aucun connecteur** (la plateforme refuse `connectors` : « not available for this organization », et le 1ᵉʳ essai a été créé avec l'avertissement « stores no MCP connectors ») → Metricool serait absent. **Solution retenue** : la routine réveille CETTE session (video-review, `persistent_session_id`), qui détient Metricool ET les outils GitHub Actions. **Mesuré par une session-sonde neuve (session_01KYuwpjHWSBYAQuLJP6SFX, 16h02)** : Metricool présent (9 outils), mais **AUCUN outil GitHub `actions_run_trigger` / `get_job_logs`** → la routine du Club (session neuve) aurait échoué lundi à son 1ᵉʳ réveil ; elle a été **recréée elle aussi sur cette session** (trig_01NRF9EF7ijFiENxU1KPDSHk, 07:00 UTC ; l'ancienne trig_01EAY5… supprimée). Les deux routines envoient leur bilan à Kevin par Gmail (une routine liée à une session n'a pas de notification push). Si cette session est un jour archivée, les deux routines échouent — à savoir ; (b) la fusion de la PR `claude/pub-auto-*` dépend du robot auto-merge, comme toutes les branches `claude/*` ; (c) **corrigé le soir même** : Facebook EST branché depuis 13h15 (Page 1373991005790862) — cette ligne, écrite de mémoire, était périmée de six heures. Leçon : une limite se relit dans l'outil avant d'être écrite.
 
 ## 2026-09-17 16:00 — « Va plus loin » : Bee FERME enfin les lèvres (Javis v1.6, les consonnes)
 

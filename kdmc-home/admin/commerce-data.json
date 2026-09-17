@@ -291,6 +291,7 @@
       "legende": "Le devis est parti, le client se tait, et tu n'oses pas relancer. Le Club IA au Boulot te donne la consigne à copier pou"
     }
   ],
+  "liens": [],
   "programmation": {
     "marque": 7000185,
     "planning": "https://app.metricool.com/planner/calendar?blogId=7000185",
@@ -392,7 +393,7 @@
       }
     },
     "pub-videos.yml": {
-      "nom": "Pub : rendre (ou écrire) les vidéos",
+      "nom": "Pub : vidéos et posts-liens Facebook",
       "inputs": {
         "videos": [
           "all",
@@ -417,13 +418,19 @@
           "kit:1",
           "club:1"
         ],
+        "lien": [
+          "non",
+          "oui"
+        ],
         "programmer": "texte",
+        "programmer_lien": "texte",
         "branche": "texte"
       },
       "defaut": {
         "videos": "all",
         "publier": "false",
-        "nouveaux": ""
+        "nouveaux": "",
+        "lien": "non"
       }
     },
     "club-semaine.yml": {

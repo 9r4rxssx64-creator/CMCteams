@@ -121,6 +121,16 @@ test('rendu : la page contient les boutons Livrer/Refuser pour la file, Lancer s
   assert.ok(ko.includes('injoignable') && ko.includes('HTTP 502'), 'la cause de la panne doit être écrite');
 });
 
+test('posts-liens Facebook : la tuile existe, dit ce qu\'elle attend quand c\'est vide, échappe le HTML', () => {
+  assert.ok(Array.isArray(data.liens), 'commerce-data.json doit porter les posts-liens');
+  assert.ok(C.sectionLiens({ liens: [] }).includes('routine du lundi'), 'vide : dire ce qui va se passer, pas un blanc');
+  const un = { liens: [{ produit: 'immo', post: 1, date: '2026-09-29T10:00:00+02:00', url: 'https://kit.kd-mc.com/immo.html', apercu: 'https://kit.kd-mc.com/og/immo.png' }] };
+  const h = C.sectionLiens(un);
+  assert.ok(h.includes('og/immo.png') && h.includes('kit.kd-mc.com/immo.html'), 'la page ET son aperçu sont cliquables');
+  assert.ok(!C.sectionLiens({ liens: [{ produit: '<img src=x onerror=alert(1)>', date: '2026-09-29T10:00:00+02:00', url: 'x', apercu: 'y' }] }).includes('<img src=x'), 'donnée non échappée');
+  assert.ok(C.rendu(data, null, null).includes('posts avec lien'), 'section jamais montée dans la page (code mort)');
+});
+
 /* Sabotages faits le 17.09 pour prouver que la garde mord :
    - retirer 'audit-live.yml' de WORKFLOWS_ATTENDUS → test « MÊMES côté caisse » échoue
    - changer prix immo-ia à 66 dans commerce-data.json → 2 échecs (verifier + prix)

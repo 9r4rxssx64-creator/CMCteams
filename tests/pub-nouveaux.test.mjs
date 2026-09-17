@@ -134,3 +134,47 @@ test('--prepare : ce que la routine lit = vidéos rendues NON encore programmée
   assert.equal(a.marque, 7000185); assert.deepEqual(a.reseaux, ['facebook', 'instagram', 'tiktok', 'youtube']);
   assert.ok(!/ghp_|Bearer |sk-ant/.test(JSON.stringify(a)), 'aucun jeton');
 });
+
+/* ── Posts AVEC LIEN sur la Page Facebook (17.09) ────────────────────────── */
+test('post-lien : le lien est dans le texte, la porte de vérité est la MÊME que les vidéos, la page membres n\'est jamais poussée', async () => {
+  const L = await import('../tools/pub/liens.mjs');
+  const cibles = L.ciblesLien();
+  assert.ok(cibles.length >= 5 && !cibles.some((p) => p.slug === 'lire'), 'l\'espace membres ne se fait pas de la publicité');
+  for (const p of cibles) {
+    const t = L.texteLien(p);
+    const v = L.valideTexteLien(t, p);
+    assert.ok(v.ok, p.slug + ' : ' + v.erreurs.join(' ; '));
+    assert.ok(t.trim().endsWith(p.url), p.slug + ' : le lien doit finir le texte (Facebook prend le dernier lien pour l\'aperçu)');
+  }
+  const bon = cibles[0];
+  for (const [nom, t, motif] of [
+    ['sans lien', L.texteLien(bon).replace(bon.url, ''), /lien/],
+    ['promesse chiffrée', L.texteLien(bon) + ' 30 % de temps en plus', /interdit/],
+    ['sans accents', L.texteLien(bon).replace(/gratuit/, 'deja gratuit'), /accents/],
+    ['émoji', L.texteLien(bon) + ' 🚀', /émoji/],
+  ]) {
+    const v = L.valideTexteLien(t, bon);
+    assert.ok(!v.ok, nom + ' accepté');
+    assert.ok(v.erreurs.some((e) => motif.test(e)), nom + ' : ' + v.erreurs.join(' ; '));
+  }
+});
+
+test('post-lien : rotation (jamais deux fois la même page avant que les autres soient passées), créneau jamais partagé avec une vidéo', async () => {
+  const L = await import('../tools/pub/liens.mjs');
+  const pages = L.ciblesLien();
+  let prog = { marque: 1, fuseau: 'Europe/Paris', posts: [{ video: 'x-01', post: 1, date: '2026-09-28T10:00:00+02:00' }], liens: [] };
+  const vus = [];
+  for (let i = 0; i < pages.length; i++) {
+    const a = L.prepare(prog, { maintenant: new Date('2026-09-17T18:00:00Z') });
+    assert.ok(!vus.includes(a.produit), 'page reproposée avant le tour complet : ' + a.produit);
+    assert.notEqual(a.creneau, '2026-09-28T10:00:00+02:00', 'créneau déjà pris par une vidéo');
+    vus.push(a.produit);
+    prog = L.ajoute(prog, { produit: a.produit, post: 1000 + i, date: a.creneau });
+  }
+  assert.equal(vus.length, pages.length, 'toutes les pages passent');
+  /* Tour suivant : on repart sur la plus ancienne, pas sur n'importe laquelle. */
+  assert.equal(L.prepare(prog, { maintenant: new Date('2026-09-17T18:00:00Z') }).produit, vus[0]);
+  assert.throws(() => L.ajoute(prog, { produit: 'inconnu', post: 9, date: '2026-10-20T10:00:00+02:00' }), /inconnu/);
+  assert.throws(() => L.ajoute(prog, { produit: pages[0].slug, post: 1000, date: '2026-10-20T10:00:00+02:00' }), /déjà enregistré/);
+  assert.throws(() => L.litAjout('immo:abc:2026-09-29T10:00:00+02:00'), /illisible/);
+});

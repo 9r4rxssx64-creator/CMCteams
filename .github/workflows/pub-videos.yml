@@ -41,6 +41,15 @@ on:
         description: "Mémoire Metricool : « id:post:date,… » (ex. immo-04:377612345:2026-09-28T10:00:00+02:00). Rempli = on n'enregistre que ça, aucun rendu"
         type: string
         default: ""
+      lien:
+        description: "Post AVEC LIEN sur la Page Facebook : « oui » prépare le prochain (rotation des pages). Un Reel ne rend pas le lien cliquable, celui-ci oui"
+        type: choice
+        options: ["non", "oui"]
+        default: "non"
+      programmer_lien:
+        description: "Mémoire du post-lien : « produit:post:date » (ex. immo:377712345:2026-09-29T10:00:00+02:00)"
+        type: string
+        default: ""
       branche:
         description: "Branche de travail (vide = claude/pub-auto-<année>-<semaine>)"
         type: string
@@ -71,7 +80,7 @@ jobs:
       # branche claude/pub-auto-*, jamais sur main. Si la branche existe déjà
       # (2ᵉ passage de la même semaine), on repart d'elle.
       - name: Branche de travail
-        if: ${{ inputs.nouveaux != '' || inputs.programmer != '' }}
+        if: ${{ inputs.nouveaux != '' || inputs.programmer != '' || inputs.lien == 'oui' || inputs.programmer_lien != '' }}
         id: br
         shell: bash -eo pipefail {0}
         run: |
@@ -84,7 +93,7 @@ jobs:
           echo "branche=$BR" >> "$GITHUB_OUTPUT"
 
       - name: Nouveaux scripts (API Anthropic + porte de vérité)
-        if: ${{ inputs.nouveaux != '' && inputs.programmer == '' }}
+        if: ${{ inputs.nouveaux != '' && inputs.programmer == '' && inputs.lien != 'oui' && inputs.programmer_lien == '' }}
         id: nouveaux
         env:
           NOUVEAUX: ${{ inputs.nouveaux }}
@@ -102,7 +111,7 @@ jobs:
 
       # Mesuré le 17.09 (run 35216971927) : ffmpeg N'EST PAS sur ubuntu-latest → on l'installe.
       - name: Outils (ffmpeg + police)
-        if: ${{ inputs.programmer == '' }}
+        if: ${{ inputs.programmer == '' && inputs.lien != 'oui' && inputs.programmer_lien == '' }}
         shell: bash -eo pipefail {0}
         run: |
           sudo apt-get update -qq
@@ -112,7 +121,7 @@ jobs:
           test -f /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
 
       - name: Rendu
-        if: ${{ inputs.programmer == '' }}
+        if: ${{ inputs.programmer == '' && inputs.lien != 'oui' && inputs.programmer_lien == '' }}
         env:
           VIDEOS: ${{ steps.nouveaux.outputs.ids || inputs.videos }}
         shell: bash -eo pipefail {0}
@@ -129,7 +138,7 @@ jobs:
           echo "Mesuré : $(ls tools/pub/out/*.mp4 | wc -l) MP4 en 1080x1920 avec audio"
 
       - name: Artifact (pour regarder les vidéos avant de publier)
-        if: ${{ inputs.programmer == '' }}
+        if: ${{ inputs.programmer == '' && inputs.lien != 'oui' && inputs.programmer_lien == '' }}
         uses: actions/upload-artifact@v4
         with:
           name: pub-videos
@@ -139,7 +148,7 @@ jobs:
           retention-days: 14
 
       - name: Publication (release « pub-videos », adresse publique)
-        if: ${{ inputs.programmer == '' && inputs.publier == 'true' }}
+        if: ${{ inputs.programmer == '' && inputs.programmer_lien == '' && inputs.lien != 'oui' && inputs.publier == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: pub-videos
@@ -152,7 +161,7 @@ jobs:
             tools/pub/out/index.json
 
       - name: Adresses publiques + preuve que la release les sert
-        if: ${{ inputs.programmer == '' && inputs.publier == 'true' }}
+        if: ${{ inputs.programmer == '' && inputs.programmer_lien == '' && inputs.lien != 'oui' && inputs.publier == 'true' }}
         shell: bash -eo pipefail {0}
         run: |
           for f in tools/pub/out/*.mp4; do
@@ -164,7 +173,7 @@ jobs:
           done
 
       - name: "À programmer (ce que la routine lit : MP4 publics + créneaux libres)"
-        if: ${{ inputs.nouveaux != '' && inputs.programmer == '' }}
+        if: ${{ inputs.nouveaux != '' && inputs.programmer == '' && inputs.lien != 'oui' && inputs.programmer_lien == '' }}
         shell: bash -eo pipefail {0}
         run: |
           node tools/pub/programmation.mjs --prepare tools/pub/out/index.json tools/pub/a-programmer.json 2>&1 | tee /tmp/prep.log
@@ -183,17 +192,47 @@ jobs:
           node --test tests/pub-nouveaux.test.mjs tests/commerce-tableau.test.mjs
           rm -f tools/pub/a-programmer.json
 
+      - name: Post avec lien Facebook (ce que la routine programme)
+        if: ${{ inputs.lien == 'oui' && inputs.programmer_lien == '' }}
+        shell: bash -eo pipefail {0}
+        run: |
+          node tools/pub/liens.mjs --prepare tools/pub/a-publier-lien.json 2>&1 | tee /tmp/lien.log
+          grep -qE "^LIEN À PROGRAMMER " /tmp/lien.log || { echo "ÉCHEC : aucun post-lien préparé"; exit 1; }
+          # L'aperçu doit être EN LIGNE, sinon Facebook affiche un rectangle gris (mesuré le 17.09).
+          IMG=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync("tools/pub/a-publier-lien.json","utf8")).apercu)')
+          C=$(curl -sS -o /dev/null -w "%{http_code}" -I -L "$IMG" || echo 000)
+          [ "$C" = "200" ] || { echo "ÉCHEC : l'aperçu $IMG répond HTTP $C — le post-lien n'aurait pas d'image"; exit 1; }
+          echo "Aperçu servi : $IMG (HTTP 200)"
+          echo "A_PUBLIER_LIEN_JSON $(node -e 'process.stdout.write(JSON.stringify(JSON.parse(require("fs").readFileSync("tools/pub/a-publier-lien.json","utf8"))))')"
+
+      - name: Mémoire du post-lien
+        if: ${{ inputs.programmer_lien != '' }}
+        env:
+          PROGRAMMER_LIEN: ${{ inputs.programmer_lien }}
+        shell: bash -eo pipefail {0}
+        run: |
+          node tools/pub/liens.mjs --ajoute "$PROGRAMMER_LIEN" 2>&1 | tee /tmp/memolien.log
+          grep -qE "^LIEN ENREGISTRÉ" /tmp/memolien.log || { echo "ÉCHEC : rien d'enregistré"; exit 1; }
+          node tools/produits/tableau-de-bord.mjs
+          node --test tests/pub-nouveaux.test.mjs tests/commerce-tableau.test.mjs
+          rm -f tools/pub/a-publier-lien.json
+
       - name: Commit + PR (branche claude/pub-auto-*, jamais main)
-        if: ${{ inputs.nouveaux != '' || inputs.programmer != '' }}
+        if: ${{ inputs.nouveaux != '' || inputs.programmer != '' || inputs.lien == 'oui' || inputs.programmer_lien != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           BR: ${{ steps.br.outputs.branche }}
         shell: bash -eo pipefail {0}
         run: |
           git add tools/pub/scripts.json tools/pub/programmation.json kdmc-home/admin/commerce-data.json
-          [ -f tools/pub/a-programmer.json ] && git add tools/pub/a-programmer.json || git rm -q --cached tools/pub/a-programmer.json 2>/dev/null || true
+          for f in tools/pub/a-programmer.json tools/pub/a-publier-lien.json; do
+            [ -f "$f" ] && git add "$f" || git rm -q --cached "$f" 2>/dev/null || true
+          done
           if git diff --cached --quiet; then echo "Rien de nouveau à enregistrer."; exit 0; fi
-          if [ -n "${{ inputs.programmer }}" ]; then MSG="Pub auto : programmation Metricool enregistrée ($(date -u +%G-%V))"; else MSG="Pub auto : nouveaux scripts ${{ steps.nouveaux.outputs.ids }} rendus et publiés ($(date -u +%G-%V))"; fi
+          if [ -n "${{ inputs.programmer }}" ]; then MSG="Pub auto : programmation Metricool enregistrée ($(date -u +%G-%V))"
+          elif [ -n "${{ inputs.programmer_lien }}" ]; then MSG="Pub auto : post-lien Facebook enregistré ($(date -u +%G-%V))"
+          elif [ "${{ inputs.lien }}" = "oui" ]; then MSG="Pub auto : post-lien Facebook préparé ($(date -u +%G-%V))"
+          else MSG="Pub auto : nouveaux scripts ${{ steps.nouveaux.outputs.ids }} rendus et publiés ($(date -u +%G-%V))"; fi
           git commit -m "$MSG" -m "Écrit par pub-videos.yml (routine hebdomadaire « Pub — vidéos de la semaine »). Scripts passés par la porte de vérité, MP4 sur la release pub-videos."
           git push -u origin "$BR"
           # `gh pr view` renvoie aussi une PR FUSIONNÉE (vécu run 35261664161 : aucune PR ouverte

@@ -74,6 +74,7 @@ export function construit({ catalogue = lireCatalogue(), scripts = lireJson(SCRI
     return { ...h, nom: c.nom, prix: c.prix, prixBarre: null, lecteur: h.famille === 'kit' || h.famille === 'club' ? 'https://kit.kd-mc.com/lire.html' : null };
   }));
 
+  const liens = (programmation.liens || []).map((l) => ({ ...l, url: 'https://kit.kd-mc.com/' + (l.produit === 'kit' ? '' : l.produit + '.html'), apercu: 'https://kit.kd-mc.com/og/' + l.produit + '.png' }));
   const parPost = new Map(programmation.posts.map((x) => [x.video, x]));
   const videos = scripts.videos.map((v) => {
     const pr = parPost.get(v.id) || null;
@@ -95,7 +96,7 @@ export function construit({ catalogue = lireCatalogue(), scripts = lireJson(SCRI
 
   const workflows = {
     'produit-fabrique.yml': { nom: 'Fabrique : écrire un kit en base', inputs: { produit: catalogue.produits.map((p) => p.id), dry_run: ['true', 'false'], refaire: 'texte' }, defaut: { produit: 'avis-ia', dry_run: 'true' } },
-    'pub-videos.yml': { nom: 'Pub : rendre (ou écrire) les vidéos', inputs: { videos: ['all', ...new Set(scripts.videos.map((v) => v.id.split('-')[0]))], publier: ['false', 'true'], nouveaux: ['', 'immo:1,club:1', ...[...new Set(scripts.videos.map((v) => v.id.split('-')[0]))].map((n) => n + ':1')], programmer: 'texte', branche: 'texte' }, defaut: { videos: 'all', publier: 'false', nouveaux: '' } },
+    'pub-videos.yml': { nom: 'Pub : vidéos et posts-liens Facebook', inputs: { videos: ['all', ...new Set(scripts.videos.map((v) => v.id.split('-')[0]))], publier: ['false', 'true'], nouveaux: ['', 'immo:1,club:1', ...[...new Set(scripts.videos.map((v) => v.id.split('-')[0]))].map((n) => n + ':1')], lien: ['non', 'oui'], programmer: 'texte', programmer_lien: 'texte', branche: 'texte' }, defaut: { videos: 'all', publier: 'false', nouveaux: '', lien: 'non' } },
     'club-semaine.yml': { nom: 'Club : consigne de la semaine', inputs: { dry_run: ['true', 'false'], tester_email: ['false', 'true'] }, defaut: { dry_run: 'true', tester_email: 'false' } },
     'audit-live.yml': { nom: 'Audit LIVE des vraies pages', inputs: {}, defaut: {} },
     'deploy-kdmc-vente.yml': { nom: 'Redéployer la caisse', inputs: {}, defaut: {} },
@@ -104,7 +105,7 @@ export function construit({ catalogue = lireCatalogue(), scripts = lireJson(SCRI
   return {
     _doc: 'GÉNÉRÉ par tools/produits/tableau-de-bord.mjs — ne pas éditer à la main (npm run commerce:data). Partie statique du tableau de bord Commerce ; le live vient de kdmc-vente /admin/tableau.',
     maj: catalogue.maj || null, depot: DEPOT, caisse: 'https://kdmc-vente.9r4rxssx64.workers.dev',
-    produits, videos, programmation: { marque: programmation.marque, planning: programmation.planning, reseaux: programmation.reseaux, fuseau: programmation.fuseau },
+    produits, videos, liens, programmation: { marque: programmation.marque, planning: programmation.planning, reseaux: programmation.reseaux, fuseau: programmation.fuseau },
     pages, workflows, marche: MARCHE,
   };
 }
@@ -121,7 +122,7 @@ export function principal(argv = process.argv.slice(2)) {
   }
   writeFileSync(SORTIE, attendu);
   const d = JSON.parse(attendu);
-  console.log('commerce-data.json écrit : ' + d.produits.length + ' produits, ' + d.videos.length + ' vidéos (' + d.videos.filter((v) => v.post).length + ' programmées), ' + d.pages.length + ' pages, ' + Object.keys(d.workflows).length + ' workflows');
+  console.log('commerce-data.json écrit : ' + d.produits.length + ' produits, ' + d.videos.length + ' vidéos (' + d.videos.filter((v) => v.post).length + ' programmées), ' + d.liens.length + ' post(s)-lien, ' + d.pages.length + ' pages, ' + Object.keys(d.workflows).length + ' workflows');
   return 0;
 }
 
