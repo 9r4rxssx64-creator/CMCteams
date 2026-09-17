@@ -167,13 +167,18 @@ export function consigneRedaction({ semaine, metier, theme, titresExistants }) {
     'Réponds UNIQUEMENT par le fragment HTML.',
   ].join('\n');
 }
-export async function redige(env, prompt, retour) {
+/* opts.max_tokens : plafond de sortie (4000 par défaut = une consigne de semaine ; un module de kit
+   complet, 12-16 Ko de HTML, en demande ~8000). opts.surArret(stop_reason) : appelé avec la raison
+   d'arrêt du modèle — 'max_tokens' = réponse TRONQUÉE, ce qui coupe précisément la fin (pièges +
+   checklist). Leçon du 17.09 : 42 refus « attention/check manquants » = 42 réponses coupées. */
+export const JETONS_DEFAUT = 4000;
+export async function redige(env, prompt, retour, opts = {}) {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
     body: JSON.stringify({
       model: env.CLUB_MODEL || MODELE_DEFAUT,
-      max_tokens: 4000,
+      max_tokens: opts.max_tokens || JETONS_DEFAUT,
       system: 'Tu es le rédacteur du Club IA au Boulot. Tu écris en français impeccable, accents compris, sans jamais inventer un fait.',
       messages: retour
         ? [{ role: 'user', content: prompt }, { role: 'assistant', content: retour.html }, { role: 'user', content: 'Ta réponse a été refusée par le contrôle automatique pour ces raisons : ' + retour.erreurs.join(' ; ') + '. Réécris le fragment HTML complet en corrigeant tout, sans commentaire.' }]
@@ -182,6 +187,7 @@ export async function redige(env, prompt, retour) {
   });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error('Anthropic refuse : HTTP ' + r.status + ' ' + ((j.error && j.error.message) || '').slice(0, 200));
+  if (typeof opts.surArret === 'function') opts.surArret(j.stop_reason || 'inconnu', j.usage || {});
   return nettoieSortie((j.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('\n'));
 }
 
