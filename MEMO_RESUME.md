@@ -86,8 +86,11 @@ prix = caisse, workflows identiques des deux côtés, marché sourcé et marqué
 `test:commerce-tableau-reel` **20/20 en vrai Chromium 375 px** (verrou sans session / sans Face ID
 avec 0 appel caisse, 8 tuiles, CA = caisse, 404 compté KO, Bearer, Livrer → /admin/valider, panne 502
 → page debout avec la cause, boutons ≥ 44 px, 0 débordement, 0 exception). Les deux dans `test:ci`.
-Surface ajoutée à `audit-live.mjs` (verrou + JSON servi). 🔴 Non mesuré ici : la page **sur le vrai
-domaine** (après fusion sur main + Pages) et le jeton `APEX_GITHUB_PAT` a-t-il le droit `workflow`
+Surface ajoutée à `audit-live.mjs` (verrou + JSON servi). **Prouvé sur le vrai domaine** (audit-live run 35241968241, main, 15:48 UTC) : « ✅ Commerce —
+tableau de bord (admin) https://kd-mc.com/admin/commerce.html · verrou affiché, données statiques
+servies (8 produits, 14 vidéos) », 0 requête projet bloquée, toutes surfaces vertes. Caisse
+déployée avec `GITHUB_DISPATCH_TOKEN` poussé (run 35240018601). 🔴 Reste non mesuré : la vue
+connectée en Face ID (l'audit est anonyme) et le jeton `APEX_GITHUB_PAT` a-t-il le droit `workflow`
 (sinon « GitHub HTTP 403 » s'affiche tel quel dans le toast).
 
 **3. « Fais pareil » — la pub suit la niche.** Deux scripts de plus sur ce que le marché désigne :
