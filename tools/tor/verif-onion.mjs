@@ -85,7 +85,7 @@ function classe(code) {
   return { etat: 'injoignable', ok: false };
 }
 
-async function teste(hote, index) {
+async function teste(hote, index, secondes = 60) {
   if (SIMULE) {
     /* Déterministe ET couvrant les 4 classements (vivant / protégé / erreur / injoignable),
        pour que la garde prouve les DEUX branches sans réseau. Le vrai verdict ne vient QUE
@@ -95,8 +95,8 @@ async function teste(hote, index) {
   try {
     const { stdout } = await execFileP('curl', [
       '--socks5-hostname', PROXY, '-sS', '-o', '/dev/null',
-      '-w', '%{http_code}', '--max-time', '60', '-L', 'http://' + hote + '/'
-    ], { timeout: 70000 });
+      '-w', '%{http_code}', '--max-time', String(secondes), '-L', 'http://' + hote + '/'
+    ], { timeout: (secondes + 10) * 1000 });
     return stdout.trim();
   } catch { return '000'; }
 }
@@ -116,25 +116,46 @@ for (let i = 0; i < sites.length; i++) {
   console.log((c.ok ? '  ✓ ' : '  ✗ ') + s.nom.padEnd(22) + c.etat.padEnd(14) + '(' + code + ')');
 }
 
-const morts = resultats.filter(r => !r.ok);
+/* DEUXIÈME ESSAI sur les seules adresses muettes. Un `000` sur Tor veut dire
+   « le circuit n'a pas abouti dans le temps imparti » — PAS « l'adresse est morte ».
+   Un circuit Tor se construit au hasard : le suivant passe souvent là où le
+   précédent a calé, surtout depuis une IP de centre de données. Annoncer « mort »
+   sur un seul essai, c'est le faux verdict que cet outil existe pour éviter
+   (leçon #268, en plus discret : ici c'est l'adresse qu'on accuse à tort). */
+const muettes = resultats.filter(r => !r.ok);
+if (!SIMULE && muettes.length) {
+  console.log('\n' + muettes.length + ' adresse(s) muette(s) au 1er essai — 2e essai, circuit neuf, 90 s :');
+  for (const r of muettes) {
+    r.essais = 2;
+    const code = await teste(r.onion, 0, 90);
+    const c = classe(code);
+    r.code = code; r.etat = c.etat; r.ok = c.ok;
+    console.log((c.ok ? '  ✓ ' : '  ✗ ') + r.nom.padEnd(22) + c.etat.padEnd(14) + '(' + code + ')');
+  }
+}
+
+/* « injoignable » et non « mort » : après 2 essais on constate qu'ON n'a pas réussi
+   à l'ouvrir d'ici, ce qui n'est pas la même chose que prouver qu'elle n'existe plus. */
+const injoignables = resultats.filter(r => !r.ok);
 const rapport = {
   date: new Date().toISOString(),
   simule: SIMULE,
   total: resultats.length,
-  vivants: resultats.length - morts.length,
-  morts: morts.map(r => r.nom),
+  vivants: resultats.length - injoignables.length,
+  injoignables: injoignables.map(r => r.nom),
+  note: 'injoignable = non ouverte depuis CE runner après 2 essais ; ce n\'est pas une preuve que l\'adresse est morte.',
   duree_s: Math.round((Date.now() - t0) / 1000),
   resultats
 };
 if (SORTIE) { writeFileSync(SORTIE, JSON.stringify(rapport, null, 2)); console.log('\nRapport écrit : ' + SORTIE); }
 
 console.log('\n' + rapport.vivants + '/' + rapport.total + ' adresses répondent' +
-            (morts.length ? ' — injoignables : ' + morts.map(r => r.nom).join(', ') : ''));
+            (injoignables.length ? ' — injoignables après 2 essais : ' + injoignables.map(r => r.nom).join(', ') : ''));
 if (SIMULE) { console.log('(mode simulé : ces chiffres ne prouvent RIEN sur le vrai réseau)'); process.exit(0); }
 
 /* Une ou deux adresses injoignables, c'est la vie normale du réseau (un service s'arrête,
    un noeud est lent). On n'échoue que si le catalogue est manifestement périmé. */
-if (morts.length > Math.max(2, Math.floor(resultats.length / 3))) {
+if (injoignables.length > Math.max(2, Math.floor(resultats.length / 3))) {
   console.error('\nÉCHEC : trop d\'adresses injoignables, le catalogue doit être revu.');
   process.exit(1);
 }
