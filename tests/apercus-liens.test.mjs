@@ -78,3 +78,51 @@ test('le gabarit échappe le HTML et met le prix barré quand il y en a un', () 
   assert.ok(h.includes('149 €') && h.includes('67 €'));
   assert.ok(!A.gabarit({ sur: 'X', titre: 'T', promesse: 'p', pied: 'p', prix: null, avant: null, slug: 'x' }).includes('class="prix"'), 'pas de bloc prix quand il n\'y a pas de prix');
 });
+
+/* ── Une seule vérité pour l'adresse d'un aperçu ────────────────────────────
+   Elle était construite à la main à TROIS endroits (les balises de la page, le
+   post-lien Facebook, le contrôle en ligne). Trois endroits = trois façons de
+   diverger en silence, et un aperçu qui ne s'affiche plus sans que rien ne rougisse. */
+test('l\'adresse de l\'aperçu vient de urlApercu() partout : balises, post-lien, contrôle', async () => {
+  const p = pages[0];
+  const attendu = A.urlApercu(p);
+  assert.ok(A.balises(p, '').some((b) => b.includes('og:image') && b.includes(attendu)), 'les balises ne citent pas urlApercu()');
+  const L = await import('../tools/pub/liens.mjs');
+  const prep = L.prepare({ posts: [], liens: [] }, { maintenant: new Date('2026-09-22T09:00:00+02:00'), pages });
+  assert.equal(prep.apercu, A.urlApercu(pages.find((x) => x.slug === prep.produit)), 'le post-lien fabrique son adresse dans son coin');
+  assert.ok(A.adressesEnLigne(pages).some((a) => a.url === attendu), 'le contrôle en ligne ne teste pas la même adresse');
+  /* Aucun fichier ne doit recoller « og/…png » à la main en dehors de urlApercu().
+     On retire d'abord les commentaires : sinon une phrase d'explication compte comme du code. */
+  const sansCommentaires = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  for (const f of ['tools/pub/liens.mjs', 'tools/produits/apercus.mjs']) {
+    const src = sansCommentaires(readFileSync(join(A.PAGES_DIR, '../../', f), 'utf8'));
+    const brut = src.split('\n').filter((l) => /og\//.test(l) && !/urlApercu/.test(l));
+    assert.equal(brut.length, 0, f + ' recolle une adresse d\'aperçu à la main : ' + brut.join(' | '));
+  }
+});
+
+/* Le contrôle EN LIGNE tourne en CI (l'agent est derrière un pare-feu). Ici on
+   prouve qu'il SAIT dire non : un 404, un 200 qui n'est pas un PNG, et un PNG
+   aux mauvaises dimensions doivent tous les trois échouer. Un simple code HTTP
+   ne suffit pas : une page d'erreur peut être servie en 200. */
+test('le contrôle en ligne refuse un 404, un faux PNG et un PNG de mauvaise taille', async () => {
+  const png = (l, h) => { const b = Buffer.alloc(24); b.writeUInt32BE(0x89504e47, 0); b.writeUInt32BE(l, 16); b.writeUInt32BE(h, 20); return b; };
+  const rep = (status, buf) => ({ status, arrayBuffer: async () => buf });
+  const une = pages.slice(0, 1);
+  const muet = () => {};
+
+  const bon = await A.enLigne(une, muet, async (u) => rep(200, png(1200, 630)));
+  assert.equal(bon.length, 0, 'un aperçu correct ne doit pas être refusé : ' + bon.join(' | '));
+
+  const absent = await A.enLigne(une, muet, async (u) => (u.endsWith('.png') ? rep(404, Buffer.alloc(0)) : rep(200, Buffer.alloc(0))));
+  assert.equal(absent.length, 1, 'un aperçu en 404 doit être refusé');
+
+  const faux = await A.enLigne(une, muet, async () => rep(200, Buffer.from('<html>404</html>')));
+  assert.equal(faux.length, 1, 'une page d\'erreur servie en 200 à la place du PNG doit être refusée');
+
+  const petit = await A.enLigne(une, muet, async () => rep(200, png(600, 315)));
+  assert.equal(petit.length, 1, 'un PNG de mauvaises dimensions doit être refusé');
+
+  const coupe = await A.enLigne(une, muet, async () => { throw new Error('reseau coupe'); });
+  assert.equal(coupe.length, 2, 'réseau coupé : la page ET l\'aperçu doivent être signalés');
+});

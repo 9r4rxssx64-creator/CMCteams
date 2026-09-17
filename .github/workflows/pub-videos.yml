@@ -198,11 +198,12 @@ jobs:
         run: |
           node tools/pub/liens.mjs --prepare tools/pub/a-publier-lien.json 2>&1 | tee /tmp/lien.log
           grep -qE "^LIEN À PROGRAMMER " /tmp/lien.log || { echo "ÉCHEC : aucun post-lien préparé"; exit 1; }
-          # L'aperçu doit être EN LIGNE, sinon Facebook affiche un rectangle gris (mesuré le 17.09).
-          IMG=$(node -e 'process.stdout.write(JSON.parse(require("fs").readFileSync("tools/pub/a-publier-lien.json","utf8")).apercu)')
-          C=$(curl -sS -o /dev/null -w "%{http_code}" -I -L "$IMG" || echo 000)
-          [ "$C" = "200" ] || { echo "ÉCHEC : l'aperçu $IMG répond HTTP $C — le post-lien n'aurait pas d'image"; exit 1; }
-          echo "Aperçu servi : $IMG (HTTP 200)"
+          # Les aperçus doivent être EN LIGNE, sinon Facebook affiche un rectangle gris
+          # (mesuré le 17.09). On contrôle LES SIX pages et LEURS SIX images, pas seulement
+          # celle du jour : un aperçu cassé sur une autre niche doit se voir tout de suite,
+          # et un simple code HTTP ne suffit pas (une page d'erreur peut être servie en 200)
+          # → on vérifie que c'est vraiment un PNG 1200×630.
+          node tools/produits/apercus.mjs --en-ligne
           echo "A_PUBLIER_LIEN_JSON $(node -e 'process.stdout.write(JSON.stringify(JSON.parse(require("fs").readFileSync("tools/pub/a-publier-lien.json","utf8"))))')"
 
       - name: Mémoire du post-lien
