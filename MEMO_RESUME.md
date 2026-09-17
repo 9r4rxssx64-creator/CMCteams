@@ -1,5 +1,32 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 00:05 — Vérif RÉELLE sur le vrai domaine : tout est vert, et une sonde muette corrigée
+
+**Vérifié pour de vrai**, pas déduit : run `35164354711` (`verif-reelle.yml`, connecté en tant que
+Kevin, vrai Chromium, vraies pages) → **AUDIT LIVE OK — toutes les surfaces rendent, 0 requête
+projet bloquée** (35 surfaces).
+
+- **Lingua** (`lingua.kd-mc.com`) : 16 langues · 189 unités · 6 onglets · 24 histoires · 2 jeux ·
+  stats · prononciation · 10 anecdotes + 4 chiffres + 6 mots **tous sourcés** · 🇲🇨 monégasque
+  17 unités + note honnête · **6 voix HD réelles distinctes** (6 signatures). Donc mon changement
+  de clignement/saut/regard **n'a rien cassé** sur l'app en ligne.
+- **Bee** (`javis.kd-mc.com`) : **fail-closed correct** — Bee cachée + message clair, parce que la
+  session de CI est **nommée**, pas prouvée par Face ID. C'est le comportement attendu.
+
+**Ce que j'ai trouvé au passage (et corrigé)** : la ligne Lingua **n'affichait pas** « version
+servie ». La sonde de version de `tools/smoke/audit-live.mjs` était **muette** : si l'élément
+`.ver` existait mais était vide elle renvoyait `''` **sans jamais regarder `window.APP_VER`**, et
+une version non lue se traduisait par **une ligne en moins** — indistinguable d'un contrôle réussi.
+C'est exactement le **faux vert de la leçon #103**. Corrigé : `APP_VER` d'abord (c'est la source :
+`var APP_VER` en tête de `lingua/app.js`, script classique donc global), l'élément en repli, et on
+**écrit « ❓ non lue »** au lieu de se taire. Tant que cette sonde ne parlait pas, je ne pouvais pas
+affirmer que la v2.125.0 était réellement en ligne — et je ne l'ai pas affirmé.
+
+**Bénin, à ne pas confondre avec un vrai échec** : `audit/deploiements-rates.md` a consigné un
+« déploiement raté » à 23:52 — c'est le bot auto-merge qui a tenté d'ouvrir une PR pour une branche
+**déjà fusionnée à la main** (« No commits between main and … »). Rien à corriger.
+
+
 ## 2026-09-17 00:10 — « Intègre les améliorations de Bee à Lingua aussi » (lingua v2.125.0)
 
 Kevin : les progrès faits sur Bee côté Javis doivent revenir dans **Lingua**, l'app d'où elle vient.
