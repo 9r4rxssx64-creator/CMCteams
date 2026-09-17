@@ -310,8 +310,13 @@ const SURFACES = [
         // de lingua/app.js, script classique donc global) ; (b) une version non lue s'affichait
         // comme une LIGNE EN MOINS, indistinguable d'un contrôle réussi. Corrigé : APP_VER d'abord,
         // l'élément en repli, et on ÉCRIT « ❓ non lue » plutôt que de se taire.
+        // Puis elle a dit « ❓ non lue » — et c'était VRAI : tout lingua/app.js vit dans une
+        // IIFE, donc APP_VER n'a jamais été global, et la seule étiquette qui l'affiche (.ver)
+        // est sur l'écran Profil, que la sonde a déjà quitté. Lingua expose maintenant
+        // window.LINGUA_VER (v2.125.1) : c'est elle qu'on lit en premier.
         const ver = await page.evaluate(() => {
-          const g = (typeof window.APP_VER === 'string' && window.APP_VER.trim()) || '';
+          const g = (typeof window.LINGUA_VER === 'string' && window.LINGUA_VER.trim())
+                 || (typeof window.APP_VER === 'string' && window.APP_VER.trim()) || '';
           if (g) return g;
           const b = document.querySelector('.ver, .version, [data-ver]');
           return b && b.textContent.trim() ? b.textContent.trim() : '';
