@@ -78,17 +78,48 @@ test.describe('Apex Chat — Boot smoke iPhone Safari PWA', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Service Worker enregistré', async ({ page }) => {
+  // Audit 17/09/2026 (P0) : le SW « enregistré » ne prouvait rien — il tournait en repli
+  // sans cache (import() interdit dans un SW classique). Ce test exige désormais que le
+  // SW soit ACTIF et que son cache soit réellement peuplé (pré-cache de l'install).
+  // L'ancienne version acceptait `true ou false` = faux vert.
+  test.describe('avec Service Worker autorisé', () => {
+  test.use({ serviceWorkers: 'allow' });
+  test('Service Worker actif ET cache peuplé (module, pré-cache)', async ({ page, browserName }) => {
     await page.goto('/');
-    const swReady = await page.evaluate(async () => {
-      if (!('serviceWorker' in navigator)) return false;
+    const etat = await page.evaluate(async () => {
+      if (!('serviceWorker' in navigator)) return { support: false };
       try {
-        const reg = await navigator.serviceWorker.getRegistration();
-        return !!reg;
-      } catch { return false; }
+        const reg = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, rej) => setTimeout(() => rej(new Error('ready timeout 15s')), 15000)),
+        ]);
+        // laisse l'install finir de pré-cacher
+        for (let i = 0; i < 30; i++) {
+          const keys = await caches.keys();
+          if (keys.some((k) => k.startsWith('apex-chat-v'))) break;
+          await new Promise((r) => setTimeout(r, 250));
+        }
+        const keys = await caches.keys();
+        const manifest = await caches.match('./manifest.json');
+        return { support: true, active: !!reg.active, keys, manifestCached: !!manifest, url: reg.active && reg.active.scriptURL };
+      } catch (e) {
+        let reg = null; try { reg = await navigator.serviceWorker.getRegistration(); } catch (_) {}
+        return { support: true, error: String(e && e.message || e), diag: { reg: !!reg, active: !!(reg && reg.active), installing: !!(reg && reg.installing), waiting: !!(reg && reg.waiting), keys: await caches.keys(), swErr: await navigator.serviceWorker.register('./sw.js?v=diag', { scope: './', type: 'module' }).then(() => 'register ok').catch((e2) => String(e2)) } };
+      }
     });
-    // SW peut prendre un peu de temps, accepte true ou null (premier load)
-    expect([true, false]).toContain(swReady);
+    expect(etat.support, 'navigateur sans Service Worker').toBe(true);
+    if (browserName === 'webkit' && etat.error) {
+      // Playwright WebKit ne fait pas toujours tourner un SW module sur un certificat
+      // auto-signé : on le DIT (annotation) au lieu de passer au vert en silence.
+      test.info().annotations.push({ type: 'non-vérifié-ici', description: 'SW WebKit : ' + etat.error });
+      return;
+    }
+    expect(etat.error, 'SW non prêt : ' + etat.error + ' ' + JSON.stringify(etat.diag)).toBeUndefined();
+    expect(etat.active).toBe(true);
+    expect(etat.url).toContain('sw.js');
+    expect(etat.keys.some((k) => k.startsWith('apex-chat-v')), 'aucun cache apex-chat-v* : ' + JSON.stringify(etat.keys)).toBe(true);
+    expect(etat.manifestCached, 'manifest.json absent du pré-cache').toBe(true);
+  });
   });
 });
 

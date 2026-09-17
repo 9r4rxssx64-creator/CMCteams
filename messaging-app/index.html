@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.289",
+  "softwareVersion": "v1.1.290",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -458,11 +458,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.289';
+const __APEX_CHAT_VERSION__ = 'v1.1.290';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
+  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./', type:'module'}).then(reg=>{
     reg.update().catch(_=>{});
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
@@ -650,7 +650,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.289</div>
+  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.290</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -664,7 +664,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.289</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.290</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -9681,13 +9681,16 @@ K._openTranslator = function(){
       <option value="ru">Russe</option>
       <option value="zh">Chinois</option>
     </select>
-    <button class="btn btn-block" style="margin-top:14px" onclick="K._doTranslate()">🌐 Traduire</button>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._doTranslateForm()">🌐 Traduire</button>
     <div id="tr-result" style="margin-top:14px"></div>
   `);
   setTimeout(() => { const i = document.getElementById('tr-text'); if(i) i.focus(); }, 100);
 };
 
-K._doTranslate = async function(){
+// Audit 17/09/2026 : cette fonction s'appelait K._doTranslate et était ÉCRASÉE en silence par
+// la seconde définition (signature (text, lang)) 1 100 lignes plus bas → le bouton « Traduire »
+// de l'outil envoyait text=undefined. Renommée ; garde : tests/unit/no-duplicate-definitions.test.js.
+K._doTranslateForm = async function(){
   const text = (document.getElementById('tr-text')?.value || '').trim();
   const lang = document.getElementById('tr-lang')?.value || 'en';
   const out = document.getElementById('tr-result');
@@ -11512,7 +11515,7 @@ K._toggleVoiceRecord = async function(){
         const fd = new FormData();
         fd.append('audio', blob, 'voice.webm');
         fd.append('lang', 'fr');
-        const r = await fetch(API_BASE + '/ai/voice-transcribe', {
+        const r = await fetch(API_BASE + '/api/ai/voice-transcribe', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + (K.token || '') },
           body: fd
@@ -11788,7 +11791,7 @@ K._uploadImage = async function(file){
     // Appel IA pour alt-text
     let altText = '';
     try{
-      const r = await fetch(API_BASE + '/ai/image-describe', {
+      const r = await fetch(API_BASE + '/api/ai/image-describe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

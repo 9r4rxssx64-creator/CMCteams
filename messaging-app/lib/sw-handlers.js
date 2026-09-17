@@ -2,9 +2,10 @@
  * Apex Chat — Service Worker handlers (ESM, testable v8 coverage)
  *
  * Source de vérité unique des handlers SW. Le fichier `sw.js` à la racine
- * importe ce module via dynamic import (Service Workers modules supportés
- * sur Chrome/Edge ; iOS Safari fallback : sw.js inline les handlers — voir
- * `tools/sync-sw.mjs` pour régénérer si modification ici).
+ * (Service Worker MODULE, enregistré avec `{type:'module'}`) les importe
+ * statiquement — plus aucun import() dynamique (interdit dans un SW, audit 17/09).
+ * CACHE_VERSION DOIT rester égal à `apex-chat-v` + version de package.json :
+ * garde tests/unit/sw-module.test.js.
  *
  * Stratégie cache :
  *   - STATIC_CACHE   : pré-cache assets statiques (cache-first)
@@ -12,7 +13,7 @@
  *   - OFFLINE_CACHE  : fallback HTML hors-ligne
  */
 
-export const CACHE_VERSION = 'apex-chat-v1.1.285';
+export const CACHE_VERSION = 'apex-chat-v1.1.290';
 export const STATIC_CACHE = `${CACHE_VERSION}-static`;
 export const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 export const OFFLINE_CACHE = `${CACHE_VERSION}-offline`;
