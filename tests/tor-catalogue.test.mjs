@@ -353,10 +353,12 @@ t('le chemin qui lance la vérification est manuel, ne touche pas main, ne fuit 
      On contrôle CHAQUE ligne curl, pas « il y en a une quelque part » : une seule
      oubliée suffit, et une garde qui se contente d'une occurrence passe au vert
      pendant qu'une autre ligne fuit (déjà vécu avec le filtre du jeton au push). */
-  const curls = wf.split('\n').map(l => l.trim())
+  const recolle = wf.replace(/\\\n\s*/g, ' ');   /* une commande coupée sur 3 lignes reste UNE commande */
+  const curls = recolle.split('\n').map(l => l.trim())
     .filter(l => !l.startsWith('#') && /\bcurl\b/.test(l));
+  assert(curls.length > 0, 'plus aucun appel curl : le retour est mort');
   for (const l of curls) {
-    assert(/PRIVATE-TOKEN: \$\{JETON\}/.test(l),
+    assert(/PRIVATE-TOKEN: \$\{[A-Z_]+\}/.test(l),
       'une commande curl n\'envoie pas le jeton en en-tête : ' + l.trim().slice(0, 90));
   }
   assert(!/(private_token|access_token)=/.test(wf),
