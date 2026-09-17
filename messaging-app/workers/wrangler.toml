@@ -119,7 +119,10 @@ new_sqlite_classes = ["ConversationDO", "BroadcastDO", "PresenceDO"]
 [vars]
 ENV = "production"
 APEX_BASE_URL = "https://9r4rxssx64-creator.github.io/CMCteams/apex-ai/"
-APEX_CHAT_BASE_URL = "https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/"
+# Audit 17/09/2026 : les liens d'invitation et magiques pointaient sur github.io alors que
+# l'adresse officielle (canonical, CGU, routeur) est apex-chat.kd-mc.com — et github.io
+# cessera de répondre le jour où le dépôt passe en privé.
+APEX_CHAT_BASE_URL = "https://apex-chat.kd-mc.com/"
 APEX_HANDOFF_FIREBASE_URL = "https://kdmc-clients-default-rtdb.europe-west1.firebasedatabase.app"
 ADMIN_MODE = "A"  # A | B | C — bascule via D1.system_config (cette var = fallback)
 KEVIN_INVISIBLE_ADMIN = "true"
@@ -213,8 +216,6 @@ max_batch_timeout = 60
 # https://apex-chat-api.<account-subdomain>.workers.dev
 # Pour ajouter un custom domain, configurer dans CF Dashboard puis remettre ici.
 
-# Workers séparés (déployés via leurs propres wrangler.toml)
-# - workers/push-worker/wrangler.toml
-# - workers/sms-worker/wrangler.toml
-# - workers/ia-worker/wrangler.toml
-# - workers/sentinel-consumer/wrangler.toml
+# Workers annexes (push-worker.js, sms-worker.js, ia-worker.js) : déployés par
+# deploy-apex-chat.yml avec ce même fichier — il n'existe pas de wrangler.toml séparé
+# (audit 17/09/2026 : les dossiers cités ici n'ont jamais existé).

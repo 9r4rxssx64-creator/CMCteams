@@ -123,6 +123,26 @@ et le tableau de bord suivent.
 **Piège vu** : le domaine a **deux** admins — `admin.kd-mc.com` (worker kdmc-access, code seul, pas
 de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié → le tableau vit dans le
 second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
+## 2026-09-17 17:30 — Apex Chat v1.1.290 : audit complet passe 3, « stable et commercialisable »
+
+**Suite 17:55 UTC** : la CI de tests a rougi sur la branche (cliquet de couverture `ConversationDO.js`, j'avais mesuré en local **sans** `--coverage` — faux vert, leçon #272). Corrigé par 6 tests qui déclenchent les rappels d'erreur jamais exercés → 100 / 98,18 / 100 / 100, cliquet remonté, **71 fichiers · 1 347 tests**. PR #3890 ouverte par le robot ; second avis Qodo lancé dessus. **18:05** : deuxième rouge CI, cette fois sur les deux voies iPhone (52 tests) — un drapeau Chromium posé dans le `use` global de Playwright empêchait WebKit de démarrer ; déplacé par projet (leçon #273). **18:30** : #3890 et #3892 fusionnées, 4 voies e2e vertes, e2e prod ✅, audit live 40/40 ✅. Qodo trié → **v1.1.291** : historique des modales cohérent au Retour, effacement IndexedDB réellement attendu, et un **P1 trouvé en mesurant** : boucle de télémétrie (3 636 requêtes/2 min Firebase refusé) → coupe-circuit. Kevin demande « toutes les fonctions en réel + audit d'amélioration UX/UI » → 3 passes en cours (harnais F01…F78, UX/UI 375 px, code/archi).
+
+**Ce qui a été fait** (branche `claude/audit-apex-chat-commercial-1709`, 9 commits, 1 341 tests verts, 56/56 e2e Chromium) :
+- **P0 vie privée** : deux numéros réels en clair dans le workflow de déploiement (dépôt public) → secrets ; garde étendu à toute l'app + workflows.
+- **P0 stabilité** : le **Service Worker ne tournait pas** (import() interdit dans un SW classique → repli sans cache, sans hors-ligne, **sans notification affichée**). SW module, versions alignées, test e2e qui exige un cache peuplé (mesuré 3 caches).
+- **P1** : micro et description d'image en 404 (`/ai/…` sans `/api`) ; `K._doTranslate` défini deux fois ; jusqu'à 9 messages acquittés perdables (DO sans alarme) ; JSON invalide → 500 ; sauvegarde quotidienne en clair et incomplète → chiffrée, complète, vérifiée, purgée à 14 j ; interrupteurs admin décoratifs (`e2e_strict` désormais appliqué, `kevin_invisible` sur la vraie clé) ; migrations D1 dont l'échec était masqué ; page de 841 Ko retéléchargée toutes les 11 s ; un appel LLM par message reçu.
+- **P0/P1 UX** (mesurés à 375 px) : tempête de toasts + reconnexions WS sans backoff, nom du contact à 14 px, retour iOS qui quittait l'app, 📞 de Contacts mort, heure des bulles 1,86:1.
+- **Commercialisable** : suppression de compte (`DELETE /api/users/me`, cascade) et export RGPD serveur ; CGU/charte versionnées et cohérentes ; `aide.html`, `mentions.html` ; renvoi du code SMS (60 s) ; signalement côté utilisateur ; bandeau « Installer » iOS ; icônes PNG ; erreurs réseau en français ; CSP en liste blanche ; liens d'invitation sur `apex-chat.kd-mc.com`.
+- **Passes CI** : audit-live 28/28, apex-chat-e2e ✅, messaging-app-tests ✅, security-suite lu et trié (faux positifs), Strix **lancé par erreur sur World Monitor** (cible par défaut) puis relancé sur `messaging-app`.
+
+**⛔ P0 hors Apex Chat, trouvé par Strix (à décider par Kevin)** : Firebase `/apex` est lisible ET modifiable avec un
+jeton **anonyme** (règles `auth != null`, l'anonyme y satisfait) — profil admin, abonnements push, audit, conversations.
+Pas de patch aveugle (Apex v13 s'y connecte en anonyme) : correctif = jetons par rôle. Détail dans
+`audit/apex-chat/03-FINDINGS.md`.
+
+**Reste chiffré** : récupération des clés E2E sur nouveau téléphone (L), paiement réel Paddle/Lemon Squeezy + CGV (M),
+Vonage à confirmer en prod + retirer TextBelt (S + Kevin), blocage côté serveur (M), 165 assertions molles + 19 vues
+admin sans test (M), 16 fonctions mortes (S), lint no-op (S).
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
@@ -9358,3 +9378,88 @@ Vérifié : `node --check` propre, **chaque mouvement et chaque émotion demand�
 leur règle CSS** (contrôle explicite JS⇄CSS — le piège « déclaré mais pas branché »), aucune
 fonction orpheline (12 contrôlées), 5/5 suites arbre vertes, `verify-assets` de Lingua vert.
 arbre v3.24 → v3.25, javis sw v1.1 → v1.2.
+
+---
+
+## 2026-09-17 — Paquet de reprise + choix d'IA (branche `claude/work-summary-ai-alternatives-cj6s29`)
+
+**Demande de Kevin** : un document unique qui reprend TOUT le travail depuis le début (tous les
+dépôts, adresses, workers, secrets, Firebase, Cloudflare, GitHub, GitLab, branches, sessions,
+erreurs), comment le récupérer sans rien perdre pour basculer vers une autre IA, et quelle IA
+choisir (meilleur rapport qualité-prix, gratuites incluses).
+
+**Livré :**
+- **`TRANSFERT-COMPLET.md`** (36 Ko, 16 sections) — la carte de tout, chiffres **mesurés** le
+  17.09.2026 : 40 sessions, 219 branches, 43 pages, 30 adresses, 28 workers, 155 workflows,
+  209 tests / 224 commandes npm, 105 noms de secrets (0 valeur), 2 bases Firebase, 2 dépôts.
+  Contient le comparatif d'IA (performances + prix relevés le jour même, avec statut de
+  confiance ✅ officiel / 🟡 relevé / 🔴 non vérifié) et la procédure de bascule en 4 étapes.
+- **`tools/transfert/export.mjs`** + `npm run transfert` — fabrique le paquet de reprise
+  (18 documents + INDEX d'ordre de lecture + inventaire JSON + liste des branches + mémoire
+  compacte) et **une archive**. Garde intégrée : le paquet est refusé si une **valeur** de
+  secret s'y trouve (6 motifs : Anthropic, OpenAI, GitHub, GitLab, Brevo, clé privée).
+  **Exécuté en vrai** : 18 documents / 3 123 Ko, archive 1 292 Ko, 0 fuite.
+- `npm run transfert:liste` — dit ce qui serait copié, sans rien écrire.
+
+**LA DÉCOUVERTE de la session (mesurée, pas supposée) :**
+`CLAUDE.md` (574 771 o) + `.claude/rules/` (1 664 o) = **576 435 octets ≈ 164 696 tokens
+rechargés à CHAQUE message**, avant toute lecture de code. Un fichier de règles sain fait
+2 000 à 10 000 tokens → le nôtre est **16 à 80× trop gros**. C'est la cause n°1 de la
+consommation dont Kevin se plaint, et elle ne vient ni du modèle ni de lui : le fichier mêle
+**les règles** (à garder chargées) et **leur histoire** (qui pourrait être lue à la demande,
+comme `LESSONS.md` l'est déjà).
+**Correctif proposé, pas encore appliqué** (touche le fichier le plus sensible du dépôt, et
+Kevin ne l'a pas demandé) : scinder en `CLAUDE.md` (règles, ~10 000 tokens) +
+`CLAUDE-HISTOIRE.md` (le reste), **−93 % de tokens d'entrée, 0 règle perdue**, avec un test
+qui prouve qu'aucune règle n'a disparu. ⏳ **en attente du feu vert de Kevin.**
+
+**Honnêteté** : l'historique verbatim des conversations n'est pas exportable (il vit chez
+Anthropic) ; ce clone est superficiel (297 commits visibles, `git fetch --unshallow` pour
+tout) ; deux pages de prix officielles (`docs.z.ai`, `api-docs.deepseek.com`) sont bloquées
+par le proxy de l'agent → prix croisés par recherche, statut 🟡 indiqué ligne par ligne.
+
+### 2026-09-17 (suite) — Bilan complet du pipeline, demandé par Kevin
+
+**Demande** : « fait faire un bilan et un point, un récap de chaque branche par ton pipeline
+sans en oublier aucune, chaque discussion, qu'ils mettent tous tout à jour. »
+
+**Outil créé** : `npm run bilan` (`tools/pipeline/bilan.mjs`) — croise les **trois** sources qui
+divergeaient en silence : le registre (`pipeline/sessions.json`, ce que les sessions *déclarent*),
+le dépôt **réel** (`git ls-remote` + date du dernier commit de chaque branche), et les
+**discussions**. Complémentaire de `retard-branches.mjs` (qui mesure le retard, pas l'état).
+Vérifie en plus, via l'**API publique GitHub** (dépôt public, sans jeton, ~0 token), si une
+branche absente a bien été **fusionnée** — parce que « branche absente » ≠ « travail perdu ».
+Document produit : **`BILAN-BRANCHES.md`** (86 Ko : chaque session une par une, **les 211
+branches non déclarées toutes listées**, chaque discussion ouverte).
+
+**Mesuré le 17.09** : 41 sessions · **219 branches** (24 vivantes ≤ 21 j) · **211 branches que
+personne n'a déclarées** (18 vivantes) · 94 discussions dont 83 ouvertes · `main` à jour.
+
+**Résultat principal : 0 travail perdu.** Les 9 sessions dont la branche avait disparu ont
+**toutes** leurs PR fusionnées dans `main` — vérifié une par une : cmcteams-pdf #3776,
+lingua-voix #3762, lingua-parcours #3763, crypto-bots #3787, video-review #3883,
+tor-securite #3889, javis-bee #3882, transfert-ia #3891 ; `meta` avait 0 commit et l'avait
+déjà documenté. **Le bot fusionne, le ménage supprime** : c'est le fonctionnement normal,
+pas un incident — mais le registre garde un état « actif » sur une branche qui n'existe plus.
+**Vécu en direct dans cette session** : ma propre branche a été fusionnée (#3891) et supprimée
+pendant que je travaillais → recréée depuis `main`, comme la règle l'exige.
+
+**CAUSE RACINE trouvée et outillée** : 61 messages ouverts n'avaient **aucun suivi daté**, et
+`test:messages-suivis` était **rouge sans que personne ne le voie** (`test:ci` ne tourne que sur
+GitLab). Raison exacte : la règle « PRÉVENIR NE SUFFIT PAS » **exige** un suivi daté, mais
+**aucune commande ne permettait d'en poser un** — il fallait éditer le JSON à la main, donc
+personne ne le faisait. C'est la leçon #142 dans sa forme la plus pure : *une règle sans outil
+finit sautée.* → **commande `pipeline suivi --id <mNNN> --action "…"` créée**, puis **44 suivis
+posés** sur les annonces adressées à « toutes » (lues et recensées au bilan). **61 → 28.**
+Les **31 demandes adressées à une session précise restent sans suivi volontairement** : c'est à
+leur destinataire d'y répondre, et le gate doit rester rouge tant que ce n'est pas fait.
+
+**Mesure côté plateforme (nouvelle information)** : sur les 40 sessions de Kevin, **14 sont
+ARCHIVÉES**, 20 en pause, 2 en cours, 1 en attente d'action. **Une session archivée ne lira
+jamais un message du pipeline et ne peut rien mettre à jour** — c'est pour ça que des demandes
+traînent depuis 7 jours. Dit dans le message `m094-transfert-ia` : si une demande vous concerne
+et que son auteur est archivé, traitez-la quand même, elle ne reviendra pas.
+
+**Gardes** : `test:pipeline-sessions` **9 OK / 0 FAIL** (un rouge était de moi : ma branche
+manquait à `SESSIONS-ET-BRANCHES.md` → ajoutée) · `test:messages-suivis` toujours rouge sur les
+31 demandes ciblées, **c'est son rôle**.

@@ -25,6 +25,33 @@ Tout ce qui a été construit pour vendre, en tuiles, avec les vrais chiffres de
 | `services/kdmc-vente/worker.js` | Caisse : nouvelles routes `GET /admin/tableau` (ventes, file, Club, contenu, sondes de livraison, workflows) et `POST /admin/lancer` (5 workflows, liste fermée) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
 | `tests/commerce-tableau.test.mjs` | Garde : JSON = sources, prix = caisse, workflows identiques, marché sourcé, rendu sûr (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/commerce-tableau.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/commerce-tableau.test.mjs) |
 | `tests/verify-commerce-tableau-reel.mjs` | Preuve en vrai navigateur 375 px : 20 contrôles (verrou, tuiles, Bearer, Livrer, panne, 44 px) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-commerce-tableau-reel.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-commerce-tableau-reel.mjs) |
+## 💬 Apex Chat v1.1.290 — audit « stable et commercialisable » — 2026-09-17
+
+| Fichier | Ce que c'est | Liens |
+|---|---|---|
+| `messaging-app/sw.js (v1.1.290)` | Service Worker **module** — il tournait en repli sans cache ni notification depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/sw.js) |
+| `messaging-app/tests/unit/sw-module.test.js` | **NOUVEAU** — garde : SW module, 0 import() dynamique, versions alignées | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/sw-module.test.js) |
+| `messaging-app/tests/unit/api-routes-front-vs-worker.test.js` | **NOUVEAU** — chaque route /api appelée par la page existe dans le worker (2 étaient en 404) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-routes-front-vs-worker.test.js) |
+| `messaging-app/tests/unit/no-duplicate-definitions.test.js` | **NOUVEAU** — aucune fonction définie deux fois (K._doTranslate l'était) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/no-duplicate-definitions.test.js) |
+| `messaging-app/tests/unit/api-worker-bad-json.test.js` | **NOUVEAU** — JSON invalide = 400, jamais 500 ni télémétrie (14 routes) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-bad-json.test.js) |
+| `messaging-app/tests/unit/conversation-do-durabilite.test.js` | **NOUVEAU** — aucun message acquitté ne se perd (alarme, fermeture, panne) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/conversation-do-durabilite.test.js) |
+| `messaging-app/tests/unit/conversation-do-rappels-erreur.test.js` | **NOUVEAU** — les 6 rappels d'erreur « best-effort » du DO sont réellement déclenchés (cliquet 100 % fonctions) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/conversation-do-rappels-erreur.test.js) |
+| `messaging-app/tests/e2e/retour-modale-et-effacement.spec.js` | **NOUVEAU** — vrai navigateur : Retour ferme bien les modales, effacement IndexedDB attendu, plus de tempête de télémétrie | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/e2e/retour-modale-et-effacement.spec.js) |
+| `.gitleaksignore` | **NOUVEAU** — faux positifs Gitleaks confirmés à la main (1 entrée, justifiée) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.gitleaksignore) |
+| `messaging-app/tests/unit/csp-connect-src.test.js` | **NOUVEAU** — CSP en liste blanche = exactement les hôtes que le code appelle | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/csp-connect-src.test.js) |
+| `messaging-app/tests/unit/rgpd-et-interrupteurs.test.js` | **NOUVEAU** — suppression de compte, export RGPD, interrupteurs admin réels, e2e_strict appliqué | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/rgpd-et-interrupteurs.test.js) |
+| `messaging-app/tools/backup-decrypt.mjs` | **NOUVEAU** — déchiffre une sauvegarde quotidienne (`JWT_SIGN_KEY=… node tools/backup-decrypt.mjs fichier.json.enc`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tools/backup-decrypt.mjs) |
+| `messaging-app/aide.html` | **NOUVEAU** — page d'aide (installation iPhone, SMS, PIN, nouveau téléphone, Premium, données, assistance) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/aide.html) |
+| `messaging-app/mentions.html` | **NOUVEAU** — mentions légales (éditeur, hébergeurs, contact) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/mentions.html) |
+| `messaging-app/icons/icon-180.png` | **NOUVEAU** — icône iOS PNG (avec 192 et 512) : l'icône d'accueil était une capture grise | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/icons/icon-180.png) |
+| `messaging-app/workers/api-worker.js (v1.1.290)` | DELETE /api/users/me, GET /api/users/me/export, sauvegarde chiffrée, rate limit check-phone, profil sous jeton, médias nosniff, invitations 8 caractères | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) |
+| `messaging-app/workers/durable-objects/ConversationDO.js` | alarme de flush + flush à la fermeture + e2e_strict appliqué | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/durable-objects/ConversationDO.js) |
+| `messaging-app/index.html (v1.1.290)` | SW module, routes /api corrigées, toasts, en-tête, retour iOS, CGU versionnées, suppression de compte, renvoi SMS, signalement, bandeau installation, CSP liste blanche, version par HEAD | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/index.html) |
+| `messaging-app/cgu.html · privacy.html` | cohérentes avec le code (Firebase retiré, effacement immédiat, sous-traitants IA réels), datées 17/09/2026 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/cgu.html) |
+| `.github/workflows/deploy-apex-chat.yml` | numéros en secrets (plus en clair), migrations qui échouent pour de vrai, vérification live après déploiement | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/deploy-apex-chat.yml) |
+| `audit/apex-chat/03-FINDINGS.md` | passe 3 du 17/09 : 20 findings corrigés, 1 P0 domaine (Firebase /apex anonyme) à décider, reste chiffré | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/03-FINDINGS.md) |
+
+Liens utiles : [Apex Chat en ligne](https://apex-chat.kd-mc.com/) · [Aide](https://apex-chat.kd-mc.com/aide.html) · [Runs des tests](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/messaging-app-tests.yml) · [Déploiements du worker](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) · [Pentest Strix](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/strix-scan.yml)
 
 ## 🎬 Machine à vidéos sans visage — 12 pubs pour les 6 produits — 2026-09-17
 
@@ -2599,3 +2626,26 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 | `shops/kit-ia/pour/` | 47 pages « l'IA pour un plombier / coiffeur / … » + index, en ligne sur kit.kd-mc.com/pour/ | [voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/kit-ia/pour) | [ouvrir](https://kit.kd-mc.com/pour/index.html) |
 | `tests/kit-metiers.test.mjs` | 5 preuves : pages == source, CSP, 0 contenu payant, liens, sitemap | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-metiers.test.mjs) | — |
 | Routine « Club IA — contenu de la semaine » | Session Claude automatique chaque lundi 07:00 UTC : nouvelle consigne en base + e-mail aux abonnés + point à Kevin | [Routines](https://claude.ai/code) | — |
+
+---
+
+## 2026-09-17 — Paquet de reprise & comparatif d'IA
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `TRANSFERT-COMPLET.md` | **Tout notre travail en un document** : dépôts, 30 adresses, 28 workers, Firebase, 105 noms de secrets, 40 sessions, 219 branches, les règles, ce qui reste à faire, le comparatif d'IA et la bascule en 4 étapes | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) · [✏️ Modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) · [⬇️ Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) |
+| `tools/transfert/export.mjs` | L'outil `npm run transfert` : fabrique le paquet de reprise (18 documents + INDEX + inventaire + archive) avec garde anti-fuite de secrets | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/work-summary-ai-alternatives-cj6s29/tools/transfert/export.mjs) |
+
+**Commandes ajoutées** : `npm run transfert` (fabrique le paquet + l'archive) ·
+`npm run transfert:liste` (dit seulement ce qui serait copié).
+
+### 2026-09-17 (suite) — Bilan du pipeline
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `BILAN-BRANCHES.md` | **Le point complet** : chaque session une par une (état, branche, fusion, discussions), **les 211 branches non déclarées toutes listées**, chaque discussion ouverte, ce qui attend Kevin | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/BILAN-BRANCHES.md) |
+| `tools/pipeline/bilan.mjs` | `npm run bilan` — refabrique ce bilan avec les chiffres du jour (registre × dépôt réel × API GitHub) | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/pipeline/bilan.mjs) |
+
+**Commandes ajoutées** : `npm run bilan` · `npm run bilan:court` ·
+`node tools/pipeline/pipeline.mjs suivi --id <mNNN> --action "…"` (posait problème : elle
+n'existait pas, d'où 61 messages en retard).

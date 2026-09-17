@@ -147,13 +147,14 @@ describe('POST /api/auth/check-phone (handleCheckPhone)', () => {
   it('compte connu sans first_name → prénom extrait du real_name + admin_authorized', async () => {
     const env = mkEnv([['FROM users WHERE phone=?', { first: { id: 'u1', status: 'active', real_name: '  Marie Test ', first_name: '', admin_authorized: 1 } }]]);
     const r = await worker.fetch(jreq('POST', '/api/auth/check-phone', { phone: '+33600000010' }), env);
-    expect(await r.json()).toEqual({ ok: true, exists: true, first_name: 'Marie', admin_authorized: true });
+    // audit 17/09 : admin_authorized n'est plus révélé avant preuve de possession du numéro
+    expect(await r.json()).toEqual({ ok: true, exists: true, first_name: 'Marie' });
   });
 
   it('compte connu sans nom → repli sur le pseudo', async () => {
     const env = mkEnv([['FROM users WHERE phone=?', { first: { id: 'u1', pseudo: 'marie_t', admin_authorized: 0 } }]]);
     const j = await (await worker.fetch(jreq('POST', '/api/auth/check-phone', { phone: '+33600000010' }), env)).json();
-    expect(j).toEqual({ ok: true, exists: true, first_name: 'marie_t', admin_authorized: false });
+    expect(j).toEqual({ ok: true, exists: true, first_name: 'marie_t' });
   });
 
   it('panne D1 → 500 lookup_failed avec le message exact', async () => {
@@ -1029,7 +1030,7 @@ describe('rappels anonymes — admin diag, invitations, magic-login, contacts', 
     expect(j.users[0].phone).toBeNull();
   });
 
-  it('POST /api/invitations : nouvel invité créé (code 4 car., id u_hex) ; nom de l\'inviteur en panne → repli pseudo du jeton', async () => {
+  it('POST /api/invitations : nouvel invité créé (code 8 car., id u_hex) ; nom de l\'inviteur en panne → repli pseudo du jeton', async () => {
     const env = mkEnv([
       ['SELECT COUNT(*) as c FROM invitations WHERE inviter_id=?', { first: { c: 0 } }],
       ['FROM users WHERE phone_hash=?', { first: null }],
@@ -1039,7 +1040,7 @@ describe('rappels anonymes — admin diag, invitations, magic-login, contacts', 
     const r = await worker.fetch(jreq('POST', '/api/invitations', { phone: '0600000020', name: 'Marie Test' }, await userTok()), env);
     expect(r.status).toBe(200);
     const j = await r.json();
-    expect(j.code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{4}$/);
+    expect(j.code).toMatch(/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/); // audit 17/09 : 30⁸ ≈ 6,6·10¹¹ combinaisons (avant 30⁴ ≈ 810 000)
     expect(j.invited_user_id).toMatch(/^u_[0-9a-f]{16}$/);
     expect(j.sms_template).toMatch(/^Salut Marie Test ! testeur t'invite/);
     const ins = calls(env, 'run', 'INSERT INTO users')[0].args;

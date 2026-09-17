@@ -58,7 +58,7 @@ jobs:
 
       - name: Pre-flight check (HTTP 200 sur prod)
         run: |
-          URL="${APEX_CHAT_URL:-https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/}"
+          URL="${APEX_CHAT_URL:-https://apex-chat.kd-mc.com/}"
           echo "Testing $URL"
           for i in 1 2 3 4 5; do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
@@ -75,7 +75,7 @@ jobs:
       - name: Run Playwright smoke tests
         working-directory: messaging-app/e2e
         env:
-          APEX_CHAT_URL: https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/
+          APEX_CHAT_URL: https://apex-chat.kd-mc.com/
           # v1.1.198 — secret du login de test sûr (== APEX_CHAT_ADMIN_TOKEN côté worker)
           E2E_TEST_SECRET: ${{ secrets.APEX_CHAT_ADMIN_TOKEN }}
           # v1.1.199 — le flag CLI --reporter=json IGNORE le outputFile du config →

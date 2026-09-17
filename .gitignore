@@ -44,3 +44,7 @@ pipeline/rappel-etat.json
 mobile/build/
 tools/pub/out/
 audit/captures-commerce/
+
+# Paquet de reprise (fabrique par npm run transfert — copie locale, pas a versionner)
+/transfert/
+/transfert-kdmc-*.tgz

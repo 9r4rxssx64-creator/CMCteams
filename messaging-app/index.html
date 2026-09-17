@@ -19,7 +19,7 @@
 <meta property="og:image" content="./og-image.svg">
 <meta property="og:url" content="https://apex-chat.kd-mc.com/">
 <!-- Sécurité : CSP + Referrer-Policy + X-Content-Type-Options + Permissions-Policy défense en profondeur -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https://apex-chat-api.9r4rxssx64.workers.dev wss://apex-chat-api.9r4rxssx64.workers.dev https://apex-push-worker.9r4rxssx64.workers.dev https://kd-mc.com https://*.kd-mc.com wss://*.kd-mc.com https://api.giphy.com https://api.qrserver.com https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app https://unpkg.com; media-src 'self' blob: data: https:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), geolocation=(self), display-capture=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
 <link rel="dns-prefetch" href="https://unpkg.com">
 <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
-<link rel="apple-touch-icon" href="./icons/icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <!-- v1.1.170 SEO complet : canonical, robots, Twitter Cards, og enrichi, JSON-LD -->
 <link rel="canonical" href="https://apex-chat.kd-mc.com/">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
@@ -59,7 +59,7 @@
   "applicationCategory": "CommunicationApplication",
   "operatingSystem": "Web, iOS, Android (PWA)",
   "browserRequirements": "Requires JavaScript, modern browser with WebCrypto API",
-  "softwareVersion": "v1.1.289",
+  "softwareVersion": "v1.1.291",
   "inLanguage": "fr-FR",
   "offers": {
     "@type": "Offer",
@@ -240,6 +240,10 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .chat-header .avatar{width:32px;height:32px;font-size:.9em;flex-shrink:0}
 .chat-header .topbar-btn{width:44px;height:44px;flex-shrink:0}
 .chat-hname{font-weight:600;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Audit 17/09/2026 (P1 UX) : à 375 px le nom du contact n'avait plus que 14 px (6 boutons de 44 px).
+   Sur écran étroit, recherche et vidéo vivent dans le menu ⋯ ; le nom garde au moins 96 px. */
+.chat-header > div[style*="flex:1"]{min-width:96px}
+@media (max-width:420px){ .chat-header .hdr-opt{display:none} }
 .find-bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--ax-bg-2);
   border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:49}
 .find-bar #find-input{flex:1;min-width:0;background:var(--ax-bg-3,var(--ax-bg));border:1px solid var(--ax-border);
@@ -283,8 +287,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .msg.grp-start{margin-top:8px}
 .msg.me:not(.grp-end){border-bottom-right-radius:15px}
 .msg.them:not(.grp-end){border-bottom-left-radius:15px}
-.msg-time{color:var(--ax-text-3);font-size:.6em;margin-top:1px;text-align:right;line-height:1}
+.msg-time{color:var(--ax-text-3);font-size:.72em;margin-top:1px;text-align:right;line-height:1}
 .msg.them .msg-time{color:var(--ax-text-3)}
+.msg.me .msg-time,.msg.me .msg-status{color:rgba(8,8,15,.72)} /* audit 17/09 : gris sur or = 1.86:1, illisible */
 .msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
   font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
 /* v1.1.189 — fenêtre de chat PLEIN ÉCRAN : la zone messages remplit tout
@@ -386,11 +391,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   margin:18px 0 10px;font-size:1em;font-weight:700;border-bottom:1px solid var(--ax-border);padding-bottom:6px}
 
 /* ========== Toast ========== */
-.toasts{position:fixed;top:calc(var(--ax-safe-top) + 70px);left:14px;right:14px;
+.toasts{position:fixed;top:calc(var(--ax-safe-top) + 122px);left:14px;right:14px;
   z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .toast{background:var(--ax-bg-2);border:1px solid var(--ax-border);padding:10px 14px;
   border-radius:var(--ax-radius);box-shadow:var(--ax-shadow);
-  animation:slidein .25s ease;pointer-events:auto;font-size:.9em}
+  animation:slidein .25s ease;pointer-events:none;font-size:.9em}
 .toast.ok{border-left:3px solid var(--ax-ok)}
 .toast.warn{border-left:3px solid var(--ax-warn)}
 .toast.err{border-left:3px solid var(--ax-err)}
@@ -428,7 +433,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   padding-top:var(--ax-safe-top)}
 .modal{background:var(--ax-bg-2);border-top-left-radius:var(--ax-radius-lg);border-top-right-radius:var(--ax-radius-lg);
   padding:20px 16px calc(var(--ax-safe-bottom) + 20px);width:100%;max-width:600px;animation:slidein .25s ease;
-  max-height:85vh;overflow-y:auto;outline:none}
+  max-height:85vh;overflow-y:auto;outline:none;position:relative}
 .modal:focus-visible{box-shadow:0 0 0 3px var(--ax-gold-2)}
 .modal-title{font-family:Georgia,serif;color:var(--ax-gold);font-size:1.2em;margin:0 0 14px;letter-spacing:1px}
 .modal-close{position:absolute;top:12px;right:14px;font-size:1.3em;color:var(--ax-text-2);
@@ -453,16 +458,18 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 </head>
 <body>
 <a href="#main-app" class="skip-link">Aller au contenu principal</a>
-<a id="kdmc-portal-link" href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;left:8px;bottom:max(72px,calc(env(safe-area-inset-bottom) + 60px));top:auto;z-index:1200;background:rgba(10,10,12,.66);color:#fff;text-decoration:none;padding:5px 11px;border-radius:999px;font:600 11px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
+<a id="kdmc-portal-link" href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;left:8px;bottom:max(72px,calc(env(safe-area-inset-bottom) + 60px));top:auto;z-index:150;background:rgba(10,10,12,.66);color:#fff;text-decoration:none;padding:5px 11px;border-radius:999px;font:600 11px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
 
 <!-- Service Worker registration -->
 <script>
 'use strict';
-const __APEX_CHAT_VERSION__ = 'v1.1.289';
+const __APEX_CHAT_VERSION__ = 'v1.1.291';
+// Convention du domaine (audit-live.yml lit toute globale <APP>_VERSION) : « version servie » lisible en ligne.
+try{ window.APEX_CHAT_VERSION = __APEX_CHAT_VERSION__; }catch(_){}
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
-// Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
+// Triple stratégie : SW updatefound + heartbeat 60s + remote version check 60s (HEAD/ETag)
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./'}).then(reg=>{
+  navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./', type:'module'}).then(reg=>{
     reg.update().catch(_=>{});
     reg.addEventListener('updatefound',()=>{
       const nw=reg.installing;
@@ -556,6 +563,8 @@ if('serviceWorker' in navigator){
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
+  let _pageEtag = null;          // empreinte (ETag/Last-Modified) de la page servie
+  let _lastFullFetchTs = 0;
   async function _checkRemoteVersion(reason){
     if(_versionCheckRunning) return;
     if(Date.now() - _lastVersionCheckTs < 8000) return;   // throttle 8s
@@ -564,11 +573,20 @@ if('serviceWorker' in navigator){
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 10000);    // timeout 10s — débloque le flag
     try{
-      const r = await fetch(location.pathname + '?_v=' + Date.now(), {
-        cache: 'reload',
-        signal: ctrl.signal,
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
-      });
+      // Audit 17/09/2026 (P1 perf) : la page complète (841 Ko) était retéléchargée toutes
+      // les ~11 s (≈ 83 Mo/h). On interroge d'abord l'empreinte du fichier (HEAD, quelques
+      // octets) ; la page n'est relue que si elle a changé — ou toutes les 10 min au plus
+      // si le serveur ne donne pas d'empreinte.
+      const opts = { cache: 'reload', signal: ctrl.signal, headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } };
+      const head = await fetch(location.pathname + '?_v=' + Date.now(), { ...opts, method: 'HEAD' }).catch(() => null);
+      const tag = head && (head.headers.get('etag') || head.headers.get('last-modified'));
+      if(tag){
+        if(_pageEtag === null){ _pageEtag = tag; if(Date.now() - _lastFullFetchTs < 600000) return; }
+        else if(tag === _pageEtag) return;                  // rien n'a changé
+      } else if(Date.now() - _lastFullFetchTs < 600000){ return; }
+      _lastFullFetchTs = Date.now();
+      const r = await fetch(location.pathname + '?_v=' + Date.now(), opts);
+      if(tag) _pageEtag = tag;
       const html = await r.text();
       const m = html.match(/__APEX_CHAT_VERSION__\s*=\s*['"]([^'"]+)['"]/);
       if(m && m[1] && m[1] !== __APEX_CHAT_VERSION__){
@@ -605,7 +623,7 @@ if('serviceWorker' in navigator){
   setTimeout(() => { try { if (window.K) window.K._checkRemoteVersion = _checkRemoteVersion; } catch (_e) {} }, 0);   // exposé : déclenché aussi aux changements de vue
   // Polling renforcé iOS PWA : boot 4s + interval 20s + visibility/focus/pageshow
   setTimeout(() => _checkRemoteVersion('boot'), 4000);
-  setInterval(() => _checkRemoteVersion('interval'), 20000);
+  setInterval(() => _checkRemoteVersion('interval'), 60000);   // règle MAJ auto : 60 s (+ focus/visibilité)
   document.addEventListener('visibilitychange', () => { if(!document.hidden) _checkRemoteVersion('visible'); });
   window.addEventListener('focus', () => _checkRemoteVersion('focus'));
   window.addEventListener('pageshow', (e) => { if(e.persisted) _checkRemoteVersion('pageshow'); });
@@ -650,7 +668,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.289</div>
+  <div id="splash-version" data-ver="v1.1.291" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.291</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>
@@ -664,7 +682,7 @@ if('serviceWorker' in navigator){
 
 <header class="topbar h" id="topbar">
   <button class="topbar-btn" onclick="K.toggleMenu()" aria-label="Menu">☰</button>
-  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.289</span></div>
+  <div class="topbar-title">APEX CHAT <span style="font-size:.55em;color:var(--ax-text-3);letter-spacing:0;margin-left:6px;font-weight:400" id="topbar-version">v1.1.291</span></div>
   <span class="connected" id="conn-status">●</span>
   <button class="topbar-btn" onclick="K.openInvite()" aria-label="Inviter">📤</button>
 </header>
@@ -811,12 +829,22 @@ function ls(key, value){
 
 // IndexedDB shadow store
 let _idb = null;
+let _idbWiping = false;   // suppression de compte en cours : plus aucune (ré)ouverture (sinon deleteDatabase reste « blocked »)
 async function idbOpen(){
   if(_idb) return _idb;
+  if(_idbWiping) throw new Error('idb: effacement local en cours');
   return new Promise((resolve, reject) => {
     const req = indexedDB.open('apex_chat_idb', 1);
     req.onerror = () => reject(req.error);
-    req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+    req.onsuccess = () => {
+      const db = req.result;
+      // Une suppression demandée pendant l'ouverture (compte effacé) : on ne garde pas la connexion.
+      if(_idbWiping){ try{ db.close(); }catch(_){} reject(new Error('idb: effacement local en cours')); return; }
+      // deleteDatabase() prévient les connexions ouvertes par `versionchange` : on se ferme aussitôt,
+      // sinon la suppression reste « blocked » tant que la page vit (mesuré en vrai Chromium).
+      db.onversionchange = () => { try{ db.close(); }catch(_){} if(_idb === db) _idb = null; };
+      _idb = db; resolve(_idb);
+    };
     req.onupgradeneeded = () => {
       const db = req.result;
       if(!db.objectStoreNames.contains('kv')) db.createObjectStore('kv');
@@ -856,7 +884,14 @@ function _cleanupStorage(){
     for(const k of all){
       const short = k.replace(PERSIST_PREFIX, '');
       if(!keep.includes(short) && localStorage.getItem(k).length > 5000){
-        localStorage.removeItem(k);
+        // Audit 17/09/2026 (P2) : avant, la clé entière partait (historique local effacé en
+        // silence). Une liste est tronquée à ses 150 derniers éléments ; le reste est retiré.
+        let tronque = false;
+        try{
+          const v = JSON.parse(localStorage.getItem(k));
+          if(Array.isArray(v) && v.length > 150){ localStorage.setItem(k, JSON.stringify(v.slice(-150))); tronque = true; }
+        }catch(_){}
+        if(!tronque) localStorage.removeItem(k);
       }
     }
   }catch(e){_safeCatch('silent',e)}
@@ -887,7 +922,18 @@ function _logTelemetry(severity, sentinel, payload){
   }
 }
 
+// Audit 17/09/2026 (mesuré en vrai Chromium, Firebase injoignable) : l'échec du POST passait par
+// _safeCatch → _logTelemetry → _escalateToApex → échec → … : 3 636 requêtes en 2 min (~30/s),
+// hors-ligne, réseau bloqué ou Firebase en panne. Coupe-circuit : jamais d'auto-rappel, plafond
+// 10 envois / minute, et après 3 échecs consécutifs on se tait 5 min (compteur exposé pour l'admin).
+K._telemetryGate = { sent: [], failures: 0, pausedUntil: 0 };
 async function _escalateToApex(severity, sentinel, payload){
+  const g = K._telemetryGate, now = Date.now();
+  if(now < g.pausedUntil) return;
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return;
+  g.sent = g.sent.filter((t) => now - t < 60000);
+  if(g.sent.length >= 10) return;
+  g.sent.push(now);
   try{
     const entry = {
       id: 'apexchat_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
@@ -900,11 +946,18 @@ async function _escalateToApex(severity, sentinel, payload){
       ts: Date.now(),
       processed: false
     };
-    await fetch(FIREBASE_URL + '/apex/ax_telemetry_in.json', {
+    const r = await fetch(FIREBASE_URL + '/apex/ax_telemetry_in.json', {
       method: 'POST',
       body: JSON.stringify(entry)
     });
-  }catch(e){_safeCatch('silent',e)}
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    g.failures = 0;
+  }catch(e){
+    // JAMAIS _safeCatch ici (c'est lui qui nous appelle) : journal local seulement + pause.
+    g.failures++;
+    if(g.failures >= 3){ g.pausedUntil = Date.now() + 5 * 60 * 1000; g.failures = 0; }
+    try{ console.warn('[apex-chat] télémétrie non envoyée :', e && e.message, g.pausedUntil ? '(pause 5 min)' : ''); }catch(_){}
+  }
 }
 
 function _runSentinels(){
@@ -940,15 +993,36 @@ function toast(message, type='info', duration=3000){
   try{
     const host = $('#toasts');
     if(!host) return;
+    // Audit 17/09/2026 (P0 UX) : même texte → on rafraîchit le toast existant au lieu
+    // d'empiler ; au plus 3 visibles (le plus ancien part). Fini la « tempête ».
+    const same = [...host.children].find(el => el.textContent === message);
+    if(same){ clearTimeout(same._toastT); same.style.opacity = ''; same._toastT = setTimeout(() => { same.style.opacity = '0'; setTimeout(()=>same.remove(), 300); }, duration); return; }
+    while(host.children.length >= 3) host.firstElementChild.remove();
     const t = document.createElement('div');
     t.className = 'toast ' + type;
     t.textContent = message;
     host.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, duration);
+    t._toastT = setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, duration);
   }catch(e){ console.log(`[toast:${type}]`, message); }
 }
 
 K.toast = toast;
+
+// Audit 17/09/2026 : version des CGU/charte. Un changement de version redemande l'accord
+// (avant : le drapeau local, une fois posé, ne redemandait jamais rien).
+K.CGU_VERSION = '2026-09-17';
+K._cguAccepted = function(){
+  try{ const a = JSON.parse(localStorage.getItem('apex_chat_cgu_v1') || 'null'); return !!(a && a.cgu === K.CGU_VERSION); }catch(_){ return false; }
+};
+
+// Audit 17/09/2026 : jamais « Failed to fetch » à l'écran (règle « langage simple »).
+K._humanError = function(e, fallback){
+  const m = String((e && e.message) || e || '');
+  if(/failed to fetch|networkerror|load failed|network request failed|fetch failed/i.test(m)) return 'Réseau indisponible — vérifie le Wi-Fi ou la 4G, puis réessaie';
+  if(/aborterror|timeout|timed out/i.test(m)) return 'Pas de réponse du serveur, réessaie dans un instant';
+  if(/json/i.test(m) && /unexpected|parse|token/i.test(m)) return 'Réponse du serveur illisible, réessaie';
+  return m || fallback || 'Erreur inconnue';
+};
 
 // ============================================================================
 //  Auth — Firebase Phone + comptes pré-configurés
@@ -2892,7 +2966,9 @@ K._checkPushStatus = async function(){
 };
 
 K._openPushSettings = async function(){
-  const status = await K._checkPushStatus();
+  // Audit 17/09/2026 (P2 UX) : sans délai maximal, aucune fenêtre n'apparaissait quand le
+  // Service Worker tardait — le bouton semblait mort. 3 s au plus, puis « erreur ».
+  const status = await Promise.race([K._checkPushStatus(), new Promise(res => setTimeout(() => res('error'), 3000))]);
   const statusLabel = {
     'unsupported': '❌ Non supporté',
     'not_subscribed': '⚪ Inactif',
@@ -4000,6 +4076,36 @@ K._isBlocked = function(peerId){
   return (lg('blocked_users', []) || []).includes(peerId);
 };
 
+// Audit 17/09/2026 : le signalement existait côté serveur (POST /api/signalements) et dans
+// l'admin, mais aucun bouton ne permettait à un utilisateur de signaler quelqu'un.
+K._reportUser = function(peerId, convId, peerName){
+  K._showModal('⚠️ Signaler ' + peerName, `
+    <p style="color:var(--ax-text-2);font-size:.9em">L'équipe est prévenue tout de suite et peut suspendre le compte. ${esc(peerName)} n'est pas informé du signalement.</p>
+    <label class="label" style="margin-top:10px">Motif</label>
+    <select id="rep-reason" class="input">
+      <option value="harcelement">Harcèlement, menaces</option>
+      <option value="arnaque">Arnaque, hameçonnage</option>
+      <option value="spam">Spam</option>
+      <option value="usurpation">Usurpation d'identité</option>
+      <option value="contenu_illegal">Contenu illégal</option>
+      <option value="autre">Autre</option>
+    </select>
+    <label class="label" style="margin-top:10px">Explique en quelques mots (facultatif)</label>
+    <textarea id="rep-desc" class="input" rows="3" maxlength="1000" style="resize:vertical"></textarea>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._reportUserGo('${esc(peerId)}','${esc(convId)}')">Envoyer le signalement</button>
+  `);
+};
+K._reportUserGo = async function(peerId, convId){
+  const reason = $('#rep-reason')?.value || 'autre';
+  const description = ($('#rep-desc')?.value || '').trim().slice(0, 1000);
+  try{
+    const r = await K._api('POST', '/api/signalements', { target_user_id: peerId, conv_id: convId || null, reason, description });
+    if(!r || !r.ok) throw new Error((r && r.message) || 'Envoi impossible');
+    K._closeModal();
+    toast('✅ Signalement envoyé. Merci, on s\'en occupe.', 'ok', 4000);
+  }catch(e){ toast('Signalement non envoyé : ' + K._humanError(e), 'err', 6000); }
+};
+
 K._blockUser = function(peerId, peerName){
   if(!peerId) return;
   if(!confirm(`Bloquer ${peerName || 'cet utilisateur'} ?\n\nIl ne pourra plus t'envoyer de messages.\nTes messages ne lui parviendront plus.`)) return;
@@ -4345,6 +4451,9 @@ K._openConvActionsMenu = function(convId, ev){
   K._showModal('⚙️ Actions conversation', `
     <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px"><strong>${esc(K._convName(conv))}</strong></p>
     <div style="display:grid;gap:6px">
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._call('video','${esc(convId)}')">📹 Appel vidéo</button>
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._toggleFindBar()">🔎 Rechercher dans cette conversation</button>
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._openSearchModal()">🔍 Recherche IA</button>
       <button class="btn btn-out btn-block" onclick="K._markConvUnread('${esc(convId)}')">🔵 Marquer comme non-lue</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvPinned('${esc(convId)}')">${conv.pinned ? '📌 Désépingler' : '📌 Épingler en haut'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet (permanent)'}</button>
@@ -4359,7 +4468,8 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openConvInfo('${esc(convId)}')">ℹ️ Infos & statistiques</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openReactionStats('${esc(convId)}')">📊 Stats réactions</button>
-      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(K._convName(conv))}')">🚫 Bloquer ${esc(K._convName(conv))}</button>` : ''}
+      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._reportUser('${esc(conv.peer_id)}','${esc(convId)}','${esc(K._convName(conv))}')">⚠️ Signaler ${esc(K._convName(conv))}</button>
+      <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(K._convName(conv))}')">🚫 Bloquer ${esc(K._convName(conv))}</button>` : ''}
       <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._clearConvMessages('${esc(convId)}')">🧹 Effacer les messages (garder la conv)</button>
       <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._deleteConv('${esc(convId)}')">🗑 Supprimer la conversation</button>
     </div>
@@ -7100,8 +7210,8 @@ function renderAuthStep(){
       // Demandé 1 fois (flag apex_chat_cgu_v1) : si déjà accepté, pré-coché + débloqué.
       const acceptCgu = (explicit) => {
         try{
-          if(!localStorage.getItem('apex_chat_cgu_v1')){
-            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, implicit: !explicit, ua: navigator.userAgent.slice(0, 200) };
+          if(!K._cguAccepted()){
+            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, cgu: K.CGU_VERSION, implicit: !explicit, ua: navigator.userAgent.slice(0, 200) };
             localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(accept));
             // Push backend (RGPD trace immutable) — best-effort
             const phone = (document.getElementById('auth-phone')?.value || '').replace(/[^\d+]/g, '');
@@ -7114,7 +7224,7 @@ function renderAuthStep(){
         }catch(_e){_safeCatch('silent',_e)}
       };
       const cguBox = $('#auth-cgu');
-      const cguDone = !!localStorage.getItem('apex_chat_cgu_v1');
+      const cguDone = K._cguAccepted();
       const setSendEnabled = (on) => {
         const b = $('#btn-auth-phone'); if(!b) return;
         b.disabled = !on; b.style.opacity = on ? '' : '.5'; b.style.pointerEvents = on ? '' : 'none';
@@ -7142,7 +7252,7 @@ function renderAuthStep(){
           try{
             await K._handleAuthPhone();
           }catch(err){
-            $('#auth-debug').textContent = '❌ ' + (err.message || 'Erreur inconnue');
+            $('#auth-debug').textContent = '❌ ' + K._humanError(err, 'Erreur inconnue');
           }
         });
         $('#auth-debug').textContent = '';
@@ -7170,10 +7280,15 @@ function renderAuthStep(){
       <button class="btn btn-block" onclick="K._handleAuthOtp()" style="margin-top:16px">
         ✓ Vérifier
       </button>
-      <button class="btn btn-ghost btn-block btn-sm" onclick="K.authStep='phone';renderAuthStep()" style="margin-top:8px">
+      <button id="btn-otp-resend" class="btn btn-ghost btn-block btn-sm" onclick="K._resendOtp()" style="margin-top:8px" disabled>
+        🔁 Renvoyer le code (60 s)
+      </button>
+      <button class="btn btn-ghost btn-block btn-sm" onclick="K.authStep='phone';renderAuthStep()" style="margin-top:4px">
         ⬅ Changer de numéro
-      </button>`;
+      </button>
+      <p style="text-align:center;color:var(--ax-text-3);font-size:.75em;margin-top:10px">Le code est valable 5 minutes. Rien reçu ? <a href="./aide.html" target="_blank" style="color:var(--ax-gold)">Voir l'aide</a></p>`;
     setTimeout(()=>$('#auth-otp')?.focus(), 100);
+    K._startOtpCountdown(60);
   }
   else if(K.authStep === 'pseudo'){
     const suggested = (K.authData.name || '').split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,15);
@@ -7237,7 +7352,7 @@ K._handleAuthPhone = async function(){
       body: JSON.stringify({ phone: cleanPhone, name })
     });
     const result = await r.json().catch(() => ({}));
-    if(!r.ok) throw new Error(result.detail || result.message || ('Erreur ' + r.status));
+    if(!r.ok) throw new Error(result.message || result.detail || ('Erreur ' + r.status));
     // v1.1.219 — cercle de confiance (Laurence + famille/amis configurés) : le
     // serveur autorise la connexion SANS SMS → on saute l'étape code.
     if(result._circle_bypass){
@@ -7258,7 +7373,7 @@ K._handleAuthPhone = async function(){
     K.authStep = 'otp';
     renderAuthStep();
   }catch(e){
-    toast(e.message || 'Envoi impossible, réessaie', 'err', 4000);
+    toast(K._humanError(e, 'Envoi impossible, réessaie'), 'err', 4000);
   }
   return;
 
@@ -7315,6 +7430,30 @@ K._handleAuthPhone = async function(){
     const dbg = $('#auth-debug');
     if(dbg) dbg.textContent = '❌ ' + (e.message || 'Erreur');
   }
+};
+
+// Audit 17/09/2026 (P0 onboarding) : aucun moyen de renvoyer le code SMS, aucun délai affiché.
+K._startOtpCountdown = function(secs){
+  clearInterval(K._otpCdT);
+  let left = secs;
+  const tick = () => {
+    const b = $('#btn-otp-resend'); if(!b){ clearInterval(K._otpCdT); return; }
+    if(left <= 0){ b.disabled = false; b.textContent = '🔁 Renvoyer le code'; clearInterval(K._otpCdT); return; }
+    b.disabled = true; b.textContent = '🔁 Renvoyer le code (' + left + ' s)'; left--;
+  };
+  tick(); K._otpCdT = setInterval(tick, 1000);
+};
+K._resendOtp = async function(){
+  const phone = K.authData && K.authData.phone; if(!phone) return;
+  const b = $('#btn-otp-resend'); if(b) b.disabled = true;
+  try{
+    const r = await fetch(API_BASE + '/api/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, name: K.authData.name || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.message || j.detail || ('Erreur ' + r.status));
+    if(j._dev_otp){ K.authData._dev_otp = j._dev_otp; K.authData._dev_show = true; renderAuthStep(); return; }
+    toast('📩 Nouveau code envoyé par SMS', 'ok', 3000);
+  }catch(e){ toast(K._humanError(e, 'Renvoi impossible, réessaie'), 'err', 5000); }
+  K._startOtpCountdown(60);
 };
 
 K._handleAuthOtp = async function(){
@@ -7554,9 +7693,18 @@ K.render = function(){
   }
 };
 
+// Audit 17/09/2026 (P2 perf) : 10 événements « écrit… » = 10 rendus complets de la liste.
+// Regroupés : au plus un rendu toutes les 250 ms.
+K._renderListSoon = function(){
+  if(K._listRenderT) return;
+  K._listRenderT = setTimeout(() => { K._listRenderT = null; if(K.view === 'chats') K.render(); }, 250);
+};
 K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
+  // Audit 17/09/2026 (P1 UX) : le geste « retour » iOS quittait l'app (0 pushState).
+  // Ouvrir une conversation ajoute une entrée d'historique ; le retour la referme.
+  if(view === 'chat'){ try{ if(!(history.state && history.state.view === 'chat')) history.pushState({ view: 'chat' }, ''); }catch(_){} }
   K.render();
   // v1.1.170 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_e){_safeCatch('silent',_e)}
@@ -7834,10 +7982,9 @@ function renderChat(app){
         <div class="chat-hname">${esc(K._convName(conv))}</div>
         <div style="font-size:.68em;color:var(--ax-ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🔒 chiffré (transit)` : K._presenceLabel(conv)}</div>
       </div>
-      <button class="topbar-btn" onclick="K._toggleFindBar()" aria-label="Rechercher dans cette conversation">🔎</button>
-      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
+      <button class="topbar-btn hdr-opt" onclick="K._toggleFindBar()" aria-label="Rechercher dans cette conversation">🔎</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
-      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
+      <button class="topbar-btn hdr-opt" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
       <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
     </div>
     ${K._findBarOpen ? `<div class="find-bar" id="find-bar">
@@ -8344,10 +8491,10 @@ K._wsDiagnose = async function(convId){
       return;
     }
     if(d.ok){
-      // Tous les checks passent → le WS devrait marcher, on relance proprement
-      toast('Temps réel : nouvelle tentative…', 'info', 2000);
-      K._wsRetry = 0;
-      if(K.view === 'chat' && K.viewData && K.viewData.id === convId) K._openWs(convId);
+      // Tous les contrôles passent → la reconnexion à délai croissant (backoff, plus bas)
+      // s'en charge. Audit 17/09/2026 (P0 UX) : remettre K._wsRetry à 0 ici annulait le
+      // backoff → boucle ~1 s, 337 connexions en 5 min et 194 toasts empilés qui
+      // recouvraient l'en-tête (le bouton Retour ne répondait plus).
       return;
     }
     toast('Temps réel indisponible : ' + (d.detail || d.cause || 'cause inconnue'), 'warn', 7000);
@@ -8659,12 +8806,12 @@ async function _handleWsMessage(data, convId){
             delete K._typingState[convId][tFrom];
             if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
             /* v1.1.97 : re-render conv list pour effacer "✏️ écrit..." */
-            if(K.view === 'chats') K.render();
+            if(K.view === 'chats') K._renderListSoon();
           }
         }, 4500);
         if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
         /* v1.1.97 : si on est sur la liste conv, re-render pour montrer "✏️ écrit..." */
-        if(K.view === 'chats') K.render();
+        if(K.view === 'chats') K._renderListSoon();
       }
       break;
     case 'location_update': {
@@ -9681,13 +9828,16 @@ K._openTranslator = function(){
       <option value="ru">Russe</option>
       <option value="zh">Chinois</option>
     </select>
-    <button class="btn btn-block" style="margin-top:14px" onclick="K._doTranslate()">🌐 Traduire</button>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._doTranslateForm()">🌐 Traduire</button>
     <div id="tr-result" style="margin-top:14px"></div>
   `);
   setTimeout(() => { const i = document.getElementById('tr-text'); if(i) i.focus(); }, 100);
 };
 
-K._doTranslate = async function(){
+// Audit 17/09/2026 : cette fonction s'appelait K._doTranslate et était ÉCRASÉE en silence par
+// la seconde définition (signature (text, lang)) 1 100 lignes plus bas → le bouton « Traduire »
+// de l'outil envoyait text=undefined. Renommée ; garde : tests/unit/no-duplicate-definitions.test.js.
+K._doTranslateForm = async function(){
   const text = (document.getElementById('tr-text')?.value || '').trim();
   const lang = document.getElementById('tr-lang')?.value || 'en';
   const out = document.getElementById('tr-result');
@@ -9977,7 +10127,7 @@ K._openContactSheet = async function(id){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
       <button class="btn btn-sm" onclick="K._closeModal();K._startConvWithUser('${esc(c.id)}','${esc(nm)}')">💬 Message</button>
-      <button class="btn btn-sm btn-out" onclick="K._closeModal();K._startCall&&K._startCall('${esc(c.id)}','audio')">📞 Appel</button>
+      <button class="btn btn-sm btn-out" onclick="K._closeModal();K._callContact&&K._callContact('${esc(c.id)}','audio')">📞 Appel</button>
     </div>
     ${c.phone ? `<button class="btn btn-sm btn-block" style="margin-bottom:12px;background:var(--ax-gold);color:#000" onclick="K._inviteAndOpen('${esc(c.id)}')">📨 Inviter sur Apex Chat + ouvrir la conversation</button>` : ''}
 
@@ -10865,8 +11015,20 @@ K._renderSmartReplyChips = async function(convId, lastMsg){
     host.innerHTML = '';
     return;
   }
-  host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.72em;padding:2px 8px">💡</div>';
-  const replies = await K._loadSmartReplies(lastMsg.text);
+  // Audit 17/09/2026 (P1 coût) : un appel LLM à chaque ouverture de la conversation et à
+  // chaque message reçu, sans cache. Réponses gardées par message (50 derniers) ; rien
+  // n'est demandé quand l'onglet n'est pas visible.
+  if(document.hidden){ host.innerHTML = ''; return; }
+  K._smartReplyCache = K._smartReplyCache || new Map();
+  const ck = String(lastMsg.id || lastMsg.ts);
+  let replies;
+  if(K._smartReplyCache.has(ck)) replies = K._smartReplyCache.get(ck);
+  else {
+    host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.72em;padding:2px 8px">💡</div>';
+    replies = await K._loadSmartReplies(lastMsg.text);
+    K._smartReplyCache.set(ck, replies || []);
+    if(K._smartReplyCache.size > 50) K._smartReplyCache.delete(K._smartReplyCache.keys().next().value);
+  }
   if(!replies || replies.length === 0){
     host.innerHTML = '';
     return;
@@ -11512,7 +11674,7 @@ K._toggleVoiceRecord = async function(){
         const fd = new FormData();
         fd.append('audio', blob, 'voice.webm');
         fd.append('lang', 'fr');
-        const r = await fetch(API_BASE + '/ai/voice-transcribe', {
+        const r = await fetch(API_BASE + '/api/ai/voice-transcribe', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + (K.token || '') },
           body: fd
@@ -11788,7 +11950,7 @@ K._uploadImage = async function(file){
     // Appel IA pour alt-text
     let altText = '';
     try{
-      const r = await fetch(API_BASE + '/ai/image-describe', {
+      const r = await fetch(API_BASE + '/api/ai/image-describe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -12110,6 +12272,95 @@ K._saveNewContact = function(){
 // v1.1.219 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
 // Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
 // (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
+// Audit 17/09/2026 (RGPD, P0 commercial) — export serveur (art. 15/20) et suppression de compte (art. 17).
+K._downloadServerData = async function(){
+  if(!K.token || String(K.token).startsWith('local-')){ toast('Connecte-toi d\'abord pour récupérer tes données', 'warn', 5000); return; }
+  toast('📤 Préparation de ton fichier…', 'info', 2500);
+  try{
+    const r = await fetch(API_BASE + '/api/users/me/export', { headers: { 'Authorization': 'Bearer ' + K.token } });
+    if(!r.ok){ const j = await r.json().catch(() => ({})); throw new Error(j.message || ('Erreur ' + r.status)); }
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'apex-chat-mes-donnees-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    toast('✅ Fichier téléchargé', 'ok', 3000);
+  }catch(e){ toast('Export impossible : ' + K._humanError(e), 'err', 6000); }
+};
+K._deleteMyAccount = function(){
+  if(!K.token || String(K.token).startsWith('local-')){ toast('Connecte-toi d\'abord pour supprimer ton compte', 'warn', 5000); return; }
+  K._showModal('🗑 Supprimer mon compte', `
+    <p style="color:var(--ax-text-2);font-size:.9em;line-height:1.5">Cette action est <strong>définitive</strong> : ton compte, tes contacts, tes appareils et tes médias sont effacés tout de suite ; tes messages deviennent illisibles pour tout le monde. Ton numéro pourra être réutilisé.</p>
+    <p style="color:var(--ax-text-2);font-size:.9em">Pense à <a href="#" onclick="event.preventDefault();K._downloadServerData()" style="color:var(--ax-gold)">télécharger tes données</a> avant.</p>
+    <label class="label" style="margin-top:12px">Écris <strong>SUPPRIMER</strong> pour confirmer</label>
+    <input id="del-confirm" class="input" type="text" autocomplete="off" autocapitalize="characters" placeholder="SUPPRIMER">
+    <button class="btn btn-err btn-block" style="margin-top:14px" onclick="K._deleteMyAccountGo()">🗑 Supprimer définitivement</button>
+    <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="K._closeModal()">Annuler</button>
+  `);
+};
+K._deleteMyAccountGo = async function(){
+  const v = ($('#del-confirm')?.value || '').trim().toUpperCase();
+  if(v !== 'SUPPRIMER'){ toast('Écris SUPPRIMER en toutes lettres pour confirmer', 'warn', 4000); return; }
+  try{
+    const r = await fetch(API_BASE + '/api/users/me', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token }, body: JSON.stringify({ confirm: 'SUPPRIMER' }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok || !j.ok) throw new Error(j.message || ('Erreur ' + r.status));
+    K._closeModal();
+    toast('✅ Compte supprimé. À bientôt peut-être.', 'ok', 4000);
+    // efface tout ce qui est local (dont les clés de chiffrement) sans confirmation supplémentaire
+    try{ for(const k of Object.keys(localStorage)){ if(k.startsWith(PERSIST_PREFIX) || k.startsWith('draft_') || /^(crypto_|ratchet_|user_pin|user_unlock|apex_chat_)/.test(k)) localStorage.removeItem(k); } }catch(_){}
+    // Second avis indépendant (Qodo, PR #3890) : deleteDatabase() était lancé sans fermer notre
+    // connexion ni attendre → suppression « bloquée » possible, page rechargée avec la base encore là
+    // alors que l'écran annonçait un effacement local. On ferme, on attend chaque suppression
+    // (succès / erreur / bloquée), plafond 3 s par base pour ne jamais rester coincé.
+    await K._wipeLocalDatabases();
+    setTimeout(() => location.replace(location.pathname), 1200);
+  }catch(e){ toast('Suppression impossible : ' + K._humanError(e), 'err', 7000); }
+};
+
+/** Efface toutes les bases IndexedDB locales et ATTEND leur suppression (jamais plus de 3 s chacune). */
+K._wipeLocalDatabases = async function(){
+  if(!window.indexedDB) return { deleted: [], blocked: [] };
+  const out = { deleted: [], blocked: [] };
+  // 1) plus aucune réouverture (l'app persiste en continu ; une connexion rouverte pendant la
+  //    suppression la laisse « blocked » — mesuré en vrai Chromium), puis on ferme la nôtre.
+  try{ if(typeof _idbWiping !== 'undefined') _idbWiping = true; }catch(_){}
+  try{ if(typeof _idb !== 'undefined' && _idb){ _idb.close(); _idb = null; } }catch(_){}
+  const names = ['apex_chat_idb'];
+  try{ if(indexedDB.databases){ for(const d of await indexedDB.databases()){ if(d && d.name && !names.includes(d.name)) names.push(d.name); } } }catch(_){}
+  // 2) on attend le VRAI succès : « blocked » n'est pas une fin (la suppression aboutit dès que la
+  //    dernière connexion se ferme) ; plafond 3 s par base pour ne jamais rester coincé.
+  await Promise.all(names.map((n) => new Promise((resolve) => {
+    let done = false;
+    const fin = (how) => { if(done) return; done = true; (how === 'ok' ? out.deleted : out.blocked).push(n); resolve(); };
+    try{
+      const rq = indexedDB.deleteDatabase(n);
+      rq.onsuccess = () => fin('ok'); rq.onerror = () => fin('erreur');
+    }catch(_){ fin('erreur'); }
+    setTimeout(() => fin('délai'), 3000);
+  })));
+  return out;
+};
+
+// Audit 17/09/2026 (PWA) : sur iPhone, Safari n'a pas de bouton « Installer » — on explique
+// les 3 gestes une fois, seulement hors app installée, et on n'insiste jamais (✕ mémorisé).
+K._maybeShowInstallHint = function(){
+  const ua = navigator.userAgent || '';
+  const iOS = /iPhone|iPad|iPod/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  let standalone = false; try{ standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }catch(_){}
+  if(!iOS || standalone || !K.user) return;
+  try{ if(localStorage.getItem('apex_chat_install_hint')) return; }catch(_){}
+  if(document.getElementById('install-hint')) return;
+  const d = document.createElement('div');
+  d.id = 'install-hint';
+  d.setAttribute('role', 'note');
+  d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(var(--ax-safe-bottom, 0px) + 78px);z-index:180;background:var(--ax-bg-2);border:1px solid var(--ax-gold);border-radius:14px;padding:12px 44px 12px 14px;font-size:.85em;line-height:1.45;box-shadow:var(--ax-shadow)';
+  d.innerHTML = '<strong style="color:var(--ax-gold)">📱 Mets Apex Chat sur ton écran d\'accueil</strong><br>Touche <strong>Partager</strong> (le carré avec la flèche), puis <strong>« Sur l\'écran d\'accueil »</strong>, puis <strong>Ajouter</strong>. Tu auras les notifications et l\'app s\'ouvrira comme une vraie app.'
+    + '<button aria-label="Fermer" style="position:absolute;top:4px;right:4px;width:40px;height:40px;background:none;border:none;color:var(--ax-text-2);font-size:1.2em" onclick="try{localStorage.setItem(\'apex_chat_install_hint\',\'1\')}catch(_){};this.parentNode.remove()">✕</button>';
+  document.body.appendChild(d);
+};
+
 K._contactSupport = async function(){
   if(!K.token || String(K.token).startsWith('local-')){
     toast('Connecte-toi d\'abord (ouvre ton lien d\'invitation) pour joindre l\'assistance', 'warn', 6000);
@@ -12258,7 +12509,7 @@ function renderContacts(app){
             <div style="font-size:.75em;color:var(--ax-text-3)">${c.nickname ? esc(realName)+' · ' : ''}${esc(lastSeenLabel)}</div>
           </div>
           <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._openContactSheet('${esc(c.id)}')" aria-label="Fiche" title="Fiche de renseignement">ℹ️</button>
-          <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._startCall && K._startCall('${esc(c.id)}','audio')" aria-label="Appel">📞</button>
+          <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._callContact && K._callContact('${esc(c.id)}','audio')" aria-label="Appel">📞</button>
         </div>`;
       }).join('')}
     </div>
@@ -12438,6 +12689,21 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="window.open('./privacy.html')">
         <span>🛡</span><span style="flex:1">Charte privée</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./mentions.html')">
+        <span>ℹ️</span><span style="flex:1">Mentions légales</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./aide.html')">
+        <span>❓</span><span style="flex:1">Aide</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._contactSupport()">
+        <span>🆘</span><span style="flex:1">Contacter l'assistance</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._downloadServerData()">
+        <span>📤</span><span style="flex:1">Mes données (tout ce que le serveur sait de moi)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._deleteMyAccount()" style="color:#e63946">
+        <span>🗑</span><span style="flex:1">Supprimer mon compte</span><span>›</span>
       </div>
     </div>
     <button class="btn btn-err btn-block" onclick="K.logout()">🚪 Se déconnecter</button>
@@ -14544,7 +14810,40 @@ K._showModal = function(title, html, opts){
   setTimeout(() => { const dlg = host.querySelector('.modal'); if (dlg) dlg.focus(); }, 30);
 };
 
-K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
+// Second avis indépendant (Qodo, PR #3890, 17/09/2026) : fermer une modale par son bouton ✕
+// laissait l'entrée d'historique { modal:true } en place → le geste Retour suivant la consommait
+// sans rien changer à l'écran, et la modale suivante ne recréait pas d'entrée (state.modal encore
+// vrai). Désormais une fermeture par bouton retire aussi l'entrée (history.back()), et popstate
+// sait que c'est nous : pas de seconde fermeture, pas de retour à la liste par erreur.
+K._modalBackPending = false;   // un history.back() lancé par _closeModal est en vol
+K._modalPopClosing = false;    // _closeModal appelé depuis popstate (l'entrée est déjà consommée)
+K._closeModal = function(){
+  const host = $('#modal-host');
+  const had = !!(host && host.innerHTML);
+  if(host) host.innerHTML = '';
+  try{
+    if(had && !K._modalPopClosing && history.state && history.state.modal){ K._modalBackPending = true; history.back(); }
+  }catch(_){}
+};
+// Audit 17/09/2026 (P1 UX) : geste retour iOS / bouton Android — ferme la modale ouverte,
+// sinon revient à la liste depuis une conversation, sans jamais quitter l'app d'un coup.
+window.addEventListener('popstate', () => {
+  try{
+    if(K._modalBackPending){ K._modalBackPending = false; return; }   // c'est notre propre back()
+    const host = $('#modal-host');
+    if(host && host.innerHTML){ K._modalPopClosing = true; try{ K._closeModal(); } finally { K._modalPopClosing = false; } return; }
+    if(K.view === 'chat'){ K.view = 'chats'; K.render(); }
+  }catch(_e){ _safeCatch('silent', _e); }
+});
+try{
+  // une modale ouverte = une entrée d'historique (pour que « retour » la ferme)
+  const _mh = $('#modal-host');
+  if(_mh && 'MutationObserver' in window){
+    new MutationObserver(() => {
+      try{ if(_mh.innerHTML && !(history.state && history.state.modal)) history.pushState({ modal: true, view: K.view }, ''); }catch(_){}
+    }).observe(_mh, { childList: true });
+  }
+}catch(_){}
 
 // ============================================================================
 //  Invitation viral SMS
@@ -14941,7 +15240,7 @@ K._showOnboarding = function(opts){
   if(!u) return;
   // v1.1.219 (Kevin « fiche info complète + accepter CGU ») — style commun des champs
   const fStyle = "width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px";
-  const cguDone = (function(){ try{ return !!localStorage.getItem('apex_chat_cgu_v1'); }catch(_){ return false; } })();
+  const cguDone = K._cguAccepted();
   const currentName = u.real_name || u.display_name || '';
   const currentPseudo = (u.pseudo && typeof K._isAutoPseudo === 'function' && !K._isAutoPseudo(u.pseudo)) ? u.pseudo : '';
   const hasName = !K._profileIncomplete(u);
@@ -15039,8 +15338,8 @@ K._submitOnboarding = async function(inviterUserId){
   // v1.1.219 — enregistre l'acceptation CGU (couvre les invités) : local + serveur.
   if(cguBox){
     try{
-      if(!localStorage.getItem('apex_chat_cgu_v1')){
-        const a = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, via: 'onboarding' };
+      if(!K._cguAccepted()){
+        const a = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, cgu: K.CGU_VERSION, via: 'onboarding' };
         localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(a));
         fetch((window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.9r4rxssx64.workers.dev') + '/api/cgu/accept', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -16173,6 +16472,10 @@ async function _boot(){
   /* v1.1.92 : Deep-links pour PWA shortcuts + conv direct */
   setTimeout(() => {
     if(!K.user) return; /* attend que user soit loggé */
+    /* Lien des CGU « supprimer mon compte » (audit 17/09 : pointait dans le vide) */
+    if(params.get('action') === 'delete-account'){ K.sv && K.sv('settings'); setTimeout(() => K._deleteMyAccount && K._deleteMyAccount(), 300); history.replaceState(null, '', location.pathname); }
+    /* Bandeau « Installer » iOS Safari (pas de beforeinstallprompt sur iPhone) */
+    try{ K._maybeShowInstallHint && K._maybeShowInstallHint(); }catch(_){}
     /* Hash shortcuts : #new / #contacts / #calls / #invite */
     const hash = location.hash.replace('#', '');
     if(hash === 'new'){ K._showNewMenu && K._showNewMenu(); history.replaceState(null, '', location.pathname); }
@@ -16236,7 +16539,7 @@ async function _boot(){
   if(magicToken){
     try{
       // CGU implicite accepté (cliqué le lien admin)
-      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:'v1.0.7',implicit:true,via:'magic_link'})); }catch(_e){_safeCatch('silent',_e)}
+      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:__APEX_CHAT_VERSION__,cgu:K.CGU_VERSION,implicit:true,via:'magic_link'})); }catch(_e){_safeCatch('silent',_e)}
       const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.9r4rxssx64.workers.dev') + '/api/auth/magic-login';
       const r = await fetch(apiUrl, {
         method: 'POST',
