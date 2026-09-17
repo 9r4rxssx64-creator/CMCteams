@@ -370,7 +370,7 @@
       }
     },
     "pub-videos.yml": {
-      "nom": "Pub : rendre les vidéos",
+      "nom": "Pub : rendre (ou écrire) les vidéos",
       "inputs": {
         "videos": [
           "all",
@@ -384,11 +384,24 @@
         "publier": [
           "false",
           "true"
-        ]
+        ],
+        "nouveaux": [
+          "",
+          "immo:1,club:1",
+          "avis:1",
+          "bureau:1",
+          "etudiant:1",
+          "immo:1",
+          "kit:1",
+          "club:1"
+        ],
+        "programmer": "texte",
+        "branche": "texte"
       },
       "defaut": {
         "videos": "all",
-        "publier": "false"
+        "publier": "false",
+        "nouveaux": ""
       }
     },
     "club-semaine.yml": {

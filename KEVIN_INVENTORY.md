@@ -1,5 +1,16 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🤖 Chaîne pub AUTONOME — scripts IA → rendu → release → Metricool → mémoire — 2026-09-17
+
+Chaque lundi 08:00 UTC, la routine « Pub — vidéos de la semaine » fait tout, seule (Kevin 17.09 « tout automatique et autonome »).
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/nouveaux.mjs` | L'IA écrit de nouveaux scripts (cible réelle du produit), porte de vérité identique aux scripts à la main, 3 essais sinon niche sautée | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/nouveaux.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/nouveaux.mjs) |
+| `tools/pub/programmation.mjs` | Mémoire Metricool par script : `--plan` (créneaux libres), `--prepare` (ce que la routine programme), `--ajoute` (enregistre les posts, refuse les doublons) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/programmation.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/programmation.mjs) |
+| `.github/workflows/pub-videos.yml` | Un seul workflow, 3 modes : `videos` / `nouveaux` (écriture + rendu + release + PR) / `programmer` (mémoire + tableau de bord) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/pub-videos.yml) | [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) |
+| `tests/pub-nouveaux.test.mjs` | Garde (9 contrôles, faux modèle) dans test:ci | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/pub-nouveaux.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/pub-nouveaux.test.mjs) |
+
 ## 🛒 Tableau de bord Commerce — dans l'admin du domaine — 2026-09-17
 
 Tout ce qui a été construit pour vendre, en tuiles, avec les vrais chiffres de la caisse : **[ouvrir le tableau de bord](https://kd-mc.com/admin/commerce.html)** (Face ID, compte Kevin). Tuile « 🛒 Commerce » ajoutée dans [l'admin du domaine](https://kd-mc.com/admin/).

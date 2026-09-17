@@ -114,7 +114,7 @@ const MAX_RECLAM_PAR_HEURE = 10;          // anti-balayage d'e-mails
 const DEPOT = '9r4rxssx64-creator/cmcteams';
 const WORKFLOWS = {
   'produit-fabrique.yml': { nom: 'Fabrique de produits — écrire un kit en base', champs: ['produit', 'dry_run', 'refaire'] },
-  'pub-videos.yml': { nom: 'Pub — vidéos courtes sans visage', champs: ['videos', 'publier'] },
+  'pub-videos.yml': { nom: 'Pub — vidéos courtes sans visage', champs: ['videos', 'publier', 'nouveaux', 'programmer', 'branche'] },
   'club-semaine.yml': { nom: 'Club IA — consigne de la semaine', champs: ['dry_run', 'tester_email'] },
   'audit-live.yml': { nom: 'Audit LIVE (vraies pages kd-mc.com)', champs: [] },
   'deploy-kdmc-vente.yml': { nom: 'Déployer la caisse (kdmc-vente)', champs: [] },
@@ -484,7 +484,7 @@ export function nettoieInputs(workflow, inputs) {
   if (!def) return null;
   const out = {};
   for (const k of def.champs) {
-    if (inputs && inputs[k] != null && inputs[k] !== '') out[k] = String(inputs[k]).slice(0, 80).replace(/[^\w.,:\- ]/g, '');
+    if (inputs && inputs[k] != null && inputs[k] !== '') out[k] = String(inputs[k]).slice(0, 200).replace(/[^\w.,:+\/\- ]/g, '');
   }
   return out;
 }
