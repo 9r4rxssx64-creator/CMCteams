@@ -392,6 +392,27 @@ après, la pub.
   maintenant les 12 dernières lignes utiles + une ligne par voix. **Preuve locale de bout en bout**
   (voix muette ici, l'egress bloque le domaine) : `avis-01.mp4` 1080×1920, 30 i/s, piste aac,
   16,1 s, 256 Ko ; image extraite et regardée : texte lisible, marque, barre, compteur 1/5.
+- **Troisième lancement (run 35219079657) : « PUB RENDUE 12/12 »**, chaque carte avec la voix du
+  domaine (`voix=domaine`, 0 carte muette), 12 MP4 1080×1920 avec piste audio (370–440 Ko),
+  release `pub-videos` créée avec les 12 fichiers + `index.json`. Adresse mesurée acceptée par
+  Metricool : la vidéo est **ré-hébergée** sur `static.metricool.com/planner/…` à la création du
+  post (donc même si la release bougeait, les posts programmés ne cassent pas).
+- **12 posts programmés dans Metricool (17.09, 15:56 → 16:03)**, chacun sur les **4 réseaux**
+  (Facebook REEL · Instagram REEL « généré par IA » · TikTok public, marque propre, AIGC · YouTube
+  Short public, EDUCATION, IA déclaré), publication automatique, créneaux mesurés (semaine, 10h
+  et 12h Europe/Paris, jamais le week-end) :
+  | Date | 10h | 12h |
+  |---|---|---|
+  | jeu 18.09 | avis-01 (377537574) | kit-01 (377538530) |
+  | ven 19.09 | bureau-01 (377541193) | etudiant-01 (377541282) |
+  | lun 22.09 | immo-01 (377541336) | avis-02 (377541398) |
+  | mar 23.09 | club-01 (377541459) | bureau-02 (377541502) |
+  | mer 24.09 | etudiant-02 (377541579) | immo-02 (377541634) |
+  | jeu 25.09 | avis-03 (377541707) | kit-02 (377541762) |
+  Planning : https://app.metricool.com/planner/calendar?blogId=7000185 — Kevin peut en supprimer
+  ou déplacer avant le premier passage (jeu 18.09 10h). 🔴 Non mesuré : la publication effective
+  (Metricool dira PUBLISHED/ERROR au passage ; à relire le 18.09 via `getScheduledPosts`) et la
+  demande (0 vente).
 
 ## 2026-09-17 après-midi — Fabrique de produits : 4 niches de plus, un seul moteur
 
