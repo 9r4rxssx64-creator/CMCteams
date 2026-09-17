@@ -1396,6 +1396,22 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — « Change les autorisations du jeton GitLab » : d'abord MESURER ce qu'il porte
+
+On ne resserre pas des autorisations qu'on n'a jamais lues. Le workflow sait maintenant
+demander à GitLab **ce que le jeton porte vraiment** — nom, **portées**, actif/révoqué, date de
+création, **date de fin**, dernière utilisation — et **jamais sa valeur**. Case à cocher
+« Diagnostic du jeton », elle ne touche à rien d'autre.
+
+La **date de fin** est la vraie raison d'être de ce diagnostic : un jeton qui expire sans
+prévenir, c'est une chaîne qui casse un matin sans que personne comprenne pourquoi.
+
+**Piège évité avant de pousser** (leçon #267) : mon premier jet mettait un *heredoc* Python
+indenté dans le bloc `run:`. Un heredoc ne se termine que si son marqueur est en **colonne 0** —
+indenté, il n'aurait jamais fini ; et les lignes Python désindentées cassaient déjà le YAML.
+Réécrit en **une seule ligne**, YAML validé, `bash -n` passé, et la ligne **essayée à blanc sur
+une fausse réponse** : elle imprime bien les six champs.
+
 ## 2026-09-17 — LE POINT FAIBLE EST FERMÉ : les 20 adresses .onion ont été VRAIMENT ouvertes
 
 Le trou déclaré depuis le 15.09 (« les 20 adresses n'ont jamais été ouvertes ») est comblé,
