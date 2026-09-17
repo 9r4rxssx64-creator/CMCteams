@@ -378,8 +378,13 @@ après, la pub.
   refusés), la dernière carte rappelle toujours le module 1 gratuit.
 - **Garde** `tests/pub-videos.test.mjs` (7 contrôles, dans `test:ci`) ; le workflow mesure
   chaque MP4 avec ffprobe (1080×1920 + piste audio) avant de dire « rendu ».
-- Non fait ici (bac à sable sans ffmpeg) : le rendu réel → workflow `pub-videos.yml`, résultat
-  dans la ligne suivante.
+- **Premier vrai lancement (runs 35216964609 et 35216971927) : ROUGE des deux côtés, en 20 s,
+  deux suppositions fausses de ma part** — (a) `ffmpeg` n'est PAS sur `ubuntu-latest` (« command
+  not found ») → installé par apt dans le workflow ; (b) la garde de la fabrique importait
+  `playwright` en tête de fichier alors que le workflow n'installe rien → test navigateur déplacé
+  dans `tests/produits-fabrique-navigateur.test.mjs` (test:ci seulement), la garde du workflow
+  tourne nue. Leçon : « le runner a X » se mesure, ne se suppose pas (règle Kevin 17.09 « vérifie
+  toujours tout réellement »).
 
 ## 2026-09-17 après-midi — Fabrique de produits : 4 niches de plus, un seul moteur
 
