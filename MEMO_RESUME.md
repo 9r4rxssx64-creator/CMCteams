@@ -1,5 +1,39 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 16:00 — « Va plus loin » : Bee FERME enfin les lèvres (Javis v1.6, les consonnes)
+
+**Ce qui manquait, je l'avais écrit moi-même dans CLAUDE.md** : elle reconnaissait les voyelles,
+pas les consonnes — donc **sa bouche ne se fermait jamais au milieu d'un mot**. C'est fait.
+
+**Pas consonne par consonne** (personne ne lit ça sur des lèvres) mais par **posture** : la
+**fente** d'une fricative (s/ch/f) et la **fermeture** des lèvres (m/b/p). Chacune se reconnaît
+à la **forme du spectre**, jamais au volume : une fricative c'est du souffle (énergie **en
+haut**), une fermeture un bourdonnement étouffé (énergie **en bas**), une voyelle a ses deux
+résonances **au milieu**.
+
+**Mesuré en vrai navigateur** : « **m** » **0,98 × 0,10** — plus fermée que le repos 0,30 ·
+« **s** » **1,28 × 0,26** (une fente étirée) · « **a** » **1,11 × 1,55**. Les voyelles sont
+**inchangées** (i 1,47×0,54 · ou 0,71×0,71) : **0 régression**.
+
+**Sabotage — et ce n'était pas qu'un manque, c'était FAUX** : consonnes retirées, un « s » est
+joué comme la voyelle « **ai** » (1,31 × 1,23) et un « m » comme un « **ou** » (0,67 × 0,78)
+→ **2 échecs**.
+
+**Trois pièges payés comptant :**
+1. ⚠️ **`getByteFrequencyData` rend des DÉCIBELS, pas de l'énergie.** Additionner ces octets,
+   c'est additionner des logarithmes : une bande **10 000 fois plus faible** (inaudible) pèse
+   encore la moitié du score. C'est exactement ce qui classait le « s » en voyelle. On repasse
+   en **énergie réelle** avant tout rapport.
+2. **Une bouche fermée ne fait pas de bruit.** Pilotée par le volume de l'instant, la fermeture
+   du « m » de « maman » serait **invisible**. On garde une trace de la parole en cours qui
+   retombe en ~1/3 de seconde → au **vrai silence**, retour exact au repos.
+3. **Le test comparait des volumes, pas des formes** : une voyelle de test est faite de **deux**
+   tons mélangés, donc deux fois plus forte qu'un ton seul (mesuré : poids 0,50 contre 0,76).
+   Et la garde d'amplitude mesurait « le maximum de y » — aveugle à un mouvement qui s'éloigne
+   du repos **vers le bas**. Elle mesure maintenant l'**écart au repos** (0,20 → 0,06).
+
+Gardes : `test:javis-bee` **51/0** · `test:javis-bee-reelle` **45/0** (3 contrôles neufs).
+Widget **v1.6**, copié à l'octet près dans `arbre/` et `javis/`.
 ## 2026-09-17 17:40 — « Quelle niche rapporte le plus ? » + tableau de bord Commerce dans l'admin du domaine
 
 **Kevin** : « Quelle est la niche qui a le meilleur rendement financier ? Copie, crawl, inspire-toi et

@@ -46,7 +46,7 @@
      ligne est passee. C'est exactement le defaut que j'ai mesure sur Lingua le meme
      jour (message m085 aux autres sessions) : je me l'applique a moi-meme.
      Une ligne, aucun effet visible. L'audit LIVE du domaine la lit tout seul. */
-  var JAVIS_VER = 'v1.5';
+  var JAVIS_VER = 'v1.6';
   try { window.JAVIS_VER = JAVIS_VER; } catch (e) {}
 
   if (window.__javisWidgetLoaded) return;
@@ -665,6 +665,22 @@
     { nom: 'u',  f1: 300, f2: 1750, x: 0.70, y: 0.78 }    /* le « u » francais : levres rondes */
   ];
 
+  /* LES DEUX FAMILLES DE CONSONNES QU'ON PEUT VRAIMENT LIRE SUR UNE BOUCHE.
+     (Kevin 2026-09-17 « va plus loin » — c'etait la limite ecrite noir sur blanc juste au-dessus.)
+     On ne cherche PAS a distinguer un « s » d'un « f » : personne ne lit ca sur des levres.
+     Ce qui se VOIT, c'est la POSTURE, et il n'y en a que deux qui ne sont pas des voyelles :
+       fricative (s, ch, f, z, j, v) -> une FENTE : levres etirees, presque fermees ;
+       fermeture (m, b, p, n)        -> les levres se TOUCHENT.
+     Chacune se reconnait a la FORME DU SPECTRE, pas au volume :
+       une fricative, c'est du souffle : presque toute l'energie est EN HAUT, et il n'y a
+         aucune resonance grave (pas de F1) -- c'est ce qui la separe d'une voyelle claire
+         comme le « i », qui a bien un F1 vers 300 Hz ;
+       une fermeture, c'est un bourdonnement etouffe : presque tout EN BAS, rien en haut. */
+  var CONSONNES = {
+    fricative: { nom: 's', x: 1.28, y: 0.26 },
+    fermeture: { nom: 'm', x: 0.98, y: 0.10 }
+  };
+
   function lipSync(audioEl, bouches) {
     if (!audioEl || !bouches.length) return null;
     try { if (!AC || AC.state !== 'running') return null; } catch (_) { return null; }
@@ -683,6 +699,7 @@
       var fbuf = new Uint8Array(an.frequencyBinCount);   /* le SPECTRE, pas que le volume */
       var hz = (AC.sampleRate || 44100) / an.fftSize;     /* largeur d'une case du spectre */
       var cibleX = 1.0, cibleY = 0.30, derniere = '';     /* la forme visee, lissee */
+      var presence = 0;                                   /* « elle est en train de parler » */
       var t0 = Date.now();
       bouches.forEach(function (m) { m.classList.remove('talking'); m.style.opacity = '1'; });
       function frame() {
@@ -704,11 +721,13 @@
              ouverte, F2 dit ou est la langue. Ces deux nombres suffisent a identifier une
              voyelle. On compare (F1,F2) aux voyelles francaises de reference et on prend la
              plus proche, puis la bouche prend LA FORME de cette voyelle.
-           Pourquoi ca suffit visuellement : ce qu'on voit d'une bouche qui parle, ce sont
-             surtout les voyelles ; les consonnes passent trop vite pour etre lues.
-           Honnete : c'est du visème PAR VOYELLE, pas par phoneme complet -- les consonnes
-             ne sont pas distinguees entre elles (un « s » et un « f » se ressemblent).
-             Mais elle forme maintenant un « ou » sur un « ou ». */
+           Etape 4 (v1.6, « va plus loin ») : les CONSONNES. Pas une par une -- ca ne se lit
+             pas sur des levres -- mais par POSTURE : la fente d'une fricative (s/ch/f) et
+             la fermeture des levres (m/b/p). Voir CONSONNES plus haut.
+           Honnete : trois familles (voyelle / fente / fermeture), pas un phoneme par
+             phoneme. Un « s » et un « f » font toujours la meme bouche -- comme chez
+             un vrai visage. Ce qui manquait vraiment, c'etait la FERMETURE : sans elle,
+             une bouche ne se ferme jamais au milieu d'un mot, et ca se voit. */
         an.getByteFrequencyData(fbuf);
         var pic = function (fMin, fMax) {          /* la resonance la plus forte d'une bande */
           var b0 = Math.max(1, Math.round(fMin / hz)), b1 = Math.min(fbuf.length - 1, Math.round(fMax / hz));
@@ -716,8 +735,35 @@
           for (var k = b0; k <= b1; k++) { if (fbuf[k] > bv) { bv = fbuf[k]; best = k; } }
           return bv < 24 ? 0 : best * hz;          /* trop faible = pas une resonance */
         };
+        /* ⚠️ PIEGE MESURE (vecu ici meme) : getByteFrequencyData ne rend PAS de l'energie,
+           elle rend des DECIBELS ramenes sur 0-255. Additionner ces octets tels quels, c'est
+           additionner des echelles logarithmiques : une bande 40 dB plus faible (donc
+           10 000 fois moins d'energie, inaudible) pese encore plus de la moitie du score.
+           Mesure : un vrai « s » etait classe comme la voyelle « ai ». On repasse donc en
+           ENERGIE REELLE avant de comparer. Le facteur constant se simplifie dans un
+           rapport : 10^(octet * 0.027451) suffit. */
+        var lin = function (b) { return Math.pow(10, b * 0.027451); };
+        var somme = function (fMin, fMax) {        /* l'energie reelle d'une bande */
+          var b0 = Math.max(1, Math.round(fMin / hz)), b1 = Math.min(fbuf.length - 1, Math.round(fMax / hz));
+          var a = 0;
+          for (var k = b0; k <= b1; k++) a += lin(fbuf[k]);
+          return a;
+        };
         var F1 = pic(200, 1000), F2 = pic(900, 3000);
-        if (F1 && F2) {
+        /* LA FORME DU SPECTRE, en deux nombres simples : quelle part de l'energie est tout
+           en bas (le bourdonnement d'une bouche fermee) et quelle part est tout en haut
+           (le souffle d'une fricative). Une voyelle, elle, a ses deux resonances AU MILIEU,
+           donc ni l'une ni l'autre de ces deux parts ne devient dominante. */
+        var sonPresent = rms > 0.008;              /* il y a vraiment quelque chose a analyser */
+        var tot = sonPresent ? somme(80, 8000) : 0;
+        var partBas = tot > 0 ? somme(80, 350) / tot : 0;
+        var partHaut = tot > 0 ? somme(2000, 8000) / tot : 0;
+        var cible = null;
+        if (partBas > 0.72 && partHaut < 0.12) {
+          cible = CONSONNES.fermeture;             /* m / b / p / n : les levres se touchent */
+        } else if (partHaut > 0.70) {
+          cible = CONSONNES.fricative;             /* s / ch / f : du souffle, rien dans le grave */
+        } else if (F1 && F2) {
           var meilleur = null, dMin = 1e9;
           for (i = 0; i < VOYELLES.length; i++) {
             var v = VOYELLES[i];
@@ -726,16 +772,27 @@
             var d = Math.pow(Math.log(F1 / v.f1), 2) + Math.pow(Math.log(F2 / v.f2), 2) * 0.8;
             if (d < dMin) { dMin = d; meilleur = v; }
           }
-          if (meilleur) {                          /* on glisse vers la forme, on n'y saute pas */
-            cibleX = cibleX * 0.6 + meilleur.x * 0.4;
-            cibleY = cibleY * 0.6 + meilleur.y * 0.4;
-            derniere = meilleur.nom;
-          }
+          cible = meilleur;
         }
-        /* la forme ne s'applique QUE quand elle parle : au silence on retombe exactement sur
-           l'ancien repos (scaleY 0.30 / scaleX 1.00) -- aucune regression sur la garde. */
-        var sy = 0.30 + (cibleY - 0.30) * ouv;
-        var sx = 1.00 + (cibleX - 1.00) * ouv;
+        if (cible) {                               /* on glisse vers la forme, on n'y saute pas */
+          cibleX = cibleX * 0.6 + cible.x * 0.4;
+          cibleY = cibleY * 0.6 + cible.y * 0.4;
+          derniere = cible.nom;
+        } else if (!sonPresent) {                  /* plus rien : la bouche rentre au repos */
+          cibleX = cibleX * 0.85 + 1.00 * 0.15;
+          cibleY = cibleY * 0.85 + 0.30 * 0.15;
+        }
+        /* UNE BOUCHE FERMEE NE FAIT PAS DE BRUIT -- et c'est tout le probleme.
+           Si la forme n'etait pilotee que par le volume DE L'INSTANT, le « m » de « maman »
+           serait invisible : silencieux, donc bouche au repos, donc jamais ferme. On garde
+           donc une trace de la parole en cours (`presence`), qui retombe en ~1/3 de seconde
+           de vrai silence. Resultat : la fermeture se VOIT pendant le mot, et au silence
+           reel on revient exactement a l'ancien repos (scaleY 0.30 / scaleX 1.00) --
+           aucune regression sur la garde. */
+        presence = sonPresent ? Math.max(presence, rms) : presence * 0.85;
+        var poids = Math.max(ouv, Math.min(1, Math.max(0, (presence - 0.01) * 7)) * 0.8);
+        var sy = 0.30 + (cibleY - 0.30) * poids;
+        var sx = 1.00 + (cibleX - 1.00) * poids;
         var t = 'translate(-50%,-50%) scaleY(' + sy.toFixed(2) + ') scaleX(' + sx.toFixed(2) + ')';
         bouches.forEach(function (m) { m.style.transform = t; });
         /* amplitude plate pendant 500 ms = analyse muette (codec/navigateur) -> repli CSS */
