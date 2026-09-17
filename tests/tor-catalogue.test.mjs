@@ -332,6 +332,20 @@ t('le chemin qui lance la vérification est manuel, ne touche pas main, ne fuit 
   assert(ligneCommit, 'le commit qui porte la demande a disparu : le job ne partirait plus');
   assert(!/\[\s*(skip\s+ci|ci\s+skip)\s*\]/i.test(ligneCommit),
     'le commit qui doit LANCER le pipeline porte « [skip ci] » : GitLab le lit aussi et ne lance rien');
+  /* Le RETOUR (lire le résultat côté GitLab) doit passer le jeton dans un EN-TÊTE.
+     Dans une URL, il finirait dans les journaux, dans les redirections et dans les
+     messages d'erreur de curl — c'est-à-dire en clair, sur un dépôt public.
+     On contrôle CHAQUE ligne curl, pas « il y en a une quelque part » : une seule
+     oubliée suffit, et une garde qui se contente d'une occurrence passe au vert
+     pendant qu'une autre ligne fuit (déjà vécu avec le filtre du jeton au push). */
+  const curls = wf.split('\n').map(l => l.trim())
+    .filter(l => !l.startsWith('#') && /\bcurl\b/.test(l));
+  for (const l of curls) {
+    assert(/PRIVATE-TOKEN: \$\{JETON\}/.test(l),
+      'une commande curl n\'envoie pas le jeton en en-tête : ' + l.trim().slice(0, 90));
+  }
+  assert(!/(private_token|access_token)=/.test(wf),
+    'un jeton est mis dans une URL : il partirait en clair dans les journaux');
   assert(!wf.includes('verif-onion.mjs'), 'le vérificateur est nommé dans un workflow GitHub : il doit rester côté GitLab');
 });
 

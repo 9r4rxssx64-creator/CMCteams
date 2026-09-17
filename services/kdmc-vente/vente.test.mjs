@@ -500,3 +500,97 @@ test('e-mail du code : envoyé via EmailJS quand la clé existe, jamais bloquant
     assert.ok(j2.code); assert.equal(j2.email_envoye, false);
   } finally { globalThis.fetch = vrai; }
 });
+
+/* ── Tableau de bord Commerce (kd-mc.com/admin/commerce.html, 17.09) ─────── */
+function monteFetchTableau({ sso, dispatch = 204 }) {
+  const vrai = globalThis.fetch;
+  const appels = [];
+  globalThis.fetch = async (u, opt = {}) => {
+    const url = String(u);
+    appels.push({ url, opt });
+    if (url.includes('__sso/whoami')) return new Response(JSON.stringify(sso || { ok: false }), { status: 200 });
+    if (url.includes('/dispatches')) return new Response(dispatch === 204 ? null : '{"message":"Resource not accessible"}', { status: dispatch });
+    /* GitHub runs, sondes HEAD des pages de livraison : muets ici → fail-open attendu */
+    throw new Error('reseau coupe: ' + url);
+  };
+  return { stop: () => { globalThis.fetch = vrai; }, appels };
+}
+const KEVIN = { ok: true, admin: true, verified: true, name: 'Kevin DESARZENS' };
+
+test('/admin/tableau sans pass → 401 ; admin non vérifié → 403 (même garde que la file)', async () => {
+  const a = monteFetchTableau({});
+  const r1 = await worker.fetch(req('/admin/tableau'), { VENTES: fauxKV() });
+  a.stop();
+  assert.equal(r1.status, 401);
+  const b = monteFetchTableau({ sso: { ok: true, admin: true, verified: false, name: 'Kevin' } });
+  const r2 = await worker.fetch(req('/admin/tableau', { entetes: { Authorization: 'Bearer x' } }), { VENTES: fauxKV() });
+  b.stop();
+  assert.equal(r2.status, 403);
+});
+
+test('/admin/tableau compte les VRAIES ventes (clés code:*), masque les e-mails, avoue ce qui n\'est pas configuré', async () => {
+  const kv = fauxKV();
+  await kv.put('code:AAAA-BBBB-CCCC-DDDD', JSON.stringify({ produit: 'kit-ia', email: 'marie@exemple.fr', source: 'paypal-webhook', ts: 10, ts_iso: '2026-09-10T10:00:00.000Z' }));
+  await kv.put('code:EEEE-FFFF-GGGG-HHHH', JSON.stringify({ produit: 'club-ia', email: 'paul@exemple.fr', source: 'admin:Kevin DESARZENS', ts: 20, ts_iso: '2026-09-17T10:00:00.000Z' }));
+  await kv.put('tx:TX1', 'AAAA-BBBB-CCCC-DDDD');
+  await kv.put('demande:d1', JSON.stringify({ id: 'd1', produit: 'avis-ia', email: 'z@exemple.fr', methode: 'revolut', etat: 'en_attente', ts: 5, ts_iso: '2026-09-17T09:00:00.000Z' }));
+  const m = monteFetchTableau({ sso: KEVIN });
+  const r = await worker.fetch(req('/admin/tableau', { entetes: { Authorization: 'Bearer x' } }), { VENTES: kv });
+  const j = await lis(r);
+  m.stop();
+  assert.equal(r.status, 200);
+  assert.equal(j.ventes.n, 2, 'tx:* et demande:* ne sont pas des ventes');
+  assert.equal(j.ventes.ca, 47 + 59);
+  assert.equal(j.ventes.parProduit['kit-ia'].n, 1);
+  assert.equal(j.ventes.parSource['admin'].n, 1, 'la source admin:<nom> est regroupée sous « admin »');
+  assert.equal(j.ventes.parMois['2026-09'].ca, 106);
+  assert.equal(j.ventes.dernieres[0].produit, 'club-ia', 'la plus récente d\'abord');
+  assert.equal(j.ventes.dernieres[0].email, 'p***@exemple.fr', 'jamais l\'adresse entière');
+  assert.equal(j.ventes.tronque, false);
+  assert.equal(j.file.n, 1);
+  assert.equal(j.club, null, 'sans base D1 : null, pas un zéro trompeur');
+  assert.match(j.base_detail, /CONTENU absent/);
+  assert.equal(j.config.commandes, false, 'sans jeton, les boutons « lancer » doivent se présenter comme des liens');
+  assert.equal(j.workflows.length, Object.keys(__test.WORKFLOWS).length);
+  assert.ok(j.workflows.every((w) => w.run && w.run.erreur), 'GitHub muet → chaque run porte sa cause, la page n\'est pas cassée');
+  assert.ok(j.produits.every((p) => p.livre_http === null), 'sonde de livraison injoignable → null (non vérifié), jamais un faux 200');
+  assert.equal(j.produits.length, Object.keys(__test.PRODUITS).length);
+});
+
+test('masqueEmail : première lettre + domaine, rien d\'autre', () => {
+  assert.equal(__test.masqueEmail('kevin@kd-mc.com'), 'k***@kd-mc.com');
+  assert.equal(__test.masqueEmail(''), '');
+  assert.equal(__test.masqueEmail('bizarre'), '***');
+});
+
+test('/admin/lancer : liste FERMÉE, jeton absent → 503 avec le lien GitHub, jeton présent → dispatch sur main avec inputs nettoyés', async () => {
+  const m1 = monteFetchTableau({ sso: KEVIN });
+  const hors = await lis(await worker.fetch(req('/admin/lancer', { methode: 'POST', corps: { workflow: 'deploy.yml' }, entetes: { Authorization: 'Bearer x' } }), { VENTES: fauxKV() }));
+  assert.equal(hors.ok, false); assert.equal(hors.error, 'workflow');
+  const r = await worker.fetch(req('/admin/lancer', { methode: 'POST', corps: { workflow: 'produit-fabrique.yml', inputs: { produit: 'immo-ia' } }, entetes: { Authorization: 'Bearer x' } }), { VENTES: fauxKV() });
+  const sans = await lis(r);
+  m1.stop();
+  assert.equal(r.status, 503);
+  assert.equal(sans.error, 'token_non_configure');
+  assert.match(sans.url, /actions\/workflows\/produit-fabrique\.yml$/);
+
+  const m2 = monteFetchTableau({ sso: KEVIN });
+  const ok = await lis(await worker.fetch(req('/admin/lancer', { methode: 'POST', corps: { workflow: 'produit-fabrique.yml', inputs: { produit: 'immo-ia', dry_run: 'false', refaire: 'm3,m5', pirate: 'rm -rf /' } }, entetes: { Authorization: 'Bearer x' } }), { VENTES: fauxKV(), GITHUB_DISPATCH_TOKEN: 'ghp_x' }));
+  const d = m2.appels.find((a) => a.url.includes('/dispatches'));
+  m2.stop();
+  assert.equal(ok.ok, true);
+  const corps = JSON.parse(d.opt.body);
+  assert.equal(corps.ref, 'main');
+  assert.deepEqual(corps.inputs, { produit: 'immo-ia', dry_run: 'false', refaire: 'm3,m5' }, 'un champ hors liste (pirate) ne part JAMAIS');
+  assert.equal(d.opt.headers.Authorization, 'Bearer ghp_x');
+  assert.equal(ok.par, 'Kevin DESARZENS');
+});
+
+test('/admin/lancer : GitHub refuse (403) → la cause exacte revient, pas un vert', async () => {
+  const m = monteFetchTableau({ sso: KEVIN, dispatch: 403 });
+  const r = await worker.fetch(req('/admin/lancer', { methode: 'POST', corps: { workflow: 'audit-live.yml' }, entetes: { Authorization: 'Bearer x' } }), { VENTES: fauxKV(), GITHUB_DISPATCH_TOKEN: 't' });
+  const j = await lis(r);
+  m.stop();
+  assert.equal(r.status, 502);
+  assert.match(j.detail, /GitHub HTTP 403/);
+});

@@ -75,6 +75,18 @@ const SURFACES = [
           ? 'fail-closed correct : Bee cachée + message clair (session nommée, pas Face ID)'
           : 'PAGE MUETTE : ni Bee ni explication' };
     } },
+  /* Tableau de bord Commerce (admin) : sans session, la page DOIT afficher le verrou
+     (pas une page blanche, pas une erreur JS). Sa CSP autorise la caisse ; le JSON
+     statique doit être servi (sinon le tableau ne se construit jamais). */
+  { url: 'https://' + ROOT + '/admin/commerce.html', name: 'Commerce — tableau de bord (admin)', selKey: '#app .msg', deep: async (page) => {
+      const txt = await page.textContent('#app').catch(() => '');
+      if (!/Accès administrateur/.test(txt)) return { ok: false, note: 'verrou absent : « ' + txt.slice(0, 80) + ' »' };
+      const r = await page.request.get('https://' + ROOT + '/admin/commerce-data.json').catch(() => null);
+      if (!r || r.status() !== 200) return { ok: false, note: 'commerce-data.json HTTP ' + (r ? r.status() : 'KO') };
+      const j = await r.json().catch(() => null);
+      if (!j || !Array.isArray(j.produits) || j.produits.length < 6) return { ok: false, note: 'commerce-data.json illisible ou vide' };
+      return { ok: true, note: 'verrou affiché, données statiques servies (' + j.produits.length + ' produits, ' + j.videos.length + ' vidéos)' };
+    } },
   { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1', deep: async (page) => {
       // « Déjà publié au Club » : la page lit le sommaire du Club sur le VRAI worker et la
       // VRAIE base (au moins 1 consigne hebdo depuis le 16.09, s2026-38). Bloc caché =

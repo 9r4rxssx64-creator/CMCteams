@@ -34,6 +34,72 @@ joué comme la voyelle « **ai** » (1,31 × 1,23) et un « m » comme un « **o
 
 Gardes : `test:javis-bee` **51/0** · `test:javis-bee-reelle` **45/0** (3 contrôles neufs).
 Widget **v1.6**, copié à l'octet près dans `arbre/` et `javis/`.
+## 2026-09-17 17:40 — « Quelle niche rapporte le plus ? » + tableau de bord Commerce dans l'admin du domaine
+
+**Kevin** : « Quelle est la niche qui a le meilleur rendement financier ? Copie, crawl, inspire-toi et
+fais pareil en toute autonomie. Fais-moi un tableau de bord où je peux voir tout ce que tu as créé par
+rapport au commerce — contrôle, commande, infos — en tuiles, avec un visuel récap, dans mon domaine
+partie admin. »
+
+**1. La niche — réponse honnête, chiffres cités, rien d'inventé.** Nos ventes = **0** (la caisse
+lue en direct : aucune clé `code:*`), donc la niche la plus rentable *chez nous* n'est pas encore
+mesurable. Ce que dit le marché (sources dans le tableau, section « Marché ») :
+- InsightRaider, **146 271 produits Gumroad (2026)** : le revenu **par produit** va aux tickets
+  élevés et aux pros (« Other » 88 048 $/produit, Software 60 814 $, Writing & Publishing
+  15 750 $ sur seulement 226 produits) — pas aux petits fichiers à 7 $.
+- InsightRaider, **24 724 vendeurs** : revenu médian par produit **134 $ avec 1 produit, 187 $ avec
+  2-3 (+40 %), 112 $ à 8 et plus** → peu de produits bien tenus, pas une longue liste.
+- Reddit (200 000+ produits suivis) : graphisme = 40 000 produits, 34 % vendent (encombré) ; la niche
+  la plus rentable du relevé ne fait vendre que 17 % des produits mais 3 200 $ médians chez ceux qui vendent.
+- Etsy (CreateSell) : planificateurs 5,8 M vues/mois à **6,97 $** ; modèles de site **44,53 $**.
+- Marché francophone (Pilotage IA) : formations 97–997 €, packs de consignes IA en demande.
+**Conclusion appliquée** : le produit le plus aligné chez nous = **Kit IA de l'agent immobilier
+(67 €, un pro qui paie déjà pour son outil)**, puis le **Club (59 €/an, récurrent)** et le **Kit au
+bureau (37 €)**. Copié du relevé « 2-3 produits » : **pas de 7ᵉ niche** tant que les 6 ne vendent
+pas ; la pub porte sur immo et le Club. 🔴 Non mesuré : la demande réelle (pub 18→25.09).
+
+**2. Le tableau de bord Commerce — `kd-mc.com/admin/commerce.html`** (tuile « 🛒 Commerce » dans
+l'admin du domaine). Deux sources, jamais mélangées :
+- **Statique** `kdmc-home/admin/commerce-data.json`, généré par `tools/produits/tableau-de-bord.mjs`
+  (`npm run commerce:data`, `--verifier` en CI) depuis le catalogue, les scripts de pub, le nouveau
+  `tools/pub/programmation.json` (les 12 posts Metricool : ids + créneaux) et les pages réellement sur
+  disque (47 pages métier comptées). Prix des produits hors catalogue = ceux de la caisse (import direct).
+- **Live** : nouvelle route `GET /admin/tableau` de kdmc-vente — en UN appel : ventes (clés `code:*`,
+  **e-mails masqués** `k***@domaine`, CA par produit/source/mois, 20 dernières), file à valider, Club
+  (D1 `abonnes` : actifs, expirent sous 14 j), contenu en base par produit, **sonde HEAD de chaque page
+  de livraison** (mesuré : `croupier-entretien` livre vers une page **absente** → tuile « 1 KO »),
+  dernier passage de 5 workflows (API GitHub, fail-open), et ce qui est branché (PayPal, EmailJS, D1).
+- **Commandes** : `POST /admin/lancer` — liste **fermée** de 5 workflows (fabrique, pub, Club, audit
+  live, redéploiement caisse), champs filtrés, `ref: main`, jeton `GITHUB_DISPATCH_TOKEN` poussé par
+  `deploy-kdmc-vente.yml` depuis `APEX_GITHUB_PAT`. **Sans jeton, les boutons deviennent des liens
+  GitHub** et la tuile le dit — jamais un bouton qui fait semblant.
+- **Admin = le domaine seul** (`/__sso/whoami` : `admin && verified`, Face ID) ; la page ne compare
+  aucun code ; le pass part en Bearer vers la caisse (origine `kd-mc.com` déjà autorisée).
+- 8 tuiles chiffrées en haut (CA, file, Club, produits, vidéos programmées, audit live, livraisons,
+  commandes), puis Ventes (barres 6 mois + dernières), File (Livrer / Refuser en 1 clic), Produits
+  (une tuile par produit : prix, modules en base/attendus, livraison sondée, ventes, liens), Commandes,
+  Pub (12 vidéos + créneaux + MP4), Marché (relevés + sources), Tout ce qui existe (liens), Caisse.
+
+**Preuves** : caisse **39/39** (5 nouveaux : 401/403, agrégats + masquage + tronque, liste fermée,
+jeton absent → 503 avec lien, GitHub 403 → cause), `test:commerce-tableau` **10/10** (JSON = sources,
+prix = caisse, workflows identiques des deux côtés, marché sourcé et marqué 🔴, rendu échappe le HTML),
+`test:commerce-tableau-reel` **20/20 en vrai Chromium 375 px** (verrou sans session / sans Face ID
+avec 0 appel caisse, 8 tuiles, CA = caisse, 404 compté KO, Bearer, Livrer → /admin/valider, panne 502
+→ page debout avec la cause, boutons ≥ 44 px, 0 débordement, 0 exception). Les deux dans `test:ci`.
+Surface ajoutée à `audit-live.mjs` (verrou + JSON servi). 🔴 Non mesuré ici : la page **sur le vrai
+domaine** (après fusion sur main + Pages) et le jeton `APEX_GITHUB_PAT` a-t-il le droit `workflow`
+(sinon « GitHub HTTP 403 » s'affiche tel quel dans le toast).
+
+**3. « Fais pareil » — la pub suit la niche.** Deux scripts de plus sur ce que le marché désigne :
+`immo-03` (mail de prospection vendeur) et `club-02` (« lundi matin, une consigne nouvelle »).
+Portes de vérité passées, rendus par `pub-videos.yml` (run 35240238639, **vert**, MP4 publiés sur la
+release), **programmés dans Metricool** ven 26.09 10h (immo-03, post 377602953) et 12h (club-02, post
+377602979), 4 réseaux, publication automatique → **14 vidéos, 14 programmées**. `programmation.json`
+et le tableau de bord suivent.
+
+**Piège vu** : le domaine a **deux** admins — `admin.kd-mc.com` (worker kdmc-access, code seul, pas
+de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié → le tableau vit dans le
+second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
 
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
@@ -1329,6 +1395,28 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
+
+## 2026-09-17 — L'aller-retour se ferme : le résultat GitLab revient TOUT SEUL ici
+
+Kevin : « Fait. » Le chaînon qui manquait n'était pas le départ du travail — c'était le
+**retour**. Le workflow sait maintenant lire lui-même le résultat côté GitLab et le
+**recopier dans son journal** : Kevin n'a plus rien à regarder.
+
+- Deux interrupteurs : **Publier** (décochable → mode « relire seulement ») et
+  **Lire le résultat**. Le workflow attend la fin du pipeline (20 essais × 30 s = 10 min
+  au plus), liste les jobs, puis rapatrie l'artifact `tor-adresses.json` et l'imprime.
+- **Le jeton part dans un EN-TÊTE, jamais dans une URL.** Une URL se retrouve dans les
+  journaux, dans les redirections et dans les messages d'erreur de curl — donc en clair,
+  sur un dépôt public.
+- **Message d'erreur qui dit quoi faire** (règle « détailler la cause exacte ») : 401/403 =
+  jeton mort ; **404 = le jeton pousse du code mais n'a pas `read_api`** (sur un projet
+  privé GitLab répond 404, pas 403 — rien ne distingue « pas le droit » de « n'existe pas »,
+  d'où le piège).
+- **Garde renforcée, et ma 1ʳᵉ version n'était PAS discriminante** (encore) : elle se
+  contentait de « il y a une ligne avec l'en-tête quelque part » → j'ai saboté, elle est
+  restée verte. Corrigée : elle contrôle **chaque** ligne `curl` du workflow, une par une
+  (même leçon que le filtre du jeton au push). **Re-prouvée par sabotage** : jeton remis
+  dans l'URL → sortie **1** avec la ligne fautive citée ; restauré → **34 contrôles, 0 échec**.
 
 ## 2026-09-17 — Premier lancement réel : le commit qui devait LANCER le pipeline se sabordait
 
