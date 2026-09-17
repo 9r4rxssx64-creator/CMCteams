@@ -465,6 +465,71 @@ if (FFMPEG) {
   await ctx.close();
 }
 
+/* === 4 septies. LE CHOIX DU PERSONNAGE : Bee ou Bourricot l'âne ==============
+   Kevin 2026-09-17 : « intègre l'âne de Lingua, avoir le choix des personnages ».
+   On ne vérifie pas que le code existe — on TAPE sur la pastille et on regarde ce qui
+   change vraiment : le dessin, la géométrie du visage, le nom, et la mémoire du choix. */
+{
+  const { ctx, page, erreurs } = await ouvre();
+  await page.waitForSelector('#javis-launcher .bee-rig', { timeout: 8000 }).catch(() => {});
+  await page.evaluate(() => { const b = document.querySelector('#javis-launcher'); if (b) b.click(); });
+  await dors(400);
+  const avant = await page.evaluate(() => {
+    const r = document.querySelector('#javis-launcher .bee-rig');
+    const img = r && r.querySelector('.rig-base');
+    return { masc: r && r.getAttribute('data-mascot'), src: img && img.getAttribute('src'),
+      ailes: r ? r.querySelectorAll('.rig-piece').length : -1,
+      nom: (document.querySelector('#javis-head b') || {}).textContent,
+      pastilles: document.querySelectorAll('#javis-masc .javis-mpick').length,
+      oeil: r ? getComputedStyle(r).getPropertyValue('--ll-t').trim() : '' };
+  });
+  chk(avant.pastilles === 2, `deux personnages proposés dans le panneau (${avant.pastilles} pastille(s))`);
+  chk(avant.masc === 'bee' && avant.ailes === 2,
+    `au départ c'est Bee, avec ses 2 ailes (${avant.masc}, ${avant.ailes} pièce(s))`);
+
+  await page.evaluate(() => {
+    const b = document.querySelector('#javis-masc .javis-mpick[data-masc="donkey"]');
+    if (b) b.click();
+  });
+  await dors(600);
+  const apres = await page.evaluate(() => {
+    const r = document.querySelector('#javis-launcher .bee-rig');
+    const img = r && r.querySelector('.rig-base');
+    let retenu = ''; try { retenu = localStorage.getItem('javis_mascotte') || ''; } catch (e) {}
+    return { masc: r && r.getAttribute('data-mascot'), src: img && img.getAttribute('src'),
+      ailes: r ? r.querySelectorAll('.rig-piece').length : -1,
+      nom: (document.querySelector('#javis-head b') || {}).textContent, retenu,
+      oeil: r ? getComputedStyle(r).getPropertyValue('--ll-t').trim() : '',
+      anime: r ? r.className : '' };
+  });
+  chk(apres.masc === 'donkey', `un doigt suffit : on passe à l'âne (${apres.masc})`);
+  chk(!!apres.src && apres.src !== avant.src && /\/donkey\/rig\/base\.webp$/.test(apres.src),
+    `c'est VRAIMENT son dessin qui s'affiche (${String(apres.src).replace('https://lingua.kd-mc.com/', '')})`);
+  chk(apres.ailes === 0, `l'âne n'a pas d'ailes : aucune image fantôme chargée (${apres.ailes} pièce(s))`);
+  chk(apres.oeil && apres.oeil !== avant.oeil,
+    `son visage a SA géométrie, pas celle de l'abeille (paupière à ${apres.oeil} contre ${avant.oeil})`);
+  chk(apres.nom === 'Bourricot', `il est appelé par son nom (${apres.nom})`);
+  chk(apres.retenu === 'donkey', `le choix est retenu pour la prochaine fois (${apres.retenu})`);
+
+  /* il doit être VIVANT, pas une image collée : la mise en vie est posée sur l'élément,
+     qui vient d'être remplacé — c'est l'oubli classique. */
+  await dors(1200);
+  const vivant = await page.evaluate(async () => {
+    const r = document.querySelector('#javis-launcher .bee-rig');
+    if (!r) return 0;
+    let n = 0;
+    const obs = new MutationObserver((l) => { n += l.length; });
+    obs.observe(r, { attributes: true, attributeFilter: ['class'] });
+    await new Promise((res) => setTimeout(res, 9000));
+    obs.disconnect();
+    return n;
+  });
+  chk(vivant > 0, vivant > 0 ? `et il est VIVANT (${vivant} battement(s) en 9 s, pas une image collée)`
+                             : "l'âne est figé : la mise en vie n'a pas été refaite après le changement");
+  chk(erreurs.length === 0, erreurs.length ? `ERREURS JS : ${erreurs[0]}` : 'aucune erreur JS au changement de personnage');
+  await ctx.close();
+}
+
 /* === 4 ter. voix du domaine injoignable → elle parle quand même ============== */
 {
   voixKO = true;
