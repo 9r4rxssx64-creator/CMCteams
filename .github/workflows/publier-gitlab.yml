@@ -89,9 +89,22 @@ jobs:
           # 1er push : crée/actualise la branche technique. GitLab saute volontairement
           # le pipeline d'une branche qui vient de naître (garde « pas-sur-nouvelle-branche »),
           # c'est normal et voulu — rien ne tourne encore.
+          # « --force-with-lease » tout court exige un repère local du distant. Ici on
+          # pousse vers une URL, donc ce repère n'existe pas → git refuse avec « stale
+          # info » (vécu). On va donc chercher l'état réel du miroir d'abord, et on
+          # n'autorise l'écrasement QUE si le miroir est bien là où on croit.
           echo "→ publication de la branche ${CIBLE}"
-          git push --force-with-lease "${DEPOT}" "HEAD:refs/heads/${CIBLE}" 2>&1 \
-            | sed -e "s#${JETON}#***#g"
+          if git fetch --no-tags "${DEPOT}" "+refs/heads/${CIBLE}:refs/remotes/miroir/${CIBLE}" 2>/dev/null; then
+            ATTENDU=$(git rev-parse "refs/remotes/miroir/${CIBLE}")
+            echo "   (la branche existe déjà côté miroir : ${ATTENDU:0:8})"
+            git push --force-with-lease="refs/heads/${CIBLE}:${ATTENDU}" \
+              "${DEPOT}" "HEAD:refs/heads/${CIBLE}" 2>&1 \
+              | sed -e "s#${JETON}#***#g"
+          else
+            echo "   (première publication : la branche n'existe pas encore, rien à écraser)"
+            git push "${DEPOT}" "HEAD:refs/heads/${CIBLE}" 2>&1 \
+              | sed -e "s#${JETON}#***#g"
+          fi
 
           if [ "${TOR}" != "true" ]; then
             echo "Publication faite. Aucun travail demandé (case décochée)."
