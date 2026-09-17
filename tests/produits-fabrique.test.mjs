@@ -100,8 +100,8 @@ test('consigne de rédaction : dit le lecteur, la promesse, le titre exact du mo
 });
 
 /* Faux réseau : D1 (REST) + Anthropic, pour dérouler principal() sans rien toucher. */
-function fauxReseau({ enBase = [], reponses = [] }) {
-  const inserts = []; let appelsIA = 0;
+function fauxReseau({ enBase = [], reponses = [], arrets = [] }) {
+  const inserts = []; let appelsIA = 0; const budgets = [];
   globalThis.fetch = async (url, opt) => {
     const u = String(url);
     if (u.includes('/d1/database/')) {
@@ -111,12 +111,14 @@ function fauxReseau({ enBase = [], reponses = [] }) {
       throw new Error('SQL inattendu : ' + sql);
     }
     if (u.includes('api.anthropic.com')) {
-      const html = reponses[Math.min(appelsIA, reponses.length - 1)]; appelsIA++;
-      return new Response(JSON.stringify({ content: [{ type: 'text', text: '```html\n' + html + '\n```' }] }), { status: 200 });
+      budgets.push(JSON.parse(opt.body).max_tokens);
+      const html = reponses[Math.min(appelsIA, reponses.length - 1)];
+      const stop = arrets[appelsIA] || 'end_turn'; appelsIA++;
+      return new Response(JSON.stringify({ stop_reason: stop, usage: { output_tokens: 1 }, content: [{ type: 'text', text: '```html\n' + html + '\n```' }] }), { status: 200 });
     }
     throw new Error('réseau inattendu : ' + u);
   };
-  return { inserts, ia: () => appelsIA };
+  return { inserts, ia: () => appelsIA, budgets };
 }
 const ENV = { CLOUDFLARE_API_TOKEN: 't', CLOUDFLARE_ACCOUNT_ID: 'a', ANTHROPIC_API_KEY: 'k' };
 
@@ -160,6 +162,21 @@ test('déroulé réel : un module refusé 3 fois n\'est PAS écrit, les bons le 
   const log3 = [];
   await F.principal({ ...ENV, PRODUIT: p.id, DRY_RUN: 'false' }, (l) => log3.push(l));
   assert.equal(r3.ia(), 0); assert.match(log3.at(-1), /^PRODUIT COMPLET/);
+});
+
+test('budget de sortie : un module demande ≥ 8000 jetons (4000 coupait pièges + checklist), et une réponse tronquée est refusée en le DISANT', async () => {
+  const p = CAT.produits[0];
+  assert.ok(F.JETONS_MODULE >= 8000, 'JETONS_MODULE = ' + F.JETONS_MODULE);
+  /* même HTML complet les deux fois : seul l'arrêt du modèle change → c'est lui qui décide */
+  const r = fauxReseau({ enBase: [], reponses: [bon(p, 0), bon(p, 0)], arrets: ['max_tokens', 'end_turn'] });
+  const log = [];
+  const res = await F.redigeModule(ENV, { produit: p, index: 0, module: p.modules[0], titresFaits: [] }, (l) => log.push(l));
+  assert.ok(res && res.ok, 'accepté au 2e essai (arrêt end_turn)');
+  assert.equal(r.ia(), 2);
+  assert.ok(r.budgets.every((b) => b === F.JETONS_MODULE), 'chaque appel porte le budget module : ' + r.budgets.join(','));
+  assert.match(log[0], /refusé — réponse TRONQUÉE .*max_tokens/);
+  assert.match(log[1], /· fin : …/, 'le journal montre aussi la FIN du texte refusé');
+  assert.match(log[2], /ACCEPTÉ .*arrêt end_turn/);
 });
 
 test('pages de vente : à jour sur le catalogue, CSP identique à la page mère, prix = caisse, lien de paiement au montant, aucun contenu payant', () => {
