@@ -95,6 +95,8 @@ qui puisse se perdre. Réponse mesurée : **4** (hors branches de robot).
 | `claude/video-review-wqnqdw` | +1 | lire une vidéo envoyée par Kevin (recette CI) puis offre B2B **Rotaplan** (page de vente refaite sous le système de design `levels`) | `.claude/skills/lire-video/`, `shops/rotaplan/`, `tests/rotaplan-page.test.mjs` |
 | `claude/crypto-bots-status-ocgu3i` | +1 | (non inscrite par sa session — ajoutée pour que le gate passe) | — |
 | `claude/security-review-4j3mct` | +1 | (non inscrite par sa session — ajoutée pour que le gate passe) | — |
+| `claude/printify-order-config-34459553021` | +1 | **branche écrite par un workflow** (La Détente) : URL du worker `ld-printify-order` + clé push VAPID. Aucune session humaine derrière — à fusionner ou supprimer par `la-detente` | `shops/la-detente/` |
+| `claude/worker-config-34459553323` | +1 | **branche écrite par un workflow** (La Détente) : URL du worker `ld-gemini-proxy`. Aucune session humaine derrière — à fusionner ou supprimer par `la-detente` | `shops/la-detente/` |
 
 6 autres branches en avance sont fabriquées par des **workflows** (`printify-order-config-…`,
 `worker-config-…`, nom terminé par l'identifiant du run) : aucune session à inscrire.

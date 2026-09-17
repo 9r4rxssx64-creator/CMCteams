@@ -21,6 +21,7 @@ Chaque ligne renvoie à sa section plus bas.
 | **Ton vrai IBAN** (ou dis-moi de retirer le bouton) | Tes 6 boutiques affichent `MC98 •••• •••• ••••` et « Copier l'IBAN » **copie des points**. Un client qui choisit « virement » tombe dans le vide, **en ce moment** | 1 min |
 | **Régénérer `AGENT_SECRET`** | Seule protection de ton agent en ligne. Qui l'a lance ses cycles — chaque cycle appelle l'IA, **c'est ton argent** | 2 min |
 | **Changer le code famille de l'arbre** + **révoquer le jeton GitLab** `glpat-wD6Q…` | Le code **est** l'adresse des données : qui l'a lit et modifie l'arbre — des infos de personnes vivantes | 3 min |
+| 👆 **Resserrer le jeton GitLab du secret `GITLAB_TOKEN`** | Mesuré le 17.09 : il porte `api` et **lit les 35 secrets de CI** du projet GitLab. Il n'a besoin que de pousser du code et de lire un résultat. GitLab **refuse** que je fabrique le jeton étroit moi-même (« User does not have permission ») — il faut tes deux gestes. **(1)** GitLab → Kdmc-project → Settings → Access tokens → nouveau jeton, rôle Maintainer, portées **`write_repository` + `read_api` seulement** ; **(2)** GitHub → ce dépôt → Settings → Secrets → Actions → `GITLAB_TOKEN` → Update. Puis **Revoke** sur l'ancien, même page GitLab | 3 min |
 
 ### 🟡 Ça débloque des revenus
 

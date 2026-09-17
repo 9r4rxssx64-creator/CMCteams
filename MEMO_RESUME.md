@@ -1417,6 +1417,130 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — Deuxième essai : **15/20** adresses .onion répondent (et le chiffre BOUGE)
+
+**Mesuré** (run 35245673292, artefact rapatrié, `simule: false`). Au premier passage : **13/20**.
+Au second, avec le **deuxième essai** ajouté :
+
+```
+15 vivantes  · Tor Project et The Guardian ont répondu DU DEUXIÈME ESSAI
+ 5 muettes   · New York Times, ProPublica, The Intercept, Bellingcat, Privacy International
+```
+
+**La preuve que « muette » ≠ « morte »** est dans les chiffres eux-mêmes : **DuckDuckGo**, qui
+avait répondu du premier coup la fois d'avant, a eu besoin de **deux tentatives** cette fois. Un
+circuit Tor se construit au hasard et cale souvent depuis un centre de données — c'est exactement
+pour ça que le rapport dit **« injoignable »** et jamais « mort ».
+
+Page **v1.6** : les 15 noms, les 5 muettes nommées, et le va-et-vient expliqué en clair. Le bouton
+**« Prouver l'adresse »** reste la vérité : c'est l'organisation elle-même qui publie son adresse.
+
+## 2026-09-17 — Jusqu'où va vraiment le jeton GitLab : **1 projet, mais 35 secrets de CI lisibles**
+
+**Mesuré** (run 35244805920, lecture seule, aucune valeur affichée) :
+
+```
+identite      : project_85753352_bot_… -> JETON DE PROJET (un seul projet)
+projets vus   : 1
+secrets de CI : LISIBLES (35)  <- c'est ce que « api » ouvre
+jetons de deploiement : HTTP 200
+```
+
+Bonne nouvelle : c'est un **jeton de projet**, pas le compte personnel de Kevin — les dégâts
+possibles s'arrêtent à `Kdmc-project`. Mauvaise nouvelle : dans ce projet, il **lit les 35
+variables de CI**, c'est-à-dire les autres secrets. C'est précisément ce qu'on voulait fermer.
+
+**Et on ne peut pas le fermer tout seul** : un bot de projet n'a pas le droit de fabriquer un
+jeton de projet (`400 … User does not have permission`), et GitLab ne sait pas changer les
+portées d'un jeton existant. Donc **deux gestes de Kevin, une fois** — écrits dans
+`KEVIN_ACTIONS_TODO.md`, et **redits à chaque passage du diagnostic** (`::warning::`) tant que
+`api` est là : une dette silencieuse finit oubliée.
+
+## 2026-09-17 — GitLab REFUSE de fabriquer un jeton plus étroit : « User does not have permission »
+
+**Mesuré** (run 35244243351, étape 2/5) : la rotation s'arrête net sur
+`400 Bad request - User does not have permission to create project access token`. Le workflow
+a fait exactement ce qu'il devait faire — **il n'a rien touché**, l'ancien jeton fonctionne
+toujours, et il le dit dans le journal (« Rien n'a été touché »). C'est la garantie de l'ordre
+créer → vérifier → installer → révoquer : un échec au début ne coûte rien.
+
+**Ce que ça veut dire** : sur ce compte GitLab, la fabrication d'un jeton de projet par l'API
+est fermée (elle l'est sur les espaces de noms gratuits une fois la période d'essai finie).
+Et GitLab ne sait **pas** modifier les portées d'un jeton existant — donc le chemin « 0 clic »
+n'existe pas ici. Avant de demander quoi que ce soit à Kevin, je mesure **jusqu'où le jeton
+va vraiment** : un jeton **de projet** qui porte `api` ouvre UN projet ; le jeton **personnel**
+de Kevin qui porte `api` ouvre **tous ses projets**. Ce n'est pas le même problème, et la
+réponse n'est pas la même. Le diagnostic dit maintenant : qui est le jeton (bot de projet ou
+compte de Kevin), combien de projets il voit, si les **variables de CI** (donc les autres
+secrets) lui sont lisibles, et si un **jeton de déploiement** — limité au push, lui — peut être
+fabriqué à la place. Tout en lecture, et **aucune valeur affichée**, seulement des comptes.
+
+## 2026-09-17 — Le jeton GitLab portait « api » (la clé de toute la boîte) — resserré
+
+**Mesuré** (run 35243309740), et c'était pire que prévu. Le jeton « Kdmc project » portait :
+`api, read_api, self_rotate, read_repository, write_repository, read_registry, write_registry,
+ai_features`. **`api` seul donne l'écriture sur TOUT le projet** : réglages, membres, variables
+de CI (donc les autres secrets), suppression de branches. Pour un jeton rangé dans un secret
+GitHub d'un dépôt **public**, c'est bien trop. Il n'a besoin que de deux choses : **pousser du
+code** et **lire un résultat de pipeline**. Fin prévue le 2027-01-31 — au moins il expire.
+
+**GitLab ne sait pas modifier les portées d'un jeton existant** : il faut en créer un neuf et
+révoquer l'ancien. C'est l'ORDRE qui rend l'opération sûre, et il est écrit dans le workflow :
+**créer → vérifier que le neuf marche vraiment → l'installer dans le secret → révoquer l'ancien.**
+À la moindre anicroche avant la fin, le neuf est révoqué et **l'ancien reste en place** : on ne se
+met jamais dehors soi-même. L'écriture du secret passe par `gh secret set` (chiffrement géré par
+l'outil) avec `APEX_GITHUB_PAT` ; PAT absent → on s'arrête **avant** d'avoir touché à quoi que ce soit.
+
+**Garde apprise au passage** : elle vérifiait « chaque ligne `curl` » — mais une commande coupée
+sur trois lignes n'est pas trois commandes. Elle **recolle** maintenant les continuations avant de
+contrôler, et accepte n'importe quelle variable de jeton (`${JETON}`, `${NEUF}`). **Prouvée
+discriminante** : en-tête retiré de la création du jeton → sortie **1** avec la commande fautive
+citée ; restauré → **35 contrôles, 0 échec**.
+
+## 2026-09-17 — « Change les autorisations du jeton GitLab » : d'abord MESURER ce qu'il porte
+
+On ne resserre pas des autorisations qu'on n'a jamais lues. Le workflow sait maintenant
+demander à GitLab **ce que le jeton porte vraiment** — nom, **portées**, actif/révoqué, date de
+création, **date de fin**, dernière utilisation — et **jamais sa valeur**. Case à cocher
+« Diagnostic du jeton », elle ne touche à rien d'autre.
+
+La **date de fin** est la vraie raison d'être de ce diagnostic : un jeton qui expire sans
+prévenir, c'est une chaîne qui casse un matin sans que personne comprenne pourquoi.
+
+**Piège évité avant de pousser** (leçon #267) : mon premier jet mettait un *heredoc* Python
+indenté dans le bloc `run:`. Un heredoc ne se termine que si son marqueur est en **colonne 0** —
+indenté, il n'aurait jamais fini ; et les lignes Python désindentées cassaient déjà le YAML.
+Réécrit en **une seule ligne**, YAML validé, `bash -n` passé, et la ligne **essayée à blanc sur
+une fausse réponse** : elle imprime bien les six champs.
+
+## 2026-09-17 — LE POINT FAIBLE EST FERMÉ : les 20 adresses .onion ont été VRAIMENT ouvertes
+
+Le trou déclaré depuis le 15.09 (« les 20 adresses n'ont jamais été ouvertes ») est comblé,
+avec des chiffres, pas une intention. Rapport rapatrié automatiquement dans le journal GitHub
+(run 35242294789) : **20 adresses, 368 s, `"simule": false`, 13 vivantes.**
+
+- **Vivantes (13)** : Ahmia · DuckDuckGo · BBC News · BBC Learning English · Deutsche Welle ·
+  Radio Free Europe · Voice of America · CIA · Facebook (500 — le serveur répond, l'adresse vit) ·
+  Proton Mail · Riseup · Systemli · Qubes OS.
+- **Muettes (7)** : Tor Project, The Guardian, NYT, ProPublica, The Intercept, Bellingcat,
+  Privacy International.
+
+**Et j'ai refusé d'appeler ça « 7 adresses mortes ».** Ce sont sept services notoirement vivants ;
+un `000` sur Tor veut dire « le circuit n'a pas abouti dans le temps imparti », pas « l'adresse
+n'existe plus » — et un circuit se construit au hasard, il cale souvent depuis un centre de
+données. Annoncer la mort sur un seul essai, c'est le faux verdict de la leçon #268 **retourné
+contre l'adresse** au lieu du réseau.
+
+**Correctif** : deuxième essai (circuit neuf, 90 s) sur les seules adresses muettes, et le rapport
+ne dit plus `morts` mais `injoignables`, avec la réserve écrite dedans : *« non ouverte depuis CE
+runner après 2 essais ; ce n'est pas une preuve que l'adresse est morte »*. **Garde** : `test:tor`
+passe à **35 contrôles** et exige la 2ᵉ passe + le vocabulaire honnête. **Prouvée discriminante** :
+2ᵉ passe retirée → sortie **1** (« un seul timeout redeviendrait un verdict ») ; remise → 35/0.
+
+**Page `tor.kd-mc.com` v1.5** : la phrase « elles n'ont pas encore été ouvertes » est remplacée par
+le résultat daté, avec la réserve. **Vérifié en vrai Chromium à 375 px** : v1.5 affichée, 0 exception
+JS, 0 débordement latéral, les 3 formulations présentes, l'ancienne phrase absente.
+
 ## 2026-09-17 — L'aller-retour se ferme : le résultat GitLab revient TOUT SEUL ici
 
 Kevin : « Fait. » Le chaînon qui manquait n'était pas le départ du travail — c'était le

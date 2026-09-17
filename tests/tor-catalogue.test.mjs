@@ -304,6 +304,21 @@ t('sa destination est écrite, et ce n\'est pas GitHub Actions', () => {
 /* ── Le vérificateur d'adresse est la protection la plus forte de l'outil (c'est lui qui
    voit la fausse adresse). Il doit exister, et surtout garder la comparaison de préfixe :
    sans elle, il ne détecte plus les imitations, qui sont TOUTE la menace. ── */
+t('une adresse muette a DROIT à un deuxième essai avant d\'être dite injoignable', () => {
+  /* Un `000` sur Tor = « le circuit n'a pas abouti », pas « l'adresse est morte ».
+     Mesuré le 17.09 : 7 des 20 adresses (Tor Project, NYT, ProPublica, The Intercept…)
+     sont sorties muettes au 1er essai depuis un runner — des services qui vivent très
+     bien. Déclarer « mort » là-dessus, c'est accuser un catalogue correct : la même
+     faute que le faux verdict de la leçon #268, retournée contre l'adresse. */
+  const src = readFileSync(new URL('../tools/tor/verif-onion.mjs', import.meta.url), 'utf8');
+  assert(/muettes/.test(src) && /2e essai/.test(src),
+    'la deuxième passe sur les adresses muettes a disparu : un seul timeout redeviendrait un verdict');
+  assert(/injoignables:/.test(src) && !/\bmorts:/.test(src),
+    'le rapport reparle d\'adresses « mortes » : on ne peut constater que « pas ouverte d\'ici »');
+  assert(/pas une preuve que l\\?'adresse est morte/.test(src),
+    'la réserve honnête a disparu du rapport');
+});
+
 t('le chemin qui lance la vérification est manuel, ne touche pas main, ne fuit pas le jeton', () => {
   /* Une session Claude n'a aucun jeton GitLab (mesuré 17.09). Le seul chemin est un
      workflow que JE déclenche et qui publie le dépôt vers son miroir. Trois choses ne
@@ -338,10 +353,12 @@ t('le chemin qui lance la vérification est manuel, ne touche pas main, ne fuit 
      On contrôle CHAQUE ligne curl, pas « il y en a une quelque part » : une seule
      oubliée suffit, et une garde qui se contente d'une occurrence passe au vert
      pendant qu'une autre ligne fuit (déjà vécu avec le filtre du jeton au push). */
-  const curls = wf.split('\n').map(l => l.trim())
+  const recolle = wf.replace(/\\\n\s*/g, ' ');   /* une commande coupée sur 3 lignes reste UNE commande */
+  const curls = recolle.split('\n').map(l => l.trim())
     .filter(l => !l.startsWith('#') && /\bcurl\b/.test(l));
+  assert(curls.length > 0, 'plus aucun appel curl : le retour est mort');
   for (const l of curls) {
-    assert(/PRIVATE-TOKEN: \$\{JETON\}/.test(l),
+    assert(/PRIVATE-TOKEN: \$\{[A-Z_]+\}/.test(l),
       'une commande curl n\'envoie pas le jeton en en-tête : ' + l.trim().slice(0, 90));
   }
   assert(!/(private_token|access_token)=/.test(wf),

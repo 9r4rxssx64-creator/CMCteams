@@ -7,6 +7,62 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 17/09/2026 16:18 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `859ad3bc` · **Run** : `35244481440`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35244481440
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3883 — merge auto refusé. Cause exacte ci-dessous.
+[claude/video-review-wqnqdw e08637a29] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Auto-merge Claude branches into main — 17/09/2026 16:11 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `67e967c2` · **Run** : `35244247728`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35244247728
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3883 — merge auto refusé. Cause exacte ci-dessous.
+[claude/video-review-wqnqdw eaab5f3a3] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
+## ❌ Auto-merge Claude branches into main — 17/09/2026 16:09 UTC
+
+- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `8402dc77` · **Run** : `35243585180`
+- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35243585180
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+##[error]Process completed with exit code 128.
+```
+
 ## ❌ Auto-merge Claude branches into main — 17/09/2026 15:14 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `38967e26` · **Run** : `35237867582`
@@ -434,52 +490,5 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 ^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
 ##[warning]PR #3795 — merge auto refusé. Cause exacte ci-dessous.
 [claude/suivi-domaine-suite 4a3c55547] diag: pourquoi l'auto-merge de claude/suivi-domaine-suite est refusé [skip ci]
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 15/09/2026 19:25 UTC
-
-- **Branche** : `claude/security-review-4j3mct` · **Commit** : `6ad7b582` · **Run** : `35013165489`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35013165489
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 15/09/2026 19:24 UTC
-
-- **Branche** : `claude/security-review-4j3mct` · **Commit** : `4ee4daa9` · **Run** : `35013095722`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35013095722
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 15/09/2026 19:21 UTC
-
-- **Branche** : `claude/suivi-domaine-suite` · **Commit** : `a5a49811` · **Run** : `35012323535`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35012323535
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3795 — merge auto refusé. Cause exacte ci-dessous.
-[claude/suivi-domaine-suite 7433ac8bb] diag: pourquoi l'auto-merge de claude/suivi-domaine-suite est refusé [skip ci]
 ##[error]Process completed with exit code 1.
 ```
