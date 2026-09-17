@@ -22,6 +22,14 @@ C'est exactement le **faux vert de la leçon #103**. Corrigé : `APP_VER` d'abor
 **écrit « ❓ non lue »** au lieu de se taire. Tant que cette sonde ne parlait pas, je ne pouvais pas
 affirmer que la v2.125.0 était réellement en ligne — et je ne l'ai pas affirmé.
 
+**Suite (06:07, run `35188189455`) — la sonde parle, et elle disait vrai** : « version servie
+❓ non lue ». La vraie cause, trouvée ensuite : **tout `lingua/app.js` vit dans une IIFE**, donc
+`APP_VER` n'a **jamais** été une variable globale, et la seule étiquette qui l'affiche (`.ver`) est
+sur l'écran **Profil**, que la sonde a déjà quitté. Corrigé en une ligne côté Lingua
+(`window.LINGUA_VER`, **v2.125.1**, aucun effet visible, `sw.js` bumpé avec) + la sonde la lit en
+premier. Gardes après changement : `test:lingua-bee` **13/0**, `test:lingua-voix` **26/0**,
+`test:lingua-connexion` **20/0**, `test:lingua-parcours` **11/0**.
+
 **Bénin, à ne pas confondre avec un vrai échec** : `audit/deploiements-rates.md` a consigné un
 « déploiement raté » à 23:52 — c'est le bot auto-merge qui a tenté d'ouvrir une PR pour une branche
 **déjà fusionnée à la main** (« No commits between main and … »). Rien à corriger.

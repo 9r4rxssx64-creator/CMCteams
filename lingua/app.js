@@ -2,7 +2,13 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.125.0";
+var APP_VER="v2.125.1";
+/* La version doit etre LISIBLE DE DEHORS. Tout ce fichier vit dans une IIFE : APP_VER n'a
+   donc jamais ete une variable globale, et la seule etiquette qui l'affiche (.ver) vit sur
+   l'ecran Profil. Resultat mesure le 17/09 : l'audit LIVE du domaine ne pouvait PAS dire
+   quelle version de Lingua etait servie -- on ne savait pas si un deploiement etait passe.
+   Une ligne, aucun effet visible, et toute verif reelle peut desormais le dire. */
+try{ window.LINGUA_VER = APP_VER; }catch(e){}
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
