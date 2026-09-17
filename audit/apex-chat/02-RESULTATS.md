@@ -250,6 +250,7 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 | Unitaires locaux après | **70 fichiers · 1341 tests** (96 tests neufs, 7 fichiers de garde) — ⚠️ mesuré **sans** `--coverage` | `vitest run` |
 | CI `messaging-app-tests.yml` sur la branche | ❌ run `35255340099` : cliquet `ConversationDO.js` sous le seuil (fonctions 88,09 % < 89,7 %) — six `.catch` jamais exercés | `vitest run --coverage` |
 | Unitaires locaux après correctif | **71 fichiers · 1347 tests**, `ConversationDO.js` 100 / 98,18 / 100 / 100, cliquet remonté ; tous seuils par fichier tenus | `vitest run --coverage` (sortie `EXIT=0`) |
+| CI e2e 4 voies sur `703cc23db` | ❌ run `35256174034` : `tests` ✅, `chromium-desktop` ✅, `pixel-android` ✅, **`iphone-safari` ❌ 52, `iphone-se` ❌ 52** — WebKit ne démarre pas avec le drapeau Chromium posé en global (annotations du check-run) | `playwright test --project=…` (CI) |
 | e2e Chromium local après | **56 / 56** (dont SW actif + cache peuplé) | `playwright test --project=chromium-desktop` |
 | Boot (Chromium 375×812, API mockée) | LCP 116 ms (login) / 88 ms (liste) ; 0 exception ; 0 mutation DOM et 0 rendu au repos sur 3 vues ; 7–8 minuteries, aucune ≤ 1 s | passe perf |
 | Chat 1 000 messages | rendu 84 ms ; 20 messages entrants 8,6 ms/msg ; 0 fuite DOM après 20 cycles | passe perf |
