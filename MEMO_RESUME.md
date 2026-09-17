@@ -9415,3 +9415,49 @@ qui prouve qu'aucune règle n'a disparu. ⏳ **en attente du feu vert de Kevin.*
 Anthropic) ; ce clone est superficiel (297 commits visibles, `git fetch --unshallow` pour
 tout) ; deux pages de prix officielles (`docs.z.ai`, `api-docs.deepseek.com`) sont bloquées
 par le proxy de l'agent → prix croisés par recherche, statut 🟡 indiqué ligne par ligne.
+
+### 2026-09-17 (suite) — Bilan complet du pipeline, demandé par Kevin
+
+**Demande** : « fait faire un bilan et un point, un récap de chaque branche par ton pipeline
+sans en oublier aucune, chaque discussion, qu'ils mettent tous tout à jour. »
+
+**Outil créé** : `npm run bilan` (`tools/pipeline/bilan.mjs`) — croise les **trois** sources qui
+divergeaient en silence : le registre (`pipeline/sessions.json`, ce que les sessions *déclarent*),
+le dépôt **réel** (`git ls-remote` + date du dernier commit de chaque branche), et les
+**discussions**. Complémentaire de `retard-branches.mjs` (qui mesure le retard, pas l'état).
+Vérifie en plus, via l'**API publique GitHub** (dépôt public, sans jeton, ~0 token), si une
+branche absente a bien été **fusionnée** — parce que « branche absente » ≠ « travail perdu ».
+Document produit : **`BILAN-BRANCHES.md`** (86 Ko : chaque session une par une, **les 211
+branches non déclarées toutes listées**, chaque discussion ouverte).
+
+**Mesuré le 17.09** : 41 sessions · **219 branches** (24 vivantes ≤ 21 j) · **211 branches que
+personne n'a déclarées** (18 vivantes) · 94 discussions dont 83 ouvertes · `main` à jour.
+
+**Résultat principal : 0 travail perdu.** Les 9 sessions dont la branche avait disparu ont
+**toutes** leurs PR fusionnées dans `main` — vérifié une par une : cmcteams-pdf #3776,
+lingua-voix #3762, lingua-parcours #3763, crypto-bots #3787, video-review #3883,
+tor-securite #3889, javis-bee #3882, transfert-ia #3891 ; `meta` avait 0 commit et l'avait
+déjà documenté. **Le bot fusionne, le ménage supprime** : c'est le fonctionnement normal,
+pas un incident — mais le registre garde un état « actif » sur une branche qui n'existe plus.
+**Vécu en direct dans cette session** : ma propre branche a été fusionnée (#3891) et supprimée
+pendant que je travaillais → recréée depuis `main`, comme la règle l'exige.
+
+**CAUSE RACINE trouvée et outillée** : 61 messages ouverts n'avaient **aucun suivi daté**, et
+`test:messages-suivis` était **rouge sans que personne ne le voie** (`test:ci` ne tourne que sur
+GitLab). Raison exacte : la règle « PRÉVENIR NE SUFFIT PAS » **exige** un suivi daté, mais
+**aucune commande ne permettait d'en poser un** — il fallait éditer le JSON à la main, donc
+personne ne le faisait. C'est la leçon #142 dans sa forme la plus pure : *une règle sans outil
+finit sautée.* → **commande `pipeline suivi --id <mNNN> --action "…"` créée**, puis **44 suivis
+posés** sur les annonces adressées à « toutes » (lues et recensées au bilan). **61 → 28.**
+Les **31 demandes adressées à une session précise restent sans suivi volontairement** : c'est à
+leur destinataire d'y répondre, et le gate doit rester rouge tant que ce n'est pas fait.
+
+**Mesure côté plateforme (nouvelle information)** : sur les 40 sessions de Kevin, **14 sont
+ARCHIVÉES**, 20 en pause, 2 en cours, 1 en attente d'action. **Une session archivée ne lira
+jamais un message du pipeline et ne peut rien mettre à jour** — c'est pour ça que des demandes
+traînent depuis 7 jours. Dit dans le message `m094-transfert-ia` : si une demande vous concerne
+et que son auteur est archivé, traitez-la quand même, elle ne reviendra pas.
+
+**Gardes** : `test:pipeline-sessions` **9 OK / 0 FAIL** (un rouge était de moi : ma branche
+manquait à `SESSIONS-ET-BRANCHES.md` → ajoutée) · `test:messages-suivis` toujours rouge sur les
+31 demandes ciblées, **c'est son rôle**.

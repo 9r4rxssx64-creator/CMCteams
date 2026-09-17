@@ -2636,3 +2636,14 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 
 **Commandes ajoutées** : `npm run transfert` (fabrique le paquet + l'archive) ·
 `npm run transfert:liste` (dit seulement ce qui serait copié).
+
+### 2026-09-17 (suite) — Bilan du pipeline
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `BILAN-BRANCHES.md` | **Le point complet** : chaque session une par une (état, branche, fusion, discussions), **les 211 branches non déclarées toutes listées**, chaque discussion ouverte, ce qui attend Kevin | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/BILAN-BRANCHES.md) |
+| `tools/pipeline/bilan.mjs` | `npm run bilan` — refabrique ce bilan avec les chiffres du jour (registre × dépôt réel × API GitHub) | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/pipeline/bilan.mjs) |
+
+**Commandes ajoutées** : `npm run bilan` · `npm run bilan:court` ·
+`node tools/pipeline/pipeline.mjs suivi --id <mNNN> --action "…"` (posait problème : elle
+n'existait pas, d'où 61 messages en retard).
