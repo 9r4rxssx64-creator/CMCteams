@@ -1252,6 +1252,85 @@ async function handleGetMe(request, env) {
   return json({ ok: true, user });
 }
 
+// ----------------------------------------------------------------------------
+//  RGPD (audit 17/09/2026, P0 commercial) — export serveur + suppression de compte
+//  Avant : l'export ne couvrait que le téléphone (JSON local) et AUCUNE route ne
+//  permettait à un utilisateur de supprimer son compte (le lien des CGU pointait dans
+//  le vide). Art. 15/17/20 RGPD.
+// ----------------------------------------------------------------------------
+const RGPD_USER_PUBLIC_COLS = ['id', 'pseudo', 'real_name', 'display_name', 'first_name', 'last_name', 'phone', 'email',
+  'bio', 'avatar_url', 'created_at', 'last_seen', 'premium_until', 'premium_plan', 'language', 'timezone', 'address',
+  'city', 'country', 'job', 'birth_date', 'status', 'source', 'invited_by', 'last_geo_label', 'last_device_label'];
+
+export async function handleExportMe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+  const DB = env.APEX_CHAT_DB;
+  const uid = auth.sub;
+  const out = { exported_at: Date.now(), user_id: uid, note: 'Messages : contenu chiffré tel que stocké (le serveur ne détient pas la clé quand le chiffrement de bout en bout est actif).' };
+  const q = async (sql, ...args) => { try { return (await DB.prepare(sql).bind(...args).all()).results || []; } catch (e) { return { error: e && e.message }; } };
+  try {
+    const u = await DB.prepare('SELECT * FROM users WHERE id=?').bind(uid).first();
+    if (!u) return err('Compte introuvable', 404, 'user_not_found');
+    out.profile = {}; for (const k of RGPD_USER_PUBLIC_COLS) if (u[k] !== undefined) out.profile[k] = u[k];
+    out.conversations = await q('SELECT c.id, c.type, c.name, c.created_at, m.role, m.joined_at FROM conversation_members m JOIN conversations c ON c.id = m.conv_id WHERE m.user_id=?', uid);
+    out.messages_sent = await q('SELECT id, conv_id, ciphertext, mime, ts, edited_at, deleted_at FROM messages WHERE sender_id=? ORDER BY ts LIMIT 100000', uid);
+    out.contacts = await q('SELECT contact_id, nickname, mutual_at, blocked_at, created_at FROM contacts WHERE user_id=?', uid);
+    out.invitations_sent = await q('SELECT code, sent_via, accepted_at, created_at, expires_at FROM invitations WHERE inviter_id=?', uid);
+    out.media = await q('SELECT id, mime, size, uploaded_at, expires_at FROM media WHERE owner_id=?', uid);
+    out.push_devices = await q('SELECT device_id, device_name, user_agent, created_at, last_seen FROM push_subscriptions WHERE user_id=?', uid);
+    out.connections = await q('SELECT device, os, browser, country, city, first_seen, last_seen FROM connections WHERE user_id=?', uid);
+    out.cgu_acceptances = await q('SELECT version, accepted_at, implicit FROM cgu_acceptances WHERE user_id=?', uid);
+    out.reports_made = await q('SELECT id, target_user_id, reason, ts, status FROM signalements WHERE reporter_id=?', uid);
+  } catch (e) { return err('Export impossible pour le moment', 500, 'export_failed', e); }
+  try { await auditLog(env, uid, 'rgpd_export', 'user', uid, {}, null, request.headers.get('user-agent') || ''); } catch (_) {}
+  return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="apex-chat-mes-donnees-${new Date().toISOString().slice(0, 10)}.json"` } });
+}
+
+export async function handleDeleteMe(request, env) {
+  const auth = await getAuthUser(request, env);
+  if (!auth) return err('Non authentifié', 401, 'unauthorized');
+  const uid = auth.sub;
+  if (uid === 'kdmc_admin' || auth.is_admin) return err('Un compte administrateur ne se supprime pas par cette voie', 403, 'admin_protected');
+  const body = await readJson(request).catch(() => ({}));
+  if (String(body.confirm || '').trim().toUpperCase() !== 'SUPPRIMER') {
+    return err('Écris SUPPRIMER pour confirmer', 400, 'confirm_required');
+  }
+  const DB = env.APEX_CHAT_DB;
+  const now = Date.now();
+  const done = { media: 0, rows: {} };
+  const run = async (label, sql, ...args) => { try { const r = await DB.prepare(sql).bind(...args).run(); done.rows[label] = (r && r.meta && r.meta.changes) || 0; } catch (e) { done.rows[label] = 'erreur: ' + (e && e.message); } };
+  try {
+    // 1) Médias R2 (fichiers) puis lignes
+    try {
+      const media = (await DB.prepare('SELECT r2_key, thumbnail_r2_key FROM media WHERE owner_id=?').bind(uid).all()).results || [];
+      for (const m of media) {
+        for (const k of [m.r2_key, m.thumbnail_r2_key]) if (k && env.APEX_CHAT_MEDIA) { try { await env.APEX_CHAT_MEDIA.delete(k); done.media++; } catch (_) {} }
+      }
+    } catch (_) {}
+    await run('media', 'DELETE FROM media WHERE owner_id=?', uid);
+    // 2) Messages envoyés : contenu effacé (tombstone : les autres voient « message supprimé »)
+    await run('messages', 'UPDATE messages SET ciphertext=NULL, deleted_at=? WHERE sender_id=? AND deleted_at IS NULL', now, uid);
+    // 3) Liens et appareils
+    await run('conversation_members', 'DELETE FROM conversation_members WHERE user_id=?', uid);
+    await run('contacts', 'DELETE FROM contacts WHERE user_id=? OR contact_id=?', uid, uid);
+    await run('push_subscriptions', 'DELETE FROM push_subscriptions WHERE user_id=?', uid);
+    await run('connections', 'DELETE FROM connections WHERE user_id=?', uid);
+    await run('user_activity', 'DELETE FROM user_activity WHERE user_id=?', uid);
+    await run('invitations', 'DELETE FROM invitations WHERE inviter_id=? AND accepted_at IS NULL', uid);
+    // 4) Compte : anonymisé (l'id reste pour l'intégrité des références), numéro libéré
+    await run('users', `UPDATE users SET status='deleted', phone=NULL, phone_hash=NULL, email=NULL, real_name=NULL, display_name=NULL,
+      first_name=NULL, last_name=NULL, bio=NULL, avatar_url=NULL, address=NULL, city=NULL, country=NULL, job=NULL, birth_date=NULL,
+      last_ip_hash=NULL, last_user_agent=NULL, last_lat=NULL, last_lng=NULL, last_geo_label=NULL, last_device_label=NULL,
+      identity_key_pub=NULL, prekey_signed=NULL, kdmc_uid=NULL, pseudo=?, last_force_logout_at=?, updated_at=? WHERE id=?`,
+      'supprime_' + uid.slice(0, 8), now, now, uid);
+    // 5) KV : quotas / demandes premium
+    try { if (env.APEX_CHAT_KV) { const l = await env.APEX_CHAT_KV.list({ prefix: 'quota:' + uid }); for (const k of (l.keys || [])) await env.APEX_CHAT_KV.delete(k.name); } } catch (_) {}
+  } catch (e) { return err('Suppression incomplète, réessaie ou contacte l\'assistance', 500, 'delete_failed', e); }
+  try { await auditLog(env, uid, 'rgpd_delete_account', 'user', uid, done, null, request.headers.get('user-agent') || ''); } catch (_) {}
+  return json({ ok: true, deleted: true, details: done });
+}
+
 // Acceptation CGU (RGPD trace immutable)
 async function handleCguAccept(request, env) {
   const body = await request.json().catch(() => ({}));
@@ -3823,6 +3902,12 @@ async function handleAdminGetToggles(request, env) {
     const v = config['FEATURE_' + key.toUpperCase()];
     toggles[key] = v === undefined ? true : (v === 'true' || v === '1' || v === true);
   }
+  // Audit 17/09/2026 (P1) : ces deux interrupteurs affichaient « ON » par défaut sans
+  // rien piloter. kevin_invisible reflète le drapeau réellement lu (KEVIN_INVISIBLE_ADMIN,
+  // 'false' en prod) ; e2e_strict est OFF tant qu'il n'a pas été activé explicitement
+  // (il est désormais appliqué par le ConversationDO quand il est ON).
+  toggles.kevin_invisible = config.KEVIN_INVISIBLE_ADMIN === 'true';
+  toggles.e2e_strict = config.FEATURE_E2E_STRICT === 'true' || config.FEATURE_E2E_STRICT === '1';
   return json({ ok: true, toggles });
 }
 
@@ -3842,12 +3927,13 @@ export async function handleAdminSetToggle(request, env) {
     ).bind(user_id, feature, enabled ? 1 : 0, Date.now(), auth.sub).run();
   } else {
     // Global toggle
-    const key = 'FEATURE_' + feature.toUpperCase();
+    // kevin_invisible pilote le drapeau réellement lu par le code (KEVIN_INVISIBLE_ADMIN)
+    const key = feature === 'kevin_invisible' ? 'KEVIN_INVISIBLE_ADMIN' : 'FEATURE_' + feature.toUpperCase();
     await env.APEX_CHAT_DB.prepare(
       `INSERT INTO system_config (key, value, updated_at, updated_by)
        VALUES (?, ?, ?, ?)
        ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at, updated_by=excluded.updated_by`
-    ).bind(key, String(enabled), Date.now(), auth.sub).run();
+    ).bind(key, String(!!enabled), Date.now(), auth.sub).run();
   }
 
   await auditLog(env, auth.sub, 'admin_toggle_set', user_id ? 'user' : 'global', user_id || feature,
@@ -5632,6 +5718,8 @@ const _workerHandler = {
       // Users
       if (path === '/api/users/me' && method === 'GET') return await handleGetMe(request, env);
       if (path === '/api/users/me' && method === 'PATCH') return await handleUpdateMe(request, env);
+      if (path === '/api/users/me' && method === 'DELETE') return await handleDeleteMe(request, env);
+      if (path === '/api/users/me/export' && method === 'GET') return await handleExportMe(request, env);
       if (path === '/api/users/me/avatar' && method === 'POST') return await handleUploadMyAvatar(request, env);
       if (path === '/api/admin/user-toggles' && method === 'POST') return await handleAdminSetUserToggle(request, env);
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);

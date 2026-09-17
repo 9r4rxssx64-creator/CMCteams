@@ -24,6 +24,8 @@ export const STATIC_ASSETS = [
   './manifest.json',
   './cgu.html',
   './privacy.html',
+  './mentions.html',
+  './aide.html',
   './force-update.html',
 ];
 

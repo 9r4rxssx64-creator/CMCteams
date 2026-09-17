@@ -14,9 +14,9 @@ Apex Chat est une application de messagerie privée orientée confidentialité. 
 - Notifications push, paiement par QR
 
 ## Pages
-- [Accueil](https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/) : application
-- [Conditions d'utilisation](https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/cgu.html)
-- [Politique de confidentialité](https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/privacy.html)
+- [Accueil](https://apex-chat.kd-mc.com/) : application
+- [Conditions d'utilisation](https://apex-chat.kd-mc.com/cgu.html)
+- [Politique de confidentialité](https://apex-chat.kd-mc.com/privacy.html)
 
 ## Technique
 - PWA (standalone, offline-ready via Service Worker)

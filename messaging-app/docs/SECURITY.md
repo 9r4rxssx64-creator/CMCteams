@@ -1,5 +1,15 @@
 # 🔒 Apex Chat — Modèle de sécurité
 
+> ⚠️ **Audit 17/09/2026 — ce document décrivait une architecture qui n'existe pas.** Ce qui est
+> RÉELLEMENT dans le code (`lib/crypto-core.js`) : ECDH P-256 + HKDF-SHA256 + AES-GCM-256, clés
+> dérivées en PBKDF2 100 000 itérations, ratchet symétrique (forward secrecy). **Aucun
+> Kyber/PQXDH, aucun libsodium, aucun Ed25519, aucun sealed sender.** Le serveur n'est pas
+> « aveugle » : il stocke les messages tels qu'envoyés (chiffrés quand la session E2E est
+> établie, sinon en clair — l'interrupteur admin `e2e_strict` impose désormais le chiffré).
+> Les sections ci-dessous marquées « (cible, non livré) » sont conservées comme intention
+> produit, pas comme description de l'existant. Règle Kevin « vérité, rien de faux ».
+
+
 > Version 1.0 — 2026-04-27
 > Audit externe Phase 9 obligatoire avant lancement public
 
@@ -15,18 +25,17 @@
 | Tes contacts | Pseudo + photo + bio + statut "en ligne" (toggle par contact) | Vrai nom, tel, email, conversations privées |
 | **Admin Kevin (Option A)** | Pseudo + vrai nom + fiche complète au clic + conversations (clé maître invisible) | — (admin total côté client) |
 | Serveur Cloudflare | Métadonnées (qui→qui, quand, taille) | Contenu chiffré (mathématiquement illisible) |
-| Hacker / gouvernement | Métadonnées si breach serveur | Contenu (PQXDH post-quantum) |
+| Hacker / gouvernement | Métadonnées si breach serveur | Contenu des messages chiffrés de bout en bout (ECDH P-256 / AES-GCM) |
 
 ### 1.2 Communication marketing
-- ✅ "Chiffrement militaire"
-- ✅ "Serveur aveugle"
-- ✅ "Post-quantum (PQXDH)"
+- ✅ "Chiffré de bout en bout par défaut (ECDH P-256 + AES-GCM-256)"
+- ❌ JAMAIS "chiffrement militaire", "serveur aveugle", "post-quantum" — le code ne le tient pas
 - ❌ JAMAIS "inviolable" (mensonge en Option A car Kevin lit côté client)
 - ⚠ Mention discrète CGU : "modération admin pour la sécurité du service privé"
 
 ---
 
-## 2. Crypto E2E PQXDH
+## 2. Crypto E2E — cible PQXDH (NON LIVRÉ ; l'existant est ECDH P-256, voir bandeau)
 
 ### 2.1 Spec
 - **Identité** : Ed25519 (signature) + Curve25519 (ECDH)

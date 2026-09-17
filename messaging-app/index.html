@@ -30,7 +30,7 @@
 <link rel="preconnect" href="https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
 <link rel="dns-prefetch" href="https://unpkg.com">
 <link rel="icon" type="image/svg+xml" href="./icons/favicon.svg">
-<link rel="apple-touch-icon" href="./icons/icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
 <!-- v1.1.170 SEO complet : canonical, robots, Twitter Cards, og enrichi, JSON-LD -->
 <link rel="canonical" href="https://apex-chat.kd-mc.com/">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1">
@@ -977,6 +977,13 @@ function toast(message, type='info', duration=3000){
 }
 
 K.toast = toast;
+
+// Audit 17/09/2026 : version des CGU/charte. Un changement de version redemande l'accord
+// (avant : le drapeau local, une fois posé, ne redemandait jamais rien).
+K.CGU_VERSION = '2026-09-17';
+K._cguAccepted = function(){
+  try{ const a = JSON.parse(localStorage.getItem('apex_chat_cgu_v1') || 'null'); return !!(a && a.cgu === K.CGU_VERSION); }catch(_){ return false; }
+};
 
 // Audit 17/09/2026 : jamais « Failed to fetch » à l'écran (règle « langage simple »).
 K._humanError = function(e, fallback){
@@ -2929,7 +2936,9 @@ K._checkPushStatus = async function(){
 };
 
 K._openPushSettings = async function(){
-  const status = await K._checkPushStatus();
+  // Audit 17/09/2026 (P2 UX) : sans délai maximal, aucune fenêtre n'apparaissait quand le
+  // Service Worker tardait — le bouton semblait mort. 3 s au plus, puis « erreur ».
+  const status = await Promise.race([K._checkPushStatus(), new Promise(res => setTimeout(() => res('error'), 3000))]);
   const statusLabel = {
     'unsupported': '❌ Non supporté',
     'not_subscribed': '⚪ Inactif',
@@ -4037,6 +4046,36 @@ K._isBlocked = function(peerId){
   return (lg('blocked_users', []) || []).includes(peerId);
 };
 
+// Audit 17/09/2026 : le signalement existait côté serveur (POST /api/signalements) et dans
+// l'admin, mais aucun bouton ne permettait à un utilisateur de signaler quelqu'un.
+K._reportUser = function(peerId, convId, peerName){
+  K._showModal('⚠️ Signaler ' + peerName, `
+    <p style="color:var(--ax-text-2);font-size:.9em">L'équipe est prévenue tout de suite et peut suspendre le compte. ${esc(peerName)} n'est pas informé du signalement.</p>
+    <label class="label" style="margin-top:10px">Motif</label>
+    <select id="rep-reason" class="input">
+      <option value="harcelement">Harcèlement, menaces</option>
+      <option value="arnaque">Arnaque, hameçonnage</option>
+      <option value="spam">Spam</option>
+      <option value="usurpation">Usurpation d'identité</option>
+      <option value="contenu_illegal">Contenu illégal</option>
+      <option value="autre">Autre</option>
+    </select>
+    <label class="label" style="margin-top:10px">Explique en quelques mots (facultatif)</label>
+    <textarea id="rep-desc" class="input" rows="3" maxlength="1000" style="resize:vertical"></textarea>
+    <button class="btn btn-block" style="margin-top:14px" onclick="K._reportUserGo('${esc(peerId)}','${esc(convId)}')">Envoyer le signalement</button>
+  `);
+};
+K._reportUserGo = async function(peerId, convId){
+  const reason = $('#rep-reason')?.value || 'autre';
+  const description = ($('#rep-desc')?.value || '').trim().slice(0, 1000);
+  try{
+    const r = await K._api('POST', '/api/signalements', { target_user_id: peerId, conv_id: convId || null, reason, description });
+    if(!r || !r.ok) throw new Error((r && r.message) || 'Envoi impossible');
+    K._closeModal();
+    toast('✅ Signalement envoyé. Merci, on s\'en occupe.', 'ok', 4000);
+  }catch(e){ toast('Signalement non envoyé : ' + K._humanError(e), 'err', 6000); }
+};
+
 K._blockUser = function(peerId, peerName){
   if(!peerId) return;
   if(!confirm(`Bloquer ${peerName || 'cet utilisateur'} ?\n\nIl ne pourra plus t'envoyer de messages.\nTes messages ne lui parviendront plus.`)) return;
@@ -4399,7 +4438,8 @@ K._openConvActionsMenu = function(convId, ev){
       <button class="btn btn-out btn-block" onclick="K._openExportMenu('${esc(convId)}')">💾 Exporter la conversation</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openConvInfo('${esc(convId)}')">ℹ️ Infos & statistiques</button>
       <button class="btn btn-out btn-block" onclick="K._closeModal();K._openReactionStats('${esc(convId)}')">📊 Stats réactions</button>
-      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(K._convName(conv))}')">🚫 Bloquer ${esc(K._convName(conv))}</button>` : ''}
+      ${conv.peer_id ? `<button class="btn btn-out btn-block" style="margin-top:8px" onclick="K._reportUser('${esc(conv.peer_id)}','${esc(convId)}','${esc(K._convName(conv))}')">⚠️ Signaler ${esc(K._convName(conv))}</button>
+      <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._blockUser('${esc(conv.peer_id)}','${esc(K._convName(conv))}')">🚫 Bloquer ${esc(K._convName(conv))}</button>` : ''}
       <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946;margin-top:8px" onclick="K._clearConvMessages('${esc(convId)}')">🧹 Effacer les messages (garder la conv)</button>
       <button class="btn btn-out btn-block" style="color:#e63946;border-color:#e63946" onclick="K._deleteConv('${esc(convId)}')">🗑 Supprimer la conversation</button>
     </div>
@@ -7140,8 +7180,8 @@ function renderAuthStep(){
       // Demandé 1 fois (flag apex_chat_cgu_v1) : si déjà accepté, pré-coché + débloqué.
       const acceptCgu = (explicit) => {
         try{
-          if(!localStorage.getItem('apex_chat_cgu_v1')){
-            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, implicit: !explicit, ua: navigator.userAgent.slice(0, 200) };
+          if(!K._cguAccepted()){
+            const accept = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, cgu: K.CGU_VERSION, implicit: !explicit, ua: navigator.userAgent.slice(0, 200) };
             localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(accept));
             // Push backend (RGPD trace immutable) — best-effort
             const phone = (document.getElementById('auth-phone')?.value || '').replace(/[^\d+]/g, '');
@@ -7154,7 +7194,7 @@ function renderAuthStep(){
         }catch(_e){_safeCatch('silent',_e)}
       };
       const cguBox = $('#auth-cgu');
-      const cguDone = !!localStorage.getItem('apex_chat_cgu_v1');
+      const cguDone = K._cguAccepted();
       const setSendEnabled = (on) => {
         const b = $('#btn-auth-phone'); if(!b) return;
         b.disabled = !on; b.style.opacity = on ? '' : '.5'; b.style.pointerEvents = on ? '' : 'none';
@@ -7210,10 +7250,15 @@ function renderAuthStep(){
       <button class="btn btn-block" onclick="K._handleAuthOtp()" style="margin-top:16px">
         ✓ Vérifier
       </button>
-      <button class="btn btn-ghost btn-block btn-sm" onclick="K.authStep='phone';renderAuthStep()" style="margin-top:8px">
+      <button id="btn-otp-resend" class="btn btn-ghost btn-block btn-sm" onclick="K._resendOtp()" style="margin-top:8px" disabled>
+        🔁 Renvoyer le code (60 s)
+      </button>
+      <button class="btn btn-ghost btn-block btn-sm" onclick="K.authStep='phone';renderAuthStep()" style="margin-top:4px">
         ⬅ Changer de numéro
-      </button>`;
+      </button>
+      <p style="text-align:center;color:var(--ax-text-3);font-size:.75em;margin-top:10px">Le code est valable 5 minutes. Rien reçu ? <a href="./aide.html" target="_blank" style="color:var(--ax-gold)">Voir l'aide</a></p>`;
     setTimeout(()=>$('#auth-otp')?.focus(), 100);
+    K._startOtpCountdown(60);
   }
   else if(K.authStep === 'pseudo'){
     const suggested = (K.authData.name || '').split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,15);
@@ -7355,6 +7400,30 @@ K._handleAuthPhone = async function(){
     const dbg = $('#auth-debug');
     if(dbg) dbg.textContent = '❌ ' + (e.message || 'Erreur');
   }
+};
+
+// Audit 17/09/2026 (P0 onboarding) : aucun moyen de renvoyer le code SMS, aucun délai affiché.
+K._startOtpCountdown = function(secs){
+  clearInterval(K._otpCdT);
+  let left = secs;
+  const tick = () => {
+    const b = $('#btn-otp-resend'); if(!b){ clearInterval(K._otpCdT); return; }
+    if(left <= 0){ b.disabled = false; b.textContent = '🔁 Renvoyer le code'; clearInterval(K._otpCdT); return; }
+    b.disabled = true; b.textContent = '🔁 Renvoyer le code (' + left + ' s)'; left--;
+  };
+  tick(); K._otpCdT = setInterval(tick, 1000);
+};
+K._resendOtp = async function(){
+  const phone = K.authData && K.authData.phone; if(!phone) return;
+  const b = $('#btn-otp-resend'); if(b) b.disabled = true;
+  try{
+    const r = await fetch(API_BASE + '/api/auth/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, name: K.authData.name || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok) throw new Error(j.message || j.detail || ('Erreur ' + r.status));
+    if(j._dev_otp){ K.authData._dev_otp = j._dev_otp; K.authData._dev_show = true; renderAuthStep(); return; }
+    toast('📩 Nouveau code envoyé par SMS', 'ok', 3000);
+  }catch(e){ toast(K._humanError(e, 'Renvoi impossible, réessaie'), 'err', 5000); }
+  K._startOtpCountdown(60);
 };
 
 K._handleAuthOtp = async function(){
@@ -12173,6 +12242,67 @@ K._saveNewContact = function(){
 // v1.1.219 (Kevin « pas visible mais qu'on puisse me contacter si problème ») —
 // Canal d'assistance : Kevin reste INVISIBLE dans les listes de contacts
 // (KEVIN_INVISIBLE_ADMIN), mais TOUT utilisateur connecté peut le joindre en 1 tap.
+// Audit 17/09/2026 (RGPD, P0 commercial) — export serveur (art. 15/20) et suppression de compte (art. 17).
+K._downloadServerData = async function(){
+  if(!K.token || String(K.token).startsWith('local-')){ toast('Connecte-toi d\'abord pour récupérer tes données', 'warn', 5000); return; }
+  toast('📤 Préparation de ton fichier…', 'info', 2500);
+  try{
+    const r = await fetch(API_BASE + '/api/users/me/export', { headers: { 'Authorization': 'Bearer ' + K.token } });
+    if(!r.ok){ const j = await r.json().catch(() => ({})); throw new Error(j.message || ('Erreur ' + r.status)); }
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'apex-chat-mes-donnees-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+    toast('✅ Fichier téléchargé', 'ok', 3000);
+  }catch(e){ toast('Export impossible : ' + K._humanError(e), 'err', 6000); }
+};
+K._deleteMyAccount = function(){
+  if(!K.token || String(K.token).startsWith('local-')){ toast('Connecte-toi d\'abord pour supprimer ton compte', 'warn', 5000); return; }
+  K._showModal('🗑 Supprimer mon compte', `
+    <p style="color:var(--ax-text-2);font-size:.9em;line-height:1.5">Cette action est <strong>définitive</strong> : ton compte, tes contacts, tes appareils et tes médias sont effacés tout de suite ; tes messages deviennent illisibles pour tout le monde. Ton numéro pourra être réutilisé.</p>
+    <p style="color:var(--ax-text-2);font-size:.9em">Pense à <a href="#" onclick="event.preventDefault();K._downloadServerData()" style="color:var(--ax-gold)">télécharger tes données</a> avant.</p>
+    <label class="label" style="margin-top:12px">Écris <strong>SUPPRIMER</strong> pour confirmer</label>
+    <input id="del-confirm" class="input" type="text" autocomplete="off" autocapitalize="characters" placeholder="SUPPRIMER">
+    <button class="btn btn-err btn-block" style="margin-top:14px" onclick="K._deleteMyAccountGo()">🗑 Supprimer définitivement</button>
+    <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px" onclick="K._closeModal()">Annuler</button>
+  `);
+};
+K._deleteMyAccountGo = async function(){
+  const v = ($('#del-confirm')?.value || '').trim().toUpperCase();
+  if(v !== 'SUPPRIMER'){ toast('Écris SUPPRIMER en toutes lettres pour confirmer', 'warn', 4000); return; }
+  try{
+    const r = await fetch(API_BASE + '/api/users/me', { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + K.token }, body: JSON.stringify({ confirm: 'SUPPRIMER' }) });
+    const j = await r.json().catch(() => ({}));
+    if(!r.ok || !j.ok) throw new Error(j.message || ('Erreur ' + r.status));
+    K._closeModal();
+    toast('✅ Compte supprimé. À bientôt peut-être.', 'ok', 4000);
+    // efface tout ce qui est local (dont les clés de chiffrement) sans confirmation supplémentaire
+    try{ for(const k of Object.keys(localStorage)){ if(k.startsWith(PERSIST_PREFIX) || k.startsWith('draft_') || /^(crypto_|ratchet_|user_pin|user_unlock|apex_chat_)/.test(k)) localStorage.removeItem(k); } }catch(_){}
+    try{ if(window.indexedDB && indexedDB.databases){ const dbs = await indexedDB.databases(); for(const d of dbs){ if(d && d.name) indexedDB.deleteDatabase(d.name); } } }catch(_){}
+    setTimeout(() => location.replace(location.pathname), 1200);
+  }catch(e){ toast('Suppression impossible : ' + K._humanError(e), 'err', 7000); }
+};
+
+// Audit 17/09/2026 (PWA) : sur iPhone, Safari n'a pas de bouton « Installer » — on explique
+// les 3 gestes une fois, seulement hors app installée, et on n'insiste jamais (✕ mémorisé).
+K._maybeShowInstallHint = function(){
+  const ua = navigator.userAgent || '';
+  const iOS = /iPhone|iPad|iPod/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
+  let standalone = false; try{ standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }catch(_){}
+  if(!iOS || standalone || !K.user) return;
+  try{ if(localStorage.getItem('apex_chat_install_hint')) return; }catch(_){}
+  if(document.getElementById('install-hint')) return;
+  const d = document.createElement('div');
+  d.id = 'install-hint';
+  d.setAttribute('role', 'note');
+  d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:calc(var(--ax-safe-bottom, 0px) + 78px);z-index:180;background:var(--ax-bg-2);border:1px solid var(--ax-gold);border-radius:14px;padding:12px 44px 12px 14px;font-size:.85em;line-height:1.45;box-shadow:var(--ax-shadow)';
+  d.innerHTML = '<strong style="color:var(--ax-gold)">📱 Mets Apex Chat sur ton écran d\'accueil</strong><br>Touche <strong>Partager</strong> (le carré avec la flèche), puis <strong>« Sur l\'écran d\'accueil »</strong>, puis <strong>Ajouter</strong>. Tu auras les notifications et l\'app s\'ouvrira comme une vraie app.'
+    + '<button aria-label="Fermer" style="position:absolute;top:4px;right:4px;width:40px;height:40px;background:none;border:none;color:var(--ax-text-2);font-size:1.2em" onclick="try{localStorage.setItem(\'apex_chat_install_hint\',\'1\')}catch(_){};this.parentNode.remove()">✕</button>';
+  document.body.appendChild(d);
+};
+
 K._contactSupport = async function(){
   if(!K.token || String(K.token).startsWith('local-')){
     toast('Connecte-toi d\'abord (ouvre ton lien d\'invitation) pour joindre l\'assistance', 'warn', 6000);
@@ -12501,6 +12631,21 @@ function renderSettings(app){
       </div>
       <div class="card-row" onclick="window.open('./privacy.html')">
         <span>🛡</span><span style="flex:1">Charte privée</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./mentions.html')">
+        <span>ℹ️</span><span style="flex:1">Mentions légales</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="window.open('./aide.html')">
+        <span>❓</span><span style="flex:1">Aide</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._contactSupport()">
+        <span>🆘</span><span style="flex:1">Contacter l'assistance</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._downloadServerData()">
+        <span>📤</span><span style="flex:1">Mes données (tout ce que le serveur sait de moi)</span><span>›</span>
+      </div>
+      <div class="card-row" onclick="K._deleteMyAccount()" style="color:#e63946">
+        <span>🗑</span><span style="flex:1">Supprimer mon compte</span><span>›</span>
       </div>
     </div>
     <button class="btn btn-err btn-block" onclick="K.logout()">🚪 Se déconnecter</button>
@@ -15022,7 +15167,7 @@ K._showOnboarding = function(opts){
   if(!u) return;
   // v1.1.219 (Kevin « fiche info complète + accepter CGU ») — style commun des champs
   const fStyle = "width:100%;background:var(--ax-bg-2);border:1px solid var(--ax-border);border-radius:10px;padding:10px;color:var(--ax-text);font-size:16px";
-  const cguDone = (function(){ try{ return !!localStorage.getItem('apex_chat_cgu_v1'); }catch(_){ return false; } })();
+  const cguDone = K._cguAccepted();
   const currentName = u.real_name || u.display_name || '';
   const currentPseudo = (u.pseudo && typeof K._isAutoPseudo === 'function' && !K._isAutoPseudo(u.pseudo)) ? u.pseudo : '';
   const hasName = !K._profileIncomplete(u);
@@ -15120,8 +15265,8 @@ K._submitOnboarding = async function(inviterUserId){
   // v1.1.219 — enregistre l'acceptation CGU (couvre les invités) : local + serveur.
   if(cguBox){
     try{
-      if(!localStorage.getItem('apex_chat_cgu_v1')){
-        const a = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, via: 'onboarding' };
+      if(!K._cguAccepted()){
+        const a = { accepted_at: Date.now(), version: __APEX_CHAT_VERSION__, cgu: K.CGU_VERSION, via: 'onboarding' };
         localStorage.setItem('apex_chat_cgu_v1', JSON.stringify(a));
         fetch((window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.9r4rxssx64.workers.dev') + '/api/cgu/accept', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -16254,6 +16399,10 @@ async function _boot(){
   /* v1.1.92 : Deep-links pour PWA shortcuts + conv direct */
   setTimeout(() => {
     if(!K.user) return; /* attend que user soit loggé */
+    /* Lien des CGU « supprimer mon compte » (audit 17/09 : pointait dans le vide) */
+    if(params.get('action') === 'delete-account'){ K.sv && K.sv('settings'); setTimeout(() => K._deleteMyAccount && K._deleteMyAccount(), 300); history.replaceState(null, '', location.pathname); }
+    /* Bandeau « Installer » iOS Safari (pas de beforeinstallprompt sur iPhone) */
+    try{ K._maybeShowInstallHint && K._maybeShowInstallHint(); }catch(_){}
     /* Hash shortcuts : #new / #contacts / #calls / #invite */
     const hash = location.hash.replace('#', '');
     if(hash === 'new'){ K._showNewMenu && K._showNewMenu(); history.replaceState(null, '', location.pathname); }
@@ -16317,7 +16466,7 @@ async function _boot(){
   if(magicToken){
     try{
       // CGU implicite accepté (cliqué le lien admin)
-      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:'v1.0.7',implicit:true,via:'magic_link'})); }catch(_e){_safeCatch('silent',_e)}
+      try{ localStorage.setItem('apex_chat_cgu_v1', JSON.stringify({accepted_at:Date.now(),version:__APEX_CHAT_VERSION__,cgu:K.CGU_VERSION,implicit:true,via:'magic_link'})); }catch(_e){_safeCatch('silent',_e)}
       const apiUrl = (window.__APEX_CHAT_API_URL__ || 'https://apex-chat-api.9r4rxssx64.workers.dev') + '/api/auth/magic-login';
       const r = await fetch(apiUrl, {
         method: 'POST',

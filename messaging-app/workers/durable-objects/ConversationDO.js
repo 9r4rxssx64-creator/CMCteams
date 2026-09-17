@@ -39,6 +39,15 @@ export class ConversationDO {
     });
   }
 
+  /** Politique e2e_strict (system_config.FEATURE_E2E_STRICT), rechargée au plus toutes les 60 s. */
+  async e2eStrict() {
+    try {
+      if (!this._configTs || Date.now() - this._configTs > 60000) { this.config = await this.loadConfig(); this._configTs = Date.now(); }
+      const v = this.config && this.config.FEATURE_E2E_STRICT;
+      return v === 'true' || v === '1';
+    } catch (_) { return false; }
+  }
+
   async loadConfig() {
     try {
       const stmt = await this.env.APEX_CHAT_DB.prepare('SELECT key, value FROM system_config').all();
@@ -335,6 +344,11 @@ export class ConversationDO {
         // Nouveau message chiffré (ciphertext)
         if (!msg.ciphertext) return ws.send(JSON.stringify({ type: 'error', message: 'ciphertext required' }));
         if (msg.ciphertext.length > 100000) return ws.send(JSON.stringify({ type: 'error', message: 'ciphertext too large (max 100KB)' }));
+        // Audit 17/09/2026 (P1) : l'interrupteur admin « e2e_strict » n'était lu nulle part.
+        // Quand il est ON, un message non chiffré de bout en bout (préfixe E2E1:/E2E2:) est refusé.
+        if (await this.e2eStrict() && !/^E2E\d+:/.test(String(msg.ciphertext))) {
+          return ws.send(JSON.stringify({ type: 'error', code: 'e2e_required', message: 'Chiffrement de bout en bout obligatoire : la clé de ton contact doit être établie avant d\'envoyer' }));
+        }
 
         // P0 FIX (audit) : utiliser blockConcurrencyWhile pour seq atomic
         await this.state.blockConcurrencyWhile(async () => {
