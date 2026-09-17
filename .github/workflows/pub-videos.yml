@@ -1,0 +1,95 @@
+name: Pub — vidéos courtes sans visage
+
+# Déclenché À LA MAIN (bouton, ou actions_run_trigger par Claude Code), jamais
+# par un cron GitHub (règle absolue du dépôt).
+#
+# Ce que ça fait (tools/pub/video.mjs) : chaque script public de
+# tools/pub/scripts.json → cartes texte 1080×1920 + voix du domaine
+# (lingua.kd-mc.com/__lingua/tts) → MP4 par ffmpeg → publié comme fichier
+# de la release « pub-videos » (adresse publique stable, rien dans le dépôt :
+#   https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/<id>.mp4 )
+# C'est cette adresse que Metricool va chercher pour programmer la publication.
+# Aucun secret nécessaire : la voix est publique et mise en cache, ffmpeg est
+# sur le runner.
+
+on:
+  workflow_dispatch:
+    inputs:
+      videos:
+        description: "all, une niche (avis, bureau, etudiant, immo, kit, club) ou des ids séparés par des virgules (avis-01,kit-02)"
+        type: string
+        default: "all"
+      publier:
+        description: "Publier les MP4 sur la release « pub-videos » (adresse publique). false = rendu seul, à télécharger dans l'artifact"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pub-videos
+  cancel-in-progress: false
+
+jobs:
+  rendu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Garde (tests hors ligne)
+        run: node --test tests/pub-videos.test.mjs
+
+      - name: Outils (ffmpeg + police)
+        shell: bash -eo pipefail {0}
+        run: |
+          ffmpeg -version | head -1
+          test -f /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-dejavu-core; }
+
+      - name: Rendu
+        env:
+          VIDEOS: ${{ inputs.videos }}
+        shell: bash -eo pipefail {0}
+        run: |
+          node tools/pub/video.mjs 2>&1 | tee /tmp/pub.log
+          grep -qE "^PUB RENDUE" /tmp/pub.log || { echo "ÉCHEC : « PUB RENDUE » absent du journal (cause exacte au-dessus)"; exit 1; }
+          ls -la tools/pub/out/*.mp4
+          # Preuve mesurée : chaque MP4 a une piste vidéo 1080x1920 ET une piste audio
+          for f in tools/pub/out/*.mp4; do
+            ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 "$f" | grep -q "^1080,1920$" || { echo "ÉCHEC : $f n'est pas en 1080x1920"; exit 1; }
+            ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$f" | grep -q . || { echo "ÉCHEC : $f n'a pas de piste audio"; exit 1; }
+          done
+          echo "Mesuré : $(ls tools/pub/out/*.mp4 | wc -l) MP4 en 1080x1920 avec audio"
+
+      - name: Artifact (pour regarder les vidéos avant de publier)
+        uses: actions/upload-artifact@v4
+        with:
+          name: pub-videos
+          path: |
+            tools/pub/out/*.mp4
+            tools/pub/out/*.json
+          retention-days: 14
+
+      - name: Publication (release « pub-videos », adresse publique)
+        if: ${{ inputs.publier == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pub-videos
+          name: "Vidéos de pub sans visage (kit.kd-mc.com)"
+          body: "Fichiers publics servis à Metricool. Rendus par pub-videos.yml depuis tools/pub/scripts.json. Aucun contenu payant."
+          prerelease: true
+          make_latest: "false"
+          files: |
+            tools/pub/out/*.mp4
+            tools/pub/out/index.json
+
+      - name: Adresses publiques
+        if: ${{ inputs.publier == 'true' }}
+        shell: bash -eo pipefail {0}
+        run: |
+          for f in tools/pub/out/*.mp4; do echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/pub-videos/$(basename "$f")"; done

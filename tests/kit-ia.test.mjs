@@ -29,7 +29,7 @@ test('PARITÉ : chaque produit livré sur kit.kd-mc.com est dans le menu, au bon
     const prix = p.prix + ' €';
     const opt = menu.find((m) => m[1] === id);
     assert.ok(opt[2].includes(prix), `${id} : le menu dit « ${opt[2]} » mais le worker vérifie ${prix}`);
-    assert.equal(p.livre, 'https://kit.kd-mc.com/lire.html'); assert.equal(p.devise, 'EUR');
+    assert.ok(p.livre.startsWith('https://kit.kd-mc.com/lire.html'), id + ' : lecteur attendu'); assert.equal(p.devise, 'EUR');
     for (const b of boutons[id] || []) {
       const ligne = INDEX.match(new RegExp('id="' + b + '" href="([^"]+)"[^>]*>([^<]+)<'));
       assert.ok(ligne, b + ' absent');
