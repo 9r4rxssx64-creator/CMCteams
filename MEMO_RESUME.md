@@ -9376,3 +9376,42 @@ Vérifié : `node --check` propre, **chaque mouvement et chaque émotion demand�
 leur règle CSS** (contrôle explicite JS⇄CSS — le piège « déclaré mais pas branché »), aucune
 fonction orpheline (12 contrôlées), 5/5 suites arbre vertes, `verify-assets` de Lingua vert.
 arbre v3.24 → v3.25, javis sw v1.1 → v1.2.
+
+---
+
+## 2026-09-17 — Paquet de reprise + choix d'IA (branche `claude/work-summary-ai-alternatives-cj6s29`)
+
+**Demande de Kevin** : un document unique qui reprend TOUT le travail depuis le début (tous les
+dépôts, adresses, workers, secrets, Firebase, Cloudflare, GitHub, GitLab, branches, sessions,
+erreurs), comment le récupérer sans rien perdre pour basculer vers une autre IA, et quelle IA
+choisir (meilleur rapport qualité-prix, gratuites incluses).
+
+**Livré :**
+- **`TRANSFERT-COMPLET.md`** (36 Ko, 16 sections) — la carte de tout, chiffres **mesurés** le
+  17.09.2026 : 40 sessions, 219 branches, 43 pages, 30 adresses, 28 workers, 155 workflows,
+  209 tests / 224 commandes npm, 105 noms de secrets (0 valeur), 2 bases Firebase, 2 dépôts.
+  Contient le comparatif d'IA (performances + prix relevés le jour même, avec statut de
+  confiance ✅ officiel / 🟡 relevé / 🔴 non vérifié) et la procédure de bascule en 4 étapes.
+- **`tools/transfert/export.mjs`** + `npm run transfert` — fabrique le paquet de reprise
+  (18 documents + INDEX d'ordre de lecture + inventaire JSON + liste des branches + mémoire
+  compacte) et **une archive**. Garde intégrée : le paquet est refusé si une **valeur** de
+  secret s'y trouve (6 motifs : Anthropic, OpenAI, GitHub, GitLab, Brevo, clé privée).
+  **Exécuté en vrai** : 18 documents / 3 123 Ko, archive 1 292 Ko, 0 fuite.
+- `npm run transfert:liste` — dit ce qui serait copié, sans rien écrire.
+
+**LA DÉCOUVERTE de la session (mesurée, pas supposée) :**
+`CLAUDE.md` (574 771 o) + `.claude/rules/` (1 664 o) = **576 435 octets ≈ 164 696 tokens
+rechargés à CHAQUE message**, avant toute lecture de code. Un fichier de règles sain fait
+2 000 à 10 000 tokens → le nôtre est **16 à 80× trop gros**. C'est la cause n°1 de la
+consommation dont Kevin se plaint, et elle ne vient ni du modèle ni de lui : le fichier mêle
+**les règles** (à garder chargées) et **leur histoire** (qui pourrait être lue à la demande,
+comme `LESSONS.md` l'est déjà).
+**Correctif proposé, pas encore appliqué** (touche le fichier le plus sensible du dépôt, et
+Kevin ne l'a pas demandé) : scinder en `CLAUDE.md` (règles, ~10 000 tokens) +
+`CLAUDE-HISTOIRE.md` (le reste), **−93 % de tokens d'entrée, 0 règle perdue**, avec un test
+qui prouve qu'aucune règle n'a disparu. ⏳ **en attente du feu vert de Kevin.**
+
+**Honnêteté** : l'historique verbatim des conversations n'est pas exportable (il vit chez
+Anthropic) ; ce clone est superficiel (297 commits visibles, `git fetch --unshallow` pour
+tout) ; deux pages de prix officielles (`docs.z.ai`, `api-docs.deepseek.com`) sont bloquées
+par le proxy de l'agent → prix croisés par recherche, statut 🟡 indiqué ligne par ligne.

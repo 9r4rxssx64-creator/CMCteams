@@ -2624,3 +2624,15 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 | `shops/kit-ia/pour/` | 47 pages « l'IA pour un plombier / coiffeur / … » + index, en ligne sur kit.kd-mc.com/pour/ | [voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/kit-ia/pour) | [ouvrir](https://kit.kd-mc.com/pour/index.html) |
 | `tests/kit-metiers.test.mjs` | 5 preuves : pages == source, CSP, 0 contenu payant, liens, sitemap | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-metiers.test.mjs) | — |
 | Routine « Club IA — contenu de la semaine » | Session Claude automatique chaque lundi 07:00 UTC : nouvelle consigne en base + e-mail aux abonnés + point à Kevin | [Routines](https://claude.ai/code) | — |
+
+---
+
+## 2026-09-17 — Paquet de reprise & comparatif d'IA
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `TRANSFERT-COMPLET.md` | **Tout notre travail en un document** : dépôts, 30 adresses, 28 workers, Firebase, 105 noms de secrets, 40 sessions, 219 branches, les règles, ce qui reste à faire, le comparatif d'IA et la bascule en 4 étapes | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) · [✏️ Modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) · [⬇️ Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) |
+| `tools/transfert/export.mjs` | L'outil `npm run transfert` : fabrique le paquet de reprise (18 documents + INDEX + inventaire + archive) avec garde anti-fuite de secrets | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/work-summary-ai-alternatives-cj6s29/tools/transfert/export.mjs) |
+
+**Commandes ajoutées** : `npm run transfert` (fabrique le paquet + l'archive) ·
+`npm run transfert:liste` (dit seulement ce qui serait copié).

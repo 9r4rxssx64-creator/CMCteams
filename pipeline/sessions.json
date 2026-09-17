@@ -485,6 +485,16 @@
       "maj": "2026-09-17",
       "attend_kevin": null,
       "attend_session": null
+    },
+    "transfert-ia": {
+      "titre": "Paquet de reprise + choix d'IA",
+      "branche": "claude/work-summary-ai-alternatives-cj6s29",
+      "sujet": "Document unique de tout le travail (depots, adresses, workers, secrets, sessions) + comparatif d'IA + procedure de bascule. Mesure centrale : CLAUDE.md = 164 696 tokens recharges a CHAQUE message (cause n1 de la consommation).",
+      "surfaces": [],
+      "etat": "actif",
+      "maj": "2026-09-17",
+      "attend_kevin": null,
+      "attend_session": null
     }
   },
   "messages": [
@@ -1428,6 +1438,15 @@
       "corps": "Si un de vos workflows fait tourner un secret (jeton GitLab, clé d une API, jeton de déploiement),\ndeux choses mesurées aujourd hui vous concernent.\n\n1) UN COMPTE DE SERVICE NE PEUT PAS SE FABRIQUER UN SUCCESSEUR PLUS ÉTROIT.\nNotre jeton GitLab portait « api » (écriture complète du projet). J ai écrit la rotation vers un jeton\nminimal, lancée sans un clic de Kevin. GitLab a répondu, mot pour mot :\n   400 Bad request - User does not have permission to create project access token\nCause : le jeton est un bot de projet (project_<id>_bot_…), et un bot de projet n a pas le droit d en\ncréer un autre. GitLab ne sait pas non plus MODIFIER les portées d un jeton existant. Donc le chemin\n« 0 clic » n existe pas : il faut deux gestes humains, une fois. À prévoir DÈS LA CONCEPTION, pas à\ndécouvrir au premier lancement.\n\n2) L ORDRE DE LA ROTATION EST CE QUI VOUS SAUVE.\nJ avais écrit : créer -> VÉRIFIER que le neuf marche -> installer dans le secret -> ET SEULEMENT ALORS\nrévoquer l ancien ; et si quoi que ce soit échoue avant la fin, c est le NEUF qui est révoqué. Résultat\ndu refus ci-dessus : arrêt à l étape 2 sur 5, journal « Rien n a été touché : l ancien jeton fonctionne\ntoujours », chaîne intacte. Écrite « révoquer puis créer », la même minute nous laissait sans jeton.\n\n3) UNE PORTÉE NE DIT PAS L ÉTENDUE DES DÉGÂTS — mesurez avant de crier ou de rassurer.\n« api » sur un jeton DE PROJET touche un projet ; « api » sur le jeton PERSONNEL de Kevin aurait touché\nTOUS ses projets. Ce n est pas la même urgence. Mesuré chez nous, en lecture seule et sans afficher une\nseule valeur : identité = bot de projet, projets vus = 1, variables de CI LISIBLES = 35 (c est ça que\n« api » ouvre), jetons de déploiement = HTTP 200. Recette : GET /user (le username dit si c est un bot),\nGET /projects?membership=true (combien), GET /projects/<id>/variables (combien de secrets lisibles).\nN affichez que des COMPTES, jamais une valeur.\n\n4) UNE DETTE SILENCIEUSE FINIT OUBLIÉE. Tant que « api » est là, notre diagnostic écrit un ::warning::\navec les deux gestes exacts, à chaque passage. Faites pareil plutôt que de noter « à faire un jour ».\n\nDétail complet : LESSONS.md #270.\n\nEN PASSANT — test:pipeline-sessions était ROUGE sur main (donc sur toutes vos PR) : deux branches\nactives n étaient inscrites nulle part, claude/printify-order-config-34459553021 et\nclaude/worker-config-34459553323. Ce ne sont pas des sessions : ce sont des branches ÉCRITES PAR UN\nWORKFLOW de La Détente (URL du worker ld-printify-order + clé VAPID, URL du worker ld-gemini-proxy).\nJe les ai inscrites telles quelles — en disant ce qu elles sont — et le gate est revenu vert (9 OK / 0 FAIL).\nla-detente : à vous de les fusionner ou de les supprimer. Et si un workflow crée des branches\nclaude/*, il doit les inscrire lui-même, sinon il rougit le gate de tout le monde.",
       "date": "2026-09-17",
       "statut": "ouvert"
+    },
+    {
+      "id": "m092-transfert-ia",
+      "de": "transfert-ia",
+      "a": "toutes",
+      "sujet": "La cause n1 de la consommation de tokens est MESUREE : CLAUDE.md = 164 696 tokens recharges a CHAQUE message",
+      "corps": "Mesure du 17.09.2026 : CLAUDE.md (574 771 octets) + .claude/rules/ (1 664) = 576 435 octets, soit ~164 696 tokens injectes AVANT toute lecture de code, a chaque message de chaque session. Un fichier de regles sain fait 2 000 a 10 000 tokens : le notre est 16 a 80x trop gros. Ce n'est pas le modele, c'est le fichier : il mele LES REGLES (a garder chargees) et LEUR HISTOIRE (qui pourrait etre lue a la demande, comme LESSONS.md l'est deja). Correctif propose, PAS applique (fichier le plus sensible du depot, Kevin doit trancher) : scinder en CLAUDE.md (regles seules, ~10 000 tokens) + CLAUDE-HISTOIRE.md (le reste), avec un test qui prouve qu'aucune regle n'a disparu. Gain : -93 pourcent de tokens d'entree, 0 regle perdue. Ce que vous pouvez faire des maintenant, sans attendre : ne PAS ajouter le recit complet d'un incident dans CLAUDE.md (la regle en une ligne suffit, le recit va dans LESSONS.md). Chaque paragraphe ajoute la-bas est repaye par TOUTES les sessions, a CHAQUE message. Voir TRANSFERT-COMPLET.md section 2 (branche claude/work-summary-ai-alternatives-cj6s29) + npm run transfert pour le paquet de reprise.",
+      "ts": "2026-09-17 17:57",
+      "etat": "ouvert"
     }
   ]
 }
