@@ -1,5 +1,38 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-18 01:40 — Facebook : les aperçus sont EN LIGNE et le 1ᵉʳ post-lien est programmé (mesuré)
+
+**Ce qui restait à prouver** ce matin : les 6 images d'aperçu existaient dans le dépôt, mais
+personne n'avait vérifié qu'elles étaient **servies** par le domaine. Ma propre règle interdisait
+de programmer quoi que ce soit avant.
+
+**Mesuré en vrai** (runner CI, mon accès réseau est bloqué depuis l'agent) :
+- run 35266616985 → `Aperçu servi : https://kit.kd-mc.com/og/kit.png (HTTP 200)` ;
+- run 35267028026 → **EN LIGNE 12/12** : les 6 pages ET les 6 images répondent 200, et chaque image
+  est bien un **PNG 1200×630** (`og/kit.png`, `og/lire.png`, `og/bureau.png`, `og/etudiant.png`,
+  `og/avis.png`, `og/immo.png`).
+
+**Post-lien Facebook créé** : Metricool `377824824`, **lundi 29.09 à 10 h** (Europe/Paris),
+Page seule, sans vidéo, texte + `https://kit.kd-mc.com/` → c'est le format qui rend le lien
+cliquable. Enregistré en mémoire (`programmation.json` → `liens`), visible dans la tuile
+« 🔗 Pub — posts avec lien » du tableau de bord Commerce.
+
+**Deux défauts corrigés au passage (trouvés en relisant mon propre travail) :**
+1. L'adresse d'un aperçu (`og/<slug>.png`) était **recollée à la main à trois endroits** : les
+   balises de la page, le post-lien, le contrôle. Trois façons de diverger en silence (leçon #142)
+   → une seule fonction `urlApercu()`, et une garde qui **refuse** toute adresse recollée ailleurs.
+2. Le contrôle ne regardait **qu'une image** et **qu'un code HTTP**. Or une page d'erreur peut être
+   servie en 200 : le contrôle vérifie maintenant **les 6 pages + les 6 images**, et que chaque
+   image est vraiment un PNG aux bonnes dimensions.
+
+**Prouvé discriminant par sabotage** : adresse recollée à la main → 1 échec · faux PNG → 1 échec ·
+mauvaises dimensions → 1 échec · 404 → 1 échec · réseau coupé → 2 échecs. Ma première version de la
+garde « pas d'adresse recollée » **ne savait pas dire non** (le sabotage passait au vert) — corrigée
+avant d'être gardée : une garde qui ne refuse rien ne garde rien.
+
+**État Facebook, mesuré** (`getScheduledPosts`, 18.09 → 15.11) : **17 posts programmés, tous avec
+Facebook** — 16 Reels vidéo (Facebook + Instagram + TikTok + YouTube) et 1 post-lien (Facebook seul).
+
 ## 2026-09-17 21:00 — « Fais Facebook maintenant que tu as les accès » : l'aperçu des liens, et le seul format qui amène du trafic
 
 **Mesuré d'abord, avant de coder** : `getBrandSettings` → Facebook connecté (Page `1373991005790862`),
