@@ -100,6 +100,28 @@ jobs:
           fi
           python3 -c "import json;d=json.load(open('/tmp/jeton.json'));print('nom           :',d.get('name'));print('portees       :',', '.join(d.get('scopes') or []) or '(aucune)');print('actif         :',d.get('active'),'| revoque :',d.get('revoked'));print('cree le       :',(d.get('created_at') or '')[:10],'| expire le :',d.get('expires_at') or '(jamais - a eviter)');print('derniere util :',(d.get('last_used_at') or '')[:10] or '(jamais)')"
 
+          # JUSQU'OU CE JETON VA-T-IL ? Une portee ne dit pas l'etendue des degats :
+          # « api » sur un jeton de projet touche UN projet, « api » sur le jeton
+          # personnel de Kevin touche TOUS ses projets. On mesure, on ne suppose pas.
+          # Tout est en LECTURE, et on n'affiche que des comptes — jamais une valeur.
+          echo ""
+          echo "--- jusqu'ou il va (lecture seule, aucune valeur affichee) ---"
+          API="https://gitlab.com/api/v4"; PROJ=85753352
+          curl -sS -o /tmp/qui.json -H "PRIVATE-TOKEN: ${JETON}" "${API}/user" || true
+          python3 -c "import json;d=json.load(open('/tmp/qui.json'));u=d.get('username') or '?';print('identite      :',u,'->','JETON DE PROJET (un seul projet)' if u.startswith('project_') else 'COMPTE PERSONNEL DE KEVIN (tous ses projets)')" 2>/dev/null || echo "identite      : illisible"
+          NBP=$(curl -sS -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects?membership=true&simple=true&per_page=100" 2>/dev/null | python3 -c "import sys,json;d=json.load(sys.stdin);print(len(d) if isinstance(d,list) else 0)" 2>/dev/null || echo 0)
+          echo "projets vus   : ${NBP}"
+          CV=$(curl -sS -o /tmp/vars.json -w '%{http_code}' -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects/${PROJ}/variables?per_page=100")
+          NBV=$(python3 -c "import json;d=json.load(open('/tmp/vars.json'));print(len(d) if isinstance(d,list) else 0)" 2>/dev/null || echo 0)
+          rm -f /tmp/vars.json /tmp/qui.json
+          if [ "${CV}" = "200" ]; then
+            echo "secrets de CI : LISIBLES (${NBV}) <- c'est ce que « api » ouvre, et c'est ce qu'on veut fermer"
+          else
+            echo "secrets de CI : fermes (HTTP ${CV}) <- bien"
+          fi
+          CD=$(curl -sS -o /dev/null -w '%{http_code}' -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects/${PROJ}/deploy_tokens?per_page=1")
+          echo "jetons de deploiement : HTTP ${CD} (200 = je peux en fabriquer un, limite au push)"
+
       # RESSERRER LES AUTORISATIONS — mesuré le 17.09 : le jeton portait « api »,
       # c'est-à-dire la clé de toute la boîte (réglages du projet, membres, variables
       # de CI, suppression de branches…). Or il n'a besoin que de DEUX choses :

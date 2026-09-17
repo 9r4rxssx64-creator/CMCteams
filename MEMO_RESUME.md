@@ -1396,6 +1396,25 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — GitLab REFUSE de fabriquer un jeton plus étroit : « User does not have permission »
+
+**Mesuré** (run 35244243351, étape 2/5) : la rotation s'arrête net sur
+`400 Bad request - User does not have permission to create project access token`. Le workflow
+a fait exactement ce qu'il devait faire — **il n'a rien touché**, l'ancien jeton fonctionne
+toujours, et il le dit dans le journal (« Rien n'a été touché »). C'est la garantie de l'ordre
+créer → vérifier → installer → révoquer : un échec au début ne coûte rien.
+
+**Ce que ça veut dire** : sur ce compte GitLab, la fabrication d'un jeton de projet par l'API
+est fermée (elle l'est sur les espaces de noms gratuits une fois la période d'essai finie).
+Et GitLab ne sait **pas** modifier les portées d'un jeton existant — donc le chemin « 0 clic »
+n'existe pas ici. Avant de demander quoi que ce soit à Kevin, je mesure **jusqu'où le jeton
+va vraiment** : un jeton **de projet** qui porte `api` ouvre UN projet ; le jeton **personnel**
+de Kevin qui porte `api` ouvre **tous ses projets**. Ce n'est pas le même problème, et la
+réponse n'est pas la même. Le diagnostic dit maintenant : qui est le jeton (bot de projet ou
+compte de Kevin), combien de projets il voit, si les **variables de CI** (donc les autres
+secrets) lui sont lisibles, et si un **jeton de déploiement** — limité au push, lui — peut être
+fabriqué à la place. Tout en lecture, et **aucune valeur affichée**, seulement des comptes.
+
 ## 2026-09-17 — Le jeton GitLab portait « api » (la clé de toute la boîte) — resserré
 
 **Mesuré** (run 35243309740), et c'était pire que prévu. Le jeton « Kdmc project » portait :
