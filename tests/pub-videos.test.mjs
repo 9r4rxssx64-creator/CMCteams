@@ -92,5 +92,8 @@ test('workflow : bouton seulement, pipefail, garde lancée, preuve ffprobe 1080x
   assert.match(WF, /softprops\/action-gh-release@v\d/); assert.ok(!/@(main|master)\b/.test(WF), 'action tierce non épinglée');
   assert.match(WF, /default: "false"/);
   assert.match(WF, /tag_name: pub-videos/);
-  assert.ok(!/secrets\./.test(WF), 'aucun secret nécessaire au rendu');
+  assert.ok(!/secrets\.(?!ANTHROPIC_API_KEY\b)/.test(WF), 'le seul secret est la clé Anthropic (écriture des scripts) — le rendu n\'en a aucun');
+  assert.match(WF, /nouveaux\.mjs/); assert.match(WF, /programmation\.mjs --prepare/); assert.match(WF, /programmation\.mjs --ajoute/);
+  assert.match(WF, /tableau-de-bord\.mjs/, 'la mémoire régénère le tableau de bord (sinon la garde commerce-data rougit)');
+  assert.match(WF, /\^NOUVEAUX SCRIPTS/); assert.match(WF, /gh pr create/); assert.ok(!/git push[^\n]*main/.test(WF), 'jamais de push sur main');
 });

@@ -170,7 +170,7 @@ export async function rendVideo(v, { marque, dossier, log }) {
   if (!ffmpeg(argsConcat(liste, final), log)) return null;
   const duree = cartes.reduce((s, c) => s + c.duree, 0);
   const muettes = cartes.filter((c) => c.muet).length;
-  const fiche = { id: v.id, produit: v.produit, page: v.page, legende: v.legende, hashtags: v.hashtags, duree: Math.round(duree * 10) / 10, voix: muettes ? (muettes === cartes.length ? 'muet' : 'partielle') : 'domaine', cartes: cartes.length, fichier: v.id + '.mp4', rendu: new Date().toISOString() };
+  const fiche = { id: v.id, produit: v.produit, page: v.page, titre: v.lignes[0], legende: v.legende, hashtags: v.hashtags, duree: Math.round(duree * 10) / 10, voix: muettes ? (muettes === cartes.length ? 'muet' : 'partielle') : 'domaine', cartes: cartes.length, fichier: v.id + '.mp4', rendu: new Date().toISOString() };
   writeFileSync(join(dossier, v.id + '.json'), JSON.stringify(fiche, null, 2) + '\n');
   return fiche;
 }

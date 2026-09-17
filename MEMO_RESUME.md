@@ -1,5 +1,23 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 18:30 — « Tu as tout prévu ? création auto régulière, mise en ligne, pub, tout automatique » → la chaîne pub est maintenant AUTONOME
+
+**Réponse honnête donnée à Kevin** : avant ce soir, seule la consigne du Club (lundi 07:00) tournait seule. Les scripts de pub, le rendu et la programmation Metricool étaient faits à la main par moi. Plus maintenant.
+
+**Ce qui tourne seul chaque lundi 08:00 UTC** (routine « Pub — vidéos de la semaine », session neuve, aucun secret dans la session) :
+1. la routine déclenche `pub-videos.yml` sur `main` avec `nouveaux="immo:1,club:1"`, `publier=true` ;
+2. **`tools/pub/nouveaux.mjs`** : l'API Anthropic écrit UN script neuf par niche (cible réelle du produit, angles déjà utilisés donnés au modèle), passé par la **même porte de vérité** que les scripts à la main (`valideScript` : jargon, promesse chiffrée, émoji, page étrangère, 1ʳᵉ ligne déjà utilisée) — 3 essais avec les raisons renvoyées au modèle, sinon la niche est **sautée** (rien plutôt qu'un faux) ; ajout à `scripts.json` (id suivant `niche-NN`, thème alterné) ;
+3. rendu des seuls nouveaux ids (ffmpeg + voix du domaine), release `pub-videos`, **preuve mesurée** que chaque adresse MP4 répond HTTP 200 ;
+4. **`tools/pub/programmation.mjs --prepare`** écrit `a-programmer.json` (MP4 publics + **créneaux libres** : jours ouvrés 10 h/12 h Europe/Paris après le dernier post, jamais deux vidéos au même créneau) ; commit sur `claude/pub-auto-<année>-<semaine>` + PR (jamais main) ; ligne `A_PROGRAMMER_JSON` dans le journal ;
+5. la routine programme chaque vidéo dans Metricool (createScheduledPost, 4 réseaux, mêmes réglages que le 17.09), puis relance le workflow avec `programmer="id:post:créneau,…"` → **`--ajoute`** dans `programmation.json` (refus des doublons post/vidéo/créneau) + `commerce-data.json` régénéré → le tableau de bord Commerce voit les nouvelles vidéos ;
+6. contrôle de la semaine passée (PUBLISHED / ERROR par réseau) + réponse de 6 lignes.
+
+**Un seul workflow, trois modes** (leçon #142, pas de copie) : `videos` (rendu classique), `nouveaux` (écriture + rendu + release + a-programmer), `programmer` (mémoire). Champs ajoutés aux 5 endroits qui les listent : workflow, caisse (`WORKFLOWS` + `nettoieInputs` accepte `+` et 200 caractères), tableau de bord, garde commerce.
+
+**Gardes** : `test:pub-nouveaux` (9 contrôles, faux modèle : accepté au 1ᵉʳ essai, refus + raison renvoyée, 3 refus → sautée, doublon, réponse illisible, fichier réécrit repasse la porte, créneaux, ajouts) + `test:pub-videos` étendue au workflow (seul secret = clé Anthropic, `--prepare`/`--ajoute`, tableau régénéré, `gh pr create`, jamais de push main). Tous dans `test:ci`. Caisse 39/39, commerce 10/10, gardes workflows (pipefail, shell, valides, conformes, destinations, dépôt public sain) : OK.
+
+**Limites honnêtes** : (a) une routine à session NEUVE tourne **sans aucun connecteur** (la plateforme refuse `connectors` : « not available for this organization », et le 1ᵉʳ essai a été créé avec l'avertissement « stores no MCP connectors ») → Metricool serait absent. **Solution retenue** : la routine réveille CETTE session (video-review, `persistent_session_id`), qui détient Metricool — donc chaque lundi la conversation reprend ici ; si un jour la session est archivée, la routine échoue et Kevin le voit (notification) ; (b) la fusion de la PR `claude/pub-auto-*` dépend du robot auto-merge, comme toutes les branches `claude/*` ; (c) Facebook reste « plus tard » (Kevin 16.09) : les posts Facebook sont créés mais le réseau n'est pas branché.
+
 ## 2026-09-17 16:00 — « Va plus loin » : Bee FERME enfin les lèvres (Javis v1.6, les consonnes)
 
 **Ce qui manquait, je l'avais écrit moi-même dans CLAUDE.md** : elle reconnaissait les voyelles,
