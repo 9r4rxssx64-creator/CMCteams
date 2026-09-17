@@ -107,7 +107,11 @@ const JOURS = 7;
    Les DEUX signaux sont exigés ensemble : un nom en `-<chiffres>` ne suffit pas — il faut
    aussi que personne d'humain n'ait commité dessus. Une vraie session dont le nom finirait
    par des chiffres reste donc contrôlée. */
-const NOM_DE_ROBOT = /-[0-9]{8,}$/;
+/* + (17.09.2026) la branche HEBDOMADAIRE de la pub autonome, `claude/pub-auto-<année>-<semaine>`,
+   écrite par pub-videos.yml (routine « Pub — vidéos de la semaine ») : même nom chaque
+   semaine, même règle — le robot seul y écrit, la PR est fusionnée par le robot. */
+const PUB_AUTO = /^claude\/pub-auto-[0-9]{4}-[0-9]{2}$/;
+const NOM_DE_ROBOT = new RegExp('-[0-9]{8,}$|' + PUB_AUTO.source);
 const ROBOTS = new Set(['kdmc-bot', 'github-actions[bot]', 'claude-bot']);
 
 /* Une branche dont TOUT est déjà dans `main` ne porte, par définition, aucun travail
@@ -132,7 +136,10 @@ function ecriteParUnRobotSeulement(branche) {
       { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
   } catch (_) { return false; }        /* pas lisible → on ne l'exclut pas */
   if (!auteurs) return false;
-  return auteurs.split('\n').every((a) => ROBOTS.has(a.trim()));
+  /* Sur la branche hebdo de la pub, la session Claude Code qui tient la routine peut poser
+     un correctif (vécu 17.09 : accents d'un script) — elle n'est pas « personne ». */
+  const toleres = PUB_AUTO.test(branche) ? new Set([...ROBOTS, 'Claude']) : ROBOTS;
+  return auteurs.split('\n').every((a) => toleres.has(a.trim()));
 }
 
 let refs = '';

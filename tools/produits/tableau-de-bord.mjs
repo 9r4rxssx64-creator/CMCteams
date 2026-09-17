@@ -95,7 +95,7 @@ export function construit({ catalogue = lireCatalogue(), scripts = lireJson(SCRI
 
   const workflows = {
     'produit-fabrique.yml': { nom: 'Fabrique : écrire un kit en base', inputs: { produit: catalogue.produits.map((p) => p.id), dry_run: ['true', 'false'], refaire: 'texte' }, defaut: { produit: 'avis-ia', dry_run: 'true' } },
-    'pub-videos.yml': { nom: 'Pub : rendre les vidéos', inputs: { videos: ['all', ...new Set(scripts.videos.map((v) => v.id.split('-')[0]))], publier: ['false', 'true'] }, defaut: { videos: 'all', publier: 'false' } },
+    'pub-videos.yml': { nom: 'Pub : rendre (ou écrire) les vidéos', inputs: { videos: ['all', ...new Set(scripts.videos.map((v) => v.id.split('-')[0]))], publier: ['false', 'true'], nouveaux: ['', 'immo:1,club:1', ...[...new Set(scripts.videos.map((v) => v.id.split('-')[0]))].map((n) => n + ':1')], programmer: 'texte', branche: 'texte' }, defaut: { videos: 'all', publier: 'false', nouveaux: '' } },
     'club-semaine.yml': { nom: 'Club : consigne de la semaine', inputs: { dry_run: ['true', 'false'], tester_email: ['false', 'true'] }, defaut: { dry_run: 'true', tester_email: 'false' } },
     'audit-live.yml': { nom: 'Audit LIVE des vraies pages', inputs: {}, defaut: {} },
     'deploy-kdmc-vente.yml': { nom: 'Redéployer la caisse', inputs: {}, defaut: {} },
