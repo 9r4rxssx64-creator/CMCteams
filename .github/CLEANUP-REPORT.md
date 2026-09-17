@@ -1,6 +1,6 @@
 # Compte-rendu du menage automatique
 
-Genere le 2026-09-17 10:55 UTC par auto-merge-claude.yml.
+Genere le 2026-09-17 10:56 UTC par auto-merge-claude.yml.
 
 ## Branches
 
@@ -8,7 +8,7 @@ Genere le 2026-09-17 10:55 UTC par auto-merge-claude.yml.
 | vues | supprimees | gardees |
 |---:|---:|---:|
 | 0
-0 | 0 | 132 |
+0 | 0 | 131 |
 
 Echecs de suppression : **0**
 
