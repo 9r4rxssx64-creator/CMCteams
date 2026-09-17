@@ -1,5 +1,65 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-17 17:40 — « Quelle niche rapporte le plus ? » + tableau de bord Commerce dans l'admin du domaine
+
+**Kevin** : « Quelle est la niche qui a le meilleur rendement financier ? Copie, crawl, inspire-toi et
+fais pareil en toute autonomie. Fais-moi un tableau de bord où je peux voir tout ce que tu as créé par
+rapport au commerce — contrôle, commande, infos — en tuiles, avec un visuel récap, dans mon domaine
+partie admin. »
+
+**1. La niche — réponse honnête, chiffres cités, rien d'inventé.** Nos ventes = **0** (la caisse
+lue en direct : aucune clé `code:*`), donc la niche la plus rentable *chez nous* n'est pas encore
+mesurable. Ce que dit le marché (sources dans le tableau, section « Marché ») :
+- InsightRaider, **146 271 produits Gumroad (2026)** : le revenu **par produit** va aux tickets
+  élevés et aux pros (« Other » 88 048 $/produit, Software 60 814 $, Writing & Publishing
+  15 750 $ sur seulement 226 produits) — pas aux petits fichiers à 7 $.
+- InsightRaider, **24 724 vendeurs** : revenu médian par produit **134 $ avec 1 produit, 187 $ avec
+  2-3 (+40 %), 112 $ à 8 et plus** → peu de produits bien tenus, pas une longue liste.
+- Reddit (200 000+ produits suivis) : graphisme = 40 000 produits, 34 % vendent (encombré) ; la niche
+  la plus rentable du relevé ne fait vendre que 17 % des produits mais 3 200 $ médians chez ceux qui vendent.
+- Etsy (CreateSell) : planificateurs 5,8 M vues/mois à **6,97 $** ; modèles de site **44,53 $**.
+- Marché francophone (Pilotage IA) : formations 97–997 €, packs de consignes IA en demande.
+**Conclusion appliquée** : le produit le plus aligné chez nous = **Kit IA de l'agent immobilier
+(67 €, un pro qui paie déjà pour son outil)**, puis le **Club (59 €/an, récurrent)** et le **Kit au
+bureau (37 €)**. Copié du relevé « 2-3 produits » : **pas de 7ᵉ niche** tant que les 6 ne vendent
+pas ; la pub porte sur immo et le Club. 🔴 Non mesuré : la demande réelle (pub 18→25.09).
+
+**2. Le tableau de bord Commerce — `kd-mc.com/admin/commerce.html`** (tuile « 🛒 Commerce » dans
+l'admin du domaine). Deux sources, jamais mélangées :
+- **Statique** `kdmc-home/admin/commerce-data.json`, généré par `tools/produits/tableau-de-bord.mjs`
+  (`npm run commerce:data`, `--verifier` en CI) depuis le catalogue, les scripts de pub, le nouveau
+  `tools/pub/programmation.json` (les 12 posts Metricool : ids + créneaux) et les pages réellement sur
+  disque (47 pages métier comptées). Prix des produits hors catalogue = ceux de la caisse (import direct).
+- **Live** : nouvelle route `GET /admin/tableau` de kdmc-vente — en UN appel : ventes (clés `code:*`,
+  **e-mails masqués** `k***@domaine`, CA par produit/source/mois, 20 dernières), file à valider, Club
+  (D1 `abonnes` : actifs, expirent sous 14 j), contenu en base par produit, **sonde HEAD de chaque page
+  de livraison** (mesuré : `croupier-entretien` livre vers une page **absente** → tuile « 1 KO »),
+  dernier passage de 5 workflows (API GitHub, fail-open), et ce qui est branché (PayPal, EmailJS, D1).
+- **Commandes** : `POST /admin/lancer` — liste **fermée** de 5 workflows (fabrique, pub, Club, audit
+  live, redéploiement caisse), champs filtrés, `ref: main`, jeton `GITHUB_DISPATCH_TOKEN` poussé par
+  `deploy-kdmc-vente.yml` depuis `APEX_GITHUB_PAT`. **Sans jeton, les boutons deviennent des liens
+  GitHub** et la tuile le dit — jamais un bouton qui fait semblant.
+- **Admin = le domaine seul** (`/__sso/whoami` : `admin && verified`, Face ID) ; la page ne compare
+  aucun code ; le pass part en Bearer vers la caisse (origine `kd-mc.com` déjà autorisée).
+- 8 tuiles chiffrées en haut (CA, file, Club, produits, vidéos programmées, audit live, livraisons,
+  commandes), puis Ventes (barres 6 mois + dernières), File (Livrer / Refuser en 1 clic), Produits
+  (une tuile par produit : prix, modules en base/attendus, livraison sondée, ventes, liens), Commandes,
+  Pub (12 vidéos + créneaux + MP4), Marché (relevés + sources), Tout ce qui existe (liens), Caisse.
+
+**Preuves** : caisse **39/39** (5 nouveaux : 401/403, agrégats + masquage + tronque, liste fermée,
+jeton absent → 503 avec lien, GitHub 403 → cause), `test:commerce-tableau` **10/10** (JSON = sources,
+prix = caisse, workflows identiques des deux côtés, marché sourcé et marqué 🔴, rendu échappe le HTML),
+`test:commerce-tableau-reel` **20/20 en vrai Chromium 375 px** (verrou sans session / sans Face ID
+avec 0 appel caisse, 8 tuiles, CA = caisse, 404 compté KO, Bearer, Livrer → /admin/valider, panne 502
+→ page debout avec la cause, boutons ≥ 44 px, 0 débordement, 0 exception). Les deux dans `test:ci`.
+Surface ajoutée à `audit-live.mjs` (verrou + JSON servi). 🔴 Non mesuré ici : la page **sur le vrai
+domaine** (après fusion sur main + Pages) et le jeton `APEX_GITHUB_PAT` a-t-il le droit `workflow`
+(sinon « GitHub HTTP 403 » s'affiche tel quel dans le toast).
+
+**Piège vu** : le domaine a **deux** admins — `admin.kd-mc.com` (worker kdmc-access, code seul, pas
+de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié → le tableau vit dans le
+second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
+
 ## 2026-09-17 14:30 — « Pour Javis aussi : améliore, enrichit, performe » + toutes les apps disent leur version
 
 **1 bis. Puis elle a appris à FORMER la voyelle qu'elle prononce — de vrais visèmes.** Kevin :

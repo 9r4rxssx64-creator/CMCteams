@@ -104,6 +104,23 @@ const TTL_CODE = 60 * 60 * 24 * 365 * 2;  // un accès acheté dure 2 ans
 const TTL_DEMANDE = 60 * 60 * 24 * 60;    // une demande en attente : 60 jours
 const MAX_RECLAM_PAR_HEURE = 10;          // anti-balayage d'e-mails
 
+/* ── Tableau de bord Commerce (kd-mc.com/admin/commerce.html, 17.09) ──────────
+   Les workflows que Kevin peut LANCER depuis le tableau de bord, et les seuls
+   champs qu'il peut leur passer. Liste FERMÉE : un jeton GitHub côté worker ne
+   doit jamais permettre de lancer n'importe quoi. Le jeton (secret
+   GITHUB_DISPATCH_TOKEN, poussé par deploy-kdmc-vente.yml depuis APEX_GITHUB_PAT)
+   est OPTIONNEL : absent, le tableau de bord affiche le lien GitHub à la place
+   du bouton, il ne ment pas. */
+const DEPOT = '9r4rxssx64-creator/cmcteams';
+const WORKFLOWS = {
+  'produit-fabrique.yml': { nom: 'Fabrique de produits — écrire un kit en base', champs: ['produit', 'dry_run', 'refaire'] },
+  'pub-videos.yml': { nom: 'Pub — vidéos courtes sans visage', champs: ['videos', 'publier'] },
+  'club-semaine.yml': { nom: 'Club IA — consigne de la semaine', champs: ['dry_run', 'tester_email'] },
+  'audit-live.yml': { nom: 'Audit LIVE (vraies pages kd-mc.com)', champs: [] },
+  'deploy-kdmc-vente.yml': { nom: 'Déployer la caisse (kdmc-vente)', champs: [] },
+};
+const MAX_CODES_TABLEAU = 2000;           // au-delà, on le DIT (tronque:true)
+
 /* ── Utilitaires ─────────────────────────────────────────────────────────── */
 /* Une origine du domaine = n'importe quel sous-domaine HTTPS de kd-mc.com (les pages
    de vente vivent sur kit.kd-mc.com, croupier.kd-mc.com…). Mesuré le 16.09 : sans
@@ -345,6 +362,133 @@ async function lireContenu(env, produitId, { gratuitSeulement }) {
   }
 }
 
+/* ── Tableau de bord : agrégats de ventes (lecture seule) ─────────────────
+   Une vente = une clé `code:<CODE>` dans VENTES. Rien d'autre ne compte les
+   ventes nulle part (mesuré le 17.09 : aucune route ne listait `code:*`).
+   L'e-mail est MASQUÉ avant de sortir (k***@domaine) : le tableau de bord
+   n'a pas besoin de l'adresse entière pour compter. */
+function masqueEmail(e) {
+  const v = String(e || '');
+  const i = v.indexOf('@');
+  if (i < 1) return v ? '***' : '';
+  return v.charAt(0) + '***' + v.slice(i);
+}
+async function listeToutes(kv, prefix, max) {
+  const noms = [];
+  let cursor;
+  let tronque = false;
+  for (;;) {
+    const res = await kv.list(cursor ? { prefix, limit: 1000, cursor } : { prefix, limit: 1000 });
+    for (const k of (res.keys || [])) { noms.push(k.name); if (noms.length >= max) { tronque = true; break; } }
+    if (tronque || res.list_complete !== false || !res.cursor) break;
+    cursor = res.cursor;
+  }
+  return { noms, tronque };
+}
+export function agregeVentes(fiches) {
+  const parProduit = {}, parSource = {}, parMois = {};
+  let n = 0, ca = 0;
+  const plus = (o, k, prix) => { const x = o[k] || (o[k] = { n: 0, ca: 0 }); x.n += 1; x.ca += prix; };
+  for (const f of fiches) {
+    const prod = PRODUITS[f.produit];
+    const prix = prod ? Number(prod.prix) || 0 : 0;
+    n += 1; ca += prix;
+    plus(parProduit, f.produit || '?', prix);
+    plus(parSource, String(f.source || '?').split(':')[0], prix);
+    plus(parMois, String(f.ts_iso || '').slice(0, 7) || '?', prix);
+  }
+  const dernieres = [...fiches].sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 20)
+    .map((f) => ({ produit: f.produit, source: f.source, ts_iso: f.ts_iso, expire_iso: f.expire_iso, email: masqueEmail(f.email) }));
+  return { n, ca: Math.round(ca * 100) / 100, parProduit, parSource, parMois, dernieres };
+}
+async function lireVentes(env) {
+  const { noms, tronque } = await listeToutes(env.VENTES, 'code:', MAX_CODES_TABLEAU);
+  const fiches = [];
+  for (const nom of noms) {
+    const v = await env.VENTES.get(nom);
+    if (!v) continue;
+    try { fiches.push(JSON.parse(v)); } catch (_) { /* fiche illisible : ignorée, on ne casse pas le tableau */ }
+  }
+  return { ...agregeVentes(fiches), tronque };
+}
+async function lireFile(env) {
+  const liste = await env.VENTES.list({ prefix: 'demande:', limit: 200 });
+  const demandes = [];
+  for (const k of liste.keys) {
+    const v = await env.VENTES.get(k.name);
+    if (!v) continue;
+    try { demandes.push(JSON.parse(v)); } catch (_) { /* idem */ }
+  }
+  demandes.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return demandes;
+}
+/* D1 : Club (abonnés actifs, expirations à 14 j) + inventaire du contenu par
+   produit. Sans base branchée → `null` et la cause, jamais un zéro trompeur. */
+async function lireBase(env) {
+  if (!env.CONTENU || typeof env.CONTENU.prepare !== 'function') {
+    return { club: null, contenu: null, detail: 'base de contenu non branchée (binding CONTENU absent)' };
+  }
+  const now = new Date();
+  const j14 = new Date(now.getTime() + 14 * 864e5);
+  const out = { club: null, contenu: null, detail: null };
+  try {
+    const c = await env.CONTENU.prepare("SELECT COUNT(*) AS actifs, SUM(CASE WHEN expire <= ?2 THEN 1 ELSE 0 END) AS expirent14j, SUM(CASE WHEN relance IS NOT NULL AND relance <> '' THEN 1 ELSE 0 END) AS relances FROM abonnes WHERE produit = 'club-ia' AND expire > ?1")
+      .bind(now.toISOString(), j14.toISOString()).all();
+    const r = (c && c.results && c.results[0]) || {};
+    const t = await env.CONTENU.prepare('SELECT COUNT(*) AS n FROM abonnes').bind().all();
+    out.club = { actifs: Number(r.actifs) || 0, expirent14j: Number(r.expirent14j) || 0, relances: Number(r.relances) || 0, abonnes_total: Number(((t && t.results && t.results[0]) || {}).n) || 0 };
+  } catch (e) { out.detail = 'abonnes: ' + String((e && e.message) || e).slice(0, 120); }
+  try {
+    const q = await env.CONTENU.prepare('SELECT produit, COUNT(*) AS n, SUM(gratuit) AS gratuits, MAX(maj) AS maj FROM contenu GROUP BY produit').bind().all();
+    out.contenu = {};
+    for (const l of ((q && q.results) || [])) out.contenu[l.produit] = { n: Number(l.n) || 0, gratuits: Number(l.gratuits) || 0, maj: l.maj || null };
+  } catch (e) { out.detail = (out.detail ? out.detail + ' · ' : '') + 'contenu: ' + String((e && e.message) || e).slice(0, 120); }
+  return out;
+}
+/* Chaque page de livraison est SONDÉE (HEAD) : une vente qui livre vers une
+   page absente est une vente qui coûte un remboursement. Mesuré le 17.09 :
+   croupier-entretien livrait vers une page inexistante. `null` = non vérifié. */
+async function sondeLivraisons() {
+  const out = {};
+  await Promise.all(Object.entries(PRODUITS).map(async ([id, p]) => {
+    try {
+      const r = await fetch(p.livre, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(4000) });
+      out[id] = r.status;
+    } catch (_) { out[id] = null; }
+  }));
+  return out;
+}
+function enTetesGitHub(env) {
+  const h = { Accept: 'application/vnd.github+json', 'User-Agent': 'kdmc-vente-tableau' };
+  if (env.GITHUB_DISPATCH_TOKEN) h.Authorization = 'Bearer ' + env.GITHUB_DISPATCH_TOKEN;
+  return h;
+}
+/* Dernier passage de chaque workflow du tableau : lu sur l'API GitHub (dépôt
+   public → lisible sans jeton, avec jeton on a plus de marge). Fail-open par
+   workflow : un GitHub muet donne `null`, pas une page cassée. */
+async function lireRuns(env) {
+  const out = {};
+  await Promise.all(Object.keys(WORKFLOWS).map(async (w) => {
+    try {
+      const r = await fetch('https://api.github.com/repos/' + DEPOT + '/actions/workflows/' + w + '/runs?per_page=1', { headers: enTetesGitHub(env), signal: AbortSignal.timeout(6000) });
+      if (!r.ok) { out[w] = { erreur: 'GitHub HTTP ' + r.status }; return; }
+      const j = await r.json();
+      const run = (j.workflow_runs || [])[0];
+      out[w] = run ? { id: run.id, status: run.status, conclusion: run.conclusion, url: run.html_url, cree: run.created_at, maj: run.updated_at, branche: run.head_branch } : { vide: true };
+    } catch (e) { out[w] = { erreur: String((e && e.message) || e).slice(0, 80) }; }
+  }));
+  return out;
+}
+export function nettoieInputs(workflow, inputs) {
+  const def = WORKFLOWS[workflow];
+  if (!def) return null;
+  const out = {};
+  for (const k of def.champs) {
+    if (inputs && inputs[k] != null && inputs[k] !== '') out[k] = String(inputs[k]).slice(0, 80).replace(/[^\w.,:\- ]/g, '');
+  }
+  return out;
+}
+
 /* ── Routes ──────────────────────────────────────────────────────────────── */
 export default {
   async fetch(req, env) {
@@ -561,9 +705,49 @@ export default {
       return json({ ok: true, code: dd.code, livre: dd.livre, produit: produitId, email_envoye: !!dd.email_envoye }, 200, origin);
     }
 
+    /* --- Admin : le tableau de bord Commerce en UN appel ------------------ */
+    if (p === '/admin/tableau') {
+      const g = await requireAdmin(req);
+      if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
+      const [ventes, demandes, base, livraisons, runs] = await Promise.all([lireVentes(env), lireFile(env), lireBase(env), sondeLivraisons(), lireRuns(env)]);
+      return json({
+        ok: true, quand: new Date().toISOString(), admin: g.name,
+        produits: Object.entries(PRODUITS).map(([id, v]) => ({ id, nom: v.nom, prix: v.prix, devise: v.devise, livre: v.livre, contenu: v.contenu || [], ttlJours: v.ttlJours || 730, livre_http: livraisons[id] })),
+        ventes, file: { n: demandes.length, demandes: demandes.slice(0, 50) },
+        club: base.club, contenu: base.contenu, base_detail: base.detail,
+        config: { paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID), paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET), email_code: Boolean(env.EMAILJS_PRIVATE_KEY), contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'), commandes: Boolean(env.GITHUB_DISPATCH_TOKEN) },
+        workflows: Object.entries(WORKFLOWS).map(([id, w]) => ({ id, nom: w.nom, champs: w.champs, url: 'https://github.com/' + DEPOT + '/actions/workflows/' + id, run: runs[id] || null })),
+      }, 200, origin);
+    }
+
+    /* --- Admin : lancer un workflow (liste fermée, jeton côté worker) ------ */
+    if (p === '/admin/lancer' && req.method === 'POST') {
+      const g = await requireAdmin(req);
+      if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
+      let b; try { b = await req.json(); }
+      catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'lancer_body' }, 400, origin); }
+      const w = String(b.workflow || '');
+      if (!WORKFLOWS[w]) return json({ ok: false, error: 'workflow', detail: 'workflow hors liste: ' + w, step: 'lancer_liste' }, 400, origin);
+      if (!env.GITHUB_DISPATCH_TOKEN) return json({ ok: false, error: 'token_non_configure', detail: 'secret GITHUB_DISPATCH_TOKEN absent du worker — lance-le depuis GitHub', url: 'https://github.com/' + DEPOT + '/actions/workflows/' + w, step: 'lancer_token' }, 503, origin);
+      const inputs = nettoieInputs(w, b.inputs);
+      try {
+        const r = await fetch('https://api.github.com/repos/' + DEPOT + '/actions/workflows/' + w + '/dispatches', {
+          method: 'POST', headers: { ...enTetesGitHub(env), 'content-type': 'application/json' },
+          body: JSON.stringify({ ref: 'main', inputs }), signal: AbortSignal.timeout(8000),
+        });
+        if (r.status !== 204) {
+          const txt = await r.text().catch(() => '');
+          return json({ ok: false, error: 'github', detail: 'GitHub HTTP ' + r.status + ' : ' + txt.slice(0, 160), step: 'lancer_dispatch' }, 502, origin);
+        }
+        return json({ ok: true, workflow: w, inputs, url: 'https://github.com/' + DEPOT + '/actions/workflows/' + w, par: g.name }, 200, origin);
+      } catch (e) {
+        return json({ ok: false, error: 'reseau', detail: String((e && e.message) || e).slice(0, 120), step: 'lancer_reseau' }, 502, origin);
+      }
+    }
+
     return json({ ok: false, error: 'not_found', detail: 'route inconnue: ' + p, step: 'routage' }, 404, origin);
   },
 };
 
 /* Export pour les tests hors-ligne (le worker n'en dépend pas). */
-export const __test = { PRODUITS, nouveauCode, memeMontant, nettoieEmail, emailPlausible, ALPHABET, origineDuDomaine, lireContenu, envoieCode, EMAILJS };
+export const __test = { PRODUITS, WORKFLOWS, masqueEmail, nouveauCode, memeMontant, nettoieEmail, emailPlausible, ALPHABET, origineDuDomaine, lireContenu, envoieCode, EMAILJS };
