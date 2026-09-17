@@ -130,6 +130,23 @@ const SURFACES = [
       if (!h2) return { ok: false, note: 'module 1 non rendu' };
       return { ok: true, note: '7 modules, 6 verrouillés, module 1 rendu « ' + h2.slice(0, 50) + ' »' };
     } },
+  /* Les 4 lecteurs de niche (17.09) : SANS code, lire.html?produit=<id> demande
+     /apercu?produit=<id> au vrai worker sur la vraie base → 7 modules du BON produit (fil
+     d'Ariane = nom du produit, module 1 = son premier titre du catalogue), 6 verrous. C'est
+     la seule preuve que le contenu fabriqué en base (produit-fabrique.yml) est servi en vrai. */
+  ...JSON.parse(readFileSync(new URL('../produits/catalogue.json', import.meta.url), 'utf8')).produits.map((p) => ({
+    url: 'https://kit.' + ROOT + '/lire.html?produit=' + p.id, name: 'Kit IA — lecteur « ' + p.court + ' »', selKey: '#module h2', deep: async (page) => {
+      const h2 = (await page.textContent('#module h2').catch(() => '') || '').trim();
+      const nb = await page.$$eval('#sommaire li', (els) => els.length).catch(() => 0);
+      const verrous = await page.$$eval('#sommaire .verrou', (els) => els.length).catch(() => 0);
+      const sur = (await page.textContent('#sur a').catch(() => '') || '').trim();
+      const nom = p.nom.split(' — ')[0];
+      if (nb !== p.modules.length) return { ok: false, note: 'sommaire ' + nb + ' entrées (' + p.modules.length + ' attendues pour ' + p.id + ')' };
+      if (verrous !== p.modules.length - 1) return { ok: false, note: verrous + ' verrous (' + (p.modules.length - 1) + ' attendus)' };
+      if (!h2.startsWith('Module 1 — ' + p.modules[0].titre)) return { ok: false, note: 'module 1 ≠ catalogue : « ' + h2.slice(0, 70) + ' »' };
+      if (sur !== nom) return { ok: false, note: 'fil d\'Ariane « ' + sur + ' » ≠ « ' + nom + ' » (mauvais produit servi ?)' };
+      return { ok: true, note: nb + ' modules du bon produit, ' + verrous + ' verrous, module 1 « ' + h2.slice(11, 60) + ' »' };
+    } })),
   { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
