@@ -95,13 +95,13 @@ jobs:
         run: |
           for g in test:no-pin-leak test:depot-public-sain test:secret-jamais-persiste \
                    test:documents-travail test:destinations-workflows test:wrangler-assets \
-                   test:pipeline-sessions; do
+                   test:pipeline-sessions test:workflows-valides; do
             echo "::group::$g"
             if npm run -s "$g"; then echo "::endgroup::"; else
               echo "::endgroup::"; echo "::error title=$g::garde en échec — voir le groupe $g ci-dessus"; exit 1
             fi
           done
-          echo "✅ 7 gardes du dépôt public vertes"
+          echo "✅ 8 gardes du dépôt public vertes"
 
   e2e-tests:
     runs-on: ubuntu-latest

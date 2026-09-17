@@ -18,7 +18,7 @@
  * - Sentinelle never-forget-watch peut auditer
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 
 import {
   APEX_IDENTITY,
@@ -26,6 +26,7 @@ import {
   buildExtendedIdentitySection,
   listAllKnownUsers,
 } from '../../core/apex-identity.js';
+import { featureToggles } from '../../services/auth/feature-toggles.js';
 
 describe('APEX_IDENTITY étendu — Tous les users connus de Kevin', () => {
   describe('Employés CMCteams (cadres unifiés)', () => {
@@ -282,5 +283,25 @@ describe('Test mental obligatoire — Apex reconnaît tous les users', () => {
     expect(section).toContain('e-KDMC');
     expect(section).toContain('Apex Chat');
     expect(section).toContain('CrackPass');
+  });
+});
+
+describe('buildExtendedIdentitySection() — persona Javis (Kevin 2026-09-16, "Go tout")', () => {
+  afterEach(() => {
+    featureToggles.resetDefaults('test');
+  });
+
+  it('détaille les 8 traits Javis en version étendue', () => {
+    const section = buildExtendedIdentitySection();
+    expect(section).toContain('PERSONA');
+    expect(section).toContain('Javis');
+    expect(section).toContain('tutoiement toujours');
+  });
+
+  it('OFF global → bloc PERSONA absent de la version étendue aussi', () => {
+    featureToggles.setGlobal('persona.javis', false, 'kdmc_admin');
+    const section = buildExtendedIdentitySection();
+    expect(section).not.toContain('PERSONA');
+    expect(section).not.toContain('Javis');
   });
 });

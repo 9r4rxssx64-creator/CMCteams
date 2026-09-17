@@ -1,5 +1,167 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🎬 Machine à vidéos sans visage — 12 pubs pour les 6 produits — 2026-09-17
+
+Des cartes de texte plein écran lues par la voix du domaine, collées par ffmpeg sur le runner, publiées à une adresse publique hors dépôt (release GitHub « pub-videos ») que Metricool va chercher.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/scripts.json` | Les 12 scripts publics (5 cartes, légende, hashtags) — 3 avis, 2 bureau, 2 étudiant, 2 immo, 2 kit, 1 club | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/scripts.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/scripts.json) |
+| `tools/pub/video.mjs` | Le rendu : voix du domaine par carte, ffmpeg, MP4 1080×1920 + fiche .json ; muet si la voix tombe, et il le dit | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/video.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/video.mjs) |
+| Release `pub-videos` (hors dépôt) | Les 12 MP4 publics rendus par le run 35219079657 + `index.json` — [ouvrir](https://github.com/9r4rxssx64-creator/CMCteams/releases/tag/pub-videos) | [avis-01.mp4](https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/avis-01.mp4) | — |
+| `.github/workflows/pub-videos.yml` | Le bouton « rendre les vidéos » (artifact) + « publier » (release) — [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/pub-videos.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/pub-videos.yml) |
+| `tests/pub-videos.test.mjs` | La garde : porte de vérité des scripts (8 sabotages), repli du texte, plan, commandes ffmpeg, workflow (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/pub-videos.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/pub-videos.test.mjs) |
+
+## 🏭 Fabrique de produits — 4 nouvelles niches à vendre — 2026-09-17
+
+Un seul moteur écrit un kit complet en base privée à partir d'une fiche publique ; les 4 niches (bureau 37 €, étudiant 27 €, avis clients 17 €, immobilier 67 €) ont chacune leur page sur kit.kd-mc.com et passent par la même caisse et le même lecteur.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/produits/catalogue.json` | Les fiches PUBLIQUES des 4 produits (titres, briefs, prix) — jamais le contenu payant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/catalogue.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/catalogue.json) |
+| `tools/produits/fabrique.mjs` | Le moteur : rédaction par l'IA, contrôle strict (3 essais), écriture en base D1 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/fabrique.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/fabrique.mjs) |
+| `tools/produits/pages.mjs` | Génère les 4 pages de vente à partir du catalogue (`--verifier` en CI) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/pages.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/pages.mjs) |
+| `.github/workflows/produit-fabrique.yml` | Le bouton « fabriquer un produit » (à blanc par défaut) — [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/produit-fabrique.yml) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/produit-fabrique.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/produit-fabrique.yml) |
+| `shops/kit-ia/bureau.html` | Page de vente Kit IA au bureau, 37 € — [en ligne](https://kit.kd-mc.com/bureau.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/bureau.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/bureau.html) |
+| `shops/kit-ia/etudiant.html` | Page de vente Kit IA de l'étudiant, 27 € — [en ligne](https://kit.kd-mc.com/etudiant.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/etudiant.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/etudiant.html) |
+| `shops/kit-ia/avis.html` | Page de vente 40 réponses aux avis, 17 € — [en ligne](https://kit.kd-mc.com/avis.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/avis.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/avis.html) |
+| `shops/kit-ia/immo.html` | Page de vente Kit IA de l'agent immobilier, 67 € — [en ligne](https://kit.kd-mc.com/immo.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/immo.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/immo.html) |
+| `tests/produits-fabrique.test.mjs` | La garde : porte de vérité discriminante, prix = caisse, pages à jour, vrai navigateur (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/produits-fabrique.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/produits-fabrique.test.mjs) |
+
+## 🐝 Bee dans Lingua — les améliorations sont revenues chez elle — 2026-09-17
+
+**▶️ Essayer (une fois déployé)** : ouvre [lingua.kd-mc.com](https://lingua.kd-mc.com) — touche Bee,
+regarde-la sauter (elle se ramasse, s'étire, s'écrase, rebondit) et cligner des yeux naturellement
+(jamais deux fois pareil, et parfois deux battements coup sur coup).
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`lingua/app.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/app.js) | `beeClinNaturel()` — **un seul** clignement pour les trois Bee (mascotte, accueil, visage du coach) au lieu de trois boucles recopiées |
+| [`lingua/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/index.html) | Le saut « dessin animé » (`rigJump`) + le regard qui se détourne quand elle réfléchit (`rxPense`) |
+| [`tests/verify-lingua-bee-vivante.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-lingua-bee-vivante.mjs) | **Garde en VRAI navigateur** (dans `test:ci`) : le saut écrase ET étire (-36 px), le regard se détourne, la durée du clignement varie (110-177 ms) et 1 fois sur 5 c'est double — `npm run test:lingua-bee` |
+| [`.github/workflows/bee-gardes.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/.github/workflows/bee-gardes.yml) | **Les 3 gardes de Bee tournent enfin sur GitHub**, à chaque PR qui touche Lingua ou Javis (avant : câblées dans `test:ci`, qui ne tourne dans aucun workflow GitHub — donc jamais exécutées sur une PR) |
+| [`tests/workflows-valides.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/workflows-valides.test.mjs) | **Garde** : aucun de tes 152 workflows ne peut plus être refusé au démarrage en silence (un fichier invalide échouait 413 fois sans une ligne de journal) — `npm run test:workflows-valides` |
+
+**Ce qui n'est PAS reparti, et pourquoi** : la bouche qui suit le son et le repli sur la voix du
+téléphone **venaient déjà de Lingua** — c'est Javis qui les lui avait empruntées. On ne recopie pas
+ce qu'on a emprunté (ça ferait deux versions qui divergent, leçon #142).
+
+
+## 🤖 Javis — le personnage flottant + l'app installable — 2026-09-16
+
+**▶️ Essayer (une fois déployé)** : ouvre [arbre.kd-mc.com](https://arbre.kd-mc.com) connecté en admin — le bouton rond doré apparaît en bas à droite, au-dessus du bouton ➕ existant.
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/javis/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tools/javis/javis-widget.js) | La SOURCE : bouton flottant, personnage animé, chat, SSO admin-only. À copier tel quel dans une nouvelle app (ce domaine n'a pas de bundler — chaque app garde sa propre copie, comme `_depSsoAutoAdmin`) |
+| [`arbre/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/arbre/javis-widget.js) | La copie réellement chargée par `arbre/index.html` (preuve vivante) |
+| [`javis/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/index.html) | L'app **installable sur ton téléphone** (plein écran, personnage + chat) |
+| [`javis/manifest.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/manifest.json) · [`javis/sw.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/sw.js) | PWA : « Ajouter à l'écran d'accueil », icône, hors-ligne |
+| [`tests/verify-javis-bee.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-javis-bee.mjs) | **Garde** : les 3 copies identiques à l'octet + les bons hôtes dans chaque CSP + chaque image/vidéo citée existe (`npm run test:javis-bee`, dans `test:ci`) |
+| [`tests/verify-javis-bee-reelle.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-javis-bee-reelle.mjs) | **Garde en VRAI navigateur** (dans `test:ci`) : la vidéo se lit et avance, un toucher change de mouvement, si la vidéo casse le dessin reste (jamais d'écran vide), **la bouche suit vraiment le son** (1,20 → 0,30) et sa voix en panne bascule sur celle du téléphone — `npm run test:javis-bee-reelle` |
+| [`services/kdmc-router/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/services/kdmc-router/worker.js) | L'adresse de Bee : **javis.kd-mc.com** (ajoutée le 16.09, avec son étiquette d'app) |
+
+**Bee**, la mascotte de Lingua — mêmes images, **et maintenant ses vraies vidéos** (`lingua/bee/live/*.mp4` :
+repos, coucou, danse, saut, vol, marche), réutilisées telles quelles : une seule source de vérité, aucun
+fichier dupliqué. Dans l'app installable elle bouge pour de vrai ; sur une page normale le bouton flottant
+reste le dessin animé en CSS (3 Mo de vidéo ne s'imposent pas à une page ouverte en 4G).
+Elle parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives (gratuites).
+**Pas encore fait, honnêtement** : les lèvres synchronisées phonétiquement (la bouche bouge en rythme,
+pas au son exact), et le déploiement domaine-large (pour l'instant : arbre + l'app installable).
+
+## 📣 Réseaux sociaux — le moyen unique — 2026-09-16
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`services/kdmc-social/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-social/worker.js) | Publier · lire · messages · file, pour TOUS tes projets |
+| [`services/kdmc-social/social.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-social/social.test.mjs) | 19 contrôles · 4 gardes prouvés par sabotage |
+| [`.github/workflows/deploy-kdmc-social.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/deploy-kdmc-social.yml) | Déploiement + preuve live (publier reste fermé sans Face ID) |
+| [`tests/social-env-parite.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/social-env-parite.test.mjs) | Empêche le bug de noms de jetons de revenir |
+| [`.github/workflows/social-scheduler.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/social-scheduler.yml) | Pipeline vidéo existant — noms de jetons corrigés + diagnostic |
+
+`npm run test:social` et `npm run test:social-env` (les deux dans `test:ci`).
+
+**▶️ Voir l'état de tes réseaux** : [Actions → Deploy kdmc-social](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-social.yml) (le journal imprime la matrice)
+
+## 💶 Encaisser → vérifier → livrer — 2026-09-16
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`services/kdmc-vente/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/worker.js) | Le worker : webhook PayPal, recherche API, file manuelle, anti-rejeu, `/contenu` |
+| [`services/kdmc-vente/vente.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/vente.test.mjs) | 26 contrôles · 3 gardes prouvés par sabotage |
+| [`services/kdmc-vente/wrangler.toml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/wrangler.toml) | Réglages + le stockage KV (id `059260f5…`, créé le 16.09) |
+| [`.github/workflows/deploy-kdmc-vente.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/deploy-kdmc-vente.yml) | Déploiement : tests obligatoires, puis preuve live (un faux webhook DOIT être refusé) |
+| [`shops/croupier/acces.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/acces.html) | La page « J'ai payé, donne-moi mon accès » |
+| [`shops/croupier/acces.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/acces.js) | Sa logique — elle ne décide rien, elle obéit au worker |
+| [`tests/croupier-acces.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-acces.test.mjs) | 6 contrôles dont la **parité menu ⇄ catalogue du worker** |
+
+`npm run test:vente` et `npm run test:croupier-acces` (les deux dans `test:ci`).
+
+**▶️ Lancer le déploiement** : [Actions → Deploy kdmc-vente](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-vente.yml)
+
+## 🎯 L'entraîneur de paiements — 2026-09-16
+
+**▶️ Essayer** : [croupier.kd-mc.com/entrainement.html](https://croupier.kd-mc.com/entrainement.html)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/entrainement.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/entrainement.html) | L'écran (système `editorial`, hors-ligne, `connect-src 'none'`) |
+| [`shops/croupier/entrainement.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/entrainement.js) | Le moteur : rapports, génération des exercices, score local |
+| [`tests/croupier-entrainement.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-entrainement.test.mjs) | 40 contrôles dont 400 tirages vérifiés · prouvés discriminants |
+
+`npm run test:croupier-entrainement` (dans `test:ci`).
+
+---
+
+## 🎲 Devenir croupier — nouveau produit — 2026-09-15
+
+**▶️ La page** : [croupier.kd-mc.com](https://croupier.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/index.html) | Le guide gratuit (1 437 mots), système de design `editorial` |
+| [`tests/croupier-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-page.test.mjs) | La garde : jeu responsable, exactitude des paiements, jetons du design, honnêteté commerciale |
+
+`npm run test:croupier` (dans `test:ci`). Produit payant à venir : l'entraîneur de paiements.
+
+---
+
+## ⏸ Rotation aux tables — moteur + test (CMCteams v9.904) — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/index.html) (près de `var ROTATION`) | Le moteur : `rotationEtat`, `rotationDebutTour`, `rotationLimiteMin`, `rotationMaxLegalMin`, `rotationDepassements` |
+| [`tests/rotation-tables.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotation-tables.test.mjs) | 22 contrôles dans un vrai navigateur, prouvés discriminants par 4 sabotages |
+
+`npm run test:rotation-tables` (dans `test:ci`).
+
+---
+
+## 🎨 Dette de thème CMCteams — le cliquet — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/audit/theme-signature.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature.mjs) | Compte les couleurs de marque écrites en dur. La dette peut baisser, jamais monter. |
+| [`tools/audit/theme-signature-baseline.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature-baseline.json) | Le chiffre figé : **1 680** au 15.09.2026 |
+
+`npm run test:theme-signature` (dans `test:ci`). Une baisse volontaire se re-fige avec `--maj-baseline`.
+
+---
+
+## 🎨 Rotaplan — page de vente refaite (système « levels ») — 2026-09-15
+
+**▶️ La page en ligne** : [rotaplan.kd-mc.com](https://rotaplan.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/rotaplan/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/rotaplan/index.html) | La page de vente, refaite sous le système de design `levels` |
+| [`tests/rotaplan-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotaplan-page.test.mjs) | La garde : sécurité, liens, jetons du système, cibles iPhone, sitemap, honnêteté des chiffres |
+| [`vendor/agent-toolkit/awesome-design-skills/skills/levels/`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/vendor/agent-toolkit/awesome-design-skills/skills/levels/DESIGN.md) | Le système de design choisi (67 disponibles) |
+
+Lancer la garde : `npm run test:rotaplan` (elle tourne aussi dans `npm run test:ci`).
+
+---
+
 ## 🎬 Lire une vidéo (TikTok, Insta, YouTube…) — 2026-09-15
 
 Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcription horodatée).
@@ -2389,3 +2551,24 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 | Le garde | Vérifie que les 23 restent surveillées, sans volume ni spam | [verify-deploiement-declenche.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-deploiement-declenche.mjs) |
 
 **Rien dans le journal = tout va bien.** Il ne se remplit que sur panne.
+
+## 🧰 Kit IA de l'indépendant — produit numérique neuf (2026-09-16)
+
+| Fichier | Rôle | Voir | Modifier |
+|---|---|---|---|
+| `shops/kit-ia/index.html` | Page de vente + « j'ai payé, je récupère mon accès » | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/index.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/index.html) |
+| `shops/kit-ia/lire.html` | Lecteur : module 1 gratuit, le reste avec le code | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/lire.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/lire.html) |
+| `shops/kit-ia/kit.js` | Logique (récupération d'accès, lecteur, bouton Copier) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/kit.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/kit.js) |
+| `shops/kit-ia/kit.css` | Style « Swiss moderne », clair/sombre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/kit.css) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/kit.css) |
+| `tests/kit-ia.test.mjs` | 6 preuves (parité prix, CSP, 0 contenu payant public, 2 vrais navigateurs) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-ia.test.mjs) | — |
+| `services/kdmc-vente/worker.js` | Caisse : produit `kit-ia`, `/apercu`, `/lire` (contenu en base D1) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
+| Base D1 `kdmc-contenu` | Les 7 modules (hors dépôt, privé) | [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) | — |
+| Site live | `https://kit.kd-mc.com/` (après fusion + déploiement du routeur) | [ouvrir](https://kit.kd-mc.com/) | — |
+| `tools/club/semaine.mjs` | La machine du lundi : rédige, contrôle, publie la consigne de la semaine, prévient les abonnés | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/club/semaine.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/club/semaine.mjs) |
+| `.github/workflows/club-semaine.yml` | Le bouton que la routine appuie chaque lundi (essai à blanc possible) | [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/club-semaine.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/club-semaine.yml) |
+| `tests/club-semaine.test.mjs` | 16 preuves hors ligne (porte de vérité, faux réseau, rien publié si refusé, relances J-14) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/club-semaine.test.mjs) | — |
+| `tools/kit/metiers.json` | Source unique des 47 métiers × 5 situations (pages « l'IA pour [métier] ») | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/kit/metiers.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/kit/metiers.json) |
+| `tools/kit/pages-metiers.mjs` | Générateur déterministe des pages métiers + sitemap (`npm run kit:metiers`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/kit/pages-metiers.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/kit/pages-metiers.mjs) |
+| `shops/kit-ia/pour/` | 47 pages « l'IA pour un plombier / coiffeur / … » + index, en ligne sur kit.kd-mc.com/pour/ | [voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/kit-ia/pour) | [ouvrir](https://kit.kd-mc.com/pour/index.html) |
+| `tests/kit-metiers.test.mjs` | 5 preuves : pages == source, CSP, 0 contenu payant, liens, sitemap | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-metiers.test.mjs) | — |
+| Routine « Club IA — contenu de la semaine » | Session Claude automatique chaque lundi 07:00 UTC : nouvelle consigne en base + e-mail aux abonnés + point à Kevin | [Routines](https://claude.ai/code) | — |

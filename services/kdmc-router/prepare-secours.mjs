@@ -56,6 +56,7 @@ const APPS = [
   { chemin: 'tools/crea-studio', quoi: 'studio' },
   { chemin: 'tools/crypto-bot-dashboard', quoi: 'bot' },
   { chemin: 'tools/poolrobot', quoi: 'beatbot' },
+  { chemin: 'javis', quoi: 'javis' },  // l'app installable de Bee (16.09)
   { chemin: 'tools/tor', quoi: 'tor' },  // 27e adresse, ajoutee sur main le 15.09 : sans elle, GitHub eteint = 404
   { chemin: 'tools/approvals', quoi: 'autorisations' },
   { chemin: 'lingua', quoi: 'lingua' },

@@ -2,7 +2,13 @@
    Vanilla JS, 0 dépendance. Auteur : KDMC. */
 (function(){
 "use strict";
-var APP_VER="v2.124.0";
+var APP_VER="v2.125.1";
+/* La version doit etre LISIBLE DE DEHORS. Tout ce fichier vit dans une IIFE : APP_VER n'a
+   donc jamais ete une variable globale, et la seule etiquette qui l'affiche (.ver) vit sur
+   l'ecran Profil. Resultat mesure le 17/09 : l'audit LIVE du domaine ne pouvait PAS dire
+   quelle version de Lingua etait servie -- on ne savait pas si un deploiement etait passe.
+   Une ligne, aucun effet visible, et toute verif reelle peut desormais le dire. */
+try{ window.LINGUA_VER = APP_VER; }catch(e){}
 
 /* ============ Stockage : global vs par-compte ============ */
 function gg(k,d){ try{ var v=localStorage.getItem("lingua_g_"+k); return v==null?d:JSON.parse(v);}catch(e){return d;} }
@@ -1798,6 +1804,22 @@ var _rxLines={
 };
 function _rxSay(zone){ var L=_rxLines[zone]||_rxLines.tete; var t=L[Math.floor(Math.random()*L.length)];
   try{ speakLang(t,"fr-FR",BEE_VOICE,mascotCfg().gen!=="m"); }catch(_){} return t; }
+/* ── CLIGNEMENT NATUREL (Kevin 2026-09-16, remonté du widget Javis) ──────────
+   Un vrai œil ne cligne pas toutes les 3 s pendant exactement 150 ms : la durée
+   varie, et une fois sur cinq c'est un DOUBLE battement. C'est ce détail-là qui
+   fait passer Bee de « mécanique » à « vivante ». Une seule fonction pour les
+   TROIS endroits où elle cligne (mascotte, vie permanente, gros plan du coach) :
+   recopier la boucle trois fois, c'est trois versions qui divergent (leçon #142). */
+function beeClinNaturel(el, estEndormie){
+  if(!el || !document.contains(el)) return;
+  function clin(ms){ el.classList.add("blink");
+    setTimeout(function(){ try{el.classList.remove("blink");}catch(_){} }, ms); }
+  var dort = typeof estEndormie==="function" ? !!estEndormie() : !!estEndormie;
+  if(!dort){ var ms = 110 + Math.random()*70; clin(ms);
+    if(Math.random() < 0.2) setTimeout(function(){
+      if(!(typeof estEndormie==="function" ? estEndormie() : estEndormie)) clin(ms); }, ms + 90); }
+  setTimeout(function(){ beeClinNaturel(el, estEndormie); }, dort ? 9000 : (2200 + Math.random()*3600));
+}
 function mascotReact(rig,kind,dur){ if(!rig)return;
   ["rx-joie","rx-triste","rx-reflechit","rx-coucou","rx-poke"].forEach(function(c){rig.classList.remove(c);});
   if(!kind)return; void rig.offsetWidth;            /* relance l'animation même si c'est la même */
@@ -1812,10 +1834,8 @@ function mascotAlive(rig,opts){ if(!rig||rig._alive)return; rig._alive=true; opt
   var look=rig.querySelector(".rig-look")||rig;
   rig.classList.add("vivant");
   var lastTouch=Date.now(), dormi=false;
-  /* — respiration + clignement naturel — */
-  (function blink(){ if(!document.contains(rig))return;
-    if(!dormi){ rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150); }
-    setTimeout(blink, dormi?9000:(2400+Math.random()*3400)); })();
+  /* — respiration + clignement naturel (durée variable, 1 fois sur 5 en double) — */
+  beeClinNaturel(rig, function(){ return dormi; });
   /* — elle te suit du regard — */
   function suivre(cx,cy){ if(dormi)return;
     var r=rig.getBoundingClientRect(); if(!r.width)return;
@@ -1848,9 +1868,7 @@ function mascotAlive(rig,opts){ if(!rig||rig._alive)return; rig._alive=true; opt
 }
 /* Elle VIT en permanence : clignements + micro-mouvements aléatoires, s'arrête seule si l'élément disparaît */
 function beeLifeStart(rig){
-  (function blink(){ if(!document.contains(rig))return;
-    rig.classList.add("blink"); setTimeout(function(){ try{rig.classList.remove("blink");}catch(_){} },150);
-    setTimeout(blink, 2400+Math.random()*3400); })();
+  beeClinNaturel(rig, false);
   (function idle(){ if(!document.contains(rig))return;
     var ks=["fly","walk","dance"]; beeMove(rig, ks[Math.floor(Math.random()*ks.length)], 2200+Math.random()*1400);
     setTimeout(idle, 11000+Math.random()*9000); })(); }
@@ -1894,9 +1912,7 @@ function beeCompanion(){ var w=el("div","bee-companion");
 var _coachSubIv=null, _coachTalkT=null;
 /* Le visage VIT même quand il se tait : clignements à intervalles naturels.
    (Pas de vol/danse ici : le cadre est rond et serré, un grand déplacement sortirait du cadre.) */
-function coachFaceLife(face){ (function blink(){ if(!document.contains(face))return;
-  face.classList.add("blink"); setTimeout(function(){ try{face.classList.remove("blink");}catch(_){} },150);
-  setTimeout(blink, 2400+Math.random()*3400); })(); }
+function coachFaceLife(face){ beeClinNaturel(face, false); }
 function coachStopFace(){ if(_coachSubIv){clearInterval(_coachSubIv);_coachSubIv=null;}
   if(_coachTalkT){clearTimeout(_coachTalkT);_coachTalkT=null;}
   var f=document.querySelector(".coach-face"); if(f){ f.classList.remove("talk");

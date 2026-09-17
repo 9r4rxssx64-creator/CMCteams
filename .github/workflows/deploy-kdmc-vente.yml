@@ -1,0 +1,115 @@
+name: Deploy kdmc-vente Worker
+
+on:
+  push:
+    branches: [ main, 'claude/**' ]
+    paths:
+      - "services/kdmc-vente/**"
+      - ".github/workflows/deploy-kdmc-vente.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-kdmc-vente
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/kdmc-vente
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Un worker qui encaisse ne part JAMAIS sans ses tests (23 contrôles,
+      # dont 3 prouvés discriminants par sabotage : signature webhook, anti-rejeu,
+      # admin non vérifié). Hors-ligne : aucun compte PayPal nécessaire.
+      - name: Tests (obligatoires avant tout déploiement)
+        run: node --test vente.test.mjs
+
+      - name: Install wrangler
+        run: npm i -g wrangler@4
+
+      # Secrets OPTIONNELS : leur absence ne casse rien, elle fait tomber les
+      # ventes en file manuelle (Kevin valide en 1 clic). On le DIT dans le journal.
+      - name: Push PayPal secrets (ceux qui existent)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -e
+          push() {
+            if [ -n "$2" ]; then printf '%s' "$2" | wrangler secret put "$1"; echo "$1 poussé"; 
+            else echo "$1 ABSENT — $3"; fi
+          }
+          push PAYPAL_CLIENT_ID  "${{ secrets.PAYPAL_CLIENT_ID }}"  "vérification auto désactivée, tout passe en file manuelle"
+          push PAYPAL_SECRET     "${{ secrets.PAYPAL_SECRET }}"     "idem"
+          push PAYPAL_WEBHOOK_ID "${{ secrets.PAYPAL_WEBHOOK_ID }}" "livraison instantanée désactivée, les webhooks seront ignorés"
+          push EMAILJS_PRIVATE_KEY "${{ secrets.EMAILJS_PRIVATE_KEY }}" "le code d'accès n'est pas envoyé par e-mail, seulement affiché à l'écran"
+
+      - name: Deploy worker
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # `pipefail` : sinon le code de sortie est celui de `tee` (toujours 0)
+        # et un DÉPLOIEMENT ÉCHOUÉ ressort VERT.
+        shell: bash -eo pipefail {0}
+        run: |
+          set -e
+          wrangler deploy 2>&1 | tee /tmp/deploy.log
+          URL=$(grep -oE "https://[a-zA-Z0-9.-]+\.workers\.dev" /tmp/deploy.log | head -1)
+          echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Déployé: $URL"
+
+      # PREUVE LIVE (l'agent ne peut atteindre ni workers.dev ni l'API GitHub —
+      # le journal CI est la seule preuve réelle, leçon #135).
+      - name: Preuve live — santé + catalogue + refus d'un webhook non signé
+        shell: bash -eo pipefail {0}
+        run: |
+          URL="${{ steps.deploy.outputs.worker_url }}"
+          [ -z "$URL" ] && { echo "URL introuvable"; exit 1; }
+          # La version qu'on vient de déployer se reconnaît à SON catalogue : tant que
+          # /health ne liste pas chaque produit du worker.js du dépôt, c'est l'ancienne
+          # version qui répond (mesuré le 16.09 : le premier appel, 0 s après le
+          # déploiement, lisait encore l'ancien worker — la preuve était un faux vert).
+          ATTENDUS=$(node -e "import('./worker.js').then(m=>console.log(Object.keys(m.__test.PRODUITS).join(' ')))")
+          echo "produits attendus : $ATTENDUS"
+          ok=0
+          for i in $(seq 1 12); do
+            curl -fsS "$URL/health" > /tmp/h.json || true
+            manque=0
+            for prod in $ATTENDUS; do grep -q "\"$prod\"" /tmp/h.json || manque=1; done
+            if grep -q '"ok":true' /tmp/h.json && [ "$manque" = 0 ]; then ok=1; break; fi
+            echo "ancienne version encore servie (essai $i) — attente 5 s"; sleep 5
+          done
+          echo "— santé —"; cat /tmp/h.json; echo
+          [ "$ok" = 1 ] || { echo "ÉCHEC : après 60 s, /health ne sert toujours pas le catalogue déployé"; exit 1; }
+          # Le contenu payant (Kit IA) vit dans la base D1 : sans binding, on vend du vide.
+          grep -q '"contenu_prive":true' /tmp/h.json || { echo "ÉCHEC : base de contenu (binding CONTENU) absente du worker déployé"; exit 1; }
+          echo "— catalogue —"; curl -fsS "$URL/produits"; echo
+          # Kit IA : l'aperçu public sert le module gratuit et RIEN de payant.
+          echo "— aperçu Kit IA (module gratuit seulement) —"
+          curl -fsS "$URL/apercu?produit=kit-ia" > /tmp/a.json
+          node -e '
+            const j = JSON.parse(require("fs").readFileSync("/tmp/a.json","utf8"));
+            if (!j.ok) { console.log("ÉCHEC aperçu :", j.detail || j.error); process.exit(1); }
+            const gratuits = j.modules.map(m => m.id), payants = j.sommaire.filter(s => !s.gratuit).map(s => s.id);
+            console.log("modules servis :", gratuits.join(","), "· sommaire :", j.sommaire.length, "· payants annoncés :", payants.length);
+            if (gratuits.length < 1) { console.log("ÉCHEC : aucun module gratuit en base"); process.exit(1); }
+            if (j.modules.some(m => !m.gratuit)) { console.log("DANGER : un module payant est servi sans code"); process.exit(1); }
+            if (j.sommaire.length < 7) { console.log("ÉCHEC : le sommaire annonce", j.sommaire.length, "modules, 7 attendus"); process.exit(1); }
+          '
+          # Un faux webhook, sans signature valable, ne doit RIEN délivrer.
+          echo "— faux webhook (doit être ignoré) —"
+          curl -sS -X POST "$URL/webhook/paypal" -H 'content-type: application/json' \
+            -d '{"event_type":"PAYMENT.CAPTURE.COMPLETED","resource":{"id":"FAUX","amount":{"value":"39.00","currency_code":"EUR"}}}' \
+            | tee /tmp/w.json; echo
+          grep -q '"ignore":true' /tmp/w.json || { echo "DANGER : un webhook non signé a été accepté"; exit 1; }
+          echo "OK — un paiement non prouvé ne délivre rien."
