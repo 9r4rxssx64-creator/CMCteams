@@ -445,6 +445,18 @@ async function handleCheckPhone(request, env) {
   if (!phoneNorm || !/^\+?\d{8,15}$/.test(phoneNorm)) {
     return err('Numéro invalide', 400, 'phone_invalid', { received: body.phone, normalized: phoneNorm });
   }
+  // Audit 17/09/2026 (P2) : oracle d'énumération sans plafond (« ce numéro existe-t-il ? »
+  // + prénom + statut admin, en boucle, sans être connecté). Plafond 30/h par adresse IP,
+  // même table que l'OTP (clé préfixée pour ne pas consommer le quota SMS).
+  try {
+    const ipHash = 'cp:' + (await sha256(request.headers.get('CF-Connecting-IP') || 'unknown')).slice(0, 60);
+    const hourKey = new Date().toISOString().slice(0, 13);
+    const rl = await env.APEX_CHAT_DB.prepare('SELECT count FROM ratelimit_otp WHERE ip_hash=? AND hour_key=?').bind(ipHash, hourKey).first();
+    if (rl && rl.count >= 30) return err('Trop de tentatives, réessaie dans 1h', 429, 'rate_limit');
+    await env.APEX_CHAT_DB.prepare(
+      'INSERT OR REPLACE INTO ratelimit_otp (ip_hash, hour_key, count) VALUES (?, ?, COALESCE((SELECT count FROM ratelimit_otp WHERE ip_hash=? AND hour_key=?),0)+1)'
+    ).bind(ipHash, hourKey, ipHash, hourKey).run();
+  } catch (e) { console.warn('[check-phone] rate-limit indisponible :', e && e.message); }
   try {
     const user = await env.APEX_CHAT_DB.prepare(
       'SELECT id, pseudo, real_name, first_name, admin_authorized, status FROM users WHERE phone=?'
@@ -458,11 +470,11 @@ async function handleCheckPhone(request, env) {
     if (!first && user.real_name) {
       first = String(user.real_name).trim().split(/\s+/)[0] || '';
     }
+    // admin_authorized n'est plus renvoyé avant preuve de possession du numéro (OTP).
     return json({
       ok: true,
       exists: true,
       first_name: first || user.pseudo || '',
-      admin_authorized: !!user.admin_authorized,
     });
   } catch (e) {
     return err('Erreur lookup phone', 500, 'lookup_failed', { detail: e?.message });
@@ -1362,10 +1374,17 @@ export async function handleUpdateMe(request, env) {
   return json({ ok: true, user });
 }
 
-async function handleGetPublicUser(pseudoOrId, env) {
+async function handleGetPublicUser(pseudoOrId, env, request) {
   // v1.1.164 — accepte id OU pseudo (frontend résout les peers via leur id).
   // Retourne real_name + display_name + first_name + last_name + avatar_url
   // pour K._displayName + K._getAvatar côté frontend.
+  // Audit 17/09/2026 (P2) : cette route répondait SANS jeton → l'état civil (nom, prénom,
+  // bio) de tout inscrit se lisait par son pseudo, sans être connecté. Le client envoie
+  // toujours son jeton (index.html, _fetchPeerProfile) : on l'exige.
+  if (request) {
+    const auth = await getAuthUser(request, env);
+    if (!auth) return err('Non authentifié', 401);
+  }
   const user = await env.APEX_CHAT_DB.prepare(
     `SELECT id, pseudo, real_name, display_name, first_name, last_name,
             avatar_url, bio, last_seen
@@ -1473,7 +1492,18 @@ async function handleListConversations(request, env) {
   // AUTO-RÉPARATION à l'ouverture de l'app (Kevin : « ça doit être auto, partout »).
   // Idempotent : une fois les doublons fusionnés (status='deleted'), la détection
   // les exclut → no-op. Best-effort, ne bloque jamais la liste. v1.1.179.
+  // Audit 17/09/2026 (P1 perf) : ces 6 « soins » (≥ 18 requêtes D1, boucles N+1) tournaient
+  // à CHAQUE appel — et chaque client appelle cette route toutes les 60 s. Ils restent
+  // automatiques mais au plus une fois toutes les 10 minutes (verrou KV), sinon on sert la
+  // liste directement. Sans KV (tests, panne) : comportement d'avant.
+  let healDue = true;
   try {
+    if (env.APEX_CHAT_KV) {
+      if (await env.APEX_CHAT_KV.get('heal:convlist')) healDue = false;
+      else await env.APEX_CHAT_KV.put('heal:convlist', String(Date.now()), { expirationTtl: 600 });
+    }
+  } catch (_) { healDue = true; }
+  if (healDue) try {
     // v1.1.195 — si c'est Kevin (admin) et que kdmc_admin n'a pas encore son VRAI
     // numéro (placeholder), on le lui donne MAINTENANT depuis sa session existante
     // (sans re-login) → résout les stubs local_+<numéro> dans la même requête.
@@ -1696,7 +1726,13 @@ async function handleMediaGet(id, request, env) {
   const obj = await env.APEX_CHAT_MEDIA.get(row.r2_key);
   if (!obj) return err('Média absent du stockage', 404, 'r2_miss');
   const h = new Headers();
-  h.set('Content-Type', row.mime || obj.httpMetadata?.contentType || 'application/octet-stream');
+  const mime = String(row.mime || obj.httpMetadata?.contentType || 'application/octet-stream').toLowerCase();
+  h.set('Content-Type', mime);
+  // Audit 17/09/2026 (P2) : un fichier envoyé comme text/html était servi tel quel depuis
+  // l'origine de l'API (XSS stocké possible). Tout ce qui n'est pas image/audio/vidéo est
+  // servi en pièce jointe, jamais rendu ; nosniff empêche le navigateur de « deviner ».
+  h.set('X-Content-Type-Options', 'nosniff');
+  if (!/^(image|audio|video)\//.test(mime) || /svg/.test(mime)) h.set('Content-Disposition', 'attachment');
   h.set('Cache-Control', 'private, max-age=31536000');
   // (l'en-tête CORS est posé par applyCors selon l'origine — audit P2b)
   return new Response(obj.body, { status: 200, headers: h });
@@ -2804,7 +2840,7 @@ async function handleCreateInvitation(request, env) {
   const normalizedPhone = normPhone(phone);
   const phoneHash = await sha256(normalizedPhone);
   const niceName = (name || '').trim() || 'ami';
-  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
   const expiresAt = Date.now() + 7 * 86400000;
 
@@ -2899,7 +2935,10 @@ async function handleResolveInvitation(code, env) {
   if (!inv) return err('Invitation invalide', 404);
   if (inv.expires_at < Date.now()) return err('Invitation expirée', 410);
   if (inv.accepted_at) return err('Invitation déjà acceptée', 410);
-  return json({ ok: true, invitation: inv });
+  // Audit 17/09/2026 (P2) : route sans jeton — on ne renvoie que ce que la page utilise
+  // (magic_token, qui invite, avatar), jamais l'empreinte du numéro invité ni les ids internes.
+  const { code: c, inviter_pseudo, inviter_avatar, magic_token, expires_at, sent_via } = inv;
+  return json({ ok: true, invitation: { code: c, inviter_pseudo, inviter_avatar, magic_token, expires_at, sent_via } });
 }
 
 // ============================================================================
@@ -3139,7 +3178,7 @@ export async function handleAdminWhitelistBulk(request, env) {
         exp: Math.floor(Date.now() / 1000) + 7 * 86400
       }, env.JWT_SIGN_KEY);
 
-      const code = Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
+      const code = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
       await env.APEX_CHAT_DB.prepare(
         `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
          VALUES (?, ?, ?, 'admin-bulk', ?, ?, ?)`
@@ -3227,7 +3266,7 @@ export async function handleAdminInviteMagic(request, env) {
   }, env.JWT_SIGN_KEY);
 
   // Code court pour SMS (utilisable aussi)
-  const code = Array.from(crypto.getRandomValues(new Uint8Array(4)))
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(8)))
     .map(b => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[b % 30]).join('');
   await env.APEX_CHAT_DB.prepare(
     `INSERT INTO invitations (code, inviter_id, invitee_phone_hash, sent_via, magic_token, created_at, expires_at)
@@ -5598,7 +5637,7 @@ const _workerHandler = {
       if (path === '/api/users/heartbeat' && method === 'POST') return await handleUserHeartbeat(request, env);
       if (path === '/api/cgu/accept' && method === 'POST') return await handleCguAccept(request, env);
       const userMatch = path.match(/^\/api\/users\/([a-zA-Z0-9_-]+)$/);
-      if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env);
+      if (userMatch && method === 'GET') return await handleGetPublicUser(userMatch[1], env, request);
       const adminUserMatch = path.match(/^\/api\/admin\/users\/([a-zA-Z0-9_-]+)\/full$/);
       if (adminUserMatch && method === 'GET') return await handleAdminGetFullUser(adminUserMatch[1], request, env);
 

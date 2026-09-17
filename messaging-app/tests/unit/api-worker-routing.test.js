@@ -198,24 +198,32 @@ describe('api-worker — GET /api/users/me', () => {
   });
 });
 
-describe('api-worker — GET /api/users/:pseudo (public)', () => {
+describe('api-worker — GET /api/users/:pseudo (profil d\'un pair, jeton requis — audit 17/09/2026)', () => {
+  const tok = () => makeJWT({ sub: 'u-1', iat: Math.floor(Date.now() / 1000) });
+  // La ligne d'auth (getAuthUser) puis la ligne profil
+  const db = (profil) => vi.fn((sql) => ({
+    bind: function () { return this; },
+    first: async () => (sql.includes('last_force_logout_at') ? { status: 'active', is_banned: 0 } : profil),
+  }));
+
+  it('sans jeton → 401 (avant : état civil lisible par pseudo sans être connecté)', async () => {
+    const env = ENV();
+    env.APEX_CHAT_DB.prepare = db({ pseudo: 'kdmc', real_name: 'Kevin D' });
+    const r = await worker.fetch(makeRequest({ method: 'GET', path: '/api/users/kdmc' }), env);
+    expect(r.status).toBe(401);
+  });
+
   it('user existe → 200', async () => {
     const env = ENV();
-    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
-      bind: function () { return this; },
-      first: async () => ({ pseudo: 'kdmc', name: 'Kevin' }),
-    }));
-    const r = await worker.fetch(makeRequest({ method: 'GET', path: '/api/users/kdmc' }), env);
+    env.APEX_CHAT_DB.prepare = db({ pseudo: 'kdmc', name: 'Kevin' });
+    const r = await worker.fetch(makeRequest({ method: 'GET', path: '/api/users/kdmc', token: await tok() }), env);
     expect(r.status).toBe(200);
   });
 
   it('user inconnu → 404', async () => {
     const env = ENV();
-    env.APEX_CHAT_DB.prepare = vi.fn(() => ({
-      bind: function () { return this; },
-      first: async () => null,
-    }));
-    const r = await worker.fetch(makeRequest({ method: 'GET', path: '/api/users/inconnu' }), env);
+    env.APEX_CHAT_DB.prepare = db(null);
+    const r = await worker.fetch(makeRequest({ method: 'GET', path: '/api/users/inconnu', token: await tok() }), env);
     expect(r.status).toBe(404);
   });
 });

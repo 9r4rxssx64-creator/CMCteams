@@ -91,7 +91,7 @@ describe('ConversationDO — aucun message acquitté ne peut être perdu', () =>
     expect(state.storage.setAlarm).toHaveBeenCalledTimes(1);
   });
 
-  it('la fermeture de la connexion vide le buffer en D1 (rien d'acquitté ne reste en mémoire)', async () => {
+  it("la fermeture de la connexion vide le buffer en D1 (rien d'acquitté ne reste en mémoire)", async () => {
     const req = { url: 'https://do/ws?token=x&uid=u1&did=d1', method: 'GET', headers: { get: (n) => (n.toLowerCase() === 'upgrade' ? 'websocket' : null) } };
     vi.spyOn(_do, 'verifyJWT').mockResolvedValue({ sub: 'u1', device_id: 'd1' });
     // membre autorisé + pas d'historique

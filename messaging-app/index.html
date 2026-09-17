@@ -19,7 +19,7 @@
 <meta property="og:image" content="./og-image.svg">
 <meta property="og:url" content="https://apex-chat.kd-mc.com/">
 <!-- Sécurité : CSP + Referrer-Policy + X-Content-Type-Options + Permissions-Policy défense en profondeur -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https: wss:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; connect-src 'self' https://apex-chat-api.9r4rxssx64.workers.dev wss://apex-chat-api.9r4rxssx64.workers.dev https://apex-push-worker.9r4rxssx64.workers.dev https://kd-mc.com https://*.kd-mc.com wss://*.kd-mc.com https://api.giphy.com https://api.qrserver.com https://cmcteams-c16ab-default-rtdb.europe-west1.firebasedatabase.app https://unpkg.com; media-src 'self' blob: data: https:; font-src 'self' data:; manifest-src 'self'; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(self), geolocation=(self), display-capture=(self), interest-cohort=(), payment=(), usb=(), bluetooth=(), accelerometer=(), gyroscope=()">
@@ -240,6 +240,10 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .chat-header .avatar{width:32px;height:32px;font-size:.9em;flex-shrink:0}
 .chat-header .topbar-btn{width:44px;height:44px;flex-shrink:0}
 .chat-hname{font-weight:600;font-size:.95em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Audit 17/09/2026 (P1 UX) : à 375 px le nom du contact n'avait plus que 14 px (6 boutons de 44 px).
+   Sur écran étroit, recherche et vidéo vivent dans le menu ⋯ ; le nom garde au moins 96 px. */
+.chat-header > div[style*="flex:1"]{min-width:96px}
+@media (max-width:420px){ .chat-header .hdr-opt{display:none} }
 .find-bar{display:flex;align-items:center;gap:4px;padding:6px 8px;background:var(--ax-bg-2);
   border-bottom:1px solid var(--ax-border);position:sticky;top:0;z-index:49}
 .find-bar #find-input{flex:1;min-width:0;background:var(--ax-bg-3,var(--ax-bg));border:1px solid var(--ax-border);
@@ -283,8 +287,9 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 .msg.grp-start{margin-top:8px}
 .msg.me:not(.grp-end){border-bottom-right-radius:15px}
 .msg.them:not(.grp-end){border-bottom-left-radius:15px}
-.msg-time{color:var(--ax-text-3);font-size:.6em;margin-top:1px;text-align:right;line-height:1}
+.msg-time{color:var(--ax-text-3);font-size:.72em;margin-top:1px;text-align:right;line-height:1}
 .msg.them .msg-time{color:var(--ax-text-3)}
+.msg.me .msg-time,.msg.me .msg-status{color:rgba(8,8,15,.72)} /* audit 17/09 : gris sur or = 1.86:1, illisible */
 .msg.system{align-self:center;background:rgba(106,138,255,.12);color:var(--ax-blue);
   font-size:.78em;padding:5px 12px;border-radius:14px;max-width:90%}
 /* v1.1.189 — fenêtre de chat PLEIN ÉCRAN : la zone messages remplit tout
@@ -386,11 +391,11 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   margin:18px 0 10px;font-size:1em;font-weight:700;border-bottom:1px solid var(--ax-border);padding-bottom:6px}
 
 /* ========== Toast ========== */
-.toasts{position:fixed;top:calc(var(--ax-safe-top) + 70px);left:14px;right:14px;
+.toasts{position:fixed;top:calc(var(--ax-safe-top) + 122px);left:14px;right:14px;
   z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none}
 .toast{background:var(--ax-bg-2);border:1px solid var(--ax-border);padding:10px 14px;
   border-radius:var(--ax-radius);box-shadow:var(--ax-shadow);
-  animation:slidein .25s ease;pointer-events:auto;font-size:.9em}
+  animation:slidein .25s ease;pointer-events:none;font-size:.9em}
 .toast.ok{border-left:3px solid var(--ax-ok)}
 .toast.warn{border-left:3px solid var(--ax-warn)}
 .toast.err{border-left:3px solid var(--ax-err)}
@@ -428,7 +433,7 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
   padding-top:var(--ax-safe-top)}
 .modal{background:var(--ax-bg-2);border-top-left-radius:var(--ax-radius-lg);border-top-right-radius:var(--ax-radius-lg);
   padding:20px 16px calc(var(--ax-safe-bottom) + 20px);width:100%;max-width:600px;animation:slidein .25s ease;
-  max-height:85vh;overflow-y:auto;outline:none}
+  max-height:85vh;overflow-y:auto;outline:none;position:relative}
 .modal:focus-visible{box-shadow:0 0 0 3px var(--ax-gold-2)}
 .modal-title{font-family:Georgia,serif;color:var(--ax-gold);font-size:1.2em;margin:0 0 14px;letter-spacing:1px}
 .modal-close{position:absolute;top:12px;right:14px;font-size:1.3em;color:var(--ax-text-2);
@@ -453,14 +458,14 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 </head>
 <body>
 <a href="#main-app" class="skip-link">Aller au contenu principal</a>
-<a id="kdmc-portal-link" href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;left:8px;bottom:max(72px,calc(env(safe-area-inset-bottom) + 60px));top:auto;z-index:1200;background:rgba(10,10,12,.66);color:#fff;text-decoration:none;padding:5px 11px;border-radius:999px;font:600 11px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
+<a id="kdmc-portal-link" href="https://kd-mc.com/" aria-label="Retour au portail KDMC" style="position:fixed;left:8px;bottom:max(72px,calc(env(safe-area-inset-bottom) + 60px));top:auto;z-index:150;background:rgba(10,10,12,.66);color:#fff;text-decoration:none;padding:5px 11px;border-radius:999px;font:600 11px/1 -apple-system,BlinkMacSystemFont,sans-serif;border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)">← KDMC</a>
 
 <!-- Service Worker registration -->
 <script>
 'use strict';
 const __APEX_CHAT_VERSION__ = 'v1.1.290';
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
-// Triple stratégie : SW updatefound + heartbeat 60s + remote version check 30s
+// Triple stratégie : SW updatefound + heartbeat 60s + remote version check 60s (HEAD/ETag)
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js?v=' + __APEX_CHAT_VERSION__, {scope:'./', type:'module'}).then(reg=>{
     reg.update().catch(_=>{});
@@ -556,6 +561,8 @@ if('serviceWorker' in navigator){
   // fetch bloqué laissait _versionCheckRunning=true à vie → plus aucune MAJ.
   let _versionCheckRunning = false;
   let _lastVersionCheckTs = 0;
+  let _pageEtag = null;          // empreinte (ETag/Last-Modified) de la page servie
+  let _lastFullFetchTs = 0;
   async function _checkRemoteVersion(reason){
     if(_versionCheckRunning) return;
     if(Date.now() - _lastVersionCheckTs < 8000) return;   // throttle 8s
@@ -564,11 +571,20 @@ if('serviceWorker' in navigator){
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 10000);    // timeout 10s — débloque le flag
     try{
-      const r = await fetch(location.pathname + '?_v=' + Date.now(), {
-        cache: 'reload',
-        signal: ctrl.signal,
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
-      });
+      // Audit 17/09/2026 (P1 perf) : la page complète (841 Ko) était retéléchargée toutes
+      // les ~11 s (≈ 83 Mo/h). On interroge d'abord l'empreinte du fichier (HEAD, quelques
+      // octets) ; la page n'est relue que si elle a changé — ou toutes les 10 min au plus
+      // si le serveur ne donne pas d'empreinte.
+      const opts = { cache: 'reload', signal: ctrl.signal, headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' } };
+      const head = await fetch(location.pathname + '?_v=' + Date.now(), { ...opts, method: 'HEAD' }).catch(() => null);
+      const tag = head && (head.headers.get('etag') || head.headers.get('last-modified'));
+      if(tag){
+        if(_pageEtag === null){ _pageEtag = tag; if(Date.now() - _lastFullFetchTs < 600000) return; }
+        else if(tag === _pageEtag) return;                  // rien n'a changé
+      } else if(Date.now() - _lastFullFetchTs < 600000){ return; }
+      _lastFullFetchTs = Date.now();
+      const r = await fetch(location.pathname + '?_v=' + Date.now(), opts);
+      if(tag) _pageEtag = tag;
       const html = await r.text();
       const m = html.match(/__APEX_CHAT_VERSION__\s*=\s*['"]([^'"]+)['"]/);
       if(m && m[1] && m[1] !== __APEX_CHAT_VERSION__){
@@ -605,7 +621,7 @@ if('serviceWorker' in navigator){
   setTimeout(() => { try { if (window.K) window.K._checkRemoteVersion = _checkRemoteVersion; } catch (_e) {} }, 0);   // exposé : déclenché aussi aux changements de vue
   // Polling renforcé iOS PWA : boot 4s + interval 20s + visibility/focus/pageshow
   setTimeout(() => _checkRemoteVersion('boot'), 4000);
-  setInterval(() => _checkRemoteVersion('interval'), 20000);
+  setInterval(() => _checkRemoteVersion('interval'), 60000);   // règle MAJ auto : 60 s (+ focus/visibilité)
   document.addEventListener('visibilitychange', () => { if(!document.hidden) _checkRemoteVersion('visible'); });
   window.addEventListener('focus', () => _checkRemoteVersion('focus'));
   window.addEventListener('pageshow', (e) => { if(e.persisted) _checkRemoteVersion('pageshow'); });
@@ -856,7 +872,14 @@ function _cleanupStorage(){
     for(const k of all){
       const short = k.replace(PERSIST_PREFIX, '');
       if(!keep.includes(short) && localStorage.getItem(k).length > 5000){
-        localStorage.removeItem(k);
+        // Audit 17/09/2026 (P2) : avant, la clé entière partait (historique local effacé en
+        // silence). Une liste est tronquée à ses 150 derniers éléments ; le reste est retiré.
+        let tronque = false;
+        try{
+          const v = JSON.parse(localStorage.getItem(k));
+          if(Array.isArray(v) && v.length > 150){ localStorage.setItem(k, JSON.stringify(v.slice(-150))); tronque = true; }
+        }catch(_){}
+        if(!tronque) localStorage.removeItem(k);
       }
     }
   }catch(e){_safeCatch('silent',e)}
@@ -940,15 +963,29 @@ function toast(message, type='info', duration=3000){
   try{
     const host = $('#toasts');
     if(!host) return;
+    // Audit 17/09/2026 (P0 UX) : même texte → on rafraîchit le toast existant au lieu
+    // d'empiler ; au plus 3 visibles (le plus ancien part). Fini la « tempête ».
+    const same = [...host.children].find(el => el.textContent === message);
+    if(same){ clearTimeout(same._toastT); same.style.opacity = ''; same._toastT = setTimeout(() => { same.style.opacity = '0'; setTimeout(()=>same.remove(), 300); }, duration); return; }
+    while(host.children.length >= 3) host.firstElementChild.remove();
     const t = document.createElement('div');
     t.className = 'toast ' + type;
     t.textContent = message;
     host.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, duration);
+    t._toastT = setTimeout(() => { t.style.opacity = '0'; setTimeout(()=>t.remove(), 300); }, duration);
   }catch(e){ console.log(`[toast:${type}]`, message); }
 }
 
 K.toast = toast;
+
+// Audit 17/09/2026 : jamais « Failed to fetch » à l'écran (règle « langage simple »).
+K._humanError = function(e, fallback){
+  const m = String((e && e.message) || e || '');
+  if(/failed to fetch|networkerror|load failed|network request failed|fetch failed/i.test(m)) return 'Réseau indisponible — vérifie le Wi-Fi ou la 4G, puis réessaie';
+  if(/aborterror|timeout|timed out/i.test(m)) return 'Pas de réponse du serveur, réessaie dans un instant';
+  if(/json/i.test(m) && /unexpected|parse|token/i.test(m)) return 'Réponse du serveur illisible, réessaie';
+  return m || fallback || 'Erreur inconnue';
+};
 
 // ============================================================================
 //  Auth — Firebase Phone + comptes pré-configurés
@@ -4345,6 +4382,9 @@ K._openConvActionsMenu = function(convId, ev){
   K._showModal('⚙️ Actions conversation', `
     <p style="color:var(--ax-text-2);font-size:.85em;margin:0 0 12px"><strong>${esc(K._convName(conv))}</strong></p>
     <div style="display:grid;gap:6px">
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._call('video','${esc(convId)}')">📹 Appel vidéo</button>
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._toggleFindBar()">🔎 Rechercher dans cette conversation</button>
+      <button class="btn btn-out btn-block" onclick="K._closeModal();K._openSearchModal()">🔍 Recherche IA</button>
       <button class="btn btn-out btn-block" onclick="K._markConvUnread('${esc(convId)}')">🔵 Marquer comme non-lue</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvPinned('${esc(convId)}')">${conv.pinned ? '📌 Désépingler' : '📌 Épingler en haut'}</button>
       <button class="btn btn-out btn-block" onclick="K._toggleConvMuted('${esc(convId)}')">${conv.muted ? '🔔 Réactiver notifs' : '🔕 Mettre en muet (permanent)'}</button>
@@ -7142,7 +7182,7 @@ function renderAuthStep(){
           try{
             await K._handleAuthPhone();
           }catch(err){
-            $('#auth-debug').textContent = '❌ ' + (err.message || 'Erreur inconnue');
+            $('#auth-debug').textContent = '❌ ' + K._humanError(err, 'Erreur inconnue');
           }
         });
         $('#auth-debug').textContent = '';
@@ -7237,7 +7277,7 @@ K._handleAuthPhone = async function(){
       body: JSON.stringify({ phone: cleanPhone, name })
     });
     const result = await r.json().catch(() => ({}));
-    if(!r.ok) throw new Error(result.detail || result.message || ('Erreur ' + r.status));
+    if(!r.ok) throw new Error(result.message || result.detail || ('Erreur ' + r.status));
     // v1.1.219 — cercle de confiance (Laurence + famille/amis configurés) : le
     // serveur autorise la connexion SANS SMS → on saute l'étape code.
     if(result._circle_bypass){
@@ -7258,7 +7298,7 @@ K._handleAuthPhone = async function(){
     K.authStep = 'otp';
     renderAuthStep();
   }catch(e){
-    toast(e.message || 'Envoi impossible, réessaie', 'err', 4000);
+    toast(K._humanError(e, 'Envoi impossible, réessaie'), 'err', 4000);
   }
   return;
 
@@ -7554,9 +7594,18 @@ K.render = function(){
   }
 };
 
+// Audit 17/09/2026 (P2 perf) : 10 événements « écrit… » = 10 rendus complets de la liste.
+// Regroupés : au plus un rendu toutes les 250 ms.
+K._renderListSoon = function(){
+  if(K._listRenderT) return;
+  K._listRenderT = setTimeout(() => { K._listRenderT = null; if(K.view === 'chats') K.render(); }, 250);
+};
 K.sv = function(view, data){
   K.view = view;
   if(data) K.viewData = data;
+  // Audit 17/09/2026 (P1 UX) : le geste « retour » iOS quittait l'app (0 pushState).
+  // Ouvrir une conversation ajoute une entrée d'historique ; le retour la referme.
+  if(view === 'chat'){ try{ if(!(history.state && history.state.view === 'chat')) history.pushState({ view: 'chat' }, ''); }catch(_){} }
   K.render();
   // v1.1.170 : chaque navigation déclenche aussi un check MAJ (throttlé 8s)
   try{ if(K._checkRemoteVersion) K._checkRemoteVersion('nav'); }catch(_e){_safeCatch('silent',_e)}
@@ -7834,10 +7883,9 @@ function renderChat(app){
         <div class="chat-hname">${esc(K._convName(conv))}</div>
         <div style="font-size:.68em;color:var(--ax-ok);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="chat-header-subtitle">${K._isGroup(conv) ? `👥 ${esc(String(conv.member_count || '?'))} membres · 🔒 chiffré (transit)` : K._presenceLabel(conv)}</div>
       </div>
-      <button class="topbar-btn" onclick="K._toggleFindBar()" aria-label="Rechercher dans cette conversation">🔎</button>
-      <button class="topbar-btn" onclick="K._openSearchModal()" aria-label="Recherche IA">🔍</button>
+      <button class="topbar-btn hdr-opt" onclick="K._toggleFindBar()" aria-label="Rechercher dans cette conversation">🔎</button>
       <button class="topbar-btn" onclick="K._call('audio','${esc(conv.id)}')" aria-label="Appel audio">📞</button>
-      <button class="topbar-btn" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
+      <button class="topbar-btn hdr-opt" onclick="K._call('video','${esc(conv.id)}')" aria-label="Appel vidéo">📹</button>
       <button class="topbar-btn" onclick="K._openConvActionsMenu('${esc(conv.id)}', event)" aria-label="Actions">⋯</button>
     </div>
     ${K._findBarOpen ? `<div class="find-bar" id="find-bar">
@@ -8344,10 +8392,10 @@ K._wsDiagnose = async function(convId){
       return;
     }
     if(d.ok){
-      // Tous les checks passent → le WS devrait marcher, on relance proprement
-      toast('Temps réel : nouvelle tentative…', 'info', 2000);
-      K._wsRetry = 0;
-      if(K.view === 'chat' && K.viewData && K.viewData.id === convId) K._openWs(convId);
+      // Tous les contrôles passent → la reconnexion à délai croissant (backoff, plus bas)
+      // s'en charge. Audit 17/09/2026 (P0 UX) : remettre K._wsRetry à 0 ici annulait le
+      // backoff → boucle ~1 s, 337 connexions en 5 min et 194 toasts empilés qui
+      // recouvraient l'en-tête (le bouton Retour ne répondait plus).
       return;
     }
     toast('Temps réel indisponible : ' + (d.detail || d.cause || 'cause inconnue'), 'warn', 7000);
@@ -8659,12 +8707,12 @@ async function _handleWsMessage(data, convId){
             delete K._typingState[convId][tFrom];
             if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
             /* v1.1.97 : re-render conv list pour effacer "✏️ écrit..." */
-            if(K.view === 'chats') K.render();
+            if(K.view === 'chats') K._renderListSoon();
           }
         }, 4500);
         if(K.view === 'chat' && K.viewData?.id === convId) K._renderTypingIndicator(convId);
         /* v1.1.97 : si on est sur la liste conv, re-render pour montrer "✏️ écrit..." */
-        if(K.view === 'chats') K.render();
+        if(K.view === 'chats') K._renderListSoon();
       }
       break;
     case 'location_update': {
@@ -9980,7 +10028,7 @@ K._openContactSheet = async function(id){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
       <button class="btn btn-sm" onclick="K._closeModal();K._startConvWithUser('${esc(c.id)}','${esc(nm)}')">💬 Message</button>
-      <button class="btn btn-sm btn-out" onclick="K._closeModal();K._startCall&&K._startCall('${esc(c.id)}','audio')">📞 Appel</button>
+      <button class="btn btn-sm btn-out" onclick="K._closeModal();K._callContact&&K._callContact('${esc(c.id)}','audio')">📞 Appel</button>
     </div>
     ${c.phone ? `<button class="btn btn-sm btn-block" style="margin-bottom:12px;background:var(--ax-gold);color:#000" onclick="K._inviteAndOpen('${esc(c.id)}')">📨 Inviter sur Apex Chat + ouvrir la conversation</button>` : ''}
 
@@ -10868,8 +10916,20 @@ K._renderSmartReplyChips = async function(convId, lastMsg){
     host.innerHTML = '';
     return;
   }
-  host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.72em;padding:2px 8px">💡</div>';
-  const replies = await K._loadSmartReplies(lastMsg.text);
+  // Audit 17/09/2026 (P1 coût) : un appel LLM à chaque ouverture de la conversation et à
+  // chaque message reçu, sans cache. Réponses gardées par message (50 derniers) ; rien
+  // n'est demandé quand l'onglet n'est pas visible.
+  if(document.hidden){ host.innerHTML = ''; return; }
+  K._smartReplyCache = K._smartReplyCache || new Map();
+  const ck = String(lastMsg.id || lastMsg.ts);
+  let replies;
+  if(K._smartReplyCache.has(ck)) replies = K._smartReplyCache.get(ck);
+  else {
+    host.innerHTML = '<div style="color:var(--ax-text-3);font-size:.72em;padding:2px 8px">💡</div>';
+    replies = await K._loadSmartReplies(lastMsg.text);
+    K._smartReplyCache.set(ck, replies || []);
+    if(K._smartReplyCache.size > 50) K._smartReplyCache.delete(K._smartReplyCache.keys().next().value);
+  }
   if(!replies || replies.length === 0){
     host.innerHTML = '';
     return;
@@ -12261,7 +12321,7 @@ function renderContacts(app){
             <div style="font-size:.75em;color:var(--ax-text-3)">${c.nickname ? esc(realName)+' · ' : ''}${esc(lastSeenLabel)}</div>
           </div>
           <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._openContactSheet('${esc(c.id)}')" aria-label="Fiche" title="Fiche de renseignement">ℹ️</button>
-          <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._startCall && K._startCall('${esc(c.id)}','audio')" aria-label="Appel">📞</button>
+          <button class="btn btn-sm btn-out" onclick="event.stopPropagation();K._callContact && K._callContact('${esc(c.id)}','audio')" aria-label="Appel">📞</button>
         </div>`;
       }).join('')}
     </div>
@@ -14548,6 +14608,24 @@ K._showModal = function(title, html, opts){
 };
 
 K._closeModal = function(){ $('#modal-host').innerHTML = ''; };
+// Audit 17/09/2026 (P1 UX) : geste retour iOS / bouton Android — ferme la modale ouverte,
+// sinon revient à la liste depuis une conversation, sans jamais quitter l'app d'un coup.
+window.addEventListener('popstate', () => {
+  try{
+    const host = $('#modal-host');
+    if(host && host.innerHTML){ K._closeModal(); return; }
+    if(K.view === 'chat'){ K.view = 'chats'; K.render(); }
+  }catch(_e){ _safeCatch('silent', _e); }
+});
+try{
+  // une modale ouverte = une entrée d'historique (pour que « retour » la ferme)
+  const _mh = $('#modal-host');
+  if(_mh && 'MutationObserver' in window){
+    new MutationObserver(() => {
+      try{ if(_mh.innerHTML && !(history.state && history.state.modal)) history.pushState({ modal: true, view: K.view }, ''); }catch(_){}
+    }).observe(_mh, { childList: true });
+  }
+}catch(_){}
 
 // ============================================================================
 //  Invitation viral SMS
