@@ -1,0 +1,50 @@
+{
+  "_doc": "GÉNÉRÉ par pub-videos.yml (programmation.mjs --prepare) : ce que la routine « Pub — vidéos de la semaine » programme dans Metricool (marque 7000185). Aucun secret.",
+  "marque": 7000185,
+  "fuseau": "Europe/Paris",
+  "reseaux": [
+    "facebook",
+    "instagram",
+    "tiktok",
+    "youtube"
+  ],
+  "rendu": "2026-09-17T16:07:45.461Z",
+  "videos": [
+    {
+      "id": "immo-04",
+      "produit": "immo-ia",
+      "page": "https://kit.kd-mc.com/immo.html",
+      "titre": "Trois acheteurs te relancent pendant ta visite.",
+      "mp4": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/immo-04.mp4",
+      "duree": 21,
+      "voix": "domaine",
+      "legende": "Trois acheteurs qui relancent pendant une visite, ca arrive tous les jours. Tu dictes l'essentiel du bien, l'assistant IA prepare tes reponses, tu les envoies entre deux portes. Le module 1 est gratuit sur kit.kd-mc.com",
+      "hashtags": [
+        "#immobilier",
+        "#agentimmobilier",
+        "#mandataire",
+        "#prospection",
+        "#ia"
+      ],
+      "creneau": "2026-09-28T10:00:00+02:00"
+    },
+    {
+      "id": "club-03",
+      "produit": "club-ia",
+      "page": "https://kit.kd-mc.com/#club",
+      "titre": "Ton devis est parti mardi. Toujours aucune réponse.",
+      "mp4": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/club-03.mp4",
+      "duree": 19,
+      "voix": "domaine",
+      "legende": "Le devis est parti, le client se tait, et tu n'oses pas relancer. Le Club IA au Boulot te donne la consigne à copier pour écrire cette relance sans y passer ta soirée. Tout est sur kit.kd-mc.com",
+      "hashtags": [
+        "#ia",
+        "#independant",
+        "#commercant",
+        "#devis",
+        "#relance"
+      ],
+      "creneau": "2026-09-28T12:00:00+02:00"
+    }
+  ]
+}
