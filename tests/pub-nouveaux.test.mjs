@@ -14,12 +14,18 @@ import { lireScripts, valideScript, produitsConnus } from '../tools/pub/video.mj
 const S = lireScripts();
 const BON = { lignes: ['Un mandat qui traîne depuis trois semaines.', 'Tu décris le bien en deux phrases.', "L'assistant écrit l'annonce, le titre et le message au vendeur.", 'Tu relis, tu corriges un mot, tu envoies.', 'Le module 1 est gratuit.'], legende: 'Un mandat qui traîne depuis trois semaines : tu décris le bien, l\'assistant écrit l\'annonce et le message au vendeur, tu relis et tu envoies. Kit IA de l\'agent immobilier sur kit.kd-mc.com', hashtags: ['#immobilier', '#mandat', '#agentimmobilier', '#ia'] };
 const MAUVAIS = { ...BON, lignes: BON.lignes.map((l, i) => (i === 1 ? 'Copie ce prompt et gagne 30 % de temps.' : l)) };
+/* Les ids attendus se CALCULENT depuis scripts.json : la routine y ajoute des scripts chaque
+   semaine, un id écrit en dur (« immo-04 ») casserait la garde au 2ᵉ lundi (vécu 17.09, run 35254150815). */
+const NEXT_IMMO = N.prochainId(S.videos, 'immo');
+const NEXT_CLUB = N.prochainId(S.videos, 'club');
+const THEME_IMMO = S.videos.filter((v) => v.produit === 'immo-ia').length % 2 === 0 ? 'sombre' : 'clair';
 const faux = (reponses) => { const appels = []; return { appels, fn: async (env, prompt, retour) => { appels.push({ prompt, retour }); return reponses.shift(); } }; };
 
 test('demande, id suivant, lecture de la réponse (avec ou sans clôture ```json)', () => {
   assert.deepEqual(N.litDemande('immo:1, club:2,avis'), [{ niche: 'immo', n: 1 }, { niche: 'club', n: 2 }, { niche: 'avis', n: 1 }]);
   assert.equal(N.litDemande('x:9')[0].n, 3, 'plafond 3 par niche');
-  assert.equal(N.prochainId(S.videos, 'immo'), 'immo-04');
+  assert.match(NEXT_IMMO, /^immo-\d{2}$/); assert.ok(!S.videos.some((v) => v.id === NEXT_IMMO), 'id suivant déjà pris');
+  assert.equal(N.prochainId([{ id: 'immo-03' }, { id: 'immo-01' }], 'immo'), 'immo-04');
   assert.equal(N.prochainId(S.videos, 'neuf'), 'neuf-01');
   assert.deepEqual(N.litReponse('```json\n' + JSON.stringify(BON) + '\n```'), BON);
   assert.deepEqual(N.litReponse('Voici : ' + JSON.stringify(BON) + ' — fin'), BON);
@@ -31,7 +37,7 @@ test('les fiches de niche viennent du catalogue + kit + club, chaque page est ce
   for (const id of produitsConnus()) assert.ok(Object.values(f).some((x) => x.produit === id), 'niche absente pour ' + id);
   assert.equal(f.immo.page, 'https://kit.kd-mc.com/immo.html');
   assert.match(f.club.gratuit, /cinquante-neuf/);
-  const c = N.consigneScript({ niche: 'immo', fiche: f.immo, id: 'immo-04', existants: S.videos.filter((v) => v.produit === 'immo-ia') });
+  const c = N.consigneScript({ niche: 'immo', fiche: f.immo, id: NEXT_IMMO, existants: S.videos.filter((v) => v.produit === 'immo-ia') });
   assert.ok(c.includes('immo-01') && c.includes('immo-03'), 'les angles déjà utilisés sont donnés au modèle');
 });
 
@@ -39,7 +45,7 @@ test('un bon script est accepté au 1er essai, avec l\'id et le thème alternés
   const f = N.fichesNiches();
   const { appels, fn } = faux([JSON.stringify(BON)]);
   const v = await N.ecritScript({ niche: 'immo', fiche: f.immo, videos: S.videos, env: {}, redigeFn: fn });
-  assert.equal(v.id, 'immo-04'); assert.equal(v.produit, 'immo-ia'); assert.equal(v.theme, 'clair', '3 immo existent → le 4ᵉ est clair');
+  assert.equal(v.id, NEXT_IMMO); assert.equal(v.produit, 'immo-ia'); assert.equal(v.theme, THEME_IMMO, 'thème alterné selon le nombre d\'immo existants');
   assert.ok(valideScript(v, { produits: produitsConnus() }).ok);
   assert.equal(appels.length, 1); assert.equal(appels[0].retour, null);
 });
@@ -48,7 +54,7 @@ test('un script avec jargon + promesse est REFUSÉ et la raison est renvoyée au
   const f = N.fichesNiches(); const log = [];
   const { appels, fn } = faux([JSON.stringify(MAUVAIS), JSON.stringify(BON)]);
   const v = await N.ecritScript({ niche: 'immo', fiche: f.immo, videos: S.videos, env: {}, log: (l) => log.push(l), redigeFn: fn });
-  assert.ok(v && v.id === 'immo-04');
+  assert.ok(v && v.id === NEXT_IMMO);
   assert.equal(appels.length, 2);
   assert.match(appels[1].retour.erreurs.join(' '), /interdit/);
   assert.ok(log.some((l) => /essai 1 : REFUSÉ/.test(l)) && log.some((l) => /essai 2 : ACCEPTÉ/.test(l)));
@@ -61,7 +67,7 @@ test('3 refus → niche sautée (rien n\'est écrit) ; une 1ʳᵉ ligne déjà u
   const deja = { ...BON, lignes: [S.videos.find((x) => x.id === 'immo-01').lignes[0], ...BON.lignes.slice(1)] };
   const log = [];
   const w = await N.ecritScript({ niche: 'immo', fiche: f.immo, videos: S.videos, env: {}, log: (l) => log.push(l), redigeFn: faux([JSON.stringify(deja), 'pas du json', JSON.stringify(BON)]).fn });
-  assert.ok(w && w.id === 'immo-04');
+  assert.ok(w && w.id === NEXT_IMMO);
   assert.ok(log.some((l) => /déjà utilisée/.test(l)) && log.some((l) => /illisible/.test(l)));
 });
 
@@ -72,12 +78,12 @@ test('principal : écrit les scripts acceptés dans le fichier, saute la niche i
   const log = [];
   const club = { lignes: ['Lundi, un client râle. Mardi, un devis dort.', 'Chaque semaine, une consigne prête pour une situation vécue.', 'Tu copies, tu adaptes deux mots.', 'Tu envoies depuis ton téléphone.', "Club IA au boulot. Cinquante-neuf euros l'année."], legende: 'Lundi un client râle, mardi un devis dort : chaque semaine une consigne prête pour une situation vécue, tu copies, tu adaptes, tu envoies. Club IA au Boulot sur kit.kd-mc.com', hashtags: ['#independant', '#commercant', '#ia', '#club'] };
   const r = await N.principal({ ANTHROPIC_API_KEY: 'x', NOUVEAUX: 'immo:1,inconnue:1,club:1' }, (l) => log.push(l), { redigeFn: faux([JSON.stringify(BON), JSON.stringify(club)]).fn, fichier });
-  assert.deepEqual(r.ids, ['immo-04', 'club-03']); assert.equal(r.total, 3);
+  assert.deepEqual(r.ids, [NEXT_IMMO, NEXT_CLUB]); assert.equal(r.total, 3);
   const s = JSON.parse(readFileSync(fichier, 'utf8'));
   assert.equal(s.videos.length, S.videos.length + 2);
   assert.ok(s.videos.every((v) => valideScript(v, { produits: produitsConnus() }).ok), 'le fichier écrit repasse la porte de vérité');
   assert.ok(log.some((l) => /niche inconnue : inconnue/.test(l)));
-  assert.ok(log.some((l) => /^NOUVEAUX SCRIPTS 2\/3 : immo-04,club-03$/.test(l)), log.join('\n'));
+  assert.ok(log.some((l) => l === 'NOUVEAUX SCRIPTS 2/3 : ' + NEXT_IMMO + ',' + NEXT_CLUB), log.join('\n'));
   await assert.rejects(N.principal({ NOUVEAUX: 'immo:1' }, () => {}, { fichier }), /ANTHROPIC_API_KEY/);
 });
 
