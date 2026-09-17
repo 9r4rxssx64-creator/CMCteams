@@ -1,5 +1,20 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🛒 Tableau de bord Commerce — dans l'admin du domaine — 2026-09-17
+
+Tout ce qui a été construit pour vendre, en tuiles, avec les vrais chiffres de la caisse : **[ouvrir le tableau de bord](https://kd-mc.com/admin/commerce.html)** (Face ID, compte Kevin). Tuile « 🛒 Commerce » ajoutée dans [l'admin du domaine](https://kd-mc.com/admin/).
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `kdmc-home/admin/commerce.html` | La page (tuiles, CSP ouverte vers la caisse) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/admin/commerce.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/kdmc-home/admin/commerce.html) |
+| `kdmc-home/admin/commerce.js` | La logique : verrou SSO (admin + Face ID), lecture caisse en Bearer, Livrer/Refuser, Lancer, rendu — logique pure testée hors navigateur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/admin/commerce.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/kdmc-home/admin/commerce.js) |
+| `kdmc-home/admin/commerce-data.json` | GÉNÉRÉ (ne pas éditer) : produits, pages, vidéos, planning Metricool, relevés marché avec sources | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/admin/commerce-data.json) | — |
+| `tools/produits/tableau-de-bord.mjs` | Le générateur (`npm run commerce:data`, `--verifier` en CI) — une source pour chaque chose | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/tableau-de-bord.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/tableau-de-bord.mjs) |
+| `tools/pub/programmation.json` | Mémoire publique des 12 posts Metricool (ids + créneaux, aucune clé) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/programmation.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/programmation.json) |
+| `services/kdmc-vente/worker.js` | Caisse : nouvelles routes `GET /admin/tableau` (ventes, file, Club, contenu, sondes de livraison, workflows) et `POST /admin/lancer` (5 workflows, liste fermée) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
+| `tests/commerce-tableau.test.mjs` | Garde : JSON = sources, prix = caisse, workflows identiques, marché sourcé, rendu sûr (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/commerce-tableau.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/commerce-tableau.test.mjs) |
+| `tests/verify-commerce-tableau-reel.mjs` | Preuve en vrai navigateur 375 px : 20 contrôles (verrou, tuiles, Bearer, Livrer, panne, 44 px) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-commerce-tableau-reel.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-commerce-tableau-reel.mjs) |
+
 ## 🎬 Machine à vidéos sans visage — 12 pubs pour les 6 produits — 2026-09-17
 
 Des cartes de texte plein écran lues par la voix du domaine, collées par ffmpeg sur le runner, publiées à une adresse publique hors dépôt (release GitHub « pub-videos ») que Metricool va chercher.

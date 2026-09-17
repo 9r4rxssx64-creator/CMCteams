@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: "22"
 
-      # Un worker qui encaisse ne part JAMAIS sans ses tests (23 contrôles,
+      # Un worker qui encaisse ne part JAMAIS sans ses tests (28 contrôles,
       # dont 3 prouvés discriminants par sabotage : signature webhook, anti-rejeu,
       # admin non vérifié). Hors-ligne : aucun compte PayPal nécessaire.
       - name: Tests (obligatoires avant tout déploiement)
@@ -52,6 +52,10 @@ jobs:
           push PAYPAL_SECRET     "${{ secrets.PAYPAL_SECRET }}"     "idem"
           push PAYPAL_WEBHOOK_ID "${{ secrets.PAYPAL_WEBHOOK_ID }}" "livraison instantanée désactivée, les webhooks seront ignorés"
           push EMAILJS_PRIVATE_KEY "${{ secrets.EMAILJS_PRIVATE_KEY }}" "le code d'accès n'est pas envoyé par e-mail, seulement affiché à l'écran"
+          # Tableau de bord Commerce (kd-mc.com/admin/commerce.html) : le jeton sert UNIQUEMENT
+          # à lancer 5 workflows d'une liste fermée (WORKFLOWS du worker), derrière l'admin
+          # SSO vérifié (Face ID). Absent → les boutons deviennent des liens GitHub, rien ne casse.
+          push GITHUB_DISPATCH_TOKEN "${{ secrets.APEX_GITHUB_PAT }}" "les boutons « Lancer » du tableau de bord Commerce renvoient vers GitHub au lieu de lancer"
 
       - name: Deploy worker
         id: deploy
