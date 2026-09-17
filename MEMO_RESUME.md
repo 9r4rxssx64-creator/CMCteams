@@ -30,6 +30,18 @@ sur l'écran **Profil**, que la sonde a déjà quitté. Corrigé en une ligne c�
 premier. Gardes après changement : `test:lingua-bee` **13/0**, `test:lingua-voix` **26/0**,
 `test:lingua-connexion` **20/0**, `test:lingua-parcours` **11/0**.
 
+**✅ CONFIRMÉ SUR LE VRAI DOMAINE (06:35, run `35190155769`)** : `version servie **v2.125.1**`
+sur `lingua.kd-mc.com`, avec `AUDIT LIVE OK — toutes les surfaces rendent, 0 requête projet bloquée`
+(35 surfaces) et Bee toujours fail-closed correcte sur `javis.kd-mc.com`.
+
+**Délai de propagation MESURÉ : ~10 min.** Le déploiement s'est terminé à **06:12** ; à **06:16** le
+domaine servait **encore l'ancien** `app.js` (donc « ❓ non lue ») ; à **06:35** il servait
+**v2.125.1**. Cause : `app.js` est appelé **sans numéro de version dans l'URL**
+(`<script src="app.js">`), donc le cache du réseau le garde jusqu'à son `max-age`. Ce n'est pas une
+panne — mais **ne jamais conclure « le déploiement n'est pas passé » dans les 10 minutes qui
+suivent** : re-mesurer après. Prévenu à toutes les sessions (**m085-javis-bee**), avec le réflexe
+« si votre app vit dans une IIFE, exposez `window.<APP>_VER` en une ligne ».
+
 **Bénin, à ne pas confondre avec un vrai échec** : `audit/deploiements-rates.md` a consigné un
 « déploiement raté » à 23:52 — c'est le bot auto-merge qui a tenté d'ouvrir une PR pour une branche
 **déjà fusionnée à la main** (« No commits between main and … »). Rien à corriger.
