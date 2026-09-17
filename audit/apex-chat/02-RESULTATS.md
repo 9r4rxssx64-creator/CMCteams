@@ -258,6 +258,7 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 | Second avis indépendant | Qodo run `35256337495` ✅ sur #3890 : 2 findings confirmés et corrigés (modales, IndexedDB), 1 faux positif (ticket #33), 39 fichiers non relus (budget) | commentaires PR |
 | Tempête de télémétrie (locale, Firebase refusé) | **3 636 connexions en ~2 min** avant → **≤ 3 puis pause 5 min** après (test e2e) | proxy de session + Playwright |
 | e2e local après correctifs Qodo | `retour-modale-et-effacement.spec.js` **3/3** Chromium | `playwright test` |
+| Version servie lisible par l'audit live | `window.APEX_CHAT_VERSION` + `[data-ver]` sur le splash, concordance avec la barre — test e2e réel (4/4 dans le spec, 12/12 en répétition ×3) | `playwright test` |
 | e2e Chromium local après | **56 / 56** (dont SW actif + cache peuplé) | `playwright test --project=chromium-desktop` |
 | Boot (Chromium 375×812, API mockée) | LCP 116 ms (login) / 88 ms (liste) ; 0 exception ; 0 mutation DOM et 0 rendu au repos sur 3 vues ; 7–8 minuteries, aucune ≤ 1 s | passe perf |
 | Chat 1 000 messages | rendu 84 ms ; 20 messages entrants 8,6 ms/msg ; 0 fuite DOM après 20 cycles | passe perf |

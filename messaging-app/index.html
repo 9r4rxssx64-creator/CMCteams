@@ -464,6 +464,8 @@ main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:8px;
 <script>
 'use strict';
 const __APEX_CHAT_VERSION__ = 'v1.1.291';
+// Convention du domaine (audit-live.yml lit toute globale <APP>_VERSION) : « version servie » lisible en ligne.
+try{ window.APEX_CHAT_VERSION = __APEX_CHAT_VERSION__; }catch(_){}
 // === MISE À JOUR FORCÉE AUTO TOTALE (zéro action user — règle Kevin permanente) ===
 // Triple stratégie : SW updatefound + heartbeat 60s + remote version check 60s (HEAD/ETag)
 if('serviceWorker' in navigator){
@@ -666,7 +668,7 @@ if('serviceWorker' in navigator){
   <div class="splash-logo">💬</div>
   <h1 class="splash-title">APEX CHAT</h1>
   <p class="splash-sub">Messagerie privée sécurisée<br><span style="color:var(--ax-gold-2)">🛡 Chiffrement de bout en bout</span></p>
-  <div id="splash-version" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.291</div>
+  <div id="splash-version" data-ver="v1.1.291" style="color:var(--ax-text-3);font-size:.78em;margin-bottom:20px;font-family:ui-monospace,monospace">v1.1.291</div>
   <div id="auth-step" class="splash-form">
     <!-- rempli dynamiquement -->
   </div>

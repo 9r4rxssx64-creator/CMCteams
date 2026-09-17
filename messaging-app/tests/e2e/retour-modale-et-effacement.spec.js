@@ -82,4 +82,17 @@ test.describe('Apex Chat — retour arrière et effacement local (navigateur ré
     const gate = await page.evaluate(() => ({ paused: window.K._telemetryGate.pausedUntil > Date.now() }));
     expect(gate.paused, 'après 3 échecs consécutifs, pause 5 min').toBe(true);
   });
+
+  // audit-live.yml (run 35256272025) notait « version servie : non exposée par la page » : la convention du
+  // domaine est une globale <APP>_VERSION ou un élément [data-ver]. Les deux existent désormais et concordent.
+  test('la version servie est lisible par l\'audit live (globale + data-ver), et concorde avec la barre', async ({ page }) => {
+    const v = await page.evaluate(() => ({
+      globale: window.APEX_CHAT_VERSION,
+      dataVer: document.querySelector('[data-ver]')?.getAttribute('data-ver'),
+      topbar: document.querySelector('#topbar-version')?.textContent.trim(),
+    }));
+    expect(v.globale).toMatch(/^v\d+\.\d+\.\d+$/);
+    expect(v.dataVer).toBe(v.globale);
+    expect(v.topbar).toBe(v.globale);
+  });
 });
