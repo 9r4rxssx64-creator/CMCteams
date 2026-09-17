@@ -58,7 +58,7 @@ export function consigneScript({ niche, fiche, id, existants }) {
     'Angles DÉJÀ utilisés pour ce produit, à ne PAS refaire : ' + angles + '.',
     '',
     'RÈGLES ABSOLUES (un contrôle automatique refuse tout écart) :',
-    '- tutoiement, français simple avec accents, zéro jargon : jamais « prompt », « LLM », « token », « IA générative » — dire « assistant IA » ou « consigne » ;',
+    '- tutoiement, français simple avec TOUS les accents (é, è, à, ç, ê) dans chaque ligne ET dans la légende — un mot sans accent est refusé, zéro jargon : jamais « prompt », « LLM », « token », « IA générative » — dire « assistant IA » ou « consigne » ;',
     '- 5 lignes (4 à 7 acceptées), chacune de 12 à 80 caractères, une idée par ligne, lisible sur un téléphone ;',
     '- ligne 1 = une situation vécue (un problème concret, une phrase), lignes 2-4 = ce que ça FAIT (jamais ce que ça rapporte), ligne 5 = ' + fiche.gratuit + ' ;',
     '- AUCUN chiffre de résultat, aucun pourcentage, aucun « garanti », « rapporte », « revenu », « gagne » ; aucun conseil juridique, fiscal ou médical ; aucun nom de personne réelle, aucune marque de client ;',

@@ -34,6 +34,8 @@ test('porte de vérité discriminante : jargon, promesse chiffrée, ligne trop l
     ['émoji', { ...bon, legende: bon.legende + ' 🚀' }, /émoji/],
     ['sans rappel gratuit', { ...bon, lignes: bon.lignes.map((l) => l.replace(/gratuit/i, 'offert')) }, /gratuit/],
     ['hashtag accentué', { ...bon, hashtags: ['#déjà', '#ia', '#x'] }, /hashtags/],
+    ['sans accents (vécu 17.09)', { ...bon, lignes: bon.lignes.map((l, i) => i === 1 ? "Tu dictes le bien, l'assistant IA prepare tes reponses." : l) }, /accents manquants/],
+    ['tout sans accent', { ...bon, lignes: bon.lignes.map((l) => l.normalize('NFD').replace(/[̀-ͯ]/g, '')), legende: bon.legende.normalize('NFD').replace(/[̀-ͯ]/g, '') }, /accents/],
   ];
   for (const [nom, v, motif] of cas) {
     const r = V.valideScript(v, { produits: V.produitsConnus() });
