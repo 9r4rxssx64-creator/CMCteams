@@ -97,7 +97,7 @@ test('kpis : CA et ventes viennent de la caisse, la file est orange, l\'audit ro
   assert.equal(par['Audit live'].cls, 'err');
   assert.equal(par['Livraisons'].v, '1 KO');
   assert.equal(par['Commandes'].v, 'liens', 'sans jeton, les boutons se présentent comme des liens');
-  assert.equal(par['Vidéos programmées'].v, '12/12');
+  assert.equal(par['Vidéos programmées'].v, data.videos.filter((v) => v.post).length + '/' + data.videos.length);
   const sans = C.kpis(data, null);
   assert.equal(sans.find((x) => x.l === 'Chiffre d\'affaires').v, '—', 'caisse injoignable → tiret, pas 0 €');
 });

@@ -80,7 +80,8 @@ test('sélection : all, une niche, une liste d\'ids', () => {
   assert.equal(V.selection(S.videos, 'all').length, S.videos.length);
   assert.ok(V.selection(S.videos, 'avis').every((v) => v.id.startsWith('avis-')) && V.selection(S.videos, 'avis').length >= 2);
   assert.deepEqual(V.selection(S.videos, 'avis-01,kit-02').map((v) => v.id), ['avis-01', 'kit-02']);
-  assert.deepEqual(V.selection(S.videos, 'immo-ia').map((v) => v.produit), ['immo-ia', 'immo-ia']);
+  const immo = V.selection(S.videos, 'immo-ia');
+  assert.ok(immo.length >= 2 && immo.every((v) => v.produit === 'immo-ia'), 'sélection par produit');
 });
 
 test('workflow : bouton seulement, pipefail, garde lancée, preuve ffprobe 1080x1920 + audio, action de release épinglée à une version, publication non par défaut', () => {

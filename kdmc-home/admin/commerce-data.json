@@ -245,6 +245,28 @@
       "post": 377541459,
       "date": "2026-09-23T10:00:00+02:00",
       "legende": "Chaque lundi, une nouvelle consigne-outil prête à copier : une situation réelle, la consigne, l'exemple. 52 par an, en p"
+    },
+    {
+      "id": "immo-03",
+      "produit": "immo-ia",
+      "page": "https://kit.kd-mc.com/immo.html",
+      "theme": "sombre",
+      "cartes": 5,
+      "mp4": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/immo-03.mp4",
+      "post": null,
+      "date": null,
+      "legende": "Un vendeur hésite à te confier son bien et tu n'as pas le temps d'écrire le mail parfait. Tu donnes le quartier, le prix"
+    },
+    {
+      "id": "club-02",
+      "produit": "club-ia",
+      "page": "https://kit.kd-mc.com/#club",
+      "theme": "clair",
+      "cartes": 5,
+      "mp4": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/club-02.mp4",
+      "post": null,
+      "date": null,
+      "legende": "Lundi matin, une consigne nouvelle t'attend : un client mécontent, un devis à relancer, un planning à refaire. La situat"
     }
   ],
   "programmation": {
@@ -317,7 +339,7 @@
       "ic": "🎬",
       "nom": "Vidéos de pub (release)",
       "url": "https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/index.json",
-      "quoi": "12 MP4 publics"
+      "quoi": "14 MP4 publics"
     },
     {
       "ic": "📅",
