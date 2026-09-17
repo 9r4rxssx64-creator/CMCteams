@@ -122,6 +122,17 @@ jobs:
           CD=$(curl -sS -o /dev/null -w '%{http_code}' -H "PRIVATE-TOKEN: ${JETON}" "${API}/projects/${PROJ}/deploy_tokens?per_page=1")
           echo "jetons de deploiement : HTTP ${CD} (200 = je peux en fabriquer un, limite au push)"
 
+          # MESURÉ le 17.09 : GitLab REFUSE qu'un jeton de projet en fabrique un autre
+          # (« User does not have permission to create project access token »), et il ne
+          # sait pas modifier les portées d'un jeton existant. Le resserrage demande donc
+          # DEUX gestes de Kevin, une seule fois. Tant que « api » est là, ce message le
+          # redit à chaque passage : une dette silencieuse finit oubliée.
+          if grep -q '"api"' /tmp/jeton.json; then
+            echo ""
+            echo "::warning::Le jeton porte « api » : il peut lire ET écrire les ${NBV:-?} secrets de CI du projet. Deux gestes, une fois : (1) GitLab → Kdmc-project → Settings → Access tokens → nouveau jeton, rôle Maintainer, portées write_repository + read_api SEULEMENT ; (2) GitHub → ce dépôt → Settings → Secrets → Actions → GITLAB_TOKEN → Update. Puis « Revoke » sur l'ancien, sur la même page GitLab."
+          fi
+          rm -f /tmp/jeton.json
+
       # RESSERRER LES AUTORISATIONS — mesuré le 17.09 : le jeton portait « api »,
       # c'est-à-dire la clé de toute la boîte (réglages du projet, membres, variables
       # de CI, suppression de branches…). Or il n'a besoin que de DEUX choses :

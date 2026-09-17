@@ -1396,6 +1396,27 @@ et nomme encore `claude/test-699LQ` comme branche de travail (branche d'une viei
 **État** : ma branche avait **293 commits de retard** → repartie de `main`. `tests.yml` sur
 `main` pour mon dernier commit : **success**.
 
+## 2026-09-17 — Jusqu'où va vraiment le jeton GitLab : **1 projet, mais 35 secrets de CI lisibles**
+
+**Mesuré** (run 35244805920, lecture seule, aucune valeur affichée) :
+
+```
+identite      : project_85753352_bot_… -> JETON DE PROJET (un seul projet)
+projets vus   : 1
+secrets de CI : LISIBLES (35)  <- c'est ce que « api » ouvre
+jetons de deploiement : HTTP 200
+```
+
+Bonne nouvelle : c'est un **jeton de projet**, pas le compte personnel de Kevin — les dégâts
+possibles s'arrêtent à `Kdmc-project`. Mauvaise nouvelle : dans ce projet, il **lit les 35
+variables de CI**, c'est-à-dire les autres secrets. C'est précisément ce qu'on voulait fermer.
+
+**Et on ne peut pas le fermer tout seul** : un bot de projet n'a pas le droit de fabriquer un
+jeton de projet (`400 … User does not have permission`), et GitLab ne sait pas changer les
+portées d'un jeton existant. Donc **deux gestes de Kevin, une fois** — écrits dans
+`KEVIN_ACTIONS_TODO.md`, et **redits à chaque passage du diagnostic** (`::warning::`) tant que
+`api` est là : une dette silencieuse finit oubliée.
+
 ## 2026-09-17 — GitLab REFUSE de fabriquer un jeton plus étroit : « User does not have permission »
 
 **Mesuré** (run 35244243351, étape 2/5) : la rotation s'arrête net sur
