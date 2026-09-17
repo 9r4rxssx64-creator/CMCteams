@@ -1,0 +1,112 @@
+name: Publier vers le miroir GitLab (à la main)
+
+# POURQUOI CE WORKFLOW EXISTE — et pourquoi il a le droit d'être sur GitHub.
+# La question de la règle « chaque automatisation a une destination écrite » est :
+# « est-ce que ça produit, teste, déploie ou PUBLIE CE dépôt ? ».  Ici oui : il
+# publie CE dépôt vers SON miroir (gitlab.com/kdmc-group/Kdmc-project).  Il
+# n'ouvre aucun site tiers — ça, c'est le travail des jobs GitLab, qui tournent
+# sur GitLab.  Et il est STRICTEMENT à la main (workflow_dispatch) : aucun cron,
+# aucun déclencheur ouvert à un inconnu, donc zéro volume automatique.
+#
+# CE QU'IL PERMET, CONCRÈTEMENT : une session Claude n'a aucun jeton GitLab
+# (mesuré 17.09 : les deux jetons sont révoqués, et toutes les sessions partagent
+# le même environnement).  Kevin colle UN jeton neuf dans les secrets GitHub —
+# un champ prévu pour ça, masqué à vie — et plus personne n'a à le manipuler :
+# je déclenche ce workflow par l'API, il pousse, GitLab fait le reste.
+#
+# LE JETON : portée « write_repository » SEULEMENT, sur le seul projet Kdmc-project.
+# Il ne peut ni lire les variables, ni toucher aux autres projets, ni à un compte.
+#
+# NE JAMAIS pousser vers `main` : les deux lignées (GitHub / GitLab) n'ont pas
+# d'ancêtre commun, un push forcé écraserait le travail de l'autre côté
+# (ETAT-INFRA fait n°4).  On pousse donc sur une branche technique dédiée.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branche_gitlab:
+        description: "Branche technique côté GitLab (jamais main)"
+        required: true
+        default: "ci-veille"
+      lancer_tor_adresses:
+        description: "Lancer le job qui ouvre les adresses .onion à travers Tor"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publier-gitlab
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier que le jeton est là (message clair sinon)
+        env:
+          JETON: ${{ secrets.GITLAB_TOKEN }}
+        run: |
+          if [ -z "${JETON}" ]; then
+            echo "::error::Le secret GITLAB_TOKEN est absent."
+            echo "Kevin doit le créer UNE fois :"
+            echo "  1. GitLab → Kdmc-project → Settings → Access tokens"
+            echo "     → rôle Maintainer, portée write_repository, expire dans 90 j"
+            echo "  2. GitHub → ce dépôt → Settings → Secrets → Actions"
+            echo "     → New repository secret → nom exact : GITLAB_TOKEN"
+            echo "Le jeton ne doit JAMAIS être collé dans une conversation."
+            exit 1
+          fi
+          echo "Jeton présent (valeur masquée par GitHub, jamais affichée)."
+
+      - name: Refuser toute cible dangereuse
+        env:
+          CIBLE: ${{ inputs.branche_gitlab }}
+        run: |
+          case "${CIBLE}" in
+            main|master|""|*" "*)
+              echo "::error::Cible « ${CIBLE} » refusée : on ne pousse jamais la lignée GitHub sur main GitLab (ETAT-INFRA fait n°4)."
+              exit 1;;
+          esac
+          echo "Cible acceptée : ${CIBLE}"
+
+      - name: Pousser vers le miroir, puis demander le travail
+        env:
+          JETON: ${{ secrets.GITLAB_TOKEN }}
+          CIBLE: ${{ inputs.branche_gitlab }}
+          TOR: ${{ inputs.lancer_tor_adresses }}
+        run: |
+          set -euo pipefail
+          DEPOT="https://oauth2:${JETON}@gitlab.com/kdmc-group/Kdmc-project.git"
+          git config user.name  "publication-gitlab"
+          git config user.email "noreply@kd-mc.com"
+
+          # 1er push : crée/actualise la branche technique. GitLab saute volontairement
+          # le pipeline d'une branche qui vient de naître (garde « pas-sur-nouvelle-branche »),
+          # c'est normal et voulu — rien ne tourne encore.
+          echo "→ publication de la branche ${CIBLE}"
+          git push --force-with-lease "${DEPOT}" "HEAD:refs/heads/${CIBLE}" 2>&1 \
+            | sed -e "s#${JETON}#***#g"
+
+          if [ "${TOR}" != "true" ]; then
+            echo "Publication faite. Aucun travail demandé (case décochée)."
+            exit 0
+          fi
+
+          # 2e push : un commit vide qui ne change RIEN au code, avec une option de
+          # push qui pose la variable attendue par le job. C'est ce qui le fait
+          # partir tout seul, sans que personne ait à cliquer dans GitLab.
+          git commit --allow-empty -q -m "veille : ouvrir les adresses .onion (demande du $(date -u +%F' '%H:%M) UTC) [skip ci]"
+          echo "→ demande du job tor-adresses"
+          git push "${DEPOT}" "HEAD:refs/heads/${CIBLE}" \
+            -o ci.variable="TOR_ADRESSES=1" 2>&1 \
+            | sed -e "s#${JETON}#***#g"
+
+          echo ""
+          echo "Demandé. Le rapport daté (vivant / protégé / injoignable, adresse par"
+          echo "adresse) sera l'artifact « tor-adresses.json » du pipeline GitLab."

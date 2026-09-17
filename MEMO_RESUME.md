@@ -1253,6 +1253,33 @@ Question de Kevin. Vérification plutôt que réponse de mémoire — et l'écar
 - 20 services au catalogue (Facebook ajouté : adresse officielle, utile en pays censuré, avec la
   mise en garde « t'y connecter dit qui tu es »).
 
+## 2026-09-17 — Le jeton GitLab : le chemin qui marche SANS le faire passer par le chat
+
+Kevin : *« Je te donne le jeton GitLab ici ? Passe par l'autre session sinon… »* → **non aux deux**,
+et mesuré plutôt que supposé.
+
+- **Le chat est exclu** : une conversation se garde, se résume, se relit. Un jeton collé ici est un
+  jeton publié — et il faudrait le recoller à chaque session.
+- **L'autre session ne peut rien** (mesuré) : elle tourne dans le **même environnement**
+  (`env_01MyGX…`) que moi, donc les mêmes variables ; et `ETAT-INFRA` note les **deux jetons GitLab
+  révoqués (401)**. Le renvoyer là-bas lui aurait coûté un aller-retour pour rien.
+- **Ce que l'agent atteint vraiment** (re-mesuré, la leçon #135 avait vieilli) : `gitlab.com` ✅,
+  `api.github.com` ✅, le registre npm ✅ — mais `bbc.com`, `torproject.org`, `proton.me`,
+  `nytimes.com`, `securedrop.org` → **HTTP 000, tous bloqués**. Donc même vérifier les *sources* du
+  catalogue est hors de portée d'ici.
+- **Livré** : `.github/workflows/publier-gitlab.yml` — strictement **à la main**, il publie CE dépôt
+  vers SON miroir GitLab (c'est bien « publier ce dépôt » → GitHub est la bonne destination ; le job
+  qui ouvre les .onion, lui, reste côté GitLab). Il **refuse** toute cible `main`/`master` (les deux
+  lignées n'ont pas d'ancêtre commun), **filtre le jeton** dans la sortie de *chaque* push, et pose
+  `-o ci.variable="TOR_ADRESSES=1"` → le job part **tout seul**, sans clic dans GitLab.
+- **Kevin n'a qu'UN geste, une seule fois** : créer un jeton `write_repository` sur le seul projet
+  Kdmc-project, et le coller dans **GitHub → Secrets → `GITLAB_TOKEN`** (un champ fait pour ça,
+  masqué à vie). Ensuite je déclenche, pour toujours, sans que personne ne manipule le jeton.
+- **Garde** : `test:tor` passe de 33 à **34 contrôles** — à la main uniquement, aucun cron, aucun
+  déclencheur ouvert, refus de `main`, jeton filtré sur *chaque* push. **Ma première version n'était
+  pas discriminante** (elle ne voyait qu'un des deux pushes : sabotage → vert) ; corrigée en comptant
+  filtres ≥ pushes, re-prouvée par sabotage (« 1 filtre pour 2 push » → échec).
+
 ## 2026-09-15 — Tor en clair v1.4 : j'ai essayé d'ouvrir les .onion pour de vrai, et voilà où ça bute
 
 Mon point faible déclaré était : *les 20 adresses n'ont jamais été ouvertes*. J'ai cherché à le
