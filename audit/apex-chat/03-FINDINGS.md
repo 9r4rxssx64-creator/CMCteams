@@ -874,6 +874,21 @@ TextBelt (clé publique partagée, 1 SMS/jour) est encore dans le code.
 - **CodeRabbit** : « Review skipped — bot user detected » (la PR est ouverte par le robot de fusion) → pas de
   troisième avis. **Vercel** : « 100 déploiements/jour dépassés » sur `tools/agent` — sans rapport avec Apex Chat.
 
+### Pentest IA Strix sur `messaging-app` (run `35254628554`) — lu et trié
+- **Verdict de l'outil** : 0 vulnérabilité confirmée, posture « inconclusive » ; 5 zones qu'il n'a pas pu valider
+  dynamiquement. Aucune n'est nouvelle :
+  1. JWT / OTP / SSO / déconnexion → `ws-ticket-usage-unique` (6), `media-ticket-portee-limitee` (6), `api-worker-sso-kdmc`,
+     `mfa`/`phone` (6), `no-client-side-admin-by-name` (3) ;
+  2. autorisation objet (conversations, profils, médias, invitations, admin) → `api-worker-routing` (401/403 sans jeton sur
+     chaque route admin), profil public désormais authentifié (P2 corrigé ce jour), invitations opaques ;
+  3. sinks worker (SQL, fetch sortants) → requêtes préparées `.bind()` partout (grep : 0 concaténation SQL), aucun
+     `fetch` sur une URL contrôlée par l'utilisateur (relais IA fixes) ;
+  4. rendu client / Service Worker → garde `innerHTML` sans `esc()` (8 interpolations inspectées), SW module testé en vrai ;
+  5. CORS « reflet d'origine » → liste blanche (`lib/cors.js` 100 %, `cors-origines-autorisees` 5/5) — déjà trié le 10/09.
+- **Ce que le scan apporte vraiment** : la confirmation qu'il n'y a **ni secret embarqué, ni dépendance vulnérable, ni
+  mauvaise configuration évidente** dans l'arbre analysé. Limite honnête : 709 erreurs de flux LLM pendant le run, pas de
+  validation dynamique (l'outil n'a pas lancé le worker) → il ne **prouve** pas l'absence de faille, il ne la **contredit** pas.
+
 ### Faux positifs écartés (avec preuve)
 - « Raccourcis du manifest (#new/#contacts/#calls/#invite) jamais câblés » — faux : `index.html:16180` les route au
   boot (la passe cherchait la forme quotée `'#new'`).

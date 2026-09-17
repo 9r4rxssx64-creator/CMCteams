@@ -204,5 +204,5 @@ télémétrie (P1, 3 636 requêtes/2 min quand Firebase est refusé) — ni les 
 vue ; c'est le proxy de session qui l'a fait remonter. Leçon #274.
 **Kevin (18:20)** : « Test toutes les fonctions en réel toujours · audit d'amélioration +++ UX/UI » → trois passes
 lancées en parallèle (harnais F01…F78 en vrai Chromium, audit UX/UI mesuré à 375 px, audit code/archi chiffré) ;
-résultats à consigner dans `06-*.md` à leur arrivée.
+résultats à consigner dans `06-*.md` à leur arrivée. Strix `messaging-app` reçu 18:20 : 0 confirmé, inconclusive, 5 zones déjà couvertes par des tests nommés (03-FINDINGS).
 
