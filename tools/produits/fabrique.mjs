@@ -37,11 +37,26 @@ export function fiche(id, catalogue = lireCatalogue()) {
 export function idModule(index) { return 'm' + (index + 1); }
 
 /* ── Contrôle de vérité (porte AVANT toute écriture) ─────────────────────── */
+/* Formes équivalentes tolérées AVANT de compter (mesuré le 17.09, run 35217792318 : 21 refus
+   sur 21 pour « attention », « check » et ☐ — la règle était plus étroite que l'HTML honnête
+   que le modèle rend) : entités numériques de ☐, classes en liste (« exemple variante »),
+   guillemets simples, <section> pour <div>. */
+export function normalise(html) {
+  return String(html || '')
+    .replace(/&#(?:9744|x2610);/gi, '☐').replace(/&#(?:9745|x2611);/gi, '☐')
+    .replace(/<(\/?)section\b/gi, '<$1div')
+    .replace(/<div\s+class=(["'])([^"']*)\1\s*>/gi, (m, q, cls) => '<div class="' + cls.trim().split(/\s+/)[0] + '">');
+}
+export function inventaire(h) {
+  const divs = {};
+  for (const m of h.matchAll(/<div class="([a-z-]+)">/g)) divs[m[1]] = (divs[m[1]] || 0) + 1;
+  return { divs, cases: (h.match(/☐/g) || []).length, consignes: (h.match(/<pre class="consigne">/g) || []).length };
+}
 export function valideModule(html, { produit, index, module }) {
-  const h = String(html || '');
+  const h = normalise(html);
   const erreurs = [];
   const [cMin, cMax] = produit.consignes || [2, 5];
-  const exMin = produit.exemplesMin || cMin;
+  const exMin = module.exemplesMin || produit.exemplesMin || cMin;
   const tags = [...h.matchAll(/<\/?([a-zA-Z0-9]+)/g)].map((m) => m[1].toLowerCase());
   const interdites = [...new Set(tags.filter((t) => !AUTORISEES.has(t)))];
   if (interdites.length) erreurs.push('balises interdites : ' + interdites.join(', '));
@@ -54,9 +69,10 @@ export function valideModule(html, { produit, index, module }) {
   if (consignes > cMax) erreurs.push('au plus ' + cMax + ' consignes (trouvé ' + consignes + ')');
   const exemples = (h.match(/<div class="exemple">/g) || []).length;
   if (exemples < Math.max(exMin, consignes)) erreurs.push('il faut au moins ' + Math.max(exMin, consignes) + ' <div class="exemple"> (trouvé ' + exemples + ')');
-  if ((h.match(/<div class="attention">/g) || []).length !== 1) erreurs.push('exactement un <div class="attention">');
-  if ((h.match(/<div class="check">/g) || []).length !== 1) erreurs.push('exactement un <div class="check">');
-  if (!/☐/.test(h)) erreurs.push('la checklist doit avoir des cases ☐');
+  const inv = inventaire(h);
+  if (!inv.divs.attention) erreurs.push('un <div class="attention"> (les 3 pièges) est obligatoire — vu : ' + JSON.stringify(inv.divs));
+  if (!inv.divs.check) erreurs.push('un <div class="check"> (la checklist) est obligatoire — vu : ' + JSON.stringify(inv.divs));
+  if (inv.cases < 3) erreurs.push('la checklist doit avoir au moins 3 cases ☐ (le caractère ☐ lui-même, ou &#9744;) — vu ' + inv.cases);
   if (/\bprompts?\b/i.test(h)) erreurs.push('le mot « prompt » est interdit (dire « consigne »)');
   if (/\[(A|À) (COMPLETER|COMPLÉTER|REMPLIR)\]/i.test(h)) erreurs.push('trou [À COMPLÉTER] laissé dans le texte');
   const emoji = (h.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu) || []).filter((e) => e !== '☐');
@@ -80,7 +96,7 @@ export function valideModule(html, { produit, index, module }) {
 /* ── La consigne de rédaction d'un module ────────────────────────────────── */
 export function consigneModule({ produit, index, module, titresFaits = [] }) {
   const [cMin, cMax] = produit.consignes || [2, 5];
-  const exMin = produit.exemplesMin || cMin;
+  const exMin = module.exemplesMin || produit.exemplesMin || cMin;
   const n = index + 1;
   return [
     'Tu écris le module ' + n + ' sur ' + produit.modules.length + ' du produit numérique « ' + produit.nom + ' ».',
@@ -99,11 +115,13 @@ export function consigneModule({ produit, index, module, titresFaits = [] }) {
     '4. LES CONSIGNES PRÊTES À COPIER : entre ' + cMin + ' et ' + cMax + ', chacune précédée d\'un <h3> qui dit le résultat obtenu, dans',
     '   <pre class="consigne"> … </pre> avec des crochets [à remplacer] pour les variables. Chaque consigne est COMPLÈTE et',
     '   autonome (on la colle telle quelle) : rôle, contexte, ce qu\'on veut, le ton, la longueur, le format de sortie.',
-    '5. LES EXEMPLES : au moins ' + Math.max(exMin, cMin) + ' <div class="exemple"> avec un exemple RÉEL de résultat (4 à 10 lignes chacun),',
-    '   un exemple sous chaque consigne' + (exMin > cMax ? ' ET des variantes supplémentaires quand le module en promet (« dix variantes » = dix exemples courts, chacun dans son <div class="exemple">)' : '') + '.',
-    '6. <div class="attention"> : 3 pièges (jamais coller de nom, d\'adresse, de numéro de carte, de mot de passe, de données de santé',
-    '   d\'une personne réelle ; relire avant d\'envoyer ; l\'IA peut inventer un chiffre ou une référence).',
-    '7. <div class="check"> : checklist de 4 à 6 cases commençant par ☐.',
+    '5. LES EXEMPLES : au moins ' + Math.max(exMin, cMin) + ' blocs <div class="exemple"> … </div> (exactement cette balise) avec un exemple RÉEL de',
+    '   résultat (4 à 10 lignes chacun), un sous chaque consigne' + (exMin > cMax ? ' ET, parce que ce module promet des VARIANTES, au moins ' + exMin + ' blocs <div class="exemple"> au total : chaque variante = son propre bloc court' : '') + '.',
+    '6. UN SEUL bloc <div class="attention"> … </div> (exactement cette balise, en fin de module) avec 3 pièges (jamais coller de nom,',
+    '   d\'adresse, de numéro de carte, de mot de passe, de données de santé d\'une personne réelle ; relire avant d\'envoyer ; l\'IA peut',
+    '   inventer un chiffre ou une référence).',
+    '7. UN SEUL bloc <div class="check"> … </div> (exactement cette balise, tout à la fin) : checklist de 4 à 6 lignes, chacune commençant',
+    '   par le caractère ☐ écrit tel quel (pas d\'entité HTML, pas de case à cocher <input>).',
     'Longueur : 600 à 1400 mots hors consignes. Zéro émoji (sauf ☐). Pas de titre « Conclusion ».',
     'VÉRITÉ ABSOLUE : rien d\'inventé, aucun conseil juridique, fiscal, médical ou financier affirmatif ; si un point touche la loi,',
     'écrire « vérifie sur service-public.fr » et ne citer AUCUN chiffre, taux ni article de mémoire. Pas de nom de personne réelle,',
@@ -117,9 +135,10 @@ export async function redigeModule(env, { produit, index, module, titresFaits },
   const prompt = consigneModule({ produit, index, module, titresFaits });
   let retour = null;
   for (let essai = 1; essai <= ESSAIS; essai++) {
-    const html = nettoieSortie(await redige(env, prompt, retour));
+    const html = normalise(nettoieSortie(await redige(env, prompt, retour)));
     const v = valideModule(html, { produit, index, module });
     log('  essai ' + essai + '/' + ESSAIS + ' : ' + (v.ok ? 'ACCEPTÉ' : 'refusé — ' + v.erreurs.join(' ; ')) + ' (' + v.mots + ' mots, ' + v.consignes + ' consignes, ' + v.exemples + ' exemples)');
+    if (!v.ok) log('    inventaire des balises vues : ' + JSON.stringify(inventaire(html)) + ' · début : ' + html.slice(0, 90).replace(/\s+/g, ' ') + '…');
     if (v.ok) return { html, ...v };
     retour = { html, erreurs: v.erreurs };
   }

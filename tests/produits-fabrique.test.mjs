@@ -24,7 +24,7 @@ function bon(p, i = 1) {
   const remplissage = Array.from({ length: 22 }, () => phrase + 'Cette étape prend une minute et t\'évite une heure de rédaction pénible, même quand tu es fatigué le soir, même depuis le métro. ').join('');
   return '<h2>Module ' + (i + 1) + ' — ' + m.titre + '</h2>\n<p class="promesse">À la fin, tu sais faire ce que promet ce module en moins de cinq minutes, depuis ton téléphone.</p>\n<p>' + remplissage + '</p>\n<ol><li>Étape une, tu ouvres l\'application.</li><li>Étape deux, tu colles la consigne.</li><li>Étape trois, tu relis.</li><li>Étape quatre, tu envoies.</li></ol>\n'
     + consigne('Premier résultat obtenu') + '\n' + consigne('Deuxième résultat obtenu') + '\n'
-    + (p.exemplesMin ? Array.from({ length: p.exemplesMin }, (_, k) => '<div class="exemple">Variante numéro ' + (k + 1) + ' : merci pour ta visite, à très bientôt, nous étions ravis de t\'accueillir et nous espérons te revoir prochainement dans notre établissement.</div>').join('\n') + '\n' : '')
+    + ((p.modules[i].exemplesMin || p.exemplesMin) ? Array.from({ length: p.modules[i].exemplesMin || p.exemplesMin }, (_, k) => '<div class="exemple">Variante numéro ' + (k + 1) + ' : merci pour ta visite, à très bientôt, nous étions ravis de t\'accueillir et nous espérons te revoir prochainement dans notre établissement.</div>').join('\n') + '\n' : '')
     + '<div class="attention"><ul><li>Jamais de nom réel ni de numéro de carte.</li><li>Relis avant d\'envoyer.</li><li>L\'IA peut inventer un chiffre.</li></ul></div>\n<div class="check"><p>☐ J\'ai relu ☐ J\'ai remplacé les crochets ☐ J\'ai vérifié les faits ☐ J\'ai envoyé</p></div>';
 }
 
@@ -67,17 +67,26 @@ test('contrôle de vérité : l\'étalon passe, chaque sabotage est refusé (por
     ['taux légal sans renvoi', bon(p).replace('Étape quatre, tu envoies.', 'La TVA est à 20 % dans ce cas.'), /service-public/],
     ['promesse de rendement', bon(p).replace('Étape quatre, tu envoies.', 'Un rendement garanti de ce placement.'), /rendement/],
     ['sans accents', bon(p).replace(/[àâäéèêëîïôöùûüçœ]/gi, 'e'), /accents/],
-    ['deux blocs attention', bon(p).replace('<div class="check">', '<div class="attention"></div><div class="check">'), /attention/],
+    ['aucun bloc attention', bon(p).replace('<div class="attention">', '<div class="remarque">'), /attention/],
+    ['checklist sans cases', bon(p).replace(/☐/g, '-'), /cases ☐/],
   ];
   for (const [nom, html, motif] of sab) {
     const v = F.valideModule(html, ctx);
     assert.ok(!v.ok, 'sabotage « ' + nom + ' » accepté : la porte ne discrimine pas');
     assert.ok(v.erreurs.some((e) => motif.test(e)), nom + ' : refusé pour la mauvaise raison — ' + v.erreurs.join(' ; '));
   }
+  /* Formes équivalentes ACCEPTÉES (mesuré 17.09 : 21 refus pour rien) : entité &#9744;, classes en liste, <section> */
+  const equiv = bon(p).replace(/☐/g, '&#9744;').replace('<div class="attention">', '<section class="attention note">').replace(/<div class="exemple">/g, "<div class='exemple variante'>");
+  const ve = F.valideModule(equiv, ctx);
+  assert.ok(ve.ok, 'formes équivalentes refusées : ' + ve.erreurs.join(' ; '));
+  assert.ok(!/&#9744;/.test(F.normalise(equiv)) && /<div class="attention">/.test(F.normalise(equiv)), 'normalise doit ramener à la forme canonique');
+  assert.ok(F.valideModule(bon(p).replace('<div class="check">', '<div class="attention"></div><div class="check">'), ctx).ok, 'un 2e bloc attention n\'est plus un motif de refus');
   /* avis-ia promet des variantes : sans elles, refus */
   const avis = CAT.produits.find((x) => x.id === 'avis-ia');
   const sansVariantes = bon(avis).replace(/<div class="exemple">Variante[\s\S]*?<\/div>\n/g, '');
-  assert.ok(!F.valideModule(sansVariantes, { produit: avis, index: 1, module: avis.modules[1] }).ok, 'avis-ia : un module sans ses variantes doit être refusé');
+  assert.ok(!F.valideModule(sansVariantes, { produit: avis, index: 1, module: avis.modules[1] }).ok, 'avis-ia m2 promet dix variantes : sans elles, refus');
+  assert.ok(F.valideModule(bon(avis, 0), { produit: avis, index: 0, module: avis.modules[0] }).ok, 'avis-ia m1 (intro) ne promet pas de variantes : 2 exemples suffisent');
+  assert.match(F.consigneModule({ produit: avis, index: 1, module: avis.modules[1] }), /au moins 8 blocs/, 'la consigne chiffre les variantes du module');
 });
 
 test('consigne de rédaction : dit le lecteur, la promesse, le titre exact du module, la vérité absolue, jamais le mot prompt', () => {

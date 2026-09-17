@@ -423,6 +423,15 @@ loin. Le maximum rapidement. Innove. » Réponse côté produits (les vidéos vi
   sur avis.html + lecteur (44 px, 375 px, code sous sa propre clé, aperçu du bon produit).
 - Mesures locales : produits-fabrique 9/9, kit-ia 7/7, vente 34/34, club 16/16, kit-metiers 5/5,
   workflows-valides 459/0, actions-conformes 9/0, destinations 0 échec, dépôt public sain.
+- **Fabrication réelle n°1 (run 35217792318, avis-ia) : 0/7, 21 refus sur 21** — toujours les
+  3 mêmes motifs (« exactement un attention », « exactement un check », « cases ☐ »), même après
+  le retour d'erreur au modèle. 21 échecs identiques = la RÈGLE est mal posée, pas le modèle :
+  la porte n'acceptait que la forme byte-à-byte (`<div class="attention">`, le caractère ☐), pas
+  ses équivalents honnêtes (entité `&#9744;`, `class="attention note"`, `<section>`). Corrigé :
+  `normalise()` ramène à la forme canonique avant de compter, « au moins un » bloc au lieu de
+  « exactement un », ≥ 3 cases, et **à chaque refus le journal imprime l'inventaire des balises
+  vues** (plus jamais un refus aveugle). Variantes chiffrées PAR module (m2/m3/m4/m6 d'avis-ia :
+  ≥ 8 exemples) au lieu d'un plancher sur tout le produit qui refusait l'intro. Garde 8/8.
 - 🔴 Non mesuré à cette ligne : la fabrication RÉELLE (workflow `produit-fabrique.yml`, à blanc
   puis en vrai) — voir la ligne suivante quand elle est faite. 0 vente : la demande reste à prouver.
 
