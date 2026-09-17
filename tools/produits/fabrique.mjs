@@ -131,14 +131,22 @@ export function consigneModule({ produit, index, module, titresFaits = [] }) {
 }
 
 /* ── Rédaction avec contrôle (3 essais, sinon on n'écrit RIEN) ───────────── */
+/* Un module complet (méthode + 2-5 consignes + 3-12 exemples + pièges + checklist) fait 12-16 Ko de
+   HTML : le plafond de 4000 jetons du Club coupait la réponse AVANT les pièges et la checklist
+   (17.09 : 42 refus sur 42, toujours « attention/check manquants », jamais visibles au début du
+   texte). Budget doublé, et une réponse tronquée est nommée telle quelle dans le journal. */
+export const JETONS_MODULE = 8192;
 export async function redigeModule(env, { produit, index, module, titresFaits }, log = () => {}) {
   const prompt = consigneModule({ produit, index, module, titresFaits });
   let retour = null;
   for (let essai = 1; essai <= ESSAIS; essai++) {
-    const html = normalise(nettoieSortie(await redige(env, prompt, retour)));
+    let arret = 'inconnu';
+    const brut = await redige(env, prompt, retour, { max_tokens: JETONS_MODULE, surArret: (raison) => { arret = raison; } });
+    const html = normalise(nettoieSortie(brut));
     const v = valideModule(html, { produit, index, module });
-    log('  essai ' + essai + '/' + ESSAIS + ' : ' + (v.ok ? 'ACCEPTÉ' : 'refusé — ' + v.erreurs.join(' ; ')) + ' (' + v.mots + ' mots, ' + v.consignes + ' consignes, ' + v.exemples + ' exemples)');
-    if (!v.ok) log('    inventaire des balises vues : ' + JSON.stringify(inventaire(html)) + ' · début : ' + html.slice(0, 90).replace(/\s+/g, ' ') + '…');
+    if (arret === 'max_tokens') { v.ok = false; v.erreurs.unshift('réponse TRONQUÉE par le plafond de ' + JETONS_MODULE + ' jetons (arrêt max_tokens) : raccourcir les exemples, pas les blocs de fin'); }
+    log('  essai ' + essai + '/' + ESSAIS + ' : ' + (v.ok ? 'ACCEPTÉ' : 'refusé — ' + v.erreurs.join(' ; ')) + ' (' + v.mots + ' mots, ' + v.consignes + ' consignes, ' + v.exemples + ' exemples, arrêt ' + arret + ')');
+    if (!v.ok) log('    inventaire des balises vues : ' + JSON.stringify(inventaire(html)) + ' · début : ' + html.slice(0, 90).replace(/\s+/g, ' ') + '… · fin : …' + html.slice(-90).replace(/\s+/g, ' '));
     if (v.ok) return { html, ...v };
     retour = { html, erreurs: v.erreurs };
   }

@@ -453,8 +453,21 @@ loin. Le maximum rapidement. Innove. » Réponse côté produits (les vidéos vi
   « exactement un », ≥ 3 cases, et **à chaque refus le journal imprime l'inventaire des balises
   vues** (plus jamais un refus aveugle). Variantes chiffrées PAR module (m2/m3/m4/m6 d'avis-ia :
   ≥ 8 exemples) au lieu d'un plancher sur tout le produit qui refusait l'intro. Garde 8/8.
-- 🔴 Non mesuré à cette ligne : la fabrication RÉELLE (workflow `produit-fabrique.yml`, à blanc
-  puis en vrai) — voir la ligne suivante quand elle est faite. 0 vente : la demande reste à prouver.
+- **Fabrication réelle n°2 (runs 35230809352 / 812299 / 815138 / 817984, les 4 niches, 14:01 →
+  14:18) : encore 0/7 partout, 84 refus sur 84** — mais cette fois l'inventaire imprimé à chaque refus
+  dit la vérité : le modèle produit bien `promesse`, `consigne`, `exemple` (jusqu'à 12), et
+  **jamais** `attention`/`check`/☐ — les blocs de FIN. Une seule fois `attention` sans `check`
+  (avis m5). Un module complet fait 12-16 Ko de HTML (mesuré sur kit-ia en base) ≈ plus que les
+  **4000 jetons** hérités du Club : la réponse était **coupée** juste avant les pièges et la
+  checklist, et `redige()` ne regardait pas `stop_reason`. Corrigé : budget **8192 jetons par
+  module** (`JETONS_MODULE`, le Club garde 4000), l'arrêt `max_tokens` est nommé « réponse
+  TRONQUÉE » dans le refus (le modèle est alors invité à raccourcir les exemples, pas la fin), le
+  journal montre aussi la FIN du texte refusé. Garde 9/9 (nouveau test : même HTML, seul l'arrêt
+  change → refusé puis accepté ; chaque appel porte le budget module). Leçon : un refus qui
+  se répète 84 fois à l'identique n'est jamais le modèle, c'est la chaîne — et un journal qui
+  ne montre que le DÉBUT d'un texte refusé pour « fin manquante » cache exactement la cause.
+- 🔴 Non mesuré à cette ligne : la fabrication n°3 avec le budget doublé — voir la ligne suivante
+  quand elle est faite. 0 vente : la demande reste à prouver.
 
 ## 2026-09-17 13:15 — Facebook enfin dans Metricool (4 réseaux reliés)
 
