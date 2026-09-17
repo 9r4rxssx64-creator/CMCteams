@@ -197,3 +197,12 @@ voies **iPhone (WebKit)** — 52 tests — alors que Chromium et Pixel étaient 
 global de Playwright et partait aussi à WebKit, qui ne démarre pas avec. Je n'ai pas de WebKit en local : je n'avais
 vu que Chromium. Correctif : drapeau posé **par projet Chromium** ; WebKit garde `ignoreHTTPSErrors`. Leçon #273.
 
+**Suite (18:10–18:30 UTC)** : PR #3890 puis #3892 fusionnées ; 4 voies e2e vertes en CI sur `14ef3cb53` ; e2e prod ✅ ;
+audit live 40/40 ✅ ; worker redéployé depuis main ✅. Second avis Qodo lu et trié : 2 vrais points corrigés (v1.1.291)
+avec tests réels, 1 faux positif, couverture partielle déclarée. **Trouvé en passant, en mesurant** : la boucle de
+télémétrie (P1, 3 636 requêtes/2 min quand Firebase est refusé) — ni les 7 sous-agents ni les scanners ne l'avaient
+vue ; c'est le proxy de session qui l'a fait remonter. Leçon #274.
+**Kevin (18:20)** : « Test toutes les fonctions en réel toujours · audit d'amélioration +++ UX/UI » → trois passes
+lancées en parallèle (harnais F01…F78 en vrai Chromium, audit UX/UI mesuré à 375 px, audit code/archi chiffré) ;
+résultats à consigner dans `06-*.md` à leur arrivée. Strix `messaging-app` reçu 18:20 : 0 confirmé, inconclusive, 5 zones déjà couvertes par des tests nommés (03-FINDINGS).
+

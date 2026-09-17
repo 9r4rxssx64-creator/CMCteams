@@ -244,13 +244,21 @@ n'est une faille. Zéro correctif de code ; deux recommandations P3 déjà connu
 | Parcours live Apex Chat (`apex-chat-e2e.yml`, 2 clients) | ✅ | run `35238420921` |
 | Tests CI (`messaging-app-tests.yml`, vitest + 4 navigateurs) | ✅ sur `main` avant correctifs | run `35238423613` |
 | Scan sécu outillé (`security-suite.yml`, détail `messaging-app`) | 11 signalements Semgrep (5 WARNING dont 4 `missing-integrity` sur `dns-prefetch`/`preconnect`, 1 CORS déjà trié) + gitleaks faux positifs (PEM strip, jeton de test) | run `35238487325` |
-| Pentest IA (`strix-scan.yml`) | ⚠️ lancé **sans `target`** → cible par défaut `worldmonitor` : 1 **CRITICAL** hors périmètre (Firebase `/apex` anonyme) ; **relancé sur `messaging-app`** (résultat après ce rapport) | runs `35238490127`, puis le suivant |
+| Pentest IA (`strix-scan.yml`) | ⚠️ lancé **sans `target`** → cible par défaut `worldmonitor` : 1 **CRITICAL** hors périmètre (Firebase `/apex` anonyme) ; **relancé sur `messaging-app`** → run `35254628554` ✅ rc=0, 33 min, gpt-5.4, **0 vulnérabilité confirmée**, verdict « inconclusive » : 5 zones « à valider » (JWT/SSO, autorisation objet, sinks worker, rendu/SW, CORS) — toutes déjà couvertes par des tests nommés (voir 03) ; **709 erreurs de flux LLM** pendant le run (outil instable) | runs `35238490127`, `35254628554` |
 | Prod D1 (`system_config`, lu via MCP Cloudflare) | `ADMIN_MODE=B`, `KEVIN_INVISIBLE_ADMIN=false`, `e2e_strict` absent ; 7 utilisateurs, 3 conversations, 40 messages, 2 admins | requête SQL du 17/09 |
 | Unitaires locaux avant | 63 fichiers · 1245 tests · couverture 94,31 / 86,00 / 99,05 / 95,96 | `vitest run --coverage` |
 | Unitaires locaux après | **70 fichiers · 1341 tests** (96 tests neufs, 7 fichiers de garde) — ⚠️ mesuré **sans** `--coverage` | `vitest run` |
 | CI `messaging-app-tests.yml` sur la branche | ❌ run `35255340099` : cliquet `ConversationDO.js` sous le seuil (fonctions 88,09 % < 89,7 %) — six `.catch` jamais exercés | `vitest run --coverage` |
 | Unitaires locaux après correctif | **71 fichiers · 1347 tests**, `ConversationDO.js` 100 / 98,18 / 100 / 100, cliquet remonté ; tous seuils par fichier tenus | `vitest run --coverage` (sortie `EXIT=0`) |
 | CI e2e 4 voies sur `703cc23db` | ❌ run `35256174034` : `tests` ✅, `chromium-desktop` ✅, `pixel-android` ✅, **`iphone-safari` ❌ 52, `iphone-se` ❌ 52** — WebKit ne démarre pas avec le drapeau Chromium posé en global (annotations du check-run) | `playwright test --project=…` (CI) |
+| CI e2e 4 voies sur `14ef3cb53` (drapeau par projet) | ✅ runs `35256809407` et `35256814524` : `tests` ✅, **iphone-safari ✅, iphone-se ✅**, chromium ✅, pixel ✅ | `messaging-app-tests.yml` |
+| e2e contre la **production** (`apex-chat-e2e.yml`) | ✅ run `35256269640` — « Prod OK (HTTP 200) », 3 scénarios (smoke, deux clients, push) | annotations du check-run |
+| Audit LIVE de toutes les surfaces (`audit-live.yml`) | ✅ run `35256272025` — rc=0, **40 pages OK, 0 bloquante** ; Apex Chat : 1 requête tierce tolérée, 2 lignes de console (CSP `frame-ancestors` en meta) ; « version servie : non exposée par la page » (amélioration à faire) | check-run |
+| Fusion | PR **#3890** fusionnée 18:03 UTC (`d4a2697f2`), PR **#3892** (WebKit) fusionnée ; `deploy-apex-chat.yml` sur main ✅ `35256806578` (worker v1.1.290 en ligne) | API GitHub |
+| Second avis indépendant | Qodo run `35256337495` ✅ sur #3890 : 2 findings confirmés et corrigés (modales, IndexedDB), 1 faux positif (ticket #33), 39 fichiers non relus (budget) | commentaires PR |
+| Tempête de télémétrie (locale, Firebase refusé) | **3 636 connexions en ~2 min** avant → **≤ 3 puis pause 5 min** après (test e2e) | proxy de session + Playwright |
+| e2e local après correctifs Qodo | `retour-modale-et-effacement.spec.js` **3/3** Chromium | `playwright test` |
+| Version servie lisible par l'audit live | `window.APEX_CHAT_VERSION` + `[data-ver]` sur le splash, concordance avec la barre — test e2e réel (4/4 dans le spec, 12/12 en répétition ×3) | `playwright test` |
 | e2e Chromium local après | **56 / 56** (dont SW actif + cache peuplé) | `playwright test --project=chromium-desktop` |
 | Boot (Chromium 375×812, API mockée) | LCP 116 ms (login) / 88 ms (liste) ; 0 exception ; 0 mutation DOM et 0 rendu au repos sur 3 vues ; 7–8 minuteries, aucune ≤ 1 s | passe perf |
 | Chat 1 000 messages | rendu 84 ms ; 20 messages entrants 8,6 ms/msg ; 0 fuite DOM après 20 cycles | passe perf |
