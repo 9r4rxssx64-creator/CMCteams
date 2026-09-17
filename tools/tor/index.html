@@ -283,12 +283,17 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
     <p>Chaque fiche a un bouton <b>« Prouver l'adresse »</b> : il ouvre la page <b>du site officiel lui-même</b>
     (bbc.co.uk, torproject.org, proton.me…) où l'organisation publie son adresse .onion. Compare, et tu es sûr.</p>
     <p class="mut sm">Relevées à leurs sources publiques le 15.09.2026, puis <b>réellement ouvertes
-    à travers Tor le 17.09.2026</b> : <b>13 des 20 ont répondu</b> (Ahmia, DuckDuckGo, BBC News,
-    BBC Learning English, Deutsche Welle, Radio Free Europe, Voice of America, CIA, Facebook,
-    Proton Mail, Riseup, Systemli, Qubes OS). Les <b>7 autres n'ont pas répondu depuis la machine
-    de test</b> — ce n'est <b>pas</b> une preuve qu'elles sont mortes : un circuit Tor se construit
-    au hasard et cale souvent depuis un centre de données. Le bouton « Prouver l'adresse » reste
-    la vérité : c'est l'organisation elle-même qui publie son adresse.</p>
+    à travers Tor le 17.09.2026</b> : <b>15 des 20 ont répondu</b> (Ahmia, DuckDuckGo, Tor Project,
+    BBC News, The Guardian, BBC Learning English, Deutsche Welle, Radio Free Europe, Voice of America,
+    CIA, Facebook, Proton Mail, Riseup, Systemli, Qubes OS). Les <b>5 autres n'ont pas répondu depuis
+    la machine de test</b> (New York Times, ProPublica, The Intercept, Bellingcat, Privacy
+    International) — ce n'est <b>pas</b> une preuve qu'elles sont mortes.</p>
+    <p class="mut sm"><b>La preuve que le chiffre bouge</b> : au premier passage, 13 avaient répondu ;
+    au second, <b>Tor Project et The Guardian ont répondu du deuxième essai</b>, et DuckDuckGo —
+    qui avait répondu du premier coup la fois d'avant — a eu besoin de deux tentatives. Un circuit
+    Tor se construit au hasard et cale souvent depuis un centre de données : « muette ici, ce
+    matin » ne veut pas dire « morte ». Le bouton « Prouver l'adresse » reste la vérité : c'est
+    l'organisation elle-même qui publie son adresse.</p>
     <p class="mut sm"><b>Pour les ouvrir toi-même, en une commande</b> : ouvre le <b>Tor Browser</b>
     et laisse-le ouvert, puis lance <code>npm run tor:verif</code>. Il sort un rapport daté, adresse
     par adresse. S'il ne trouve aucun Tor, il <b>refuse de répondre</b> plutôt que de te dire à tort
@@ -453,7 +458,7 @@ th{color:var(--gold2);font-size:12.5px;text-transform:uppercase;letter-spacing:.
   <button role="tab" data-v="secu" aria-selected="false"><span class="ic">🛡</span>Sécurité</button>
   <button role="tab" data-v="quiz" aria-selected="false"><span class="ic">🎓</span>Quiz</button>
 </nav>
-<div id="vbadge">v1.5</div>
+<div id="vbadge">v1.6</div>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
