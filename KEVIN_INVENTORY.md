@@ -1,5 +1,21 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🏭 Fabrique de produits — 4 nouvelles niches à vendre — 2026-09-17
+
+Un seul moteur écrit un kit complet en base privée à partir d'une fiche publique ; les 4 niches (bureau 37 €, étudiant 27 €, avis clients 17 €, immobilier 67 €) ont chacune leur page sur kit.kd-mc.com et passent par la même caisse et le même lecteur.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/produits/catalogue.json` | Les fiches PUBLIQUES des 4 produits (titres, briefs, prix) — jamais le contenu payant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/catalogue.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/catalogue.json) |
+| `tools/produits/fabrique.mjs` | Le moteur : rédaction par l'IA, contrôle strict (3 essais), écriture en base D1 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/fabrique.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/fabrique.mjs) |
+| `tools/produits/pages.mjs` | Génère les 4 pages de vente à partir du catalogue (`--verifier` en CI) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/pages.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/pages.mjs) |
+| `.github/workflows/produit-fabrique.yml` | Le bouton « fabriquer un produit » (à blanc par défaut) — [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/produit-fabrique.yml) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/produit-fabrique.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/produit-fabrique.yml) |
+| `shops/kit-ia/bureau.html` | Page de vente Kit IA au bureau, 37 € — [en ligne](https://kit.kd-mc.com/bureau.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/bureau.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/bureau.html) |
+| `shops/kit-ia/etudiant.html` | Page de vente Kit IA de l'étudiant, 27 € — [en ligne](https://kit.kd-mc.com/etudiant.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/etudiant.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/etudiant.html) |
+| `shops/kit-ia/avis.html` | Page de vente 40 réponses aux avis, 17 € — [en ligne](https://kit.kd-mc.com/avis.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/avis.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/avis.html) |
+| `shops/kit-ia/immo.html` | Page de vente Kit IA de l'agent immobilier, 67 € — [en ligne](https://kit.kd-mc.com/immo.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/immo.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/immo.html) |
+| `tests/produits-fabrique.test.mjs` | La garde : porte de vérité discriminante, prix = caisse, pages à jour, vrai navigateur (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/produits-fabrique.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/produits-fabrique.test.mjs) |
+
 ## 🐝 Bee dans Lingua — les améliorations sont revenues chez elle — 2026-09-17
 
 **▶️ Essayer (une fois déployé)** : ouvre [lingua.kd-mc.com](https://lingua.kd-mc.com) — touche Bee,

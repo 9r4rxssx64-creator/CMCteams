@@ -7,7 +7,19 @@
 
   var API = 'https://kdmc-vente.9r4rxssx64.workers.dev';
   var PRODUIT = 'kit-ia';
-  var CLE_CODE = 'kit_ia_code';   /* localStorage scopé au produit (règle d'isolation) */
+  /* Lecteur partagé par tous les kits (fabrique de produits, 17.09) : le produit
+     vient de ?produit=<id> (lettres et tirets seulement, sinon on reste sur le kit). */
+  function produitDepuisUrl(search, dataProduit) {
+    var m = /[?&]produit=([a-z][a-z-]{1,40})(?:&|$)/.exec(String(search || ''));
+    if (m) return m[1];
+    return /^[a-z][a-z-]{1,40}$/.test(String(dataProduit || '')) ? String(dataProduit) : PRODUIT;
+  }
+  var PRODUIT_LU = (typeof location !== 'undefined' && typeof document !== 'undefined')
+    ? produitDepuisUrl(location.search, document.body && document.body.getAttribute('data-produit')) : PRODUIT;
+  function lienLecteur(code) {
+    return 'lire.html?' + (PRODUIT_LU !== PRODUIT ? 'produit=' + encodeURIComponent(PRODUIT_LU) + '&' : '') + 'c=' + encodeURIComponent(code);
+  }
+  var CLE_CODE = (PRODUIT_LU === PRODUIT ? 'kit_ia' : 'kit_' + PRODUIT_LU.replace(/-/g, '_')) + '_code';   /* localStorage scopé au produit (règle d'isolation) */
 
   /* ── Logique pure ───────────────────────────────────────────────────── */
   function emailPlausible(v) {
@@ -56,7 +68,7 @@
     return m ? String(Number(m[2])) + ' de ' + m[1] : '';
   }
 
-  var expose = { emailPlausible: emailPlausible, normaliseCode: normaliseCode, interprete: interprete, interpreteLecture: interpreteLecture, clubRecentes: clubRecentes, clubSemaineLisible: clubSemaineLisible, API: API, PRODUIT: PRODUIT };
+  var expose = { emailPlausible: emailPlausible, normaliseCode: normaliseCode, interprete: interprete, interpreteLecture: interpreteLecture, clubRecentes: clubRecentes, clubSemaineLisible: clubSemaineLisible, produitDepuisUrl: produitDepuisUrl, lienLecteur: lienLecteur, API: API, PRODUIT: PRODUIT };
   if (typeof globalThis !== 'undefined') globalThis.__kit = expose;
 
   /* ── Navigateur ─────────────────────────────────────────────────────── */
@@ -78,7 +90,7 @@
     if (v.code) {
       var c = document.createElement('code'); c.className = 'code'; texte(c, v.code); boite.appendChild(c);
       var a = document.createElement('a'); a.className = 'btn btn-primaire';
-      a.href = 'lire.html?c=' + encodeURIComponent(v.code); texte(a, 'Ouvrir mon kit'); boite.appendChild(a);
+      a.href = lienLecteur(v.code); texte(a, 'Ouvrir mon kit'); boite.appendChild(a);
       ecrireStock(v.code);
     }
     boite.hidden = false;
@@ -184,12 +196,13 @@
 
     function charge(code) {
       texte(etat, code ? 'Ouverture de ton kit…' : 'Chargement du module gratuit…');
-      var url = code ? API + '/lire?c=' + encodeURIComponent(code) : API + '/apercu?produit=' + PRODUIT;
+      var url = code ? API + '/lire?c=' + encodeURIComponent(code) : API + '/apercu?produit=' + PRODUIT_LU;
       return fetchJson(url).then(function (x) {
         var r = interpreteLecture(x.j, x.ok, !!code);
         if (r.etat === 'complet' || r.etat === 'apercu') {
           modules = r.modules; sommaire = r.sommaire; complet = (r.etat === 'complet');
           texte(titre, complet ? 'Ton kit complet' : 'Module 1 — gratuit');
+          if (!complet && x.j && x.j.nom && $('sur')) { var lienSur = $('sur').querySelector('a'); if (lienSur) texte(lienSur, String(x.j.nom).split(' — ')[0]); }
           texte(etat, complet ? sommaire.length + ' modules ouverts. Chaque consigne se copie en un geste.' : 'Le reste s’ouvre avec ton code d’accès.');
           if (complet) { ecrireStock(code); boiteCode.hidden = true; }
           va(0);

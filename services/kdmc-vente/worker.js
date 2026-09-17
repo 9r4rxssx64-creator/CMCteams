@@ -69,6 +69,34 @@ const PRODUITS = {
     contenu: ['kit-ia', 'club-ia'],
     ttlJours: 365,
   },
+  /* Fabrique de produits (Kevin 2026-09-17 « d'autres niches ») : chaque fiche
+     vit dans tools/produits/catalogue.json, son contenu est écrit en D1 par
+     tools/produits/fabrique.mjs (CI). Prix tous DIFFÉRENTS : la caisse reconnaît
+     un paiement PayPal par son montant. Même lecteur (lire.html?produit=…). */
+  'bureau-ia': {
+    nom: 'Kit IA au bureau — 7 modules pour les salariés qui veulent finir plus tôt',
+    prix: 37, devise: 'EUR',
+    livre: 'https://kit.kd-mc.com/lire.html?produit=bureau-ia',
+    contenu: ['bureau-ia'],
+  },
+  'etudiant-ia': {
+    nom: "Kit IA de l'étudiant — réviser, comprendre et rendre mieux, sans tricher",
+    prix: 27, devise: 'EUR',
+    livre: 'https://kit.kd-mc.com/lire.html?produit=etudiant-ia',
+    contenu: ['etudiant-ia'],
+  },
+  'avis-ia': {
+    nom: '40 réponses aux avis clients, prêtes à adapter — Google, Facebook, TripAdvisor',
+    prix: 17, devise: 'EUR',
+    livre: 'https://kit.kd-mc.com/lire.html?produit=avis-ia',
+    contenu: ['avis-ia'],
+  },
+  'immo-ia': {
+    nom: "Kit IA de l'agent immobilier — annonces, prospection, visites, suivi",
+    prix: 67, devise: 'EUR',
+    livre: 'https://kit.kd-mc.com/lire.html?produit=immo-ia',
+    contenu: ['immo-ia'],
+  },
 };
 
 const JOURS_RECHERCHE = 14;      // fenêtre de réclamation
@@ -247,7 +275,7 @@ async function envoieCode(env, { email, produit, code }) {
           to_email: email, store: 'kd-mc.com', name: 'kd-mc.com', from_name: 'kd-mc.com',
           title: 'Ton accès : ' + produit.nom,
           message: 'Merci pour ton achat : ' + produit.nom + '.\nTon code d\'accès : ' + code +
-            '\nOuvre ton accès ici : ' + produit.livre + '?c=' + code +
+            '\nOuvre ton accès ici : ' + produit.livre + (produit.livre.indexOf('?') >= 0 ? '&' : '?') + 'c=' + code +
             '\nGarde ce message : le code ouvre ton accès sur tous tes appareils.',
         },
       }),
@@ -478,7 +506,7 @@ export default {
       if (!PRODUITS[produitId]) return json({ ok: false, error: 'produit', detail: 'produit inconnu: ' + produitId, step: 'apercu_produit' }, 404, origin);
       const r = await lireContenu(env, produitId, { gratuitSeulement: true });
       if (!r.ok) return json(r, r.status || 500, origin);
-      return json({ ok: true, produit: produitId, modules: r.modules, sommaire: r.sommaire }, 200, origin);
+      return json({ ok: true, produit: produitId, nom: PRODUITS[produitId].nom, prix: PRODUITS[produitId].prix, modules: r.modules, sommaire: r.sommaire }, 200, origin);
     }
 
     /* --- Lecture payante : TOUT le produit, contre un code valide --------- */

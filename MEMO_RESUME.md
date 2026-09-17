@@ -356,6 +356,39 @@ Prochaine étape réelle : choisir le nouveau commerce **hors casino** (règle K
 la plus pertinente, la plus rentable… n'hésite pas à en faire plusieurs »), puis seulement
 après, la pub.
 
+## 2026-09-17 après-midi — Fabrique de produits : 4 niches de plus, un seul moteur
+
+Kevin : « Continue. Crée d'autres vidéos, d'autres niches, encore du contenu qui rapporte. Va plus
+loin. Le maximum rapidement. Innove. » Réponse côté produits (les vidéos viennent ensuite) :
+
+- **`tools/produits/fabrique.mjs`** = le moteur du Club généralisé (importe `d1`, `redige`,
+  `nettoieSortie` de `tools/club/semaine.mjs`, rien recopié — leçon #142). Une fiche PUBLIQUE
+  (`catalogue.json` : titres, briefs, cible, promesse, prix) → 7 modules rédigés par Anthropic →
+  porte de vérité par module (h2 exact, promesse, 2-5 consignes, exemples, attention, checklist,
+  mots, accents, jamais « prompt », jamais un chiffre légal sans service-public.fr, jamais une
+  promesse de rendement) → 3 essais sinon RIEN n'est écrit → `INSERT OR REPLACE` en D1
+  `kdmc-contenu`. Idempotent (n'écrit que les modules manquants), `REFAIRE=m3` pour réécrire.
+  Dernière ligne du journal = la preuve : `PRODUIT PUBLIÉ|SIMULÉ|COMPLET|INCOMPLET`.
+- **4 produits** dans la caisse (`kdmc-vente` PRODUITS) avec des prix TOUS différents (le webhook
+  PayPal reconnaît un paiement par son montant ; 39/19/47/59 étaient pris) : `bureau-ia` 37 €,
+  `etudiant-ia` 27 €, `avis-ia` 17 €, `immo-ia` 67 €. Livre = `lire.html?produit=<id>`.
+- **Un seul lecteur** : `kit.js` lit `?produit=` (ou `data-produit` du body), clé localStorage
+  scopée par produit (`kit_avis_ia_code` ≠ `kit_ia_code`, isolation), fil d'Ariane = nom du
+  produit (le worker renvoie `nom`+`prix` dans `/apercu`). Lien d'accès dans l'e-mail corrigé
+  quand `livre` porte déjà un `?` (`&c=` au lieu de `?c=` — sinon lien cassé).
+- **4 pages de vente** générées par `tools/produits/pages.mjs` (CSP copiée de la page mère,
+  PayPal/Revolut au bon montant, formulaire de récupération au bon produit) ; la page mère
+  renvoie vers les 4 (boutons 44 px : des liens en ligne de 29 px ont fait tomber le test).
+- **Garde** `tests/produits-fabrique.test.mjs` (9 contrôles, dans `test:ci`) : catalogue ⇄
+  caisse (prix, nom, livre), porte discriminante (10 sabotages refusés pour la BONNE raison),
+  déroulé à blanc (0 appel IA, 0 écriture), déroulé réel sur faux réseau (m3 refusé 3× → 6
+  écritures, jamais 7 ; relance → 1 appel ; complet → 0 appel), pages à jour, **vrai navigateur**
+  sur avis.html + lecteur (44 px, 375 px, code sous sa propre clé, aperçu du bon produit).
+- Mesures locales : produits-fabrique 9/9, kit-ia 7/7, vente 34/34, club 16/16, kit-metiers 5/5,
+  workflows-valides 459/0, actions-conformes 9/0, destinations 0 échec, dépôt public sain.
+- 🔴 Non mesuré à cette ligne : la fabrication RÉELLE (workflow `produit-fabrique.yml`, à blanc
+  puis en vrai) — voir la ligne suivante quand elle est faite. 0 vente : la demande reste à prouver.
+
 ## 2026-09-17 13:15 — Facebook enfin dans Metricool (4 réseaux reliés)
 
 Kevin a créé la Page **Kdmc** (bio « L'IA au boulot, sans jargon… », catégorie Produit/service ·
