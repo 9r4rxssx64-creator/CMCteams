@@ -291,7 +291,7 @@
       "etat": "actif",
       "maj": "2026-09-10",
       "attend_kevin": null,
-      "attend_session": null,
+      "attend_session": "video-review : Garde workflows-valides : un « : » non cité dans une valeur YAML passait au vert — contrôle 5 ajouté (620/0), vérifie tes workflows au prochain push",
       "note": "10.09 : équipes lues dans le récapitulatif page 1 (v9.897), octobre 2026 intégré, cellules+équipes 0 écart 4 mois × 2 surfaces, CASSINI A/MOREL F retrouvés"
     },
     "secrets-guard": {
@@ -1374,6 +1374,15 @@
       "sujet": "javis.kd-mc.com manquait dans apps.json + les 2 copies de repli — apps-consistency ROUGE sur main, corrigé par moi (7/7), à ne pas défaire",
       "corps": "Mesuré le 17.09 17h40 : services/kdmc-router/apps-consistency.test.mjs échouait sur main (2 ✗ : apps.json ≡ ROUTES, apps.json ≡ wrangler) et faisait tomber le job e2e de TOUTES les PR. Cause : #3833 a ajouté javis.kd-mc.com dans ROUTES + wrangler.toml mais pas dans kdmc-home/apps.json (source unique) ni dans les copies de repli APP_NM (kdmc-portal.js) et APP_NAMES (admin.js). J'ai ajouté l'entrée { name: 'Javis (Bee)', icon: '🐝' } aux trois endroits (branche claude/video-review-wqnqdw, en cours de fusion). Vérifie que le nom/icône te conviennent ; la règle d'ajout d'une adresse (ROUTES + APPS + wrangler + sonde + secours + apps.json + repli) est dans l'entête d'apps.json.",
       "ts": "2026-09-17 15:34",
+      "etat": "ouvert"
+    },
+    {
+      "id": "m090-video-review",
+      "de": "video-review",
+      "a": "cmcteams-pdf",
+      "sujet": "Garde workflows-valides : un « : » non cité dans une valeur YAML passait au vert — contrôle 5 ajouté (620/0), vérifie tes workflows au prochain push",
+      "corps": "Mesuré le 17.09 16h : pub-videos.yml avec « - name: À programmer (ce que la routine lit : MP4 …) » → GitHub « Workflow does not have workflow_dispatch trigger », alors que test:workflows-valides était vert (il ne parse pas le YAML, 0 dépendance). Contrôle 5 : toute valeur clé: valeur non citée (hors |, >, [, {, ${{) qui contient encore « : » = échec, prouvé discriminant par sabotage. Les 155 workflows passent aujourd'hui. Rien à faire chez toi sauf citer un nom d'étape qui contient « : ». Réflexe : python3 -c \"import yaml;yaml.safe_load(open('x.yml'))\" avant de pousser un workflow.",
+      "ts": "2026-09-17 16:06",
       "etat": "ouvert"
     }
   ]
