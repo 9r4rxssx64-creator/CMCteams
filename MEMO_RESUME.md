@@ -356,6 +356,20 @@ Prochaine étape réelle : choisir le nouveau commerce **hors casino** (règle K
 la plus pertinente, la plus rentable… n'hésite pas à en faire plusieurs »), puis seulement
 après, la pub.
 
+## 2026-09-17 13:15 — Facebook enfin dans Metricool (4 réseaux reliés)
+
+Kevin a créé la Page **Kdmc** (bio « L'IA au boulot, sans jargon… », catégorie Produit/service ·
+Formation). Deux fausses pistes avant la bonne : « no page bound to this account » venait d'une
+**session Safari ouverte sur le mauvais compte Facebook** (cause n°3), pas d'une autorisation
+périmée. Fix qui a marché : **onglet privé Safari** → Metricool redemande l'identifiant →
+Page proposée → cochée. Mesuré `getBrandSettings` : `facebookData: 1373991005790862` +
+Instagram `kd45772` + TikTok « Kevin Mc » + YouTube. **Meilleurs créneaux Facebook (Europe/Paris,
+données Metricool)** : lundi→mercredi **10h** (~15 000-15 500) puis **12h** ; jeudi/vendredi 10h
+(~12 500) ; week-end ≈ moitié (samedi 10h ~8 850). Même logique que TikTok/Instagram : semaine,
+10h, jamais le week-end. Leçon : « précédemment connecté(e) » sur l'écran bleu Facebook = session
+navigateur réutilisée → l'onglet privé règle 2 causes d'un coup (mauvais compte + vieille session)
+sans toucher aux réglages Facebook.
+
 ## 2026-09-16 (nuit) — Metricool branché : la chaîne de publication est PROUVÉE
 
 Kevin a créé le compte Metricool (marque « Kdmc », id 7000185, fuseau Europe/Paris)
