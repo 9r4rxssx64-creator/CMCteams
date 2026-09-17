@@ -101,6 +101,22 @@ const SURFACES = [
       if (!/Manrope|Inter|system/i.test(css)) return { ok: false, note: 'feuille ../kit.css non appliquée (police ' + css.slice(0, 40) + ')' };
       return { ok: true, note: '5 situations, feuille de style appliquée' };
     } },
+  /* Fabrique de produits (17.09) : les 4 pages de niche, lues depuis le catalogue PUBLIC
+     (tools/produits/catalogue.json) pour que la vérification ne dérive jamais de la vente :
+     prix affiché, bouton PayPal au même montant, formulaire de récupération sur le bon produit.
+     Le contenu (base D1) est prouvé à part par produit-fabrique.yml. */
+  ...JSON.parse(readFileSync(new URL('../produits/catalogue.json', import.meta.url), 'utf8')).produits.map((p) => ({
+    url: 'https://kit.' + ROOT + '/' + p.slug + '.html', name: 'Kit IA — niche « ' + p.court + ' » (' + p.prix + ' €)', selKey: 'h1', deep: async (page) => {
+      const mini = (await page.textContent('.prix-mini').catch(() => '') || '').trim();
+      const paypal = await page.getAttribute('#payer-paypal', 'href').catch(() => '');
+      const opt = await page.$eval('#produit option', (o) => o.value).catch(() => '');
+      const lire = await page.$$eval('a[href^="lire.html?produit="]', (els) => els.length).catch(() => 0);
+      if (mini !== p.prix + ' €') return { ok: false, note: 'prix affiché « ' + mini + ' » ≠ ' + p.prix + ' € (la caisse vérifie ce montant)' };
+      if (!String(paypal).toLowerCase().includes(p.prix + 'eur')) return { ok: false, note: 'lien PayPal sans le montant ' + p.prix + ' EUR : ' + paypal };
+      if (opt !== p.id) return { ok: false, note: 'formulaire de récupération sur « ' + opt + ' » au lieu de ' + p.id };
+      if (!lire) return { ok: false, note: 'aucun lien vers lire.html?produit=' + p.id };
+      return { ok: true, note: p.prix + ' € affiché = PayPal = caisse, récupération sur ' + p.id + ', ' + lire + ' lien(s) lecteur' };
+    } })),
   { url: 'https://kit.' + ROOT + '/lire.html', name: 'Kit IA — lecteur (module 1 gratuit)', selKey: '#module h2', deep: async (page) => {
       // Sans code, le lecteur demande /apercu?produit=kit-ia : le sommaire est celui du KIT
       // (7 modules, 1 ouvert, 6 verrouillés). Les consignes du Club n'apparaissent qu'avec

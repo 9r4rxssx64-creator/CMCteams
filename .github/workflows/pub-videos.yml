@@ -10,7 +10,7 @@ name: Pub — vidéos courtes sans visage
 #   https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/<id>.mp4 )
 # C'est cette adresse que Metricool va chercher pour programmer la publication.
 # Aucun secret nécessaire : la voix est publique et mise en cache, ffmpeg est
-# sur le runner.
+# installé par apt sur le runner (il n'y est pas d'office : mesuré).
 
 on:
   workflow_dispatch:
@@ -45,11 +45,15 @@ jobs:
       - name: Garde (tests hors ligne)
         run: node --test tests/pub-videos.test.mjs
 
+      # Mesuré le 17.09 (run 35216971927) : ffmpeg N'EST PAS sur ubuntu-latest → on l'installe.
       - name: Outils (ffmpeg + police)
         shell: bash -eo pipefail {0}
         run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends ffmpeg fonts-dejavu-core
           ffmpeg -version | head -1
-          test -f /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf || { sudo apt-get update -qq && sudo apt-get install -y -qq fonts-dejavu-core; }
+          ffprobe -version | head -1
+          test -f /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
 
       - name: Rendu
         env:

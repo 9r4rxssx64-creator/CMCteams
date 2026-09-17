@@ -1,0 +1,327 @@
+{
+  "base": "https://kd-mc.com",
+  "at": "2026-09-17T11:40:27.547Z",
+  "hardFail": 40,
+  "report": [
+    {
+      "url": "https://kd-mc.com/",
+      "name": "accueil",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://cmcteams.kd-mc.com/",
+      "name": "CMCteams",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cmcteams.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://cmcteams.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://apex-ai.kd-mc.com/",
+      "name": "Apex AI",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://apex-ai.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://apex-ai.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://apex-chat.kd-mc.com/",
+      "name": "Apex Chat",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://apex-chat.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://apex-chat.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://la-detente.kd-mc.com/",
+      "name": "La Détente boutique",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://la-detente.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://la-detente.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://chez-lolo.kd-mc.com/",
+      "name": "Chez Lolo boutique",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://chez-lolo.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://chez-lolo.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://dashboard.kd-mc.com/",
+      "name": "Dashboard",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://dashboard.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://dashboard.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://sourcing.kd-mc.com/",
+      "name": "Sourcing",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://sourcing.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://sourcing.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://coffre.kd-mc.com/",
+      "name": "Coffre-fort",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://coffre.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://coffre.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://departs.kd-mc.com/",
+      "name": "Départs",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://departs.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://departs.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://cmcteams-light.kd-mc.com/",
+      "name": "CMCteams light",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cmcteams-light.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://cmcteams-light.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://bot.kd-mc.com/",
+      "name": "Bot crypto (tableau de bord)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://bot.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://bot.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://beatbot.kd-mc.com/",
+      "name": "Beatbot (robot piscine, admin)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://beatbot.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://beatbot.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://autorisations.kd-mc.com/",
+      "name": "Autorisations (admin)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://autorisations.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://autorisations.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://tor.kd-mc.com/",
+      "name": "Tor en clair",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://tor.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://tor.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://rotaplan.kd-mc.com/",
+      "name": "Rotaplan (offre B2B)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://rotaplan.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://rotaplan.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://javis.kd-mc.com/",
+      "name": "Bee (app installable)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://javis.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://javis.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/",
+      "name": "Kit IA de l'indépendant (vente)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/pour/index.html",
+      "name": "Kit IA — l'IA par métier (index)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/pour/index.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/pour/index.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/pour/plombier.html",
+      "name": "Kit IA — l'IA pour un plombier",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/pour/plombier.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/pour/plombier.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/bureau.html",
+      "name": "Kit IA — niche « Kit IA au bureau » (37 €)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/bureau.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/bureau.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/etudiant.html",
+      "name": "Kit IA — niche « Kit IA de l'étudiant » (27 €)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/etudiant.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/etudiant.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/avis.html",
+      "name": "Kit IA — niche « Réponses aux avis » (17 €)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/avis.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/avis.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/immo.html",
+      "name": "Kit IA — niche « Kit IA de l'agent immobilier » (67 €)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/immo.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/immo.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kit.kd-mc.com/lire.html",
+      "name": "Kit IA — lecteur (module 1 gratuit)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kit.kd-mc.com/lire.html\nCall log:\n\u001b[2m  - navigating to \"https://kit.kd-mc.com/lire.html\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://croupier.kd-mc.com/",
+      "name": "Devenir croupier (guide)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://croupier.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://croupier.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://arbre.kd-mc.com/",
+      "name": "Arbre généalogique",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://arbre.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://arbre.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://worldmonitor.kd-mc.com/",
+      "name": "World Monitor (belle adresse)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://worldmonitor.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://worldmonitor.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://osint.kd-mc.com/",
+      "name": "OSINT (belle adresse)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://osint.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://osint.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://ia.kd-mc.com/",
+      "name": "Outils IA (belle adresse)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://ia.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://ia.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://outils.kd-mc.com/",
+      "name": "Mes outils (belle adresse)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://outils.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://outils.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://shops.kd-mc.com/",
+      "name": "Portail boutiques (belle adresse)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://shops.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://shops.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://lingua.kd-mc.com/",
+      "name": "KDMC Lingua",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://lingua.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://lingua.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://studio.kd-mc.com/",
+      "name": "Créa Studio",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://studio.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://studio.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kd-mc.com/worldmonitor/",
+      "name": "World Monitor",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kd-mc.com/worldmonitor/\nCall log:\n\u001b[2m  - navigating to \"https://kd-mc.com/worldmonitor/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kd-mc.com/osint/",
+      "name": "OSINT",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kd-mc.com/osint/\nCall log:\n\u001b[2m  - navigating to \"https://kd-mc.com/osint/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://cujina.kd-mc.com/",
+      "name": "A Cüjina de Mùnegu (cujina)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cujina.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://cujina.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://cocina.kd-mc.com/",
+      "name": "A Cüjina de Mùnegu (cocina)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cocina.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://cocina.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://cuisine.kd-mc.com/",
+      "name": "A Cüjina de Mùnegu (cuisine)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://cuisine.kd-mc.com/\nCall log:\n\u001b[2m  - navigating to \"https://cuisine.kd-mc.com/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    },
+    {
+      "url": "https://kd-mc.com/cujina/",
+      "name": "A Cüjina de Mùnegu (chemin kd-mc.com/cujina)",
+      "ok": false,
+      "notes": [
+        "EXCEPTION: page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://kd-mc.com/cujina/\nCall log:\n\u001b[2m  - navigating to \"https://kd-mc.com/cujina/\", waiting until \"load\"\u001b[22m\n"
+      ]
+    }
+  ]
+}
