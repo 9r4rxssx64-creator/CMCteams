@@ -336,25 +336,9 @@ const SURFACES = [
             if (u < 5 || !note) return { ok:false, note:'🇲🇨 cours monégasque incomplet : ' + u + ' unités, note honnête ' + note };
           }
         } catch (e) { mc = ' · 🇲🇨 sonde monégasque indispo'; }
-        // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt).
-        // 17/09 : cette sonde ne disait RIEN et personne ne s'en apercevait — le faux vert de la
-        // leçon #103. Deux défauts : (a) si l'élément trouvé était VIDE, l'ancien code renvoyait ''
-        // et ne regardait JAMAIS window.APP_VER, qui est pourtant la source (`var APP_VER` en tête
-        // de lingua/app.js, script classique donc global) ; (b) une version non lue s'affichait
-        // comme une LIGNE EN MOINS, indistinguable d'un contrôle réussi. Corrigé : APP_VER d'abord,
-        // l'élément en repli, et on ÉCRIT « ❓ non lue » plutôt que de se taire.
-        // Puis elle a dit « ❓ non lue » — et c'était VRAI : tout lingua/app.js vit dans une
-        // IIFE, donc APP_VER n'a jamais été global, et la seule étiquette qui l'affiche (.ver)
-        // est sur l'écran Profil, que la sonde a déjà quitté. Lingua expose maintenant
-        // window.LINGUA_VER (v2.125.1) : c'est elle qu'on lit en premier.
-        const ver = await page.evaluate(() => {
-          const g = (typeof window.LINGUA_VER === 'string' && window.LINGUA_VER.trim())
-                 || (typeof window.APP_VER === 'string' && window.APP_VER.trim()) || '';
-          if (g) return g;
-          const b = document.querySelector('.ver, .version, [data-ver]');
-          return b && b.textContent.trim() ? b.textContent.trim() : '';
-        }).catch(() => '');
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts + ' · version servie ' + (ver || '❓ non lue') };
+        // (la version servie est désormais lue pour TOUTES les surfaces, avant le `deep` —
+        //  voir lireVersionServie(). Ce doublon local a été retiré.)
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
@@ -387,6 +371,42 @@ if (AS_KEVIN) console.log('Mode CONNECTÉ (Kevin) — code admin : ' + masque(PI
 
 const SHOT_DIR = 'audit-live-shots';
 mkdirSync(SHOT_DIR, { recursive: true });
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   QUELLE VERSION EST RÉELLEMENT SERVIE — sur CHAQUE surface, à chaque balayage.
+
+   Pourquoi ça vaut le coup : sans ça, personne ne peut prouver qu'une mise en ligne
+   est passée. On relançait des correctifs à l'aveugle sans savoir si la page servie
+   était déjà la nouvelle (mesuré le 17/09 : Lingua a servi l'ancien `app.js` pendant
+   ~10 min après un déploiement pourtant terminé — le cache réseau, `app.js` étant
+   appelé sans numéro de version dans l'URL).
+
+   Il y avait DÉJÀ une lecture de version dans ce fichier… enfermée dans la branche
+   « enquête 404 %22 », donc elle ne se déclenchait que si une requête cassait :
+   en pratique, jamais. Une capacité qui existe mais ne s'exécute pas ne compte pas
+   (erreur #28 « Declaration ≠ Deployment »).
+
+   Fail-open TOTAL : une app qui n'expose pas sa version n'est JAMAIS marquée en échec —
+   on l'écrit, c'est tout. Le garde `npm run test:versions-exposees` est là pour ça.
+   ───────────────────────────────────────────────────────────────────────────── */
+const VER_CANDIDATS = ['APP_VER', 'LINGUA_VER', 'KDMC_VER', 'AX_VER', 'VERSION', '__VER'];
+async function lireVersionServie(page) {
+  try {
+    return await page.evaluate((cands) => {
+      const bon = (v) => (typeof v === 'string' && v.trim() && v.trim().length <= 48) ? v.trim() : '';
+      const lire = (k) => { try { return bon(window[k]); } catch (e) { return ''; } };
+      for (const k of cands) { const v = lire(k); if (v) return v; }
+      /* toute globale nommée <APP>_VER / <APP>_VERSION — c'est la convention du domaine */
+      let cles = []; try { cles = Object.keys(window); } catch (e) { cles = []; }
+      for (const k of cles) { if (!/_(VER|VERSION)$/.test(k)) continue; const v = lire(k); if (v) return v; }
+      /* repli DOM : le badge de version visible (règle « badge version visible toujours ») */
+      const el = document.querySelector('[data-ver], .ver, .version, #ver, .ax-version, #versionBadge');
+      if (el) { const t = ((el.getAttribute && el.getAttribute('data-ver')) || el.textContent || '').trim();
+        if (t && t.length <= 48) return t; }
+      return '';
+    }, VER_CANDIDATS);
+  } catch (e) { return ''; }
+}
 
 const browser = await chromium.launch();
 let hardFail = 0;
@@ -530,6 +550,19 @@ for (const s of SURFACES) {
     await page.waitForTimeout(5000); // laisse le JS/live faire ses appels réseau
 
     if (!(await page.$(s.selKey))) { res.ok = false; res.notes.push('élément clé absent: ' + s.selKey); }
+
+    /* lue AVANT le `deep` : les globales sont posées au chargement, et le badge de version
+       vit sur le PREMIER écran — après une navigation interne, il a déjà disparu. */
+    const verServie = await lireVersionServie(page);
+    /* Bee est un fichier RECOPIÉ dans plusieurs pages : sa version est indépendante de celle
+       de l'app qui la porte. On l'affiche EN PLUS quand elle est là, sinon on ne saurait pas
+       quelle Bee tourne sur une page qui, elle, annonce déjà sa propre version. */
+    const verBee = await page.evaluate(() => {
+      try { return (typeof window.JAVIS_VER === 'string' && window.JAVIS_VER.trim()) || ''; }
+      catch (e) { return ''; }
+    }).catch(() => '');
+    res.notes.push('version servie : ' + (verServie || '❓ non exposée par la page')
+      + (verBee && verBee !== verServie ? ' · Bee ' + verBee : ''));
 
     if (s.deep) { try { const d = await s.deep(page); res.notes.push('deep: ' + d.note); if (!d.ok) res.ok = false; } catch (e) { res.ok = false; res.notes.push('deep KO: ' + (e && e.message ? e.message : e)); } }
 
