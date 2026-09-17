@@ -7,6 +7,27 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 17/09/2026 19:09 UTC
+
+- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `07c8d023` · **Run** : `35261990263`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35261990263
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3898 — merge auto refusé. Cause exacte ci-dessous.
+[claude/video-review-wqnqdw de175e992] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 17/09/2026 18:31 UTC
 
 - **Branche** : `claude/audit-apex-chat-commercial-1709` · **Commit** : `3745d17e` · **Run** : `35258314096`
@@ -426,27 +447,5 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 ^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
 ##[warning]PR #3806 — merge auto refusé. Cause exacte ci-dessous.
 [claude/video-review-wqnqdw 9e72353cb] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Deploy KDMC Uptime (surveillance domaine) — 15/09/2026 22:51 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `0a59c9f5` · **Run** : `35032874384`
-- **Ce qui a lâché** : deploy › Smoke test réel (leçon
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35032874384
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
-^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
-^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
-^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
-^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
-^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
-^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
-^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
---- /run sans clé doit être refusé (garde) ---
-    "why": "error code: 1042\n"
-##[error]push NON envoyé : HTTP 404 error code: 1042
 ##[error]Process completed with exit code 1.
 ```
