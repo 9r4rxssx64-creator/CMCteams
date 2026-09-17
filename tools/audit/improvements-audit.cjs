@@ -84,7 +84,27 @@ const count = (re) => (html.match(re) || []).length;
 measured.inline_styles = count(/\sstyle="/g);
 measured.todo_markers = count(/\b(?:TODO|FIXME|HACK|XXX)\b/g);
 measured.console_log = count(/console\.log\(/g);
-measured.innerhtml_no_esc = lines.filter((l) => /innerHTML\s*[+]?=/.test(l) && !/esc\(|escapeHtml\(|textContent/.test(l)).length;
+/* ⚠️ « innerHTML sans esc() » ne compte QUE ce qui peut vraiment etre une faille : une ligne
+   qui injecte une DONNEE. Une ligne qui pose du TEXTE FIXE (`el.innerHTML = '<div>…</div>'`,
+   aucune variable, aucun `${}`) ne peut rien injecter du tout -- la compter, c'etait gonfler
+   la dette avec du bruit, et faire rougir le ratchet pour un texte statique ajoute ailleurs.
+   MESURE du 17.09 : 117 lignes comptees, dont **43 de texte fixe** -> la vraie dette XSS est
+   **74**. Une mesure fausse est pire que pas de mesure (lecon de la passe ameliorations du
+   9.08) : on retire le bruit, ce qui RESSERRE le cliquet au lieu de le desserrer.
+   Methode : on retire les chaines de caracteres de la partie droite ; s'il ne reste plus
+   aucun identifiant, c'est du texte fixe. Un `'<b>' + nom + '</b>'` laisse `nom` -> compte. */
+const estTexteFixe = (l) => {
+  const i = l.search(/innerHTML\s*[+]?=/);
+  if (i < 0) return false;
+  let d = l.slice(l.indexOf('=', i) + 1);
+  if (/\$\{/.test(d)) return false;                       /* gabarit avec interpolation */
+  d = d.replace(/'(\\.|[^'\\])*'/g, '')
+       .replace(/"(\\.|[^"\\])*"/g, '')
+       .replace(/`[^`$]*`/g, '');
+  return !/[A-Za-z_$]/.test(d);
+};
+measured.innerhtml_no_esc = lines.filter((l) => /innerHTML\s*[+]?=/.test(l)
+  && !/esc\(|escapeHtml\(|textContent/.test(l) && !estTexteFixe(l)).length;
 measured.file_kb = Math.round(Buffer.byteLength(html) / 1024);
 
 console.log('\n[3] Dette mesurée (chiffres réels, ratchet sur la hausse)');
