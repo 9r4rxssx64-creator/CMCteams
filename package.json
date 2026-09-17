@@ -225,7 +225,9 @@
     "test:javis-bee-reelle": "node tests/verify-javis-bee-reelle.mjs",
     "test:club-semaine": "node --test tests/club-semaine.test.mjs",
     "test:lingua-bee": "node tests/verify-lingua-bee-vivante.mjs",
-    "test:innerhtml-mesure": "node tests/innerhtml-mesure.test.mjs"
+    "test:innerhtml-mesure": "node tests/innerhtml-mesure.test.mjs",
+    "transfert": "node tools/transfert/export.mjs",
+    "transfert:liste": "node tools/transfert/export.mjs --liste"
   },
   "repository": {
     "type": "git",
