@@ -6,6 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
  * Profils principaux : iPhone Safari WebKit (cible Kevin), Chromium desktop.
  * Tests dans tests/e2e/. Serveur dev statique HTTP sur 4173.
  */
+/** Drapeau CHROMIUM SEULEMENT (voir la note dans `use`) : le SW doit accepter le certificat local. */
+const CHROMIUM_ARGS = { args: ['--ignore-certificate-errors'] };
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
@@ -23,6 +26,19 @@ export default defineConfig({
     // tests/serve-https.sh). Certificat auto-signé → ignoreHTTPSErrors.
     baseURL: 'https://localhost:4173',
     ignoreHTTPSErrors: true,
+    // Audit 17/09/2026 : `ignoreHTTPSErrors` ne couvre que les requêtes de la PAGE. Le
+    // script d'un Service Worker est chargé par le processus navigateur, qui refusait le
+    // certificat auto-signé (« SecurityError … An unknown error occurred when fetching the
+    // script ») → aucun SW n'a jamais tourné dans ces tests. Chromium a besoin du drapeau
+    // `--ignore-certificate-errors` : il est posé PAR PROJET Chromium ci-dessous (CHROMIUM_ARGS).
+    // ⚠️ Mesuré en CI (run 35256174034) : posé ICI, dans le `use` global, il est transmis tel
+    // quel à WebKit (`pw_run.sh … --ignore-certificate-errors`), qui ne démarre plus →
+    // « browserType.launch: Target page, context or browser has been closed », 52 tests
+    // rouges sur les DEUX voies iPhone. Un drapeau de navigateur n'a rien à faire en global.
+    // Les tests mockent l'API avec page.route() ; un Service Worker actif fait ses propres
+    // fetch, que page.route() n'intercepte pas (6 tests cassés dès que le SW a marché).
+    // Par défaut le SW est donc bloqué ; seul le test qui le vérifie l'autorise (test.use).
+    serviceWorkers: 'block',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -41,11 +57,11 @@ export default defineConfig({
     },
     {
       name: 'chromium-desktop',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], launchOptions: CHROMIUM_ARGS },
     },
     {
       name: 'pixel-android',
-      use: { ...devices['Pixel 7'] },
+      use: { ...devices['Pixel 7'], launchOptions: CHROMIUM_ARGS },
     },
   ],
 

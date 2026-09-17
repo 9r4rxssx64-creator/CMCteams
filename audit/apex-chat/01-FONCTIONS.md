@@ -185,3 +185,21 @@ valent d'être nommés à part, parce que c'est eux qui font tenir l'audit dans 
 sont deux vues d'affichage réservées à l'admin, en lecture seule — le risque est un écran vide,
 pas une fuite. Elles sont consignées comme telles au `05-JOURNAL.md` plutôt que noyées dans un
 « etc. ».
+
+
+---
+
+## Corrections du 2026-09-17
+
+- **F61–F67** (`/api/ai/*`) : couverts par `tests/unit/api-worker-premium-ai.test.js` (summarize 11, translate 11, smart-reply 10,
+  search 9, rewrite 7, image 12, voice 10), **pas** par `ia-worker.test.js` (autre worker) — attribution corrigée.
+- **F46** (avatar) : 7 tests unitaires, pas seulement e2e → ✅.
+- Le routeur expose **96** couples méthode/chemin (pas 64) ; non listés ici : 8 actions admin `/api/admin/users/:id/{block,…}`
+  (`ban`/`unban` : 0 test par la route), `heartbeat`, `location/:id`, `admin/commands`, `whitelist-bulk`, `heal-dm`,
+  `configure-core-pair`, fiche `contact/:id` ×4, `members` ×3, conv `PATCH/DELETE`, `ws-diag`, `force-update` ×3, `test/*`.
+- **Nouvelles fonctions (v1.1.290)** : **F79** `DELETE /api/users/me` (suppression de compte, cascade D1/R2/KV) ✅ 3 tests ·
+  **F80** `GET /api/users/me/export` (export RGPD) ✅ 2 tests · **F81** `e2e_strict` appliqué par le DO ✅ 2 tests ·
+  **F82** renvoi du code SMS (client) 🟡 sans test · **F83** signalement côté utilisateur (client) 🟡 sans test ·
+  **F84** sauvegarde chiffrée + rotation ✅ 5 tests · **F85** alarme de flush DO ✅ 5 tests.
+- **Bilan mesuré** (passe tests) : 53 fonctions fixées par un test de comportement, 12 partielles (e2e seul, assertion
+  multi-statut, Chromium seul, stub), 13 vues client jamais exécutées par un test (F07–F19) — reste P2.
