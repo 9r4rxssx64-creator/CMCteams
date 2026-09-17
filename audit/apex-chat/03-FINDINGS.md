@@ -865,6 +865,24 @@ TextBelt (clé publique partagée, 1 SMS/jour) est encore dans le code.
   `onversionchange` ferme nos connexions). **Test** e2e réel en 2 temps (connexion étrangère qui bloque → drapeau et base
   encore là, pas de mensonge ; rechargement → donnée de l'ancien compte disparue, drapeau levé).
 
+### [P1] Le coffre à clés (clé privée E2E chiffrée par PIN) est livré, testé à 100 %… et jamais chargé — ⏳ EN COURS
+- **Preuve (harnais réel, F36)** : `window.ApexVault` absent dans la vraie page ; `index.html` l.85-93 ne charge pas
+  `lib/key-vault.js` ; `crypto.js:18` garde l'import **commenté** (« réactiver après validation iPhone réel »). Résultat :
+  `_ensureCryptoKeys` retombe sur « keep-cleartext » et la clé privée est écrite **en clair** dans `localStorage`, PIN ou pas.
+  Le test unitaire à 100 % est vert : il teste la bibliothèque, pas son câblage (même famille que le SW du matin).
+- **Cause racine** : une fonctionnalité activée par une ligne commentée, sans garde « chaque lib qui expose `window.Apex*`
+  est chargée par la page ».
+- **Correctif prévu (lot séparé, après le lot UX sur `index.html`)** : charger le module, **vérifier l'aller-retour**
+  (wrap → unwrap → comparaison) avant de retirer la clé en clair (sinon on garde le clair : jamais de perte d'historique),
+  garde vitest de câblage, test e2e Chromium, puis les deux voies WebKit en CI comme « validation iPhone ». **Effort** S,
+  **risque** M (7 utilisateurs réels, migration `planKeyMigration` existante).
+
+### [P2] `PATCH /api/conversations/:id` répond 500 (corps lu deux fois) — ⏳ EN COURS (agent worker)
+- **Preuve (harnais, F30)** : `user: 500 … "detail":"unusable" … at _Request.clone` — `api-worker.js` ≈ l.4210 lit le corps,
+  puis l.4222 `request.clone().json()` après l'UPDATE. Le test existant accepte `[200, 403]` et n'atteint jamais la ligne
+  (assertion « molle », exactement le P2 déjà listé). 🟡 prouvé dans Node/undici, déduit pour workerd (spec Fetch).
+- **Correctif** : lire le corps une fois ; test strict 200 + JSON.
+
 ### [P2] Second avis Qodo (PR #3890) : historique des modales incohérent au geste Retour — ✅ CORRIGÉ (v1.1.291)
 - **Preuve** : lecture confirmée — `K._closeModal` vidait le DOM sans retirer l'entrée `{modal:true}` ; le Retour suivant
   consommait une entrée morte (rien à l'écran) et la modale suivante ne recréait pas la sienne (`state.modal` encore vrai).
