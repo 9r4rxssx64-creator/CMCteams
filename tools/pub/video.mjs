@@ -96,7 +96,8 @@ export function argsCarte({ carte, n, theme, marque, fichierTexte, audio, sortie
     `drawtext=fontfile=${police}:textfile=${fichierTexte}:fontcolor=${couleurFF(t.texte)}:fontsize=${taille}:line_spacing=22:x=(w-text_w)/2:y=(h-text_h)/2-60`,
     `drawtext=fontfile=${police}:text='${marque}':fontcolor=${couleurFF(t.accent)}:fontsize=44:x=(w-text_w)/2:y=h-220`,
     `drawtext=fontfile=${police}:text='${carte.i + 1} / ${n}':fontcolor=${couleurFF(t.accent)}@0.7:fontsize=36:x=w-text_w-64:y=96`,
-    `drawbox=x=96:y=h-140:w=(w-192)*${(carte.i + 1) / n}:h=8:color=${couleurFF(t.accent)}:t=fill`,
+    /* drawbox : `w`/`h` = la BOÎTE, `iw`/`ih` = l'image (mesuré : `(w-192)` fait planter le filtre) */
+    `drawbox=x=96:y=ih-140:w=(iw-192)*${(carte.i + 1) / n}:h=8:color=${couleurFF(t.accent)}:t=fill`,
     `fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0, carte.duree - 0.25).toFixed(2)}:d=0.25`,
     'format=yuv420p',
   ].join(',');
@@ -127,7 +128,12 @@ export async function voix(texte, { voixId = VOIX, log = () => {} } = {}) {
 }
 export function ffmpeg(args, log) {
   const r = spawnSync('ffmpeg', args, { encoding: 'utf8' });
-  if (r.status !== 0) { log('  ffmpeg : ' + String(r.stderr || '').split('\n').filter(Boolean).slice(-3).join(' | ')); return false; }
+  if (r.status !== 0) {
+    /* Cause EXACTE, jamais 3 lignes : on garde tout sauf le bavardage de version/config. */
+    const lignes = String(r.stderr || '').split('\n').filter((l) => l.trim() && !/^\s*(configuration:|lib[a-z]+\s+\d|ffmpeg version|built with|Press \[q\])/.test(l));
+    log('  ffmpeg a échoué (' + r.status + ') :'); for (const l of lignes.slice(-12)) log('    ' + l.trim());
+    return false;
+  }
   return true;
 }
 export function dureeAudio(fichier) {
@@ -148,8 +154,8 @@ export async function rendVideo(v, { marque, dossier, log }) {
   const durees = []; const audios = [];
   for (let i = 0; i < v.lignes.length; i++) {
     const buf = await voix(v.lignes[i], { log });
-    if (buf) { const f = join(dir, 'voix-' + i + '.mp3'); writeFileSync(f, buf); const d = dureeAudio(f); audios.push(d ? f : null); durees.push(d); }
-    else { audios.push(null); durees.push(null); }
+    if (buf) { const f = join(dir, 'voix-' + i + '.mp3'); writeFileSync(f, buf); const d = dureeAudio(f); audios.push(d ? f : null); durees.push(d); log('  voix ' + (i + 1) + '/' + v.lignes.length + ' : ' + (d ? d.toFixed(2) + ' s' : 'fichier illisible → carte muette')); }
+    else { audios.push(null); durees.push(null); log('  voix ' + (i + 1) + '/' + v.lignes.length + ' : absente → carte muette 3,2 s'); }
   }
   const cartes = planCartes(v.lignes, durees);
   const morceaux = [];
