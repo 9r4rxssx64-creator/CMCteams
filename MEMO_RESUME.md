@@ -123,6 +123,8 @@ de SSO) et `kd-mc.com/admin/` (SSO + grant). La caisse exige le SSO vérifié �
 second ; l'autre n'aurait jamais pu appeler `/admin/tableau`.
 ## 2026-09-17 17:30 — Apex Chat v1.1.290 : audit complet passe 3, « stable et commercialisable »
 
+**Suite 17:55 UTC** : la CI de tests a rougi sur la branche (cliquet de couverture `ConversationDO.js`, j'avais mesuré en local **sans** `--coverage` — faux vert, leçon #272). Corrigé par 6 tests qui déclenchent les rappels d'erreur jamais exercés → 100 / 98,18 / 100 / 100, cliquet remonté, **71 fichiers · 1 347 tests**. PR #3890 ouverte par le robot ; second avis Qodo lancé dessus.
+
 **Ce qui a été fait** (branche `claude/audit-apex-chat-commercial-1709`, 9 commits, 1 341 tests verts, 56/56 e2e Chromium) :
 - **P0 vie privée** : deux numéros réels en clair dans le workflow de déploiement (dépôt public) → secrets ; garde étendu à toute l'app + workflows.
 - **P0 stabilité** : le **Service Worker ne tournait pas** (import() interdit dans un SW classique → repli sans cache, sans hors-ligne, **sans notification affichée**). SW module, versions alignées, test e2e qui exige un cache peuplé (mesuré 3 caches).

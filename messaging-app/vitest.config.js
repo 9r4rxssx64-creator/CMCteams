@@ -76,7 +76,11 @@ export default defineConfig({
         // écrit pct 0, vitest considère le seuil satisfait). Le contrat est prouvé par
         // tests/unit/durable-objects-shims.test.js ; le check CI ignore une métrique de total 0.
         'workers/durable-objects/BroadcastDO.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },
-        'workers/durable-objects/ConversationDO.js': { statements: 99.3, branches: 96.4, functions: 89.7, lines: 99.3, perFile: true },
+        // 17/09/2026 : 6 rappels d'erreur best-effort enfin exercés (tests/unit/conversation-do-rappels-erreur.test.js)
+        // → mesuré 100 / 98.18 / 100 / 100. Le cliquet avait rougi en CI (99.02 / 96.36 / 88.09 / 99.13)
+        // après l'ajout de l'alarme de flush et du mode E2E strict : du code neuf couvert, mais des
+        // `.catch(() => {})` anciens jamais déclenchés pesaient plus lourd dans le dénominateur.
+        'workers/durable-objects/ConversationDO.js': { statements: 100, branches: 98.1, functions: 100, lines: 100, perFile: true },
         'workers/durable-objects/PresenceDO.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },
         'workers/lib/cors.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },
         'workers/lib/push-send.js': { statements: 100, branches: 100, functions: 100, lines: 100, perFile: true },

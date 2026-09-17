@@ -181,3 +181,12 @@ de ce second run n'était pas disponible à l'écriture de ce journal.
 **Non vérifié** : le rendu iPhone réel (icône PNG, bandeau d'installation, clavier) ; la suppression de compte sur
 la vraie base (testée sur mocks D1/R2, pas en prod) ; le déchiffrement d'une sauvegarde réelle de R2 avec le vrai
 secret ; le comportement des liens d'invitation via le routeur (query string) ; Vonage en production.
+
+**Faux vert commis et corrigé (17/09, 17:55 UTC)** : j'avais annoncé « 1 341 tests verts » sur la foi d'un
+`vitest run` local **sans `--coverage`**. La CI (`messaging-app-tests.yml`, run `35255340099`) lance
+`vitest run --coverage`, et le cliquet par fichier de `ConversationDO.js` a rougi : 99,02 / 96,36 / 88,09 / 99,13
+contre 99,3 / 96,4 / 89,7 / 99,3. Cause racine : mon code neuf (alarme de flush, E2E strict) était couvert, mais il a
+grossi le dénominateur pendant que **six rappels d'erreur `.catch(...)` anciens n'avaient jamais été déclenchés**
+par aucun test. Correctif = `tests/unit/conversation-do-rappels-erreur.test.js` (6 tests : config qui plante,
+`read` en panne D1, push d'appel en échec, web-push qui rejette, `setAlarm` qui rejette, télémétrie qui rejette)
+→ mesuré **100 / 98,18 / 100 / 100**, cliquet remonté à cette mesure. 71 fichiers · 1 347 tests. Leçon #272.
