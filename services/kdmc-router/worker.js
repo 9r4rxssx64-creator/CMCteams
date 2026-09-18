@@ -668,11 +668,25 @@ async function handleLingua(request, url, env) {
          resteraient servis dans leur ancienne version robotique — Kevin n'entendrait AUCUN
          changement (c'est le piège classique du cache). */
       const HD_MODELE = 'gpt-4o-mini-tts';
-      const HD_CONSIGNE = "Voix humaine et chaleureuse de professeur de langue : articulation nette, rythme posé et naturel, ton bienveillant, jamais robotique. Prononce le texte dans sa propre langue, avec l'accent d'un locuteur natif.";
+      /* 🎭 STYLES DE JEU (Kevin 2026-09-18 « la voix, c'est pas le top, on dirait un robot ») :
+         le moteur HD accepte une consigne de jeu. Elle était figée sur « professeur de langue »
+         — juste pour Lingua, scolaire et plate dans une PUB. On ouvre un paramètre `i=<style>`,
+         mais en LISTE BLANCHE : cet endpoint est PUBLIC, du texte libre laisserait un inconnu
+         piloter notre moteur de voix (et notre facture). Défaut inchangé = 0 régression Lingua. */
+      const STYLES = {
+        prof: "Voix humaine et chaleureuse de professeur de langue : articulation nette, rythme posé et naturel, ton bienveillant, jamais robotique. Prononce le texte dans sa propre langue, avec l'accent d'un locuteur natif.",
+        pub: "Voix française naturelle, proche du micro, comme si tu parlais à un ami en face de toi. Ton direct et complice, JAMAIS commercial ni publicitaire. Rythme vif mais pas pressé : tu poses une courte respiration après la première phrase, tu appuies légèrement le mot qui compte, tu finis en descendant, tranquille. Aucune emphase forcée, aucun sourire commercial.",
+        calme: "Voix française posée et basse, presque confidentielle. Débit lent, longues respirations, articulation douce. Rassurante, jamais monocorde.",
+        energie: "Voix française vive et souriante, énergie franche mais tenue, débit rapide sans jamais manger les fins de mots. Tu donnes envie d'écouter la suite.",
+      };
+      const style = Object.prototype.hasOwnProperty.call(STYLES, String(url.searchParams.get('i') || '')) ? String(url.searchParams.get('i')) : 'prof';
+      const HD_CONSIGNE = STYLES[style];
       const hd = speed === 1;                       // vitesse normale → nouveau moteur
       const modele = hd ? HD_MODELE : 'tts-1';
       const voixPour = (m) => (m === 'tts-1' && VOIX_HD[voice]) ? VOIX_HD[voice] : voice;
-      const cle = async (m) => 'ltts:' + (await hashOf(m + ':' + voixPour(m) + ':' + speed + ':' + text));
+      /* Le style entre dans la clé : sans lui, une phrase déjà lue en « prof » resterait servie
+         telle quelle en « pub » — on n'entendrait AUCUN changement (piège du cache, vécu le 11.08). */
+      const cle = async (m) => 'ltts:' + (await hashOf(m + ':' + voixPour(m) + ':' + speed + ':' + (m === HD_MODELE ? style + ':' : '') + text));
       const ckey = await cle(modele);
       const cached = await env.ACCOUNTS.get(ckey, 'arrayBuffer');
       if (cached) return new Response(cached, { status: 200, headers: audioHdr });
