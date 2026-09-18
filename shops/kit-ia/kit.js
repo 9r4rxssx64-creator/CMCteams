@@ -143,53 +143,82 @@
 
   /* Affiche la référence et le bouton « J'ai payé » DANS le bloc du produit :
      l'acheteur n'a rien à chercher, rien à retenir. */
+  /* Une ligne « Machin : valeur » avec un bouton Copier : sur un t\u00e9l\u00e9phone,
+     recopier un IBAN \u00e0 la main est le meilleur moyen de se tromper. */
+  function ligneCopiable(parent, etiquette, valeur) {
+    var l = document.createElement('p'); l.className = 'petit';
+    var st = document.createElement('strong'); texte(st, etiquette + ' '); l.appendChild(st);
+    var c = document.createElement('code'); texte(c, valeur); l.appendChild(c);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'copier'; texte(b, 'Copier');
+    b.addEventListener('click', function () {
+      var fini = function () { texte(b, 'Copi\u00e9 !'); setTimeout(function () { texte(b, 'Copier'); }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(valeur).then(fini, fini); else fini();
+    });
+    l.appendChild(b); parent.appendChild(l);
+  }
+
+  /* Affiche la r\u00e9f\u00e9rence et le bouton \u00ab J'ai pay\u00e9 \u00bb DANS le bloc du produit :
+     l'acheteur n'a rien \u00e0 chercher, rien \u00e0 retenir. Trois moyens, un seul chemin. */
   function montrePanier(avis, d, produit, mail) {
     avis.textContent = ''; avis.hidden = false;
+    var virement = d.moyen === 'virement';
     var p1 = document.createElement('p');
-    texte(p1, 'Ta référence — recopie-la dans le message PayPal, c\'est elle qui relie ton paiement à ton accès :');
+    texte(p1, virement
+      ? 'Fais le virement avec ces coordonn\u00e9es. Le libell\u00e9 est obligatoire : c\'est lui qui relie ton paiement \u00e0 ton acc\u00e8s.'
+      : 'Ta r\u00e9f\u00e9rence \u2014 recopie-la dans le message ' + (d.moyen === 'revolut' ? 'Revolut' : 'PayPal') + ', c\'est elle qui relie ton paiement \u00e0 ton acc\u00e8s :');
     avis.appendChild(p1);
-    var c = document.createElement('code'); c.className = 'code'; texte(c, d.ref); avis.appendChild(c);
+    if (virement) {
+      ligneCopiable(avis, 'IBAN', d.iban);
+      if (d.bic) ligneCopiable(avis, 'BIC', d.bic);
+      if (d.titulaire) ligneCopiable(avis, 'Titulaire', d.titulaire);
+      ligneCopiable(avis, 'Montant', d.montant + ' ' + (d.devise || 'EUR'));
+      ligneCopiable(avis, 'Libell\u00e9', d.ref);
+    } else {
+      var c = document.createElement('code'); c.className = 'code'; texte(c, d.ref); avis.appendChild(c);
+    }
     var p2 = document.createElement('p');
-    texte(p2, 'PayPal s\'ouvre dans un autre onglet. Une fois payé, reviens ici et touche le bouton ci-dessous : ton accès part par e-mail à ' + mail + '.');
+    texte(p2, virement
+      ? 'Un virement met 1 \u00e0 2 jours ouvr\u00e9s \u00e0 arriver. D\u00e8s qu\'il est l\u00e0, ton acc\u00e8s part par e-mail \u00e0 ' + mail + '. Touche le bouton ci-dessous pour nous pr\u00e9venir.'
+      : (d.moyen === 'revolut' ? 'Revolut' : 'PayPal') + ' s\'ouvre dans un autre onglet. Une fois pay\u00e9, reviens ici et touche le bouton ci-dessous : ton acc\u00e8s part par e-mail \u00e0 ' + mail + '.');
     avis.appendChild(p2);
     var b = document.createElement('button');
-    b.type = 'button'; b.className = 'btn btn-primaire'; texte(b, 'J\'ai payé');
+    b.type = 'button'; b.className = 'btn btn-primaire'; texte(b, virement ? 'J\'ai fait le virement' : 'J\'ai pay\u00e9');
     b.addEventListener('click', function () {
-      b.disabled = true; texte(b, 'On enregistre…');
+      b.disabled = true; texte(b, 'On enregistre\u2026');
       fetch(API + '/reclamer', { method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ref: d.ref, produit: produit, methode: 'paypal', email: mail }) })
+        body: JSON.stringify({ ref: d.ref, produit: produit, methode: d.moyen, email: mail }) })
         .then(function (r) { return r.json().then(function (j) { return { j: j, ok: r.ok }; }); })
         .then(function (x) {
           var v = interprete(x.j, x.ok);
           var res = $('resultat');
           if (res) afficheResultat(res, v);
-          else { avis.textContent = ''; var q = document.createElement('p'); texte(q, v.titre + ' — ' + v.texte); avis.appendChild(q); }
+          else { avis.textContent = ''; var q = document.createElement('p'); texte(q, v.titre + ' \u2014 ' + v.texte); avis.appendChild(q); }
         })
-        .catch(function (e) { texte(b, 'Réessaie : ' + String((e && e.message) || e)); b.disabled = false; });
+        .catch(function (e) { texte(b, 'R\u00e9essaie : ' + String((e && e.message) || e)); b.disabled = false; });
     });
     avis.appendChild(b);
   }
 
-  function panierPuisPaypal(btn, produit, mail, avis, dis) {
+  function ouvrePanier(btn, produit, moyen, mail, avis) {
     return fetch(API + '/caisse/intention', { method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ produit: produit, email: mail, consentement: true }) })
+      body: JSON.stringify({ produit: produit, email: mail, moyen: moyen, consentement: true }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
-        if (d && d.ok && d.ref) {
-          ecrisRef(d.ref);
-          montrePanier(avis, d, produit, mail);
-          /* Le lien vient du serveur (montant pris dans NOTRE catalogue) ;
-             data-secours ne sert que si le worker est muet. */
-          window.open(d.lien || btn.getAttribute('data-secours'), '_blank', 'noopener');
-          return true;
-        }
-        return false;
+        if (!d || !d.ok || !d.ref) return false;
+        ecrisRef(d.ref);
+        montrePanier(avis, d, produit, mail);
+        /* Le virement n'ouvre AUCUN onglet : tout ce qu'il faut est \u00e0 l'\u00e9cran.
+           Le lien vient du serveur (montant pris dans NOTRE catalogue) ;
+           data-secours n'est qu'un dernier filet si le worker est muet. */
+        if (d.moyen !== 'virement') window.open(d.lien || btn.getAttribute('data-secours'), '_blank', 'noopener');
+        return true;
       })
       .catch(function () { return false; });
   }
 
   function ouvreCaisse(btn) {
     var produit = btn.getAttribute('data-produit');
+    var moyen = btn.getAttribute('data-moyen') || 'paypal';
     var bloc = btn.closest ? btn.closest('.encart, .carte') : null;
     var champ = bloc && bloc.querySelector('[data-caisse-email]');
     var coche = bloc && bloc.querySelector('[data-caisse-consentement]');
@@ -201,23 +230,39 @@
     var ancien = btn.textContent; btn.disabled = true; texte(btn, 'On pr\u00e9pare le paiement\u2026'); dis('');
     var fini = function () { btn.disabled = false; texte(btn, ancien); };
     var replit = function () {
-      /* Dernier filet : le worker ne répond pas du tout. On ouvre quand même
-         PayPal — on ne laisse jamais un acheteur devant un mur — et on le dit
-         franchement : sans panier enregistré, il devra passer par « J'ai payé ». */
+      /* Dernier filet : le worker ne r\u00e9pond pas du tout. On ouvre quand m\u00eame
+         le lien \u2014 on ne laisse jamais un acheteur devant un mur \u2014 et on le dit
+         franchement. Sans panier, il devra passer par \u00ab J'ai pay\u00e9 \u00bb. */
       var secours = btn.getAttribute('data-secours');
-      if (secours) { window.open(secours, '_blank', 'noopener'); dis('On t\u2019a ouvert PayPal. Notre serveur n\u2019a pas r\u00e9pondu : apr\u00e8s le paiement, redescends sur « J\u2019ai pay\u00e9, je r\u00e9cup\u00e8re mon acc\u00e8s ».'); }
-      else dis('La caisse ne r\u00e9pond pas. Reviens dans un instant.');
+      if (secours) { window.open(secours, '_blank', 'noopener'); dis('On t\u2019a ouvert le paiement. Notre serveur n\u2019a pas r\u00e9pondu : apr\u00e8s avoir pay\u00e9, redescends sur \u00ab J\u2019ai pay\u00e9, je r\u00e9cup\u00e8re mon acc\u00e8s \u00bb.'); }
+      else dis('La caisse ne r\u00e9pond pas. Reviens dans un instant, ou prends un autre moyen de paiement.');
     };
+    var viaPanier = function () { return ouvrePanier(btn, produit, moyen, mail, avis).then(function (ok) { if (!ok) replit(); fini(); }); };
+    /* La vraie caisse PayPal (capture automatique) n'existe que pour PayPal, et
+       seulement si les cl\u00e9s sont pos\u00e9es un jour. Revolut et virement passent
+       directement par le panier. */
+    if (moyen !== 'paypal') { viaPanier(); return; }
     fetch(API + '/caisse/commande', { method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ produit: produit, email: mail, consentement: true }) })
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d && d.ok && d.approbation) { location.href = d.approbation; return; }
-        /* Pas de clés PayPal (le cas d'aujourd'hui) → on enregistre le panier. */
-        return panierPuisPaypal(btn, produit, mail, avis, dis).then(function (ok) { if (!ok) replit(); fini(); });
+        return viaPanier();
       })
-      .catch(function () { return panierPuisPaypal(btn, produit, mail, avis, dis).then(function (ok) { if (!ok) replit(); fini(); }); });
+      .catch(viaPanier);
   }
+
+  /* Le virement ne s'affiche QUE si l'IBAN est rang\u00e9 c\u00f4t\u00e9 serveur : un bouton
+     qui m\u00e8ne \u00e0 \u00ab pas encore ouvert \u00bb est pire que pas de bouton. */
+  var boutonsVirement = document.querySelectorAll('[data-moyen-virement]');
+  if (boutonsVirement.length) {
+    fetch(API + '/health').then(function (r) { return r.json(); }).then(function (h) {
+      if (h && h.moyens && h.moyens.indexOf('virement') >= 0) {
+        Array.prototype.forEach.call(boutonsVirement, function (el) { el.hidden = false; });
+      }
+    }).catch(function () { /* muet : on laisse les deux autres moyens */ });
+  }
+
   Array.prototype.forEach.call(document.querySelectorAll('[data-produit][data-caisse]'), function (btn) {
     btn.addEventListener('click', function (ev) { ev.preventDefault(); ouvreCaisse(btn); });
   });

@@ -40,10 +40,19 @@ test('PARITÉ : chaque produit livré sur kit.kd-mc.com est dans le menu, au bon
       assert.ok(ligne[1].toLowerCase().includes(String(p.prix) + 'eur'), `${b} : le lien de paiement ne porte pas le montant ${p.prix} EUR (${ligne[1]})`);
     }
   }
-  /* La caisse doit être branchée sur le bon produit pour CHACUN des deux paliers. */
+  /* La caisse doit être branchée sur le bon produit pour CHACUN des deux paliers,
+     et pour CHACUN des trois moyens de Kevin (18.09 : « aussi mon Revolut et
+     IBAN »). Un moyen oublié = des acheteurs qui repartent. */
   for (const id of ['kit-ia', 'club-ia']) {
-    assert.ok(INDEX.includes('data-caisse data-produit="' + id + '"'), 'pas de bouton de caisse pour ' + id);
+    for (const moyen of ['paypal', 'revolut', 'virement']) {
+      const re = new RegExp('data-caisse[^>]*data-moyen="' + moyen + '"[^>]*data-produit="' + id + '"');
+      assert.match(INDEX, re, 'pas de bouton ' + moyen + ' pour ' + id);
+    }
   }
+  /* Le virement ne doit PAS être visible d'emblée : il n'existe que si l'IBAN est
+     rangé côté serveur, et c'est le script qui le révèle après /health. */
+  assert.match(INDEX, /<p data-moyen-virement hidden>/, 'le bouton virement est visible avant même de savoir si l\'IBAN existe');
+  assert.match(JS, /h\.moyens && h\.moyens\.indexOf\('virement'\) >= 0/, 'rien ne révèle le virement quand il est ouvert');
   assert.ok(INDEX.includes('"price":"' + PRODUIT.prix + '"'), 'le prix des données structurées a divergé');
   assert.ok(VENTE.PRODUITS['club-ia'].contenu.includes('kit-ia'), 'le Club doit inclure le kit (c\'est ce que la page promet)');
   assert.equal(VENTE.PRODUITS['club-ia'].ttlJours, 365, 'la page promet un accès 1 an');

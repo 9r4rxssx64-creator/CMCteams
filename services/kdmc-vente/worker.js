@@ -318,6 +318,66 @@ export function nouvelleRef() {
    Le montant vient de NOTRE catalogue, jamais du navigateur. */
 export const PAYPAL_ME = 'https://paypal.me/kdmc';
 
+/* ── LES TROIS MOYENS DE KEVIN (18.09, « Aussi mon Revolut et IBAN. Trouve des
+   solutions pour automatiser comme ça ») ─────────────────────────────────────
+   PayPal perso, Revolut perso, virement sur son IBAN. AUCUN des trois n'a d'API
+   qui laisse vérifier un paiement : il faudrait un compte PROFESSIONNEL. Le dire
+   franchement vaut mieux que promettre une vérification qui n'existe pas.
+   Ce qui EST automatisé, et qui change tout : le panier est rangé AVANT le
+   paiement, la référence sert de libellé/message, et Kevin livre en un doigt.
+   Le virement est même le mieux loti des trois : le libellé d'un virement
+   arrive tel quel sur le relevé — la référence y est lisible à coup sûr. */
+export const MOYENS = ['paypal', 'revolut', 'virement'];
+export const REVOLUT_ME = 'https://revolut.me/kdmc';
+
+export function lienRevolutMe(produit) {
+  const m = Number(produit.prix);
+  if (!isFinite(m) || m <= 0) return REVOLUT_ME;
+  return REVOLUT_ME + '/' + String(m).replace(',', '.') + String(produit.devise || 'EUR').toLowerCase();
+}
+
+/* Ce que l'acheteur doit faire, moyen par moyen. Fonction PURE : elle se teste en
+   l'EXÉCUTANT. `conf` vient du coffre du worker (KV), jamais du dépôt : un IBAN
+   écrit dans un dépôt public serait moissonné le jour même. */
+export function instructionsPaiement(moyen, produit, ref, conf) {
+  const c = conf || {};
+  const base = { moyen, montant: produit.prix, devise: produit.devise, libelle: ref };
+  if (moyen === 'paypal') {
+    return { ...base, lien: lienPaypalMe(produit), consigne: 'Écris ' + ref + ' dans le message PayPal.' };
+  }
+  if (moyen === 'revolut') {
+    return { ...base, lien: lienRevolutMe(produit), consigne: 'Écris ' + ref + ' dans la note Revolut.' };
+  }
+  if (moyen === 'virement') {
+    /* Pas d'IBAN rangé → on ne propose PAS le virement. Mieux vaut un moyen en
+       moins qu'un bouton qui envoie l'acheteur dans le vide. */
+    if (!c.iban) return null;
+    return { ...base, iban: c.iban, bic: c.bic || null, titulaire: c.titulaire || 'KDMC',
+      consigne: 'Mets ' + ref + ' en libellé du virement : c\'est ce qui relie ton paiement à ton accès.' };
+  }
+  return null;
+}
+
+/* Un IBAN se vérifie sans réseau (norme ISO 13616, clé 97) : une faute de frappe
+   au moment où Kevin le range enverrait tous ses virements nulle part. */
+export function ibanValide(v) {
+  const x = String(v || '').toUpperCase().replace(/[\s-]/g, '');
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(x)) return false;
+  const tourne = x.slice(4) + x.slice(0, 4);
+  let reste = 0;
+  for (const ch of tourne) {
+    const n = ch >= 'A' && ch <= 'Z' ? String(ch.charCodeAt(0) - 55) : ch;
+    for (const d of n) reste = (reste * 10 + Number(d)) % 97;
+  }
+  return reste === 1;
+}
+export function normaliseIban(v) { return String(v || '').toUpperCase().replace(/[\s-]/g, ''); }
+
+async function lireBanque(env) {
+  try { const v = await env.VENTES.get('reglage:banque'); return v ? JSON.parse(v) : {}; }
+  catch (_) { return {}; }
+}
+
 export function lienPaypalMe(produit) {
   /* paypal.me n'accepte que le montant : la référence, c'est l'acheteur qui
      l'écrit dans le message. On ne peut pas la mettre dans l'URL. */
@@ -333,14 +393,20 @@ export function resumeIntentions(cmds, maintenant) {
   const now = Number(maintenant) || Date.now();
   const ouvertes = (cmds || []).filter((c) => c && c.etat && c.etat !== 'livre');
   ouvertes.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const age = (c) => Math.round((now - (c.ts || now)) / 36e5);
   return {
     n: ouvertes.length,
     dit_paye: ouvertes.filter((c) => c.etat === 'dit_paye').length,
+    /* Combien de relances partiraient si Kevin touchait le bouton : abandonnés
+       depuis plus de 2 h, avec un e-mail, jamais relancés. Le chiffre doit être
+       VRAI avant le clic — sinon le bouton ment. */
+    relancables: ouvertes.filter((c) => c.etat === 'intention' && c.email && !c.relance_iso && age(c) >= 2).length,
     ca_potentiel: Math.round(ouvertes.reduce((t, c) => t + (Number(c.montant) || 0), 0) * 100) / 100,
     liste: ouvertes.slice(0, 50).map((c) => ({
       ref: c.ref, produit: c.produit, email: c.email, montant: c.montant, devise: c.devise,
       etat: c.etat, moyen: c.moyen || 'paypal', ts_iso: c.ts_iso,
-      heures: Math.round((now - (c.ts || now)) / 36e5),
+      relance_iso: c.relance_iso || null,
+      heures: age(c),
     })),
   };
 }
@@ -484,6 +550,36 @@ async function envoieCode(env, { email, produit, code }) {
     return r.ok;
   } catch (_) { return false; }
 }
+/* Relance d'un panier non payé. C'est la seule VRAIE automatisation possible
+   sur des comptes personnels : on ne peut pas constater le paiement, mais on
+   peut rattraper celui qui s'est interrompu. Un panier abandonné n'est pas un
+   client perdu tant que personne ne lui a reparlé. */
+async function envoieRelance(env, { email, produit, ref, instr }) {
+  if (!env.EMAILJS_PRIVATE_KEY) return false;
+  const ou = instr && instr.lien ? '\nReprendre ici : ' + instr.lien
+    : (instr && instr.iban ? '\nIBAN : ' + instr.iban + (instr.bic ? '\nBIC : ' + instr.bic : '') : '');
+  try {
+    const r = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        service_id: EMAILJS.service, template_id: EMAILJS.template, user_id: EMAILJS.user,
+        accessToken: env.EMAILJS_PRIVATE_KEY,
+        template_params: {
+          to_email: email, store: 'kd-mc.com', name: 'kd-mc.com', from_name: 'kd-mc.com',
+          title: 'Tu n\'as pas fini : ' + produit.nom,
+          message: 'Tu as commencé à prendre « ' + produit.nom + ' » (' + produit.prix + ' ' + produit.devise + ') et le paiement n\'est pas arrivé.'
+            + '\n\nTa référence : ' + ref + ' — mets-la en message/libellé, c\'est elle qui relie ton paiement à ton accès.'
+            + ou
+            + '\n\nTu as déjà payé ? Réponds à ce message avec ta référence, on ouvre ton accès tout de suite.'
+            + '\nTu as changé d\'avis ? Ignore ce message, il n\'y en aura pas d\'autre.',
+        },
+      }),
+    });
+    return r.ok;
+  } catch (_) { return false; }
+}
+
 async function noteAbonne(env, { code, email, produitId, source, fiche, email_envoye }) {
   if (!env.CONTENU || typeof env.CONTENU.prepare !== 'function') return false;
   try {
@@ -556,6 +652,13 @@ function masqueEmail(e) {
   const i = v.indexOf('@');
   if (i < 1) return v ? '***' : '';
   return v.charAt(0) + '***' + v.slice(i);
+}
+/* On montre les 4 premiers et les 4 derniers : assez pour que Kevin reconnaisse
+   son compte, pas assez pour qu'un écran partagé le donne. */
+export function masqueIban(v) {
+  const x = normaliseIban(v);
+  if (x.length < 10) return x ? '***' : '';
+  return x.slice(0, 4) + ' ' + '*'.repeat(Math.max(1, x.length - 8)) + ' ' + x.slice(-4);
 }
 async function listeToutes(kv, prefix, max) {
   const noms = [];
@@ -683,6 +786,7 @@ export default {
 
     /* --- Santé : dit la VÉRITÉ sur ce qui est configuré ------------------- */
     if (p === '/health') {
+      const banque = await lireBanque(env);
       return json({
         contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'),
         email_code: Boolean(env.EMAILJS_PRIVATE_KEY),
@@ -690,6 +794,9 @@ export default {
         caisse: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),   // vraie caisse (Orders v2) : commande + capture + livraison immédiate
         encaissement: (env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET) ? 'paypal-api' : 'paypal-perso',  // perso = lien paypal.me + panier enregistré + validation par Kevin
         paypal_me: PAYPAL_ME,
+        /* Les moyens réellement ouverts : le virement n'apparaît que si l'IBAN
+           est rangé dans le coffre du worker (jamais dans le dépôt public). */
+        moyens: MOYENS.filter((m) => m !== 'virement' || Boolean(banque.iban)),
         paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),
         paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID),
         produits: Object.keys(PRODUITS),
@@ -780,18 +887,18 @@ export default {
       const email = nettoieEmail((b && b.email) || '');
       if (!emailPlausible(email)) return json({ ok: false, error: 'email', detail: 'e-mail requis pour recevoir l\'accès', step: 'int_email' }, 400, origin);
       if (!(b && b.consentement === true)) return json({ ok: false, error: 'consentement', detail: 'consentement à la livraison immédiate requis', step: 'int_consentement' }, 400, origin);
+      const moyen = String((b && b.moyen) || 'paypal').toLowerCase();
+      if (MOYENS.indexOf(moyen) < 0) return json({ ok: false, error: 'moyen_inconnu', detail: moyen, step: 'int_moyen' }, 400, origin);
+      const banque = await lireBanque(env);
+      if (!instructionsPaiement(moyen, produit, 'X', banque)) return json({ ok: false, error: 'moyen_indisponible', detail: moyen + ' pas encore ouvert — utilise PayPal ou Revolut', step: 'int_moyen_conf' }, 200, origin);
       const ref = nouvelleRef();
       await env.VENTES.put('cmd:' + ref, JSON.stringify({
         ref, produit: produitId, email, montant: produit.prix, devise: produit.devise,
-        etat: 'intention', moyen: 'paypal-perso',
+        etat: 'intention', moyen,
         consentement: { donne: true, texte: CONSENTEMENT, ts_iso: new Date().toISOString(), ip: req.headers.get('CF-Connecting-IP') || null },
         ts: Date.now(), ts_iso: new Date().toISOString(),
       }), { expirationTtl: TTL_CMD });
-      return json({
-        ok: true, ref, lien: lienPaypalMe(produit),
-        montant: produit.prix, devise: produit.devise, produit: produitId,
-        consigne: 'Écris ' + ref + ' dans le message PayPal : c\'est ce qui relie ton paiement à ton accès.',
-      }, 200, origin);
+      return json({ ok: true, ref, produit: produitId, ...instructionsPaiement(moyen, produit, ref, banque) }, 200, origin);
     }
 
     /* --- CAISSE : l'acheteur revient de PayPal → on capture et on livre ---- */
@@ -1017,6 +1124,65 @@ export default {
       return json({ ok: true, code: dd.code, livre: dd.livre, produit: produitId, email_envoye: !!dd.email_envoye }, 200, origin);
     }
 
+    /* --- Admin : relancer les paniers abandonnés -------------------------- */
+    /* UNE seule relance par panier (`relance_iso`) : au-delà, ce n'est plus une
+       relance, c'est du harcèlement — et ça finit en signalement spam. */
+    if (p === '/admin/relancer' && req.method === 'POST') {
+      const g = await requireAdmin(req);
+      if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
+      if (!env.EMAILJS_PRIVATE_KEY) return json({ ok: false, error: 'email_absent', detail: 'pas de service e-mail configuré : aucune relance ne partirait', step: 'rel_conf' }, 200, origin);
+      let b; try { b = await req.json(); } catch (_) { b = {}; }
+      const heures = Math.max(1, Math.min(Number((b && b.heures) || 2), 720));
+      const limite = Date.now() - heures * 36e5;
+      const banque = await lireBanque(env);
+      const { noms } = await listeToutes(env.VENTES, 'cmd:', 200);
+      let envoyees = 0, vus = 0, echecs = 0;
+      for (const nom of noms) {
+        const v = await env.VENTES.get(nom);
+        if (!v) continue;
+        let c; try { c = JSON.parse(v); } catch (_) { continue; }
+        if (!c || c.etat !== 'intention' || c.relance_iso || !c.email) continue;
+        if ((c.ts || 0) > limite) continue;
+        const produit = PRODUITS[c.produit];
+        if (!produit) continue;
+        vus += 1;
+        const ok = await envoieRelance(env, { email: c.email, produit, ref: c.ref, instr: instructionsPaiement(c.moyen || 'paypal', produit, c.ref, banque) });
+        if (ok) { envoyees += 1; c.relance_iso = new Date().toISOString(); await env.VENTES.put(nom, JSON.stringify(c), { expirationTtl: TTL_CMD }); }
+        else echecs += 1;
+      }
+      return json({ ok: true, candidats: vus, envoyees, echecs, apres_heures: heures }, 200, origin);
+    }
+
+    /* --- Admin : ranger ses coordonnées bancaires ------------------------- */
+    /* L'IBAN de Kevin ne doit JAMAIS entrer dans le dépôt (il est PUBLIC : un
+       IBAN y serait moissonné le jour même). Il vit ici, dans le coffre du
+       worker, posé UNE fois depuis son tableau de bord. Il n'est rendu qu'à
+       quelqu'un qui a ouvert un panier — donc jamais sur une page moissonnable. */
+    if (p === '/admin/reglages') {
+      const g = await requireAdmin(req);
+      if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
+      const banque = await lireBanque(env);
+      if (req.method !== 'POST') {
+        /* Lecture : on montre l'IBAN masqué. Kevin doit pouvoir vérifier que
+           c'est le bon sans que l'écran l'expose en entier. */
+        return json({ ok: true, banque: { iban: banque.iban ? masqueIban(banque.iban) : null, bic: banque.bic || null, titulaire: banque.titulaire || null, pose_iso: banque.pose_iso || null } }, 200, origin);
+      }
+      let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'reg_body' }, 400, origin); }
+      if (b && b.effacer) {
+        await env.VENTES.delete('reglage:banque');
+        return json({ ok: true, efface: true }, 200, origin);
+      }
+      const iban = normaliseIban(b && b.iban);
+      /* Clé 97 vérifiée ICI : une faute de frappe enverrait tous les virements
+         de Kevin nulle part, et on ne s'en apercevrait qu'en cherchant l'argent. */
+      if (!ibanValide(iban)) return json({ ok: false, error: 'iban', detail: 'IBAN invalide (clé de contrôle) — vérifie la saisie', step: 'reg_iban' }, 400, origin);
+      const bic = String((b && b.bic) || '').toUpperCase().replace(/\s/g, '').slice(0, 11);
+      if (bic && !/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic)) return json({ ok: false, error: 'bic', detail: 'BIC invalide', step: 'reg_bic' }, 400, origin);
+      const fiche = { iban, bic: bic || null, titulaire: String((b && b.titulaire) || 'KDMC').slice(0, 80), pose_iso: new Date().toISOString(), pose_par: g.name };
+      await env.VENTES.put('reglage:banque', JSON.stringify(fiche));
+      return json({ ok: true, banque: { iban: masqueIban(iban), bic: fiche.bic, titulaire: fiche.titulaire, pose_iso: fiche.pose_iso } }, 200, origin);
+    }
+
     /* --- Admin : livrer un panier en un doigt (PayPal perso) -------------- */
     /* Kevin voit le paiement dans SON PayPal. Ici il retrouve le panier (qui, quoi,
        combien, consentement daté) et envoie l'accès sans rien retaper. C'est le
@@ -1052,7 +1218,7 @@ export default {
     if (p === '/admin/tableau') {
       const g = await requireAdmin(req);
       if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
-      const [ventes, demandes, base, livraisons, runs, intentions] = await Promise.all([lireVentes(env), lireFile(env), lireBase(env), sondeLivraisons(), lireRuns(env), lireIntentions(env)]);
+      const [ventes, demandes, base, livraisons, runs, intentions, banque] = await Promise.all([lireVentes(env), lireFile(env), lireBase(env), sondeLivraisons(), lireRuns(env), lireIntentions(env), lireBanque(env)]);
       return json({
         ok: true, quand: new Date().toISOString(), admin: g.name,
         produits: Object.entries(PRODUITS).map(([id, v]) => ({ id, nom: v.nom, prix: v.prix, devise: v.devise, livre: v.livre, contenu: v.contenu || [], ttlJours: v.ttlJours || 730, livre_http: livraisons[id] })),
@@ -1061,6 +1227,10 @@ export default {
            temps — même s'il n'est jamais revenu. C'est ce que le lien paypal.me
            seul ne permettait pas de savoir. */
         intentions,
+        /* IBAN MASQUÉ, même pour Kevin : un écran partagé ne doit pas le donner.
+           La valeur complète ne sort du coffre que vers un acheteur qui a ouvert
+           un panier — jamais sur une page moissonnable. */
+        banque: { iban: banque.iban ? masqueIban(banque.iban) : null, bic: banque.bic || null, titulaire: banque.titulaire || null, pose_iso: banque.pose_iso || null },
         club: base.club, contenu: base.contenu, base_detail: base.detail,
         config: { paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID), paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET), email_code: Boolean(env.EMAILJS_PRIVATE_KEY), contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'), commandes: Boolean(env.GITHUB_DISPATCH_TOKEN) },
         workflows: Object.entries(WORKFLOWS).map(([id, w]) => ({ id, nom: w.nom, champs: w.champs, url: 'https://github.com/' + DEPOT + '/actions/workflows/' + id, run: runs[id] || null })),

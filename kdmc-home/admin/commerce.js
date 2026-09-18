@@ -129,13 +129,21 @@
     else {
       h += '<ul class="list">' + it.liste.map(function (c) {
         var paye = c.etat === 'dit_paye';
+        var moyen = { paypal: 'PayPal', revolut: 'Revolut', virement: 'virement' }[c.moyen] || c.moyen || 'PayPal';
         return '<li><div class="g"><b>' + esc(c.ref) + ' · ' + esc(c.produit) + ' · ' + esc(c.email || '—') + '</b><span>'
-          + esc(euro(c.montant) + ' · ' + (paye ? 'dit avoir payé' : 'en attente') + ' · il y a ' + c.heures + ' h · ' + dt(c.ts_iso))
+          + esc(euro(c.montant) + ' · ' + moyen + ' · ' + (paye ? 'dit avoir payé' : 'en attente') + ' · il y a ' + c.heures + ' h'
+            + (c.relance_iso ? ' · relancé' : '') + ' · ' + dt(c.ts_iso))
           + '</span></div>' + (paye ? '<span class="chip warn">à livrer</span>' : '')
           + '<button class="btn p" data-livrer="' + esc(c.ref) + '">Livrer</button>'
           + '<button class="btn d" data-abandon="' + esc(c.ref) + '">Abandonné</button></li>';
       }).join('') + '</ul>';
       h += '<div class="meta">' + euro(it.ca_potentiel) + ' possible. Ceux marqués « dit avoir payé » sont aussi dans la file à valider : un clic sur « Livrer » envoie le code.</div>';
+      /* Rattraper ceux qui se sont interrompus : la seule vraie automatisation
+         possible quand aucun compte ne permet de constater le paiement. */
+      if (it.relancables) {
+        h += '<p><button class="btn p" data-relancer="1">Relancer ' + it.relancables + ' panier(s) abandonné(s)</button>'
+          + '<span class="meta"> Un seul e-mail par panier, jamais deux — au-delà, ce n\'est plus une relance.</span></p>';
+      }
     }
     return h + '</div>';
   }
@@ -218,6 +226,26 @@
       + (live.base_detail ? '<div class="note err">' + esc(live.base_detail) + '</div>' : '') + '<div class="meta">Lu ' + esc(dt(live.quand)) + ' · admin ' + esc(live.admin || '') + '</div></div>';
   }
 
+  /* ── Coordonnées bancaires ─────────────────────────────────────────────
+     L'IBAN de Kevin ne peut PAS vivre dans le dépôt (il est public). Il se pose
+     ici, une fois, et le worker le garde dans son coffre. Tant qu'il n'est pas
+     posé, le bouton « virement » n'apparaît même pas sur les pages de vente. */
+  function sectionBanque(live) {
+    if (!live) return '';
+    var b = (live.banque) || {};
+    var h = '<div class="kdmc-card tile"><h3>🏦 Virement — mon IBAN <span class="chip ' + (b.iban ? 'ok' : 'warn') + '">' + (b.iban ? 'ouvert' : 'fermé') + '</span></h3>';
+    h += '<div class="meta">' + (b.iban
+      ? 'Rangé dans le coffre du worker, jamais dans le dépôt : ' + esc(b.iban) + (b.bic ? ' · BIC ' + esc(b.bic) : '') + (b.titulaire ? ' · ' + esc(b.titulaire) : '') + (b.pose_iso ? ' · posé le ' + esc(dt(b.pose_iso)) : '')
+      : 'Tant que ton IBAN n\'est pas posé, le bouton « payer par virement » n\'apparaît pas sur tes pages. Pose-le ici : il ne partira jamais dans le dépôt.') + '</div>';
+    h += '<p><input id="ibanIn" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="FR76 …" aria-label="IBAN">'
+      + '<input id="bicIn" type="text" autocomplete="off" placeholder="BIC (facultatif)" aria-label="BIC">'
+      + '<input id="titulaireIn" type="text" autocomplete="off" placeholder="Titulaire du compte" aria-label="Titulaire">'
+      + '<button class="btn p" data-banque="poser">Enregistrer</button>'
+      + (b.iban ? '<button class="btn d" data-banque="effacer">Retirer</button>' : '') + '</p>';
+    h += '<div class="meta">La clé de contrôle est vérifiée avant l\'enregistrement : une faute de frappe enverrait tes virements nulle part.</div>';
+    return h + '</div>';
+  }
+
   function rendu(data, live, erreurLive) {
     var k = kpis(data, live);
     return '<div class="kpis">' + k.map(tuileKpi).join('') + '</div>'
@@ -231,10 +259,10 @@
       + '<h2 class="cat">🔗 Pub — posts avec lien (Facebook)</h2>' + sectionLiens(data)
       + '<h2 class="cat">🎯 Marché</h2>' + sectionMarche(data.marche)
       + '<h2 class="cat">🔗 Tout ce qui existe</h2>' + sectionPages(data)
-      + '<h2 class="cat">⚙️ Caisse</h2>' + sectionConfig(live);
+      + '<h2 class="cat">⚙️ Caisse</h2>' + sectionBanque(live) + sectionConfig(live);
   }
 
-  var API = { esc: esc, euro: euro, etatRun: etatRun, etatLivraison: etatLivraison, etatContenu: etatContenu, kpis: kpis, moisBarres: moisBarres, rendu: rendu, sectionPaniers: sectionPaniers, sectionLiens: sectionLiens, CAISSE: CAISSE };
+  var API = { esc: esc, euro: euro, etatRun: etatRun, etatLivraison: etatLivraison, etatContenu: etatContenu, kpis: kpis, moisBarres: moisBarres, rendu: rendu, sectionPaniers: sectionPaniers, sectionBanque: sectionBanque, sectionLiens: sectionLiens, CAISSE: CAISSE };
   global.kdmcCommerce = API;
   if (typeof module === 'object' && module && module.exports) module.exports = API;
 
@@ -284,6 +312,36 @@
               ? (abandon ? 'Panier retiré.' : (j.deja_delivre ? 'Déjà livré : même code ' + j.code : 'Livré : code ' + j.code + (j.email_envoye ? ' (e-mail envoyé)' : ' (e-mail non envoyé — à transmettre à ' + j.email + ')')))
               : 'Échec : ' + (j.detail || j.error));
             recharge();
+          })
+          .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; });
+      });
+    });
+    app.querySelectorAll('[data-relancer]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!confirm('Envoyer un e-mail de relance aux paniers abandonnés ? Un seul par panier, jamais deux.')) return;
+        b.disabled = true; b.textContent = '…';
+        fetch(CAISSE + '/admin/relancer', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, bearer()), body: JSON.stringify({ heures: 2 }) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { toast(j.ok ? (j.envoyees + ' relance(s) envoyée(s)' + (j.echecs ? ', ' + j.echecs + ' échec(s)' : '')) : 'Refusé : ' + (j.detail || j.error)); recharge(); })
+          .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; b.textContent = 'Relancer'; });
+      });
+    });
+    app.querySelectorAll('[data-banque]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var effacer = b.getAttribute('data-banque') === 'effacer';
+        if (effacer && !confirm('Retirer ton IBAN ? Le bouton « virement » disparaîtra de tes pages.')) return;
+        var iban = (document.getElementById('ibanIn') || {}).value || '';
+        if (!effacer && !iban.trim()) { toast('Écris ton IBAN d\'abord.'); return; }
+        b.disabled = true;
+        var corps = effacer ? { effacer: true } : {
+          iban: iban, bic: (document.getElementById('bicIn') || {}).value || '',
+          titulaire: (document.getElementById('titulaireIn') || {}).value || '',
+        };
+        fetch(CAISSE + '/admin/reglages', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, bearer()), body: JSON.stringify(corps) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            toast(j.ok ? (effacer ? 'IBAN retiré.' : 'IBAN enregistré : ' + j.banque.iban) : 'Refusé : ' + (j.detail || j.error));
+            if (j.ok) recharge(); else b.disabled = false;
           })
           .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; });
       });
