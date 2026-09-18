@@ -293,7 +293,8 @@ console.log('\n=== Mon équipe ET mon miroir, compte par compte (CMCteams) ===')
       const retour = mirId ? _cmcMirrorTeam(mirId, y, m) : null;
       const membres = mirId ? A.employees.filter((x) => teamForMonth(x, y, m) === mirId).length : 0;
       const lib = (id) => { try { const t = gt(id); return (t && (t.label || t.name)) || id; } catch (_) { return id; } };
-      return { nom: e.name, id: e.id, equipe: tid || null, equipeLib: tid ? lib(tid) : null,
+      const thMois = (e.teamHistory || {})[y + '-' + m] || null;
+      return { nom: e.name, id: e.id, equipe: tid || null, equipeDuMois: thMois, equipeLib: tid ? lib(tid) : null,
                miroir: mirId, miroirLib: mirId ? lib(mirId) : null,
                reciproque: retour && retour.id ? retour.id === tid : null, membres };
     });
@@ -304,10 +305,14 @@ console.log('\n=== Mon équipe ET mon miroir, compte par compte (CMCteams) ===')
   res.lignes.forEach((l) => {
     const qui = (l.nom + (l.id === 'U11804' ? ' (Kevin)' : '')).padEnd(24);
     assert(!!l.equipe && l.equipe !== '?', qui + ' a une équipe pour ' + MOIS_ATTENDU + ' : ' + l.equipeLib);
-    // l'identifiant d'équipe porte le mois : il doit être celui du mois courant, pas celui d'avant
-    assert(String(l.equipe).indexOf(res.prefixeMois) === 0, qui + ' équipe bien datée de ' + MOIS_ATTENDU);
+    // v9.905 — l'identifiant d'équipe ne porte PLUS le mois (« 3 », pas « 2026-09-3 ») : le mois
+    // est porté par la CLÉ de teamHistory. Ce qu'il faut vérifier reste le même : l'équipe affichée
+    // vient bien du mois courant, pas d'un mois précédent ni du découpage figé de DEF_EMP.
+    assert(l.equipe === l.equipeDuMois && !!l.equipeDuMois,
+      qui + ' équipe bien datée de ' + MOIS_ATTENDU + ' (teamHistory du mois)');
+    assert(String(l.equipe).indexOf(res.prefixeMois) !== 0, qui + ' identifiant court (pas de mois collé dedans)');
     if (l.miroir) {
-      assert(String(l.miroir).indexOf(res.prefixeMois) === 0, qui + ' miroir daté de ' + MOIS_ATTENDU + ' : ' + l.miroirLib);
+      assert(String(l.miroir).indexOf(res.prefixeMois) !== 0, qui + ' miroir en identifiant court : ' + l.miroirLib);
       assert(l.membres > 0, qui + ' miroir non vide (' + l.membres + ' personnes)');
       assert(l.reciproque === true, qui + ' miroir réciproque (' + l.equipeLib + ' ⇄ ' + l.miroirLib + ')');
     } else {
@@ -319,9 +324,13 @@ console.log('\n=== Mon équipe ET mon miroir, compte par compte (CMCteams) ===')
     const kevApp = res.lignes.find((l) => l.id === 'U11804');
     const { ctx: cL, st: stL } = await ouvrirLight(null, 'DESARZENS K');
     if (kevApp) {
-      assert(stL.label === kevApp.equipeLib,
+      // La light liste des mois côte à côte : elle préfixe le mois dans le libellé
+      // (« Septembre 2026 — BJ Éq.3 (16/22) »). L'app affiche déjà le mois ailleurs et ne le
+      // répète pas. On compare donc les libellés SANS ce préfixe : même équipe, même rotation.
+      const sansMois = (x) => String(x == null ? '' : x).replace(/^.*—\s*/, '');
+      assert(sansMois(stL.label) === sansMois(kevApp.equipeLib),
         'Kevin : MÊME équipe des deux côtés (app « ' + kevApp.equipeLib + ' » ⇄ light « ' + stL.label + ' »)');
-      assert(stL.miroir === kevApp.miroirLib,
+      assert(sansMois(stL.miroir) === sansMois(kevApp.miroirLib),
         'Kevin : MÊME miroir des deux côtés (app « ' + kevApp.miroirLib + ' » ⇄ light « ' + stL.miroir + ' »)');
     }
     await cL.close();

@@ -5181,6 +5181,20 @@ function teamForMonth(emp,y,m,opts){
   if(strict)return null;
   return "?";
 }
+// v9.905 (Kevin 2026-09-17 « il manque TOULET et DEGIOVANNI dans l'équipe 11 ») —
+// L'ÉQUIPE AFFICHÉE EST TOUJOURS CELLE DU MOIS. `emp.team` est la valeur DEF_EMP FIGÉE
+// (un découpage par tranches de matricules, jamais l'équipe courante) : la vue Équipes
+// affichait « CMC Éq.11 = GILETTA, BANTI, …, MORTER, CAMILLERI » sans TOULET ni
+// DEGIOVANNI, alors que le PDF de septembre met les quatre ensemble en CMC Éq.9.
+// Mesuré : 36/36 équipes fausses dans cette vue. Ces deux helpers remplacent `emp.team`
+// partout où une équipe est AFFICHÉE ou sert à lister/filtrer des membres.
+function empTeamNow(e,y,m){
+  if(!e)return "?";
+  var yy=(y==null?A.year:y), mm=(m==null?A.month:m);
+  var t=null; try{ t=(typeof teamForMonth==="function")?teamForMonth(e,yy,mm,{strict:true}):null; }catch(_){ t=null; }
+  return t||"?";
+}
+function empTeamIs(e,tid,y,m){ return !!tid && empTeamNow(e,y,m)===tid; }
 // v9.647 — Helper : un emp a-t-il une présence pour ce mois (data OU team assignée
 // par import) ? Si non, devrait être masqué des vues centrées sur le mois courant.
 function empHasPresenceForMonth(emp,y,m){
@@ -5880,6 +5894,9 @@ function _cmcSyncChefsTFromBoards(y,m){
     var hasLive=(!seededMonth)&&Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
     if(hasLive)return 0;                              // vraie donnée importée (hors seed) → boards ignorés
     var ct={}, found=0, byName={};
+    // v9.905 — on repart des noms d'origine : sans ça, le libellé d'un mois (« (16/22) »)
+    // resterait collé à l'équipe quand on change de mois.
+    try{ (A.teams||[]).forEach(function(t){ if(t&&t._nomBase!=null)t.name=t._nomBase; }); }catch(_){}
     (A.employees||[]).forEach(function(e){ if(e&&e.name&&!byName[e.name])byName[e.name]=e; });
     var changed=0;
     Object.keys(G.boards).forEach(function(bkey){
@@ -5890,9 +5907,18 @@ function _cmcSyncChefsTFromBoards(y,m){
       // pas d'une équipe. Les inclure ici créerait une fausse équipe « 2026-07-conges »
       // dans CHEFS_T (rotation de départ fantôme).
       if(b.kind==="abs")return;
-      ct[bkey]=b.people.map(function(p){return p.name;});
-      if(!gt(bkey)){ A.teams.push({id:bkey,name:b.label||bkey,color:"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
-      b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; if(e.teamHistory[key]!==bkey){e.teamHistory[key]=bkey;changed++;}
+      // v9.905 — IDENTIFIANT COURT (« c11 »), pas la clé du board (« 2026-09-c11 ») : un seul
+      // espace de noms avec DEF_TEAMS → couleurs (TC), miroirs, ordre de départ et libellés
+      // retrouvent l'équipe. Le mois est déjà porté par la clé de teamHistory.
+      var tid=bkey.replace(/^\d{4}-\d{2}-/,"");
+      ct[tid]=b.people.map(function(p){return p.name;});
+      // Le LIBELLÉ du mois (« BJ Éq.3 (16/22) » — le mois est déjà affiché par l'app, on ne le
+      // répète pas dans le nom ; les jours de repos, eux, identifient la rotation et restent).
+      var lib=String(b.label||tid).replace(/^.*\u2014\s*/,"");
+      var te=gt(tid);
+      if(!te){ A.teams.push({id:tid,name:lib,color:(typeof TC!=="undefined"&&TC[tid])||"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
+      else { if(te._nomBase==null)te._nomBase=te.name; te.name=lib; if(b.fam&&b.fam!=="cadres")te.family=b.fam; }
+      b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; if(e.teamHistory[key]!==tid){e.teamHistory[key]=tid;changed++;}
         // v9.901 : la famille du board (= section du PDF) accompagne l'équipe si elle manque
         if(b.fam&&b.fam!=="cadres"&&!/^P\d/.test(e.id)){ if(!e.familyHistory)e.familyHistory={}; if(!e.familyHistory[key]){e.familyHistory[key]=b.fam;changed++;} } } });
       found++;
@@ -5920,8 +5946,13 @@ function _cmcSyncChefsTFromBoards(y,m){
       // cette fonction, le board redevient TOUJOURS le dernier écrivain → équipe + miroir de
       // Kevin corrects (= page light). Coût = itération 85 boards, négligeable. NE TOUCHE
       // JAMAIS les codes de cellules (reproduction fidèle).
+      // v9.905 — purge des équipes fantômes « 2026-09-c11 » créées par les versions <= v9.904
+      if(!window._cmcPurgeLongTeams){ window._cmcPurgeLongTeams=1;
+        try{ A.teams=(A.teams||[]).filter(function(t){ return !(t&&t._board&&/^\d{4}-\d{2}-/.test(t.id)); }); }catch(_){}
+        try{ (A.employees||[]).forEach(function(e){ var th=e&&e.teamHistory; if(!th)return; Object.keys(th).forEach(function(k){ if(/^\d{4}-\d{2}-/.test(String(th[k]||"")))th[k]=String(th[k]).replace(/^\d{4}-\d{2}-/,""); }); }); }catch(_){}
+      }
       CHEFS_T=ct;                                     // départs = VRAIES équipes du mois
-      var mm={}; if(G.mirror){ Object.keys(G.mirror).forEach(function(a){ var b2=G.mirror[a]; if(ct[a]&&ct[b2])mm[a]=b2; }); }
+      var mm={}; if(G.mirror){ Object.keys(G.mirror).forEach(function(a){ var b2=G.mirror[a]; var sa=a.replace(/^\d{4}-\d{2}-/,""), sb=String(b2||"").replace(/^\d{4}-\d{2}-/,""); if(ct[sa]&&ct[sb])mm[sa]=sb; }); }
       try{ls("cmc_team_mirror_"+key,mm);}catch(_){}   // écrit TOUJOURS (même vide) → écrase le stale
       if(!window["_cmcBoardTeams_"+key]){ window["_cmcBoardTeams_"+key]=1; try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} console.info("[v9.861 boards] "+found+" équipes réelles appliquées aux départs ("+key+")"); }
     }
@@ -5932,7 +5963,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.903";
+var APP_VER="v9.905";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11029,7 +11060,7 @@ function _iaBuildHealthReport(){
         var r=pl[e.id]||{};
         var has=false;
         for(var d=1;d<=days;d++){if(r[d]){has=true;break;}}
-        if(!has) report.missing.push({id:e.id,name:e.name,team:e.team});
+        if(!has) report.missing.push({id:e.id,name:e.name,team:empTeamNow(e)});
       });
       if(report.missing.length>0) report.score-=Math.min(15,report.missing.length);
     }
@@ -11734,8 +11765,8 @@ function renderAccessModal(){
   var emp=empById(uid);
   if(!emp)return "";
   var acc=getUserAccess(uid);
-  var tcc=tc(emp.team);
-  var teamName=gt(emp.team)?gt(emp.team).name:(emp.team==="?"?"Non rattach\u00e9":emp.team);
+  var tcc=tc(empTeamNow(emp));
+  var _tmA=empTeamNow(emp);var teamName=gt(_tmA)?gt(_tmA).name:(_tmA==="?"?"Non rattach\u00e9":_tmA);
   var _mk=function(val,lb,desc){
     var chk=acc.mode===val?" checked":"";
     return '<label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:'+(acc.mode===val?"rgba(201,162,39,.08)":"rgba(255,255,255,.03)")+';border:1px solid '+(acc.mode===val?"rgba(201,162,39,.3)":"rgba(255,255,255,.08)")+';border-radius:8px;cursor:pointer;margin-bottom:6px">'
@@ -11960,7 +11991,7 @@ async function cmcExportPlanningPDF(empId){
     doc.setFontSize(11);
     doc.text(MFR[A.month]+" "+A.year,15,30);
     doc.setFontSize(9);
-    doc.text("Matricule : "+emp.id+"  ·  Equipe : "+(gt(emp.team)?gt(emp.team).name:emp.team),15,37);
+    doc.text("Matricule : "+emp.id+"  ·  Equipe : "+(gt(empTeamNow(emp))?gt(empTeamNow(emp)).name:empTeamNow(emp)),15,37);
     var days=getDays(A.year,A.month);
     var y=48,nb=0;
     doc.setFontSize(10);
@@ -13065,7 +13096,7 @@ function _agentImportGuardian(){
       var codes=ov[e.id]||{};
       var hasAny=false;
       for(var d=1;d<=days;d++){if(codes[d]){hasAny=true;break;}}
-      if(!hasAny)findings.ghost_emps.push({uid:e.id,name:e.name,team:e.team});
+      if(!hasAny)findings.ghost_emps.push({uid:e.id,name:e.name,team:empTeamNow(e)});
     });
     // 5. Incohérence compétences ↔ famille (P/P+ sans E → doit être baccara/cmc, E → roulettes)
     A.employees.forEach(function(e){
@@ -13306,7 +13337,7 @@ function _agentHorairesCoverage(){
       var nCodes=0;
       for(var d=1;d<=days;d++)if(codes[d])nCodes++;
       if(nCodes===0){
-        var entry={uid:e.id,name:e.name,team:e.team,family:fam,role:e.role||null,chef:!!e.chef};
+        var entry={uid:e.id,name:e.name,team:empTeamNow(e),family:fam,role:e.role||null,chef:!!e.chef};
         empty.push(entry);
         if(byFam[fam])byFam[fam].push(entry);
       }
@@ -14316,7 +14347,7 @@ function cmcDrillEmpsKpi(kind){
       return {
         icon:e.senior?"⭐":"👤",
         label:label.trim()||e.name||e.id,
-        value:(e.team||"—")+(reg.poste?" · "+reg.poste:""),
+        value:(empTeamNow(e)||"—")+(reg.poste?" · "+reg.poste:""),
         onClick:"function(){cmcCloseDrillModal();editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees');}"
       };
     });
@@ -15423,7 +15454,7 @@ function _agentImportWatch(){try{
     var row=pl[e.id]||{};
     var filled=0;
     for(var d=1;d<=days;d++)if(row[d])filled++;
-    if(filled===0){missing.push({id:e.id,name:e.name,family:e.family,role:e.role,team:e.team,chef:!!e.chef});return;}
+    if(filled===0){missing.push({id:e.id,name:e.name,family:e.family,role:e.role,team:empTeamNow(e),chef:!!e.chef});return;}
     // v9.608 — Reconnait congé long plein mois (≥ 80% jours avec UN seul code long-leave)
     if(filled>=Math.floor(days*0.8)){
       var leaveCount={};
@@ -15584,7 +15615,7 @@ function _agentImportFidelity(key, src){
     A.employees.forEach(function(e){
       if(!isEmpActive(e,y,m))return;
       if(e.family==="cadres")return;
-      var t=e.team||"?";
+      var t=empTeamNow(e)||"?";
       teamCounts[t]=(teamCounts[t]||0)+1;
     });
     var orphans=Object.keys(teamCounts).filter(function(t){return teamCounts[t]===1&&t!=="?";});
@@ -17380,7 +17411,7 @@ function logUserLogin(emp){
     prenom:(reg.prenom||""),
     nom:(reg.nom||""),
     email:(reg.email||""),
-    team:emp.team,
+    team:empTeamNow(emp),
     type:"login",
     ua:_ua.slice(0,300),
     browser:_browser,
@@ -17457,7 +17488,7 @@ function logUserLogin(emp){
     }).catch(function(){if(_ipTimer){clearTimeout(_ipTimer);_ipTimer=null;}});
   });
   var pres=lg("cmc_presence",{});
-  pres[emp.id]={ts:Date.now(),name:emp.name,team:emp.team};
+  pres[emp.id]={ts:Date.now(),name:emp.name,team:empTeamNow(emp)};
   var cut=Date.now()-600000;
   Object.keys(pres).forEach(function(k){if(pres[k].ts<cut)delete pres[k];});
   ls("cmc_presence",pres);
@@ -17666,7 +17697,7 @@ function _searchOnKeydown(e){
 }
 function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];dc();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
 function vTopbar(){
-  var u=A.user,isAdm=u&&u.id===AID,col=tc(u?u.team:"1"),t=gt(u?u.team:"");
+  var u=A.user,_ut=u?empTeamNow((typeof empById==="function"&&empById(u.id))||u):"",isAdm=u&&u.id===AID,col=tc(u?_ut:"1"),t=gt(_ut);
   // Code du jour de l'utilisateur dans la topbar
   var _todCode="",_todCi=null;
   if(u){var _tn=new Date(),_pl=gpl();if(_tn.getFullYear()===A.year&&_tn.getMonth()===A.month){_todCode=(_pl[u.id]||{})[_tn.getDate()]||"";_todCi=CODES[_todCode]||null;}}
@@ -18247,7 +18278,7 @@ function submitLeaveRequest(startDate,endDate,reason){
 // v9.169 — Score d'équité par équipe : mesure l'équilibre des shifts difficiles
 // (nuits, weekends, CDP) entre membres d'une même équipe sur un mois donné
 function calcEquity(teamId,year,month){
-  var emps=A.employees.filter(function(e){return e.team===teamId&&isEmpActive(e,year,month);});
+  var emps=A.employees.filter(function(e){return empTeamIs(e,teamId,year,month)&&isEmpActive(e,year,month);});
   if(emps.length<2)return{score:100,imbalances:[],avgN:0,avgW:0,count:emps.length};
   var pl=gpl(year,month)||{};
   var days=getDays(year,month);
@@ -18910,7 +18941,7 @@ function vGeoAdmin(){
     var mins=o.mins;
     var agoStr=!mins?"":mins<1?"<1min":mins<60?(mins+" min"):mins<1440?(Math.floor(mins/60)+"h"):(Math.floor(mins/1440)+"j");
     h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid rgba(255,255,255,.06)">'
-      +empAvatarHtml(emp,32,tc(emp.team))
+      +empAvatarHtml(emp,32,tc(empTeamNow(emp)))
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-size:13px;color:#e0e8d0;font-weight:700">'+esc(emp.name)+'</div>'
       +'<div style="font-size:11px;color:#a0cca0">'+(o.last?(o.last.type==="in"?"\u25b6 Entr\u00e9e":"\u23f9 Sortie")+" il y a "+agoStr+(o.dist?" \u00b7 "+o.dist+"m":""):"Pas de pointage g\u00e9olocalis\u00e9")+'</div>'
@@ -19254,7 +19285,7 @@ function pitAction(type,payload){
         else if(payload.group==="all")targets=A.employees.filter(function(e){return isEmpActive(e,A.year,A.month);}).map(function(e){return e.id;});
         else if(payload.group.indexOf("team:")===0){
           var tm=payload.group.slice(5);
-          targets=A.employees.filter(function(e){return isEmpActive(e,A.year,A.month)&&e.team===tm;}).map(function(e){return e.id;});
+          targets=A.employees.filter(function(e){return isEmpActive(e,A.year,A.month)&&empTeamIs(e,tm);}).map(function(e){return e.id;});
         }
       }
       if(!targets.length){toast("\u26a0 Aucun destinataire","err");return;}
@@ -20012,7 +20043,7 @@ function _pitConvocationPrompt(){
   ];
   // Ajouter une option par équipe active
   var teams=[];
-  A.employees.forEach(function(e){if(isEmpActive(e,A.year,A.month)&&e.team&&teams.indexOf(e.team)<0)teams.push(e.team);});
+  A.employees.forEach(function(e){var _t=empTeamNow(e);if(isEmpActive(e,A.year,A.month)&&_t&&_t!=="?"&&teams.indexOf(_t)<0)teams.push(_t);});
   teams.sort().forEach(function(tm){groups.push({id:"team:"+tm,lb:"\u00c9quipe "+tm});});
   var g1=prompt("Destinataires :\n\n"+groups.map(function(g,i){return (i+1)+". "+g.lb;}).join("\n")+"\n\nEntrez le num\u00e9ro :");
   if(g1===null)return;
@@ -20559,7 +20590,7 @@ function vPit(){
       t.empIds.forEach(function(uid){
         var e=empById?empById(uid):A.employees.find(function(x){return x.id===uid;});
         if(!e)return;
-        var tcc=tc(e.team);
+        var tcc=tc(empTeamNow(e));
         var isChefHere=t.chefId===uid;
         // v9.352 — Photo emp si dispo (mini avatar devant le nom)
         var _photo=getEmpPhoto(uid);
@@ -20593,13 +20624,13 @@ function vPit(){
   if(!comp.pool.length)h+='<div class="empty" role="status" aria-live="polite" style="padding:14px;text-align:center;color:#8aa088;font-size:13px">Aucun emp disponible \u2014 tous assign\u00e9s ou non pr\u00e9sents</div>';
   h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">';
   comp.pool.slice(0,40).forEach(function(e){
-    var tcc=tc(e.team);
+    var _tmPit=empTeamNow(e);var tcc=tc(_tmPit);
     var compB=(typeof renderCompBadges==="function")?renderCompBadges(e.post,true):'<span style="color:'+tcc+'">'+esc(e.post||"")+'</span>';
     h+='<div class="card" style="padding:7px 10px;display:flex;flex-direction:column;gap:4px">'
       +'<div style="display:flex;align-items:center;gap:5px">'
       +empAvatarHtml(e,26,tcc)
       +'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:800;color:#e0e8d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(e.name.split(" ")[0])+'</div>'
-      +'<div style="font-size:10px;color:'+tcc+'">'+esc(gt(e.team)?gt(e.team).name.slice(0,14):e.team||"")+'</div></div>'
+      +'<div style="font-size:10px;color:'+tcc+'">'+esc(gt(_tmPit)?gt(_tmPit).name.slice(0,14):_tmPit||"")+'</div></div>'
       +'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:3px">'+compB+'</div>'
       +'<div style="display:flex;gap:3px;flex-wrap:wrap">';
@@ -21916,7 +21947,7 @@ function vLiveRoom(){
         var angle=(i/Math.max((liveT.empIds||[]).length,1))*Math.PI*2-Math.PI/2;
         var ox=px+Math.cos(angle)*(r+24);
         var oy=py+Math.sin(angle)*(r+24);
-        var tcc=tc(emp.team);
+        var tcc=tc(empTeamNow(emp));
         var isChefHere=liveT.chefId===uid;
         // v9.350 — Photo emp si dispo (clipPath circle), sinon initiale
         var photo=getEmpPhoto(uid);
@@ -21924,7 +21955,7 @@ function vLiveRoom(){
         var ringCol=st==="break"?"#ffaa3c":st==="parti"||st==="libre"?"#888":"#7acc90";
         var clipId="empClip_"+uid.replace(/[^a-z0-9]/gi,"");
         h+='<g class="room-emp-dot" style="animation-delay:'+(i*0.15)+'s"'
-          +' onclick="A._liveRoomSelUid=\''+uid+'\';dc()"><title>'+esc(emp.name)+" \u00b7 "+esc(emp.team||"")+(isChefHere?" \u00b7 CHEF":"")+(st?" \u00b7 "+st:"")+'</title>'
+          +' onclick="A._liveRoomSelUid=\''+uid+'\';dc()"><title>'+esc(emp.name)+" \u00b7 "+esc(empTeamNow(emp)||"")+(isChefHere?" \u00b7 CHEF":"")+(st?" \u00b7 "+st:"")+'</title>'
           // Ligne de liaison table-emp
           +'<line x1="'+px+'" y1="'+py+'" x2="'+ox+'" y2="'+oy+'" stroke="'+tcc+'" stroke-width="1" stroke-dasharray="2,2" opacity="0.35"/>'
           // Ring status
@@ -22068,7 +22099,7 @@ function vSimView(){
       +'<div style="font-size:11px;color:#8aa088;text-transform:uppercase;margin-bottom:6px">Pool disponible ('+comp.pool.length+') \u2014 cliquez un emp pour assigner</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:4px">';
     comp.pool.forEach(function(e){
-      var tcc=tc(e.team);
+      var tcc=tc(empTeamNow(e));
       h+='<button onclick="(function(){var tids='+esc(JSON.stringify(openTids))+';if(!tids.length){toast(\'Pas de table ouverte\',\'err\');return;}var choices=tids.map(function(tid,i){return (i+1)+\'. \'+((getTablesCoords()[live.tables[tid].physTableId]||{}).name||tid)+\' (\'+live.tables[tid].jeu+\')\';}).join(\'\\n\');var ans=prompt(\'Assigner \'+'+esc(JSON.stringify(e.name))+'+\' \u00e0 :\\n\\n\'+choices+\'\\n\\nNum\u00e9ro :\');if(!ans)return;var i=parseInt(ans,10);if(isNaN(i)||i<1||i>tids.length){toast(\'Invalide\',\'err\');return;}pitManualAssign('+esc(JSON.stringify(e.id))+',tids[i-1]);})()" class="sim-shift-cell" style="padding:4px 9px;background:'+tcc+'18;border:1px solid '+tcc+'55;border-radius:12px;color:'+tcc+';font-size:12px;cursor:pointer;font-weight:700">'+esc(e.name.split(" ")[0])+(e.chef?' \ud83d\udc51':'')+'</button>';
     });
     h+='</div></div>';
@@ -22814,8 +22845,8 @@ function vMonPlanning(){
   var days=getDays(A.year,A.month);
   var pl=gpl();
   var myPl=pl[emp.id]||{};
-  var tcc=tc(emp.team);
-  var teamName=gt(emp.team)?gt(emp.team).name:emp.team;
+  var _tmMp=empTeamNow(emp);var tcc=tc(_tmMp);
+  var teamName=gt(_tmMp)?gt(_tmMp).name:_tmMp;
   var reg=A.reg[emp.id]||{};
   var dispName=reg.prenom?(reg.prenom+" "+emp.name.split(" ")[0]):emp.name;
   var hasImp=hasImportedData(A.year,A.month);
@@ -22927,8 +22958,9 @@ function vMonPlanning(){
     var codeColor=ci2?ci2.c:(isWork(code)?tcc:(code?"#3a503a":"#1e2e1e"));
     var codeBg=ci2?(ci2.bg||"transparent"):"transparent";
     var depPos=null;
-    if(isWork(code)&&CHEFS_T[emp.team]&&CHEFS_T[emp.team].indexOf(emp.name)>=0)
-      depPos=calcDepPos(emp.name,emp.team,d);
+    var _tmDep=empTeamNow(emp);
+    if(isWork(code)&&CHEFS_T[_tmDep]&&CHEFS_T[_tmDep].indexOf(emp.name)>=0)
+      depPos=calcDepPos(emp.name,_tmDep,d);
     var _isPast=isCurrentMo&&d<todD&&!isToday;
     // Horaire en clair (ex: "19h→4h")
     var _timeLabel="";
@@ -23029,11 +23061,11 @@ function vMonProfil(){
   var uid=A.user.id;
   var emp=A.user;
   var reg=A.reg[uid]||{};
-  var tname=gt(emp.team)?gt(emp.team).name:emp.team;
+  var _tmP=empTeamNow(emp);var tname=gt(_tmP)?gt(_tmP).name:_tmP;
   var comps=emp.post?renderCompBadges(emp.post,true):"";
   var h='<div class="page">';
   h+='<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
-    +empAvatarHtml(emp,64,tc(emp.team)||"#c9a227")
+    +empAvatarHtml(emp,64,tc(_tmP)||"#c9a227")
     +'<div style="flex:1;min-width:0"><div class="sec-title">\ud83d\udc64 '+t('myProfile')+'</div>'
     +'<div class="sec-sub">'+t('yourInfo')+'</div></div></div>';
   // Photo de profil
@@ -23995,7 +24027,7 @@ function vAccueil(){
   var now2=new Date();
   var tod=now2.getDate(),tMo=now2.getMonth(),tYr=now2.getFullYear();
   var isToday=(tYr===A.year&&tMo===A.month);
-  var u=A.user,tid=u?u.team:null,tcc=tc(tid),team=gt(tid);
+  var u=A.user,tid=u?empTeamNow((typeof empById==="function"&&empById(u.id))||u):null,tcc=tc(tid),team=gt(tid);
   var _isFloating=isUserFloating(u,A.year,A.month); // v9.58
   var code=isToday&&u?(pl[u.id]||{})[tod]||"":"";
   var ci=CODES[code]||{l:"\u2014",c:"#3a5030",bg:"#1e3822",b:"#2a4830",cdp:false};
@@ -24381,7 +24413,7 @@ function vAccueil(){
       +'</div>';
     // CP par équipe (top 5)
     var _cpByTeam={};
-    _conge.forEach(function(e){var tn=gt(e.team)?gt(e.team).name:e.team;_cpByTeam[tn]=(_cpByTeam[tn]||0)+1;});
+    _conge.forEach(function(e){var _t=empTeamNow(e),tn=gt(_t)?gt(_t).name:_t;_cpByTeam[tn]=(_cpByTeam[tn]||0)+1;});
     var _cpTeams=Object.keys(_cpByTeam).sort(function(a,b){return _cpByTeam[b]-_cpByTeam[a];}).slice(0,5);
     if(_cpTeams.length){
       h+='<div style="margin-top:6px;padding:6px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:8px">'
@@ -24451,7 +24483,7 @@ function vAccueil(){
     var bDay=parseInt(parts[0]),bMon=parseInt(parts[1]);
     if(bMon===now2.getMonth()+1&&bDay===now2.getDate()){
       var emp=empById(uid);
-      if(emp&&isEmpActive(emp,A.year,A.month))_birthdays.push({uid:uid,name:emp.name,prenom:r.prenom||"",team:emp.team});
+      if(emp&&isEmpActive(emp,A.year,A.month))_birthdays.push({uid:uid,name:emp.name,prenom:r.prenom||"",team:empTeamNow(emp)});
     }
   });
   // Mon anniversaire
@@ -24489,7 +24521,8 @@ function vAccueil(){
     h+='</div>';
     h+='<div style="display:flex;flex-wrap:wrap;gap:6px">';
     _onl.forEach(function(u){
-      var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team;
+      var _tu=(function(){var e=(typeof empById==="function")&&empById(u.uid);var t=e?empTeamNow(e):"?";return (t&&t!=="?")?t:(u.team||"?");})();
+      var tcc2=tc(_tu),tname=gt(_tu)?gt(_tu).name:_tu;
       var isMe=A.user&&u.uid===A.user.id;
       h+='<div style="display:flex;align-items:center;gap:6px;padding:5px 9px;background:'+hexA(tcc2,.06)+';border:1px solid '+hexA(tcc2,.2)+';border-radius:20px;flex-shrink:0">';
       h+='<div style="position:relative;flex-shrink:0"><div style="width:22px;height:22px;border-radius:50%;background:'+hexA(tcc2,.18)+';color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:-1px;right:-1px;width:7px;height:7px;border-radius:50%;background:#3a8a50;border:1px solid #060f06"></div></div>';
@@ -24499,7 +24532,7 @@ function vAccueil(){
     h+='</div></div>';
   }
   // Bandeau Mode Visiteur (employé SBM sans équipe assignée)
-  if(u&&(u.visitor||u.team==="?")){
+  if(u&&(u.visitor||empTeamNow((typeof empById==="function"&&empById(u.id))||u)==="?")){
     h+='<div style="padding:12px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(74,114,168,.15),rgba(74,114,168,.05));border:1px solid rgba(74,114,168,.3);border-radius:12px">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
       +'<span style="font-size:20px">\ud83d\udc41\ufe0f</span>'
@@ -24554,15 +24587,16 @@ function vAccueil(){
     h+='</div>';
     // Si absent aujourd'hui, afficher les collègues en service
     if(isToday&&tod&&(code==='M'||code==='CP'||code==='AF'||code==='RH'||code==='R')){
+      var _uTeamNow=empTeamNow((typeof empById==="function"&&empById(u.id))||u);
       var _colsEnService=A.employees.filter(function(e){
-        return e.team===u.team&&e.id!==u.id&&isEmpActive(e,A.year,A.month)&&isWork((pl[e.id]||{})[tod]||'');
+      return empTeamNow(e)===_uTeamNow&&e.id!==u.id&&isEmpActive(e,A.year,A.month)&&isWork((pl[e.id]||{})[tod]||'');
       });
       if(_colsEnService.length){
         h+='<div style="padding:10px 12px;background:rgba(160,100,60,.06);border:1px solid rgba(160,100,60,.2);border-radius:10px;margin-top:8px">'
           +'<div style="font-size:13px;font-weight:800;color:#c08040;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px">\ud83d\udc65 Coll\u00e8gues en service aujourd\u2019hui</div>'
           +'<div style="display:flex;flex-wrap:wrap;gap:5px">';
         _colsEnService.forEach(function(e){
-          var tcc2=tc(e.team);
+          var tcc2=tc(empTeamNow(e));
           h+='<div style="padding:3px 8px;background:'+tcc2+'10;border:1px solid '+tcc2+'25;border-radius:6px;font-size:14px;color:#b0c098">'+esc(e.name.split(' ')[0])+'</div>';
         });
         h+='</div></div>';
@@ -25571,7 +25605,7 @@ var CHEF_EQ=lg("cmc_chef_eq",Object.assign({},DEF_CHEF_EQ));
 function saveChefEq(){if(!A.user||A.user.id!==AID)return;ls("cmc_chef_eq",CHEF_EQ);}
 function pickChef(tid,idx){
   if(!A.user||A.user.id!==AID)return;
-  var teamEmps=A.employees.filter(function(e){return e.team===tid;});
+  var teamEmps=A.employees.filter(function(e){return empTeamIs(e,tid);});
   var emp=teamEmps[idx];
   if(!emp)return;
   CHEF_EQ[tid]=emp.name;saveChefEq();editChefSlot=null;dc();
@@ -25987,7 +26021,7 @@ function vDeparts(){
   if(_hasImport){
     var srcEmps=isAdm
       ?A.employees.filter(function(e){return isEmpActive(e,A.year,A.month);})
-      :A.employees.filter(function(e){return e.team===myTeam&&isEmpActive(e,A.year,A.month);});
+      :A.employees.filter(function(e){return empTeamIs(e,myTeam)&&isEmpActive(e,A.year,A.month);});
     srcEmps.forEach(function(emp){
       var ep=pl[emp.id]||{};
       if(da.some(function(d){return isWork(ep[d]||'');})) return; // a des jours travaillés → pas ici
@@ -26219,10 +26253,10 @@ function vStats(){
   <!-- v9.176 — Team insights : top 3 équipes par métrique (équité / charge / présence) -->
   ${(function(){
     var teamIds={};
-    activeEmps.forEach(function(e){if(e.team)teamIds[e.team]=true;});
+    activeEmps.forEach(function(e){var _t=empTeamNow(e);if(_t&&_t!=="?")teamIds[_t]=true;});
     var teamStats=Object.keys(teamIds).map(function(tid){
       var t=gt(tid);var eq=calcEquity(tid,A.year,A.month);
-      var emps=activeEmps.filter(function(e){return e.team===tid;});
+      var emps=activeEmps.filter(function(e){return empTeamIs(e,tid);});
       var trav=0,rep=0;emps.forEach(function(e){var r=pl[e.id]||{};Object.values(r).forEach(function(c){if(c==="RH"||c==="R")rep++;else if(c)trav++;});});
       return {id:tid,name:t?t.name:tid,color:tc(tid),count:emps.length,equity:eq.score,trav:trav,rep:rep,presRate:trav+rep?Math.round(trav/(trav+rep)*100):0};
     });
@@ -26245,19 +26279,20 @@ function vStats(){
   // Grouper par équipe
   var prevTeam=null;
   activeEmps.slice().sort(function(a,b){
-    if(a.team!==b.team)return String(a.team).localeCompare(String(b.team));
+    if(empTeamNow(a)!==empTeamNow(b))return String(empTeamNow(a)).localeCompare(String(empTeamNow(b)));
     return a.name.localeCompare(b.name);
   }).forEach(function(emp){
-    if(emp.team!==prevTeam){
-      prevTeam=emp.team;
-      var tcc2=tc(emp.team),team2=gt(emp.team);
-      h+=`<div style="font-size:14px;font-weight:800;color:${tcc2};text-transform:uppercase;letter-spacing:2px;margin:6px 0 2px;padding-bottom:4px;border-bottom:1px solid ${hexA(tcc2,.19)}">${esc(team2?team2.name:emp.team)}</div>`;
+    var _tmC=empTeamNow(emp);
+    if(_tmC!==prevTeam){
+      prevTeam=_tmC;
+      var tcc2=tc(_tmC),team2=gt(_tmC);
+      h+=`<div style="font-size:14px;font-weight:800;color:${tcc2};text-transform:uppercase;letter-spacing:2px;margin:6px 0 2px;padding-bottom:4px;border-bottom:1px solid ${hexA(tcc2,.19)}">${esc(team2?team2.name:_tmC)}</div>`;
     }
     var p=pl[emp.id]||{},v=Object.values(p);
     var cnts={};CK.forEach(function(c){cnts[c]=v.filter(function(x){return x===c;}).length;});
     var trav=v.filter(function(x){return x&&x!=="RH"&&x!=="R";}).length;
     var repos=v.filter(function(x){return x==="RH"||x==="R";}).length;
-    var tcc=tc(emp.team);
+    var tcc=tc(_tmC);
     h+=`<div class="card" style="padding:10px 12px;border-left:2px solid ${hexA(tcc,.25)}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:5px">
@@ -26500,7 +26535,7 @@ function showSalaryCalculator(empId){
     +'<button onclick="document.getElementById(\'salCalc\').remove()" aria-label="Fermer" title="Fermer" style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:8px 12px;cursor:pointer">\u2715</button>'
     +'</div><div style="flex:1;overflow-y:auto;padding:16px 22px">';
   if(emp){
-    body+='<div style="margin-bottom:10px;padding:10px;background:rgba(10,22,14,.5);border-radius:8px;display:flex;align-items:center;gap:10px">'+empAvatarHtml(emp,36,tc(emp.team))+'<div><div style="font-size:14px;font-weight:800;color:#e0e8d8">'+esc(emp.name)+'</div><div style="font-size:12px;color:#a0cca0">'+esc(emp.id)+'</div></div></div>';
+    body+='<div style="margin-bottom:10px;padding:10px;background:rgba(10,22,14,.5);border-radius:8px;display:flex;align-items:center;gap:10px">'+empAvatarHtml(emp,36,tc(empTeamNow(emp)))+'<div><div style="font-size:14px;font-weight:800;color:#e0e8d8">'+esc(emp.name)+'</div><div style="font-size:12px;color:#a0cca0">'+esc(emp.id)+'</div></div></div>';
   }
   body+='<div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-bottom:12px">'
     +'<div><div style="font-size:12px;color:#a0cca0;margin-bottom:4px">Niveau / Poste</div>'
@@ -27939,7 +27974,7 @@ function cmcExportPitBossDiag(){
       var days=[];
       for(var d=1;d<=31;d++){days.push((r[d]||"_"));}
       var nonEmpty=Object.keys(r).filter(function(d){return !!r[d];}).length;
-      return e.name.padEnd(22)+" ["+(e.role||"?")+"/"+(e.team||"?")+"]  "+days.join(" ")+"  ("+nonEmpty+"/31)";
+      return e.name.padEnd(22)+" ["+(e.role||"?")+"/"+(empTeamNow(e)||"?")+"]  "+days.join(" ")+"  ("+nonEmpty+"/31)";
     }
     // Détecter doublons exact
     function dupGroups(emps){
@@ -27970,7 +28005,7 @@ function cmcExportPitBossDiag(){
       +(bug?JSON.stringify(bug,null,2):"non détecté ✓")
       +"\n\n=== EMP META (sample 3 cadres) ===\n"
       +cadres.slice(0,3).map(function(e){
-        return e.name+": family="+e.family+" team="+e.team+" role="+(e.role||"")+" senior="+!!e.senior+" ff="+!!e.faisantFonction;
+        return e.name+": family="+e.family+" team="+empTeamNow(e)+" role="+(e.role||"")+" senior="+!!e.senior+" ff="+!!e.faisantFonction;
       }).join("\n");
     // Modal réutilisant le pattern v9.635 (clipboard.writeText, pas de side effect)
     var reportEsc=esc(report);
@@ -28129,7 +28164,7 @@ function _cmcDetectIdenticalScheduleBug(key){
     A.employees.forEach(function(e){
       if(!isEmpActive(e,year,month))return;
       if((e.family||"")==="cadres")return;
-      var t=e.team||"_";
+      var t=empTeamNow(e)||"_";
       if(!byTeam[t])byTeam[t]=[];
       byTeam[t].push(e);
     });
@@ -29543,7 +29578,7 @@ function vStatsGlobal(){
     byVenue[e.venue||"_"]=(byVenue[e.venue||"_"]||0)+1;
     byFamily[e.family||"bj"]=(byFamily[e.family||"bj"]||0)+1;
     byRole[e.role||"_"]=(byRole[e.role||"_"]||0)+1;
-    byTeam[e.team]=(byTeam[e.team]||0)+1;
+    var _tg=empTeamNow(e);byTeam[_tg]=(byTeam[_tg]||0)+1;
     if(isSenior(e))seniors++;
     if(A.passwords[e.id])inscrits++;else nonInscrits++;
   });
@@ -29686,7 +29721,7 @@ function vStatsAnnuelles(){
   }
   // Liste des employés avec recherche + filtre
   var allEmps={};
-  A.employees.forEach(function(e){allEmps[e.id]={id:e.id,name:e.name,team:e.team,role:e.role||"",family:e.family||"",active:true};});
+  A.employees.forEach(function(e){allEmps[e.id]={id:e.id,name:e.name,team:empTeamNow(e),role:e.role||"",family:e.family||"",active:true};});
   Object.keys(arch).forEach(function(id){
     if(!allEmps[id]){
       var years=Object.keys(arch[id]);
@@ -29965,7 +30000,7 @@ function vChat(){
     h+='<span style="font-size:11px;color:#3a5830;text-transform:uppercase;letter-spacing:1px;margin-right:6px">En ligne</span>';
     _online.forEach(function(u){
       var emp=empById(u.uid);
-      var tCol=emp?tc(emp.team)||"#3a8a50":"#3a8a50";
+      var tCol=emp?tc(empTeamNow(emp))||"#3a8a50":"#3a8a50";
       var isActive=_chatDm&&_chatDm.id===u.uid;
       h+='<button onclick="chatSetDm(\''+esc(u.uid)+'\',\''+esc(u.name)+'\')" '
         +'title="Message privé à '+esc(u.name)+'" '
@@ -30105,14 +30140,14 @@ function vChat(){
       empList.slice(0,30).forEach(function(e){
         var reg=A.reg[e.id]||{};
         var prenom=reg.prenom||"";
-        var tCol=tc(e.team)||"#c9a227";
-        var teamObj=gt(e.team);
+        var tCol=tc(empTeamNow(e))||"#c9a227";
+        var teamObj=gt(empTeamNow(e));
         h+='<button onclick="chatSetDm(\''+esc(e.id)+'\',\''+esc(e.name)+'\')" style="display:block;width:100%;text-align:left;padding:8px 14px;background:transparent;border:none;border-bottom:1px solid #0c160a;cursor:pointer">'
           +'<div style="display:flex;align-items:center;gap:8px">'
           +'<div style="width:28px;height:28px;border-radius:50%;background:'+tCol+'20;border:1.5px solid '+tCol+'50;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:'+tCol+';flex-shrink:0">'+esc(e.name[0])+'</div>'
           +'<div style="flex:1;min-width:0">'
           +'<div style="font-size:15px;font-weight:700;color:#c0d8a8">'+(prenom?esc(prenom)+' ':'')+esc(e.name.split(' ')[0])+'</div>'
-          +'<div style="font-size:13px;color:'+tCol+'">'+esc(teamObj?teamObj.name:'Éq.'+e.team)+'</div>'
+          +'<div style="font-size:13px;color:'+tCol+'">'+esc(teamObj?teamObj.name:'Éq.'+empTeamNow(e))+'</div>'
           +'</div>'
           +'<div style="font-size:12px;color:#90ac90;font-family:monospace">'+esc(e.id)+'</div>'
           +'</div>'
@@ -30904,7 +30939,7 @@ function cmcShowExtendedStat(key){
   }
 
   if(key === "total_active"){
-    items = active.map(function(e){return {label:e.name||e.id, value:e.team||"", icon:"\ud83d\udc64"};});
+    items = active.map(function(e){return {label:e.name||e.id, value:empTeamNow(e)||"", icon:"\ud83d\udc64"};});
     cmcShowGenericStat({title:"Total employes actifs", icon:"\ud83d\udc65", color:"#5aaa70", items:items});
     return;
   }
@@ -30963,14 +30998,14 @@ function showLiveList(key){
   if(!emps.length){body+='<div class="empty" role="status" aria-live="polite" style="padding:30px;text-align:center;color:#8aa088"><div class="empty-icon" aria-hidden="true" style="font-size:36px;margin-bottom:8px">'+icon+'</div><div>Aucun employ\u00e9</div></div>';}
   else{
     emps.forEach(function(e){
-      var tcc=tc(e.team);
+      var tcc=tc(empTeamNow(e));
       var reg=A.reg[e.id]||{};
       var compB=(typeof renderCompBadges==="function")?renderCompBadges(e.post,true):'<span style="color:'+tcc+'">'+esc(e.post||"")+'</span>';
       var _safeId=JSON.stringify(String(e.id||"")).replace(/"/g,"&quot;");
       body+='<div onclick="document.getElementById(\'liveList\').remove();showEmpQuickProfile&&showEmpQuickProfile('+_safeId+')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(10,22,14,.5);border:1px solid '+tcc+'33;border-radius:8px;margin-bottom:5px;cursor:pointer;transition:background .12s ease" onmouseover="this.style.background=\'rgba(20,40,24,.7)\'" onmouseout="this.style.background=\'rgba(10,22,14,.5)\'">'
         +empAvatarHtml(e,32,tcc)
         +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;color:#e0e8d0">'+esc(e.name)+(e.chef?' <span style="color:#ffdc40;font-size:11px">\ud83d\udc51</span>':"")+(isSenior(e)?' <span style="color:#ffce3a;font-size:13px">\u2605</span>':"")+'</div>'
-        +'<div style="font-size:11px;color:'+tcc+';margin-top:1px">'+esc(gt(e.team)?gt(e.team).name:e.team||"")+(e.post?" \u00b7 <span style=\"color:#a0cca0\">"+esc(e.post)+"</span>":"")+'</div></div>'
+        +'<div style="font-size:11px;color:'+tcc+';margin-top:1px">'+esc(gt(empTeamNow(e))?gt(empTeamNow(e)).name:empTeamNow(e)||"")+(e.post?" \u00b7 <span style=\"color:#a0cca0\">"+esc(e.post)+"</span>":"")+'</div></div>'
         +'<div style="display:flex;gap:2px">'+compB+'</div>'
         +'</div>';
     });
@@ -31257,7 +31292,7 @@ function exportPlanningCSV(){
     var row=[
       _csv(emp.id),
       _csv(emp.name),
-      _csv(emp.team),
+      _csv(empTeamNow(emp)),
       _csv(getFamLabel(emp.family||"bj")),
       _csv(emp.groupe||""),
       _csv(emp.role||"")
@@ -31321,8 +31356,8 @@ function vRetrait(){
       +'\ud83c\udf9f\ufe0f Anciens employ\u00e9s ('+inactifs.length+')</div>'
       +'<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px">';
     inactifs.forEach(function(emp){
-      var tcc=tc(emp.team)||'#888';
-      var team=gt(emp.team);
+      var _tmRt=empTeamNow(emp);var tcc=tc(_tmRt)||'#888';
+      var team=gt(_tmRt);
       var pastNow=emp.toMo<=curMo;
       var depLabel=emp.toMo!==undefined&&emp.toMo!==null?moToLabel(emp.toMo):'';
       h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(160,60,60,.04);border:1px solid rgba(160,60,60,.15);border-radius:8px">'
@@ -31352,7 +31387,7 @@ function vRetrait(){
     +'<select id="rtrEmp" class="inp" style="font-size:15px">'
     +'<option value="">-- Choisir un employ\u00e9 actif --</option>';
   actifs.forEach(function(emp){
-    var team=gt(emp.team);
+    var team=gt(empTeamNow(emp));
     h+='<option value="'+esc(emp.id)+'">'+esc(emp.name)+(team?' ('+esc(team.name)+')':'')+'</option>';
   });
   h+='</select>';
@@ -31482,7 +31517,7 @@ function vConnexions(){
         +'<div style="font-size:13px;color:#e0f0d0;line-height:1.7">'
         +(e.prenom||e.nom?'\ud83d\udc64 <b>'+esc((e.prenom||"")+" "+(e.nom||""))+'</b><br>':'')
         +(e.email?'\u2709 '+esc(e.email)+'<br>':'')
-        +(e.team?'\ud83d\udc65 \u00c9quipe '+esc(e.team)+'<br>':'')
+        +(empTeamNow(e)?'\ud83d\udc65 \u00c9quipe '+esc(empTeamNow(e))+'<br>':'')
         +(e.ip?'\ud83c\udf10 IP : <span style="font-family:monospace;color:#8ab0e0">'+esc(e.ip)+'</span><br>':'')
         +(e.city||e.country?'\ud83d\udccd '+esc([e.city,e.region,e.country].filter(Boolean).join(", "))+(e.isp?' ('+esc(e.isp)+')':'')+'<br>':'')
         +(e.browser||e.os?browserIcon(e.browser)+" "+esc(e.browser||"?")+" "+osIcon(e.os)+" "+esc(e.os||"?")+'<br>':'')
@@ -31519,7 +31554,7 @@ function _exportConnexionsCSV(){
       e.nom||"",
       e.prenom||"",
       e.email||"",
-      e.team||"",
+      empTeamNow(e)||"",
       e.type||"",
       e.ip||"",
       e.city||"",
@@ -31563,11 +31598,11 @@ function vOnline(){
   h+='<div style="padding:7px 10px;background:rgba(74,114,168,.06);border:1px solid rgba(74,114,168,.15);border-radius:7px;margin-bottom:10px;font-size:13px;color:#5a7a9a">\u2139\ufe0f Pr\u00e9sence d\u00e9tect\u00e9e dans la m\u00eame session navigateur, mise \u00e0 jour toutes les 2 min.</div>';
   h+='<div class="card" style="padding:12px;margin-bottom:10px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><div style="font-size:14px;color:#a0cca0;font-weight:700;text-transform:uppercase;letter-spacing:1px">En ligne maintenant</div><span style="background:rgba(80,180,80,.15);color:#5aaa70;border:1px solid rgba(80,180,80,.3);border-radius:10px;padding:2px 8px;font-size:14px;font-weight:700">'+online.length+' actif'+(online.length>1?"s":"")+'</span></div>';
   if(online.length===0){h+='<div style="font-size:15px;color:#a0bca0;font-style:italic;text-align:center;padding:10px 0">Aucun utilisateur actif d\u00e9tect\u00e9</div>';}
-  else{online.forEach(function(u){var tcc2=tc(u.team),tname=gt(u.team)?gt(u.team).name:u.team,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(6,16,10,.22);border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
+  else{online.forEach(function(u){var _tu=(function(){var e=(typeof empById==="function")&&empById(u.uid);var t=e?empTeamNow(e):"?";return (t&&t!=="?")?t:(u.team||"?");})();var tcc2=tc(_tu),tname=gt(_tu)?gt(_tu).name:_tu,ago=Math.round((Date.now()-u.ts)/60000);h+='<div style="display:flex;align-items:center;gap:10px;padding:7px 8px;background:rgba(6,16,10,.22);border:1px solid #1a2e1a;border-radius:7px;margin-bottom:5px"><div style="position:relative;flex-shrink:0"><div style="width:34px;height:34px;border-radius:50%;background:'+tcc2+'18;color:'+tcc2+';display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">'+esc(u.name[0])+'</div><div style="position:absolute;bottom:0;right:0;width:10px;height:10px;border-radius:50%;background:#3a8a50;border:2px solid #060f06"></div></div><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#d0e8c0">'+esc(u.name)+'</div><div style="font-size:13px;color:'+tcc2+'">'+esc(tname)+' \u00b7 actif il y a '+ago+' min</div></div></div>';});}
   h+='</div>';
   // Statistiques d'utilisation par employé
   h+='<div class="card" style="padding:12px;margin-bottom:10px"><div style="font-size:14px;color:#c9a227;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">\ud83d\udcca Statistiques d\u2019utilisation</div>';
-  var _vsAll=Object.keys(_visitStats).map(function(uid){var s=_visitStats[uid];var e=A.employees.find(function(x){return x.id===uid;});return{uid:uid,name:e?e.name:uid,team:e?e.team:"?",logins:s.logins||0,views:s.views||0,lastLogin:s.lastLogin||0};}).sort(function(a,b){return b.views-a.views;});
+  var _vsAll=Object.keys(_visitStats).map(function(uid){var s=_visitStats[uid];var e=A.employees.find(function(x){return x.id===uid;});return{uid:uid,name:e?e.name:uid,team:e?empTeamNow(e):"?",logins:s.logins||0,views:s.views||0,lastLogin:s.lastLogin||0};}).sort(function(a,b){return b.views-a.views;});
   var _totalLogins=_vsAll.reduce(function(s,v){return s+v.logins;},0);
   var _totalViews=_vsAll.reduce(function(s,v){return s+v.views;},0);
   h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px">'
@@ -32410,7 +32445,7 @@ function vPasswords(){
     h+='<div style="font-size:14px;font-weight:800;color:'+famColor+';letter-spacing:2px;text-transform:uppercase;margin:10px 0 6px">'+esc(fam.lb)+'</div>';
     famEmps.forEach(function(emp){
       var hasPw=!!A.passwords[emp.id];
-      var tcc=tc(emp.team);
+      var _tmPw=empTeamNow(emp);var tcc=tc(_tmPw);
       var reg=A.reg[emp.id]||null;
       var emailStr=reg&&reg.email?reg.email:"";
       var dateStr=reg&&reg.createdAt?(new Date(reg.createdAt)).toLocaleDateString("fr-FR"):"";
@@ -32431,7 +32466,7 @@ function vPasswords(){
        +(_hasCustomAccess?' <span title="Acc\u00e8s personnalis\u00e9" style="font-size:12px;background:rgba(201,162,39,.18);color:#c9a227;border:1px solid rgba(201,162,39,.35);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:middle">\ud83d\udd10</span>':'')
        +'</div>'
        +'<div style="font-size:14px;color:#a0cca0;font-family:monospace;margin-top:2px">'+esc(emp.id)
-       +' \u00b7 <span style="color:'+tcc+'">'+esc((function(){var t=gt(emp.team);return t?t.name:(emp.team==="?"?"Non rattach\u00e9":emp.team);})())+'</span></div></div>'
+       +' \u00b7 <span style="color:'+tcc+'">'+esc((function(){var t=gt(_tmPw);return t?t.name:(_tmPw==="?"?"Non rattach\u00e9":_tmPw);})())+'</span></div></div>'
        // Status
        +'<div style="text-align:right;flex-shrink:0">'
        +(hasPw
@@ -32598,14 +32633,14 @@ function runAudit(y,m){
           if(_strSim(emp.name,n)>=0.85)suggestions.push(n);
         });
       }
-      results.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team,
+      results.absentDuPDF.push({id:emp.id,name:emp.name,team:empTeamNow(emp),
         hasDays:false,codesSummary:'',suggestions:suggestions});
     } else {
       // OK : présent dans l'import avec données
       results.ok++;
     }
     if(!allDepartureNames.has(emp.name)){
-      results.sansDeparture.push({id:emp.id,name:emp.name,team:emp.team});
+      results.sansDeparture.push({id:emp.id,name:emp.name,team:empTeamNow(emp)});
     }
   });
   return results;
@@ -32656,7 +32691,7 @@ function vAudit(){
       +'<div style="display:flex;align-items:center;justify-content:space-between">'
       +'<div>'
       +'<span style="font-size:15px;font-weight:700;color:#c0cca8">'+esc(e.name)+'</span>'
-      +' <span style="font-size:14px;color:#a0cca0">\u00c9q.'+esc(e.team)+'</span>'
+      +' <span style="font-size:14px;color:#a0cca0">\u00c9q.'+esc(empTeamNow(e))+'</span>'
       +schedHtml+sugHtml
       +'</div>'
       +'<div style="display:flex;align-items:center;flex-shrink:0">'+renameBtn
@@ -32683,7 +32718,7 @@ function vAudit(){
     '<div style="margin-bottom:16px">'
     +'<div style="font-size:15px;font-weight:700;color:#6a92c8;margin-bottom:8px">\u2139\ufe0f Sans ligne de d\u00e9part ('+audit.sansDeparture.length+')</div>'
     +'<div style="font-size:14px;color:#8a9a78;margin-bottom:8px">Ces employ\u00e9s n\'apparaissent pas dans les listes de d\u00e9part. V\u00e9rifier les \u00e9quipes.</div>'
-    +'<div style="font-size:14px;color:#6080a0">'+audit.sansDeparture.map(function(e){return esc(e.name)+' (\u00e9q.'+esc(e.team)+')';}).join(' \u00b7 ')+'</div>'
+    +'<div style="font-size:14px;color:#6080a0">'+audit.sansDeparture.map(function(e){return esc(e.name)+' (\u00e9q.'+esc(empTeamNow(e))+')';}).join(' \u00b7 ')+'</div>'
     +'</div>':'';
   var okBanner=totalProblems===0?
     '<div style="padding:14px;background:rgba(58,138,80,.15);border:1px solid rgba(58,138,80,.3);border-radius:8px;text-align:center;color:#3a8a50;font-weight:700;font-size:16px">\u2705 Tous les employ\u00e9s actifs sont reconnus'+(audit.hasImport?' dans le planning import\u00e9':' (planning th\u00e9orique en attente d\'import)')+'</div>':'';
@@ -32729,7 +32764,7 @@ function exportAuditReport(){
     lines.push("--- ABSENTS DU PDF ("+audit.absentDuPDF.length+") ---");
     var byTeam={};
     audit.absentDuPDF.forEach(function(e){
-      (byTeam[e.team]=byTeam[e.team]||[]).push(e.name+(e.suggestions&&e.suggestions.length?" [similaires: "+e.suggestions.join(", ")+"]":""));
+      (byTeam[empTeamNow(e)]=byTeam[empTeamNow(e)]||[]).push(e.name+(e.suggestions&&e.suggestions.length?" [similaires: "+e.suggestions.join(", ")+"]":""));
     });
     Object.keys(byTeam).sort().forEach(function(t){
       lines.push("  Equipe "+t+":");
@@ -33344,12 +33379,12 @@ function vRetardataires(){
       +'<div style="font-size:13px;font-weight:800;color:'+col+';text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;padding:0 4px">'+icon+' '+title+' ('+emps.length+')</div>';
     emps.forEach(function(it){
       var emp=it.emp||it;
-      var tcc=tc(emp.team);
+      var _tmR=empTeamNow(emp);var tcc=tc(_tmR);
       s+='<div style="padding:8px 10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-left:3px solid '+col+';border-radius:7px;margin-bottom:4px;display:flex;align-items:center;gap:10px">'
         +empAvatarHtml(emp,30,tcc)
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-size:14px;color:#d0e8c0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+empLabelHtml(emp)+'</div>'
-        +'<div style="font-size:11px;color:'+tcc+'">'+esc((gt(emp.team)||{}).name||emp.team)+'</div>'
+        +'<div style="font-size:11px;color:'+tcc+'">'+esc((gt(_tmR)||{}).name||_tmR)+'</div>'
         +(it.days?'<div style="font-size:11px;color:#e08080;margin-top:2px">\u26a0 Derni\u00e8re connexion il y a '+it.days+' jours</div>':'')
         +'</div>'
         +'<button onclick="editEmpId=\''+esc(emp.id)+'\';sv(\'employees\')" style="background:'+col+'18;border:1px solid '+col+'50;border-radius:6px;color:'+col+';font-size:12px;padding:5px 11px;cursor:pointer;font-weight:700;flex-shrink:0">Fiche</button>'
@@ -33495,7 +33530,7 @@ function vTeams(){
   FAM_ORDER.forEach(function(fam){
     var tl=groups[fam.id]||[];if(!tl.length)return;
     var isOpen=!!window._teamsFamOpen[fam.id];
-    var empTot=0;tl.forEach(function(t){empTot+=A.employees.filter(function(e){return e.team===t.id;}).length;});
+    var empTot=0;tl.forEach(function(t){empTot+=A.employees.filter(function(e){return empTeamIs(e,t.id);}).length;});
     h+=`<div style="margin-bottom:10px;border:1px solid ${hexA(fam.c,.3)};border-radius:12px;overflow:hidden;background:${hexA(fam.c,.04)}">
       <button onclick="window._teamsFamOpen['${fam.id}']=!window._teamsFamOpen['${fam.id}'];dc()" style="width:100%;display:flex;align-items:center;gap:10px;padding:14px 16px;background:${hexA(fam.c,.08)};border:none;cursor:pointer;color:${fam.c};font-weight:800;font-size:17px;text-align:left;min-height:48px">
         <span style="font-size:20px;transition:transform .2s;display:inline-block;transform:rotate(${isOpen?90:0}deg)">\u25b6</span>
@@ -33506,10 +33541,10 @@ function vTeams(){
       h+=`<div style="padding:10px 12px 12px">`;
       tl.forEach(function(team){
     var tcc=team.color||"#888";
-    var ec=A.employees.filter(function(e){return e.team===team.id;}).length;
+    var ec=A.employees.filter(function(e){return empTeamIs(e,team.id);}).length;
     var mi=gm(team.id);
     var chefs=CHEFS_T[team.id]||[];
-    var teamEmps=A.employees.filter(function(e){return e.team===team.id;});
+    var teamEmps=A.employees.filter(function(e){return empTeamIs(e,team.id);});
     h+=`<div class="card" style="padding:12px;border-top:2px solid ${hexA(tcc,.27)};margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <div style="width:28px;height:28px;border-radius:7px;background:${hexA(tcc,.09)};color:${tcc};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">${esc(team.id)}</div>
@@ -34245,10 +34280,10 @@ function bulkExportCSV(){
   var rows=[["Matricule","Nom","Pr\u00e9nom","\u00c9quipe","R\u00f4le","Lieu","Famille","Email","USM","Poste","Chef","Senior","Mot de passe","V\u00e9rifi\u00e9"]];
   emps.forEach(function(e){
     var r=A.reg[e.id]||{};
-    var t=gt(e.team);
+    var t=gt(empTeamNow(e));
     rows.push([
       e.id,e.name,r.prenom||"",
-      t?t.name:e.team,
+      t?t.name:empTeamNow(e),
       e.role?getRoleLabel(e.role):"",
       e.venue?getVenueLabel(e.venue):"",
       getFamLabel(e.family||"bj"),
@@ -45011,7 +45046,7 @@ function exportImportReport(){
   if(verif.absentDuPDF&&verif.absentDuPDF.length){
     lines.push("--- ABSENTS DU PDF ("+verif.absentDuPDF.length+") ---");
     lines.push("  (employ\u00e9s dans la DB mais non trouv\u00e9s dans le texte PDF coll\u00e9)");
-    verif.absentDuPDF.forEach(function(e){lines.push("  "+e.name+" (\u00c9q."+e.team+")");});
+    verif.absentDuPDF.forEach(function(e){lines.push("  "+e.name+" (\u00c9q."+empTeamNow(e)+")");});
     lines.push("");
   }
   if(verif.sansHoraire&&verif.sansHoraire.length){
@@ -45062,12 +45097,12 @@ function runVerification(year,month,refData){
   var defIds=new Set(DEF_EMP.map(function(e){return e.id;}));
   A.employees.filter(function(emp){return isEmpActive(emp,year,month)&&defIds.has(emp.id);}).forEach(function(emp){
     var isAbsent=!importedIds.has(emp.id);
-    if(isAbsent) result.absentDuPDF.push({id:emp.id,name:emp.name,team:emp.team});
+    if(isAbsent) result.absentDuPDF.push({id:emp.id,name:emp.name,team:empTeamNow(emp)});
     var plRow=pl[emp.id]||{};
     var hasDays=Object.keys(plRow).some(function(d){return !!plRow[d];});
     // sansHoraire : uniquement les employés présents dans le PDF mais sans aucun code valide
-    if(!isAbsent&&!hasDays) result.sansHoraire.push({id:emp.id,name:emp.name,team:emp.team});
-    if(!allDepartureNames.has(emp.name)) result.sansDeparture.push({id:emp.id,name:emp.name,team:emp.team});
+    if(!isAbsent&&!hasDays) result.sansHoraire.push({id:emp.id,name:emp.name,team:empTeamNow(emp)});
+    if(!allDepartureNames.has(emp.name)) result.sansDeparture.push({id:emp.id,name:emp.name,team:empTeamNow(emp)});
   });
   result.summary={
     total:result.ok.length+result.errors.length,
@@ -46455,7 +46490,7 @@ function buildIASystemPrompt(){
     if(!emps.length)return;
     s+="\n"+getFamLabel(fid)+" ("+emps.length+") :\n";
     // Group by team
-    var byT={};emps.forEach(function(e){if(!byT[e.team])byT[e.team]=[];byT[e.team].push(e.name+(e.chef?"★":"")+(e.groupe==="ferme"?"[F]":e.groupe==="ouvert"?"[O]":""));});
+    var byT={};emps.forEach(function(e){if(!byT[empTeamNow(e)])byT[empTeamNow(e)]=[];byT[empTeamNow(e)].push(e.name+(e.chef?"★":"")+(e.groupe==="ferme"?"[F]":e.groupe==="ouvert"?"[O]":""));});
     Object.keys(byT).forEach(function(tid){
       var t=gt(tid);s+="  "+(t?t.name:"Éq."+tid)+" : "+byT[tid].join(", ")+"\n";
     });
@@ -46862,7 +46897,7 @@ function _iaExecuteTool(toolName,input){
             ||(A.reg[e.id]&&A.reg[e.id].prenom&&A.reg[e.id].prenom.toLowerCase().indexOf(q)>=0)
             ||(A.reg[e.id]&&A.reg[e.id].nom&&A.reg[e.id].nom.toLowerCase().indexOf(q)>=0)
             ||(A.reg[e.id]&&A.reg[e.id].email&&A.reg[e.id].email.toLowerCase().indexOf(q)>=0)
-            ||(e.team||"").toLowerCase().indexOf(q)>=0
+            ||(empTeamNow(e)||"").toLowerCase().indexOf(q)>=0
             ||(getFamLabel(e.family||"bj")).toLowerCase().indexOf(q)>=0;
         });
         // 2. Si aucun match, fuzzy via similarité caractères communs (gère Jacobi → GIACOBBI, Rossi → ROSI, etc.)
@@ -46905,7 +46940,7 @@ function _iaExecuteTool(toolName,input){
         var prefix=exact.length===0?"(Recherche floue appliquée car aucun match exact)\n":"";
         return prefix+res.map(function(e){
           var reg=A.reg[e.id]||{};
-          return e.id+" | "+e.name+(reg.prenom?" ("+reg.prenom+")":"")+" | Éq."+(e.team||"?")+" | "+getFamLabel(e.family||"bj")+(e.senior?" ★":"")+(e.chef?" Chef":"");
+          return e.id+" | "+e.name+(reg.prenom?" ("+reg.prenom+")":"")+" | Éq."+(empTeamNow(e)||"?")+" | "+getFamLabel(e.family||"bj")+(e.senior?" ★":"")+(e.chef?" Chef":"");
         }).join("\n");
       }
       case"get_employee_info":{
@@ -46913,7 +46948,7 @@ function _iaExecuteTool(toolName,input){
         if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
         var reg=A.reg[emp.id]||{};
         var role=emp.role?getRoleLabel(emp.role):"";
-        return JSON.stringify({id:emp.id,nom:emp.name,prenom:reg.prenom||"",equipe:emp.team,famille:getFamLabel(emp.family||"bj"),senior:!!emp.senior,chef:!!emp.chef,groupe:emp.groupe||"nd",role:role,email:reg.email||"",dateEntreeSbm:reg.dateEntreeSbm||"",dateEntreeJeux:reg.dateEntreeJeux||"",competences:emp.post||""},null,2);
+        return JSON.stringify({id:emp.id,nom:emp.name,prenom:reg.prenom||"",equipe:empTeamNow(emp),famille:getFamLabel(emp.family||"bj"),senior:!!emp.senior,chef:!!emp.chef,groupe:emp.groupe||"nd",role:role,email:reg.email||"",dateEntreeSbm:reg.dateEntreeSbm||"",dateEntreeJeux:reg.dateEntreeJeux||"",competences:emp.post||""},null,2);
       }
       case"get_stats":{
         var emp=empById(input.empId);
@@ -46955,7 +46990,7 @@ function _iaExecuteTool(toolName,input){
           +res.map(function(a){return"Art. "+a.art+" (Titre "+a.titre+") \u2014 "+a.texte.slice(0,250);}).join("\n\n");
       }
       case"get_team_roster":{
-        var members=A.employees.filter(function(e){return e.team===input.teamId;});
+        var members=A.employees.filter(function(e){return empTeamIs(e,input.teamId);});
         if(!members.length)return"Aucun employ\u00e9 dans l'\u00e9quipe "+esc(input.teamId);
         return"Equipe "+input.teamId+" ("+members.length+" membres) :\n"+members.map(function(e){return e.id+" "+e.name+(e.chef?" [Chef]":"")+(e.senior?" \u2605":"");}).join("\n");
       }
@@ -46993,7 +47028,7 @@ function _iaExecuteTool(toolName,input){
       case"get_all_teams":{
         var r="";
         A.teams.forEach(function(t){
-          var members=A.employees.filter(function(e){return e.team===t.id;});
+          var members=A.employees.filter(function(e){return empTeamIs(e,t.id);});
           var chefs=members.filter(function(e){return e.chef;});
           r+=t.name+" ("+t.id+") \u2014 "+members.length+" membres"+(chefs.length?" \u2022 Chef(s): "+chefs.map(function(c){return c.name;}).join(", "):"")+"\n";
         });
@@ -47008,7 +47043,7 @@ function _iaExecuteTool(toolName,input){
       case"get_online_users":{
         try{var users=getOnlineUsers();
         if(!users.length)return"Aucun utilisateur en ligne actuellement";
-        return"En ligne ("+users.length+") :\n"+users.map(function(u){return u.name+" (\u00e9q."+u.team+")";}).join("\n");
+        return"En ligne ("+users.length+") :\n"+users.map(function(u){return u.name+" (\u00e9q."+empTeamNow(u)+")";}).join("\n");
         }catch(e){return"Donn\u00e9es de pr\u00e9sence non disponibles";}
       }
       case"get_monthly_summary":{
@@ -47081,7 +47116,7 @@ function _iaExecuteTool(toolName,input){
         if(!isAdm)return"\u26d4 INTERDIT : seul l'admin peut changer les \u00e9quipes. Demandez \u00e0 DESARZENS K.";
         var emp=empById(input.empId);
         if(!emp)return"Employ\u00e9 non trouv\u00e9 : "+input.empId;
-        var old=emp.team;emp.team=input.teamId;
+        var old=empTeamNow(emp);emp.team=input.teamId;
         ls("cmc_e",A.employees);
         _audit("ia_set_team",AID,emp.name,old,input.teamId);
         return"\u2705 "+emp.name+" : \u00e9quipe "+old+" \u2192 "+input.teamId;
@@ -47392,7 +47427,7 @@ function _iaExecuteTool(toolName,input){
         var moved=[];
         empIds.forEach(function(eid){
           var emp=empById(eid);
-          if(emp){var old=emp.team;emp.team=teamId;moved.push(emp.name+"("+old+"\u2192"+teamId+")");}
+          if(emp){var old=empTeamNow(emp);emp.team=teamId;moved.push(emp.name+"("+old+"\u2192"+teamId+")");}
         });
         ls("cmc_e",A.employees);
         _audit("ia_bulk_team",AID,moved.join(", ").slice(0,100),"",teamId);
@@ -47520,7 +47555,7 @@ function _iaExecuteTool(toolName,input){
         var logs=lg("cmc_audit",[]).filter(function(e){return e.eid===emp.id||e.name===emp.name;}).slice(-5).reverse();
         return"\ud83d\udc64 CONTEXTE COMPLET "+emp.name+" ("+emp.id+"):\n\n"
           +"\ud83d\udcdd IDENTIT\u00c9:\n  Nom: "+emp.name+"\n  Pr\u00e9nom: "+(reg.prenom||"\u2014")+"\n  Email: "+(reg.email||"\u2014")+"\n  T\u00e9l: "+(reg.telephone||"\u2014")+"\n  Naissance: "+(reg.dateNaissance||"\u2014")+"\n\n"
-          +"\ud83d\udc65 \u00c9QUIPE & R\u00d4LE:\n  \u00c9quipe: "+emp.team+" ("+getFamLabel(emp.family||"bj")+")\n  Chef: "+(emp.chef?"oui":"non")+"\n  Senior: "+(emp.senior?"oui":"non")+"\n  Groupe: "+(emp.groupe||"nd")+"\n  Comp\u00e9tences: "+(emp.post||"\u2014")+"\n  Temps table max: "+(emp.maxWorkMinutes?emp.maxWorkMinutes+" min":"d\u00e9faut")+"\n\n"
+          +"\ud83d\udc65 \u00c9QUIPE & R\u00d4LE:\n  \u00c9quipe: "+empTeamNow(emp)+" ("+getFamLabel(emp.family||"bj")+")\n  Chef: "+(emp.chef?"oui":"non")+"\n  Senior: "+(emp.senior?"oui":"non")+"\n  Groupe: "+(emp.groupe||"nd")+"\n  Comp\u00e9tences: "+(emp.post||"\u2014")+"\n  Temps table max: "+(emp.maxWorkMinutes?emp.maxWorkMinutes+" min":"d\u00e9faut")+"\n\n"
           +"\ud83d\udcc5 PLANNING "+MFR[A.month]+" "+A.year+":\n  Jours travaill\u00e9s: "+(st.trav||0)+"\n  Heures: "+(st.heures||0)+"\n  Repos: "+((st.RH||0)+(st.R||0))+"\n  Cong\u00e9s: "+(st.CP||0)+"\n  Maladie: "+(st.M||0)+"\n  Nuits: "+(st.nuits||0)+"\n\n"
           +"\ud83c\udfd6\ufe0f CONG\u00c9S: Solde "+bal+" jours restants\n\n"
           +(logs.length?"\ud83d\udcdc DERNIERS CHANGEMENTS:\n"+logs.map(function(l){return"  "+new Date(l.ts).toLocaleDateString("fr-FR")+" "+(l.action||"modif")+": "+(l.old||"")+"\u2192"+(l.new||"");}).join("\n"):"Aucun log r\u00e9cent");
@@ -47764,11 +47799,11 @@ function _iaExecuteTool(toolName,input){
         var y=input.year||A.year,m=input.month!==undefined?input.month:A.month;
         var pl=gpl(y,m);var days=getDays(y,m);
         var targets=A.employees.filter(function(e){return isEmpActive(e,y,m);});
-        if(input.teamId)targets=targets.filter(function(e){return e.team===input.teamId;});
+        if(input.teamId)targets=targets.filter(function(e){return empTeamIs(e,input.teamId);});
         var header="Matricule;Nom;\u00c9quipe;Famille";
         for(var d=1;d<=days;d++)header+=";"+d;
         var rows=targets.map(function(e){
-          var row=[e.id,e.name,e.team||"",getFamLabel(e.family||"bj")];
+          var row=[e.id,e.name,empTeamNow(e)||"",getFamLabel(e.family||"bj")];
           var codes=pl[e.id]||{};
           for(var d=1;d<=days;d++)row.push(codes[d]||"");
           return row.map(function(c){return String(c).replace(/;/g,"_");}).join(";");
@@ -47855,7 +47890,7 @@ function _iaExecuteTool(toolName,input){
         });
         if(!res.length)return"Aucun cadre"+(roleF!=="all"?" avec r\u00f4le "+roleF:"")+" trouv\u00e9.";
         return "\ud83d\udc51 Cadres "+(roleF!=="all"?"("+roleF+") ":"")+"("+res.length+"):\n"
-          +res.map(function(e){return"\u2022 "+e.name+" \u2014 "+(e.role==="pit"?"Pit Boss":e.role==="sup"?"Superviseur":e.role==="ins"?"Inspecteur":"?")+" \u2014 \u00c9quipe "+(e.team||"?");}).join("\n");
+          +res.map(function(e){return"\u2022 "+e.name+" \u2014 "+(e.role==="pit"?"Pit Boss":e.role==="sup"?"Superviseur":e.role==="ins"?"Inspecteur":"?")+" \u2014 \u00c9quipe "+(empTeamNow(e)||"?");}).join("\n");
       }
       case"get_cadre_planning":{
         var cid=(input&&input.cadreId)||"";
@@ -48525,7 +48560,7 @@ function iaRespond(q){
       });
       if(!workers.length) return `Personne n'est en service le ${today} ${MFR[A.month]} selon le planning.`;
       var byTeam={};
-      workers.forEach(function(e){if(!byTeam[e.team])byTeam[e.team]=[];byTeam[e.team].push(e);});
+      workers.forEach(function(e){if(!byTeam[empTeamNow(e)])byTeam[empTeamNow(e)]=[];byTeam[empTeamNow(e)].push(e);});
       var r=`<strong>${workers.length} employ\u00e9(s) en service le ${today} ${MFR[A.month]} :</strong><br><br>`;
       Object.keys(byTeam).forEach(function(tid){
         var tcc=tc(tid),team=gt(tid);
@@ -48543,7 +48578,7 @@ function iaRespond(q){
   // \u2500\u2500 Effectif d'une \u00e9quipe \u2500\u2500
   var teamMatch=A.teams.find(function(t){return ql.includes(t.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""))||ql.includes("equipe "+t.id)||ql.includes("\u00e9quipe "+t.id)||ql.includes("team "+t.id);});
   if(teamMatch){
-    var emps=A.employees.filter(function(e){return e.team===teamMatch.id;});
+    var emps=A.employees.filter(function(e){return empTeamIs(e,teamMatch.id);});
     var chefs=emps.filter(function(e){return e.chef;});
     var mir=gm(teamMatch.id);
     var r=`<strong style="color:${teamMatch.color||"#c9a227"}">${esc(teamMatch.name)}</strong> \u2014 ${emps.length} employ\u00e9(s)<br>`;
@@ -48610,7 +48645,7 @@ function iaRespond(q){
     var r=`<strong>Effectif CMC Black Jack :</strong><br><br>`;
     r+=`\ud83d\udc65 Total : <strong>${A.employees.length}</strong> employ\u00e9s<br>`;
     A.teams.forEach(function(t){
-      var n=A.employees.filter(function(e){return e.team===t.id;}).length;
+      var n=A.employees.filter(function(e){return empTeamIs(e,t.id);}).length;
       r+=`<span style="color:${t.color}">\u25cf</span> ${esc(t.name)} : ${n} personnes<br>`;
     });
     return r;
@@ -48756,8 +48791,8 @@ function vImportVerif(){
   var teamConsensus={};
   var teams={};
   A.employees.filter(function(e){return isEmpActive(e,iy,im);}).forEach(function(e){
-    if(!teams[e.team])teams[e.team]=[];
-    teams[e.team].push(e);
+    if(!teams[empTeamNow(e)])teams[empTeamNow(e)]=[];
+    teams[empTeamNow(e)].push(e);
   });
   Object.keys(teams).forEach(function(tid){
     var members=teams[tid];
@@ -48795,7 +48830,7 @@ function vImportVerif(){
     _totalDays+=cnt;
     if(cnt===0)_empty.push(e);
     else if(cnt<days)_partial.push({emp:e,count:cnt});
-    if(cnt>0){_totalImported++;_totalTeamsPresent[e.team]=true;}
+    if(cnt>0){_totalImported++;_totalTeamsPresent[empTeamNow(e)]=true;}
   });
   var _teamCount=Object.keys(_totalTeamsPresent).length;
   var _summary='<div style="padding:12px 14px;background:rgba(58,138,80,.06);border:1px solid rgba(58,138,80,.2);border-radius:10px;margin:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -48963,13 +48998,13 @@ function vAbsences(){
   var absFamPrev=null;
   teamsToShow.forEach(function(team){
     var tcc=team.color||TC[team.id]||"#888";
-    var famEmp=A.employees.find(function(e){return e.team===team.id&&e.family;});
+    var famEmp=A.employees.find(function(e){return empTeamIs(e,team.id)&&e.family;});
     var teamFam=famEmp?famEmp.family:"bj";
     if(teamFam!==absFamPrev){
       absFamPrev=teamFam;
       h+='<div style="font-size:14px;font-weight:800;color:'+getFamColor(teamFam)+';text-transform:uppercase;letter-spacing:2px;margin:12px 0 4px;padding:4px 0;border-bottom:1px solid '+getFamColor(teamFam)+'30">'+esc(getFamLabel(teamFam))+'</div>';
     }
-    var emps=A.employees.filter(function(e){return e.team===team.id&&isEmpActive(e,A.year,A.month);});
+    var emps=A.employees.filter(function(e){return empTeamIs(e,team.id)&&isEmpActive(e,A.year,A.month);});
     // Filtrer: employés ayant au moins une absence ce mois
     var absentEmps=emps.filter(function(e){
       var row=pl[e.id]||{};
@@ -49507,7 +49542,7 @@ function _cmcSynthEmp(emp){
   var parts=[];
   var name=((reg.prenom||emp.prenom||"")+" "+(reg.nom||emp.nom||"")).trim();
   if(name)parts.push(name);
-  if(emp.team)parts.push("équipe "+emp.team);
+  if(empTeamNow(emp))parts.push("équipe "+empTeamNow(emp));
   if(emp.family)parts.push(emp.family);
   if(emp.role||reg.poste)parts.push(emp.role||reg.poste);
   if(reg.usbm)parts.push("matricule "+reg.usbm);
@@ -49565,7 +49600,7 @@ function _cmcKbViewProfile(uid){
     var h='<div style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)this.remove()"><div style="background:#1a2026;border:1px solid #c9a227;border-radius:14px;padding:16px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto"><h3 style="color:#f0d060;margin:0 0 12px">📋 Fiche '+esc(((reg.prenom||emp.prenom||"")+" "+(reg.nom||emp.nom||"")).trim()||uid)+'</h3>';
     var rows=[
       ["Matricule",emp.id],
-      ["Équipe",emp.team||"-"],
+      ["Équipe",empTeamNow(emp)||"-"],
       ["Famille",emp.family||"-"],
       ["Rôle",emp.role||reg.poste||"-"],
       ["Senior 55+",emp.senior?"Oui ★":"Non"],
@@ -49629,11 +49664,11 @@ function vCmcKnowledgeBank(){
     var pct=Math.round(n/totalFields*100);
     var col=pct>=80?"#4cd080":(pct>=50?"#e8a248":"#e88080");
     var name=((reg.prenom||e.prenom||"")+" "+(reg.nom||e.nom||"")).trim()||e.id;
-    var search=(name+" "+e.id+" "+(e.team||"")+" "+(reg.email||"")+" "+(s?s.text:"")).toLowerCase();
+    var search=(name+" "+e.id+" "+(empTeamNow(e)||"")+" "+(reg.email||"")+" "+(s?s.text:"")).toLowerCase();
     var synthText=s?s.text:_cmcSynthEmp(e);
     h+='<div class="cmc-kb-row" data-search="'+esc(search)+'" style="background:#1a2026;border:1px solid #2a3036;border-left:4px solid '+col+';border-radius:10px;padding:10px;margin-bottom:8px">';
     h+='<div style="display:flex;align-items:center;gap:10px"><div style="font-size:30px">'+(e.senior?"⭐":"👤")+'</div>';
-    h+='<div style="flex:1;min-width:0"><strong>'+esc(name)+'</strong> <span style="background:'+col+';color:#000;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:800">'+pct+'%</span> <span style="color:#888;font-size:11px">'+esc(e.team||"")+'</span>';
+    h+='<div style="flex:1;min-width:0"><strong>'+esc(name)+'</strong> <span style="background:'+col+';color:#000;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:800">'+pct+'%</span> <span style="color:#888;font-size:11px">'+esc(empTeamNow(e)||"")+'</span>';
     h+='<div style="font-size:11px;color:#aaa;margin-top:3px;word-wrap:break-word">'+esc(String(synthText).slice(0,180))+'</div></div></div>';
     var idJs=JSON.stringify(e.id);
     h+='<div style="display:flex;gap:6px;margin-top:8px"><button onclick="_cmcKbViewProfile('+idJs+')" style="flex:1;min-height:44px;padding:8px;background:rgba(201,162,39,.12);border:1px solid #c9a227;color:#f0d060;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">📋 Fiche</button>';
