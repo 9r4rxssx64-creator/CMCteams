@@ -113,7 +113,15 @@ jobs:
           #    tools/gitlab : les scripts de publication et leur carte des NOMS de
           #    secrets (aucune valeur). Aucune page ne s'en sert ; un site n'a pas
           #    à servir ses propres scripts de fabrication.
-          rm -rf audit pipeline patrimoine patrimoine-resultats coffre-fort/memo tools/gitlab 2>/dev/null || true
+          # 3bis. LES PLANNINGS EUX-MÊMES (Kevin 2026-09-18, « que personne ne puisse tout
+          #    voir, les noms de chaque personne »). MESURÉ : « path: . » publiait
+          #    tests/fixtures/*.pdf — les CINQ PLANNINGS SBM D'ORIGINE (10 Mo : juillet,
+          #    août, septembre, octobre 2026), téléchargeables par n'importe qui à
+          #    l'adresse du site. Aucune page du site ne charge quoi que ce soit de
+          #    tests/ (vérifié : zéro référence dans tous les .html). Un site n'a pas à
+          #    servir ses propres jeux d'essai. 16 Mo en moins, et les documents
+          #    d'origine du personnel ne sont plus en ligne.
+          rm -rf audit pipeline patrimoine patrimoine-resultats coffre-fort/memo tools/gitlab tests 2>/dev/null || true
           apres=$(find . -type f | wc -l)
           echo "documents de travail retirés : $((avant - apres)) fichiers en moins"
           echo "le dépôt, lui, n'a pas bougé — seule la copie du runner est allégée"
