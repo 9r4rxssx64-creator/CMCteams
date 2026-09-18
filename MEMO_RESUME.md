@@ -9666,3 +9666,69 @@ et que son auteur est archivé, traitez-la quand même, elle ne reviendra pas.
 **Gardes** : `test:pipeline-sessions` **9 OK / 0 FAIL** (un rouge était de moi : ma branche
 manquait à `SESSIONS-ET-BRANCHES.md` → ajoutée) · `test:messages-suivis` toujours rouge sur les
 31 demandes ciblées, **c'est son rôle**.
+
+## 2026-09-18 — PayPal perso : plus aucun acheteur perdu (Kevin « utilise mon PayPal comme ça. perso »)
+
+Kevin garde son **PayPal personnel** : pas d'application PayPal, donc pas de clés, donc pas de
+capture automatique. Le lien `paypal.me` n'est plus un repli théorique — **c'est le chemin réel**.
+Son trou, mesuré : on ouvrait un onglet et on ne savait plus rien (ni qui, ni quoi, ni où le
+joindre) ; Kevin voyait un montant sans nom, l'acheteur n'avait rien à citer.
+
+**Ce qui a été livré**
+- `POST /caisse/intention` (worker `kdmc-vente`) — enregistre le panier **avant** d'ouvrir PayPal :
+  produit, montant pris dans NOTRE catalogue, e-mail, consentement horodaté. **Aucune clé requise.**
+- La page rend une **référence** (`K` + 8 caractères) à recopier dans le message PayPal, la mémorise
+  (`kdmc_kit_ref`), ouvre PayPal, et laisse sous la main le bouton **« J'ai payé »**.
+- `POST /reclamer` accepte cette référence : produit, e-mail et consentement voyagent avec la
+  demande → Kevin livre en un clic, en connaissance de cause. Référence inventée = refusée (404).
+- `/admin/valider` **ferme** le panier correspondant (sinon il resterait « en attente » après livraison).
+- Tableau de bord Commerce : tuile **🛒 Paniers ouverts** + KPI « Paniers en attente » (CA possible,
+  combien disent avoir payé, âge en heures).
+- **Honnêteté** : CGV et pages de vente ne promettent plus l'accès instantané → « dès que le paiement
+  est constaté, au plus tard sous 24 h ouvrées ».
+
+- `POST /admin/livrer-panier` + boutons **Livrer / Abandonné** dans la tuile : Kevin voit le paiement
+  dans SON PayPal, un doigt, l'accès part par e-mail. Réservé à l'admin (`requireAdmin` AVANT de lire
+  le corps), et un panier déjà livré rend le **même** code — personne ne reçoit deux accès.
+
+**Gardes** (prouvées discriminantes par sabotage) : `tests/caisse-complete.test.mjs` (14 contrôles —
+panier livré compté comme ouvert → 1 échec ; montant non contrôlé `NaNEUR` → 1 échec ; référence non
+mémorisée → 1 échec ; garde admin retirée → 1 échec ; double livraison possible → 1 échec) et `tests/commerce-tableau.test.mjs` (12 — tuile non montée → 1 échec ;
+`esc()` retiré → 1 échec). Preuve **live** ajoutée à `deploy-kdmc-vente.yml` : refus sans e-mail /
+produit inventé / sans consentement, panier complet → `paypal.me/kdmc/17EUR` + référence, référence
+inventée refusée, « j'ai payé » relié à la file.
+
+## 2026-09-18 (suite) — Revolut + IBAN : les trois moyens, un seul chemin
+
+Kevin : « Aussi mon Revolut et IBAN. Trouve des solutions pour automatiser comme ça. »
+
+**Honnêteté d'abord** : aucun des trois comptes (PayPal perso, Revolut perso, compte bancaire)
+n'a d'API qui permette de CONSTATER un paiement — il faudrait un compte **professionnel**.
+Ce qui est automatisé, et qui change tout : le panier est rangé avant le paiement, la référence
+sert de message/libellé, et Kevin livre en un doigt.
+
+- `/caisse/intention` accepte `moyen` : **paypal** (`paypal.me/kdmc/47EUR`), **revolut**
+  (`revolut.me/kdmc/47eur`), **virement** (IBAN + BIC + titulaire + **libellé = la référence**).
+  Le virement est même le mieux loti : le libellé arrive tel quel sur le relevé.
+- **L'IBAN ne rentre JAMAIS dans le dépôt** (public → moissonné le jour même). Il se pose depuis
+  le tableau de bord (`/admin/reglages`, admin seul), vit dans le coffre du worker, et n'est rendu
+  qu'à quelqu'un qui a ouvert un panier — jamais sur une page moissonnable. Affiché **masqué**
+  même à Kevin (`FR76 ***…*** 0189`). **Clé 97 (ISO 13616) vérifiée** avant rangement : une faute
+  de frappe enverrait tous les virements nulle part.
+- **Tant qu'aucun IBAN n'est posé, le bouton « virement » ne s'affiche pas** (révélé par `/health`).
+  Un bouton qui mène au vide est pire que pas de bouton.
+- Le virement **n'ouvre aucun onglet** : IBAN, BIC, montant et libellé s'affichent à l'écran avec
+  un bouton **Copier** sur chaque ligne (recopier un IBAN à la main sur un téléphone = erreurs).
+- **Relance des paniers abandonnés** (`/admin/relancer`, bouton dans la tuile) : e-mail à ceux qui
+  se sont interrompus depuis > 2 h. **Une seule fois par panier** (`relance_iso`) — au-delà c'est
+  du spam. Le compteur affiché avant le clic est le vrai nombre.
+
+**Gardes** : `caisse-complete` **20 contrôles**, `commerce-tableau` **13**. Prouvées par sabotage :
+clé 97 non vérifiée → 1 échec · virement proposé sans IBAN → 1 échec · relance sans cliquet →
+2 échecs · IBAN complet renvoyé à l'écran → 1 échec · tuile IBAN non montée → 1 échec · bouton
+relance non câblé → 1 échec. Preuve **live** dans `deploy-kdmc-vente.yml` : lien Revolut exact,
+moyen inventé refusé, virement qui se tait sans IBAN, et `/admin/reglages` + `/admin/relancer`
+refusés à qui n'est pas admin.
+
+**Ce qui reste à Kevin** : poser son IBAN une fois dans Commerce → 🏦 Virement (3 champs, 1 bouton).
+Rien d'autre.

@@ -131,6 +131,55 @@ test('posts-liens Facebook : la tuile existe, dit ce qu\'elle attend quand c\'es
   assert.ok(C.rendu(data, null, null).includes('posts avec lien'), 'section jamais montée dans la page (code mort)');
 });
 
+test('paniers ouverts : la tuile dit le vide, montre qui dit avoir payé, échappe le HTML', () => {
+  /* Kevin encaisse sur son PayPal PERSONNEL (18.09) : rien ne capture le
+     paiement à sa place, donc c'est ici — et nulle part ailleurs — qu'il voit
+     qui a voulu acheter. Une tuile absente = des acheteurs invisibles. */
+  assert.ok(C.sectionPaniers({ intentions: { n: 0, dit_paye: 0, ca_potentiel: 0, liste: [] } }).includes('Aucun panier ouvert'),
+    'vide : dire ce que c\'est, pas un blanc');
+  const un = { intentions: { n: 2, dit_paye: 1, ca_potentiel: 64, liste: [
+    { ref: 'K7X2M4QP', produit: 'kit-ia', email: 'a@b.fr', montant: 47, devise: 'EUR', etat: 'dit_paye', heures: 2, ts_iso: '2026-09-18T10:00:00.000Z' },
+    { ref: 'K9Q3', produit: 'avis-ia', email: 'c@d.fr', montant: 17, devise: 'EUR', etat: 'intention', heures: 5, ts_iso: '2026-09-18T07:00:00.000Z' },
+  ] } };
+  const h = C.sectionPaniers(un);
+  assert.ok(h.includes('K7X2M4QP') && h.includes('a@b.fr'), 'la référence et l\'e-mail doivent être lisibles : c\'est avec ça que Kevin livre');
+  assert.ok(h.includes('dit avoir payé') && h.includes('à livrer'), 'celui qui a payé doit sauter aux yeux');
+  assert.ok(!C.sectionPaniers({ intentions: { n: 1, dit_paye: 0, ca_potentiel: 1, liste: [{ ref: '<img src=x onerror=alert(1)>', produit: 'x', email: 'y', montant: 1, heures: 0, ts_iso: '' }] } }).includes('<img src=x'),
+    'donnée client non échappée dans la page admin');
+  /* Montée dans la page, sinon c'est du code mort (erreur #28). */
+  assert.ok(C.rendu(data, { ...LIVE, intentions: un.intentions }, null).includes('Paniers ouverts'), 'tuile jamais montée dans la page');
+  /* Caisse muette : pas de tuile, mais pas de plantage non plus. */
+  assert.equal(C.sectionPaniers(null), '');
+  assert.equal(C.sectionPaniers({}), '');
+});
+
+test('IBAN : la tuile dit « fermé » tant qu\'il n\'est pas posé, et ne montre jamais l\'IBAN entier', () => {
+  /* Kevin 18.09 : « Aussi mon Revolut et IBAN ». L'IBAN ne peut pas vivre dans
+     le dépôt (public) : il se pose ici. Tant qu'il n'est pas posé, le bouton
+     « virement » n'apparaît pas sur les pages de vente — c'est ce que dit la tuile. */
+  const vide = C.sectionBanque({ banque: {} });
+  assert.ok(vide.includes('fermé') && vide.includes('n\'apparaît pas'), 'la tuile doit dire que le virement est fermé et pourquoi');
+  assert.ok(vide.includes('id="ibanIn"'), 'pas de champ pour poser l\'IBAN');
+  /* Kevin est sur iPhone : un champ sans la classe `champ` retombe sur le style
+     par défaut du navigateur — 44px perdus et iOS zoome dès qu'il le touche. */
+  assert.ok(/<input class="champ" id="ibanIn"/.test(vide), 'le champ IBAN n\'est pas au gabarit tactile');
+  const html = readFileSync(new URL('../kdmc-home/admin/commerce.html', import.meta.url), 'utf8');
+  const regle = html.match(/input\.champ\{([^}]+)\}/);
+  assert.ok(regle, 'aucune règle CSS pour input.champ : le style ne suit pas le HTML');
+  assert.match(regle[1], /min-height:44px/, 'cible tactile sous 44px');
+  assert.match(regle[1], /font-size:16px/, 'sous 16px, iOS zoome tout seul à la saisie');
+  const pose = C.sectionBanque({ banque: { iban: 'FR76 ******************* 0189', bic: 'AGRIFRPP', titulaire: 'K. D.', pose_iso: '2026-09-18T10:00:00.000Z' } });
+  assert.ok(pose.includes('ouvert') && pose.includes('0189'), 'la tuile doit confirmer que c\'est posé');
+  assert.ok(!/FR76\s?3000/.test(pose), 'IBAN affiché en clair');
+  assert.ok(!C.sectionBanque({ banque: { iban: '<img src=x onerror=alert(1)>' } }).includes('<img src=x'), 'donnée non échappée');
+  assert.equal(C.sectionBanque(null), '');
+  assert.ok(C.rendu(data, { ...LIVE, banque: {} }, null).includes('mon IBAN'), 'tuile jamais montée dans la page');
+  /* Et les deux boutons doivent être câblés, sinon c'est un décor. */
+  const js = readFileSync(new URL('../kdmc-home/admin/commerce.js', import.meta.url), 'utf8');
+  assert.match(js, /\/admin\/reglages/, 'le bouton Enregistrer n\'appelle rien');
+  assert.match(js, /\/admin\/relancer/, 'le bouton Relancer n\'appelle rien');
+});
+
 /* Sabotages faits le 17.09 pour prouver que la garde mord :
    - retirer 'audit-live.yml' de WORKFLOWS_ATTENDUS → test « MÊMES côté caisse » échoue
    - changer prix immo-ia à 66 dans commerce-data.json → 2 échecs (verifier + prix)

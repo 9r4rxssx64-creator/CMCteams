@@ -60,10 +60,11 @@
     <label for="mail-etudiant">Ton adresse e-mail (c'est là qu'arrive ton accès)</label>
     <input id="mail-etudiant" type="email" inputmode="email" autocomplete="email" placeholder="toi@exemple.fr" data-caisse-email>
     <label class="consent"><input type="checkbox" data-caisse-consentement><span>Je demande que mon accès soit ouvert tout de suite, et je reconnais qu'une fois ouvert je ne peux plus me rétracter.</span></label>
-    <p><button class="btn btn-primaire" id="payer-paypal" type="button" data-caisse data-produit="etudiant-ia" data-secours="https://paypal.me/kdmc/27EUR">Payer 27 € avec PayPal</button></p>
-    <p class="petit" data-caisse-avis hidden></p>
-    <p><a class="btn btn-secondaire" id="payer-revolut" href="https://revolut.me/kdmc/27eur" rel="noopener" target="_blank">Payer 27 € avec Revolut</a></p>
-    <p class="petit">Après le paiement, PayPal te ramène ici et ton code s'affiche tout de suite (il part aussi par e-mail). Si quelque chose coince, le formulaire juste en dessous te le renvoie avec la même adresse e-mail.</p>
+    <p><button class="btn btn-primaire" id="payer-paypal" type="button" data-caisse data-moyen="paypal" data-produit="etudiant-ia" data-secours="https://paypal.me/kdmc/27EUR">Payer 27 € avec PayPal</button></p>
+    <p><button class="btn btn-secondaire" id="payer-revolut" type="button" data-caisse data-moyen="revolut" data-produit="etudiant-ia" data-secours="https://revolut.me/kdmc/27eur">Payer 27 € avec Revolut</button></p>
+    <p data-moyen-virement hidden><button class="btn btn-secondaire" id="payer-virement" type="button" data-caisse data-moyen="virement" data-produit="etudiant-ia">Payer 27 € par virement</button></p>
+    <div class="petit" data-caisse-avis hidden></div>
+    <p class="petit">Quand tu touches &laquo;&nbsp;Payer&nbsp;&raquo;, une référence s'affiche ici&nbsp;: recopie-la dans le message PayPal. Ton code part par e-mail dès que le paiement est constaté, au plus tard sous 24&nbsp;h ouvrées &mdash; on préfère le dire plutôt que promettre l'instantané. Rien reçu&nbsp;? Le formulaire juste en dessous te le renvoie.</p>
   </div>
 
   <div class="carte" id="recuperer">
@@ -76,6 +77,9 @@
       <label for="email">Ton adresse e-mail</label>
       <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="toi@exemple.fr" required>
       <p class="aide" id="aideEmail"></p>
+      <label for="refPanier">Ta référence de panier</label>
+      <input id="refPanier" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="K7X2M4QP">
+      <p class="aide">Elle s'affiche quand tu touches &laquo;&nbsp;Payer&nbsp;&raquo; et se remplit toute seule ici. Avec elle, ton paiement est retrouvé tout de suite&nbsp;; sans elle, on cherche par e-mail.</p>
       <div id="champRef" hidden>
         <label for="reference">Référence du virement</label>
         <input id="reference" type="text" placeholder="ce que tu as mis en libellé">
