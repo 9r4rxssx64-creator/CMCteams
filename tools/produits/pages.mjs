@@ -78,6 +78,7 @@ ${modules}
     <p><button class="btn btn-secondaire" id="payer-revolut" type="button" data-caisse data-moyen="revolut" data-produit="${p.id}" data-secours="https://revolut.me/kdmc/${p.prix}eur">Payer ${prix} avec Revolut</button></p>
     <p data-moyen-virement hidden><button class="btn btn-secondaire" id="payer-virement" type="button" data-caisse data-moyen="virement" data-produit="${p.id}">Payer ${prix} par virement</button></p>
     <div class="petit" data-caisse-avis hidden></div>
+    <noscript><p class="petit">Ton navigateur n'exécute pas JavaScript. Tu peux payer directement&nbsp;: <a href="https://paypal.me/kdmc/${p.prix}EUR" rel="noopener">PayPal ${prix}</a> &middot; <a href="https://revolut.me/kdmc/${p.prix}eur" rel="noopener">Revolut ${prix}</a>. Mets ton adresse e-mail dans le message, puis écris-nous à <a href="mailto:kevind@monaco.mc">kevind@monaco.mc</a>&nbsp;: on t'ouvre l'accès à la main.</p></noscript>
     <p class="petit">Quand tu touches &laquo;&nbsp;Payer&nbsp;&raquo;, une référence s'affiche ici&nbsp;: recopie-la dans le message PayPal. Ton code part par e-mail dès que le paiement est constaté, au plus tard sous 24&nbsp;h ouvrées &mdash; on préfère le dire plutôt que promettre l'instantané. Rien reçu&nbsp;? Le formulaire juste en dessous te le renvoie.</p>
   </div>
 

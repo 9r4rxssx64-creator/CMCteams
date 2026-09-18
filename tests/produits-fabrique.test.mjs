@@ -205,6 +205,15 @@ test('pages de vente : à jour sur le catalogue, CSP identique à la page mère,
       assert.equal(c[1], p.id, p.slug + ' : le bouton ' + moyen + ' est branché sur le mauvais produit');
     }
     assert.ok(/<p data-moyen-virement hidden>/.test(html), p.slug + ' : le virement s\'affiche sans qu\'on sache si l\'IBAN existe');
+    /* Sans JavaScript, un <button> est inerte : l'acheteur resterait devant une
+       page morte. Avant le 18.09 le lien Revolut était un <a> qui marchait tout
+       seul — cette régression est rattrapée par un <noscript> qui donne les deux
+       liens directs au bon montant. */
+    const ns = html.match(/<noscript>([\s\S]*?)<\/noscript>/);
+    assert.ok(ns, p.slug + ' : rien pour payer si JavaScript ne tourne pas');
+    assert.ok(ns[1].includes('paypal.me/kdmc/' + p.prix + 'EUR'), p.slug + ' : noscript sans lien PayPal au bon montant');
+    assert.ok(ns[1].includes('revolut.me/kdmc/' + p.prix + 'eur'), p.slug + ' : noscript sans lien Revolut au bon montant');
+    assert.ok(ns[1].includes('kevind@monaco.mc'), p.slug + ' : noscript sans moyen de nous joindre après paiement');
     assert.ok(/data-caisse-email/.test(html) && /data-caisse-consentement/.test(html), p.slug + ' : on peut payer sans e-mail ni consentement');
     assert.ok(html.includes('<option value="' + p.id + '">'), p.slug + ' : formulaire de récupération sans le produit');
     assert.ok(html.includes('lire.html?produit=' + p.id));
