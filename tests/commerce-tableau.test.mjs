@@ -131,6 +131,28 @@ test('posts-liens Facebook : la tuile existe, dit ce qu\'elle attend quand c\'es
   assert.ok(C.rendu(data, null, null).includes('posts avec lien'), 'section jamais montée dans la page (code mort)');
 });
 
+test('paniers ouverts : la tuile dit le vide, montre qui dit avoir payé, échappe le HTML', () => {
+  /* Kevin encaisse sur son PayPal PERSONNEL (18.09) : rien ne capture le
+     paiement à sa place, donc c'est ici — et nulle part ailleurs — qu'il voit
+     qui a voulu acheter. Une tuile absente = des acheteurs invisibles. */
+  assert.ok(C.sectionPaniers({ intentions: { n: 0, dit_paye: 0, ca_potentiel: 0, liste: [] } }).includes('Aucun panier ouvert'),
+    'vide : dire ce que c\'est, pas un blanc');
+  const un = { intentions: { n: 2, dit_paye: 1, ca_potentiel: 64, liste: [
+    { ref: 'K7X2M4QP', produit: 'kit-ia', email: 'a@b.fr', montant: 47, devise: 'EUR', etat: 'dit_paye', heures: 2, ts_iso: '2026-09-18T10:00:00.000Z' },
+    { ref: 'K9Q3', produit: 'avis-ia', email: 'c@d.fr', montant: 17, devise: 'EUR', etat: 'intention', heures: 5, ts_iso: '2026-09-18T07:00:00.000Z' },
+  ] } };
+  const h = C.sectionPaniers(un);
+  assert.ok(h.includes('K7X2M4QP') && h.includes('a@b.fr'), 'la référence et l\'e-mail doivent être lisibles : c\'est avec ça que Kevin livre');
+  assert.ok(h.includes('dit avoir payé') && h.includes('à livrer'), 'celui qui a payé doit sauter aux yeux');
+  assert.ok(!C.sectionPaniers({ intentions: { n: 1, dit_paye: 0, ca_potentiel: 1, liste: [{ ref: '<img src=x onerror=alert(1)>', produit: 'x', email: 'y', montant: 1, heures: 0, ts_iso: '' }] } }).includes('<img src=x'),
+    'donnée client non échappée dans la page admin');
+  /* Montée dans la page, sinon c'est du code mort (erreur #28). */
+  assert.ok(C.rendu(data, { ...LIVE, intentions: un.intentions }, null).includes('Paniers ouverts'), 'tuile jamais montée dans la page');
+  /* Caisse muette : pas de tuile, mais pas de plantage non plus. */
+  assert.equal(C.sectionPaniers(null), '');
+  assert.equal(C.sectionPaniers({}), '');
+});
+
 /* Sabotages faits le 17.09 pour prouver que la garde mord :
    - retirer 'audit-live.yml' de WORKFLOWS_ATTENDUS → test « MÊMES côté caisse » échoue
    - changer prix immo-ia à 66 dans commerce-data.json → 2 échecs (verifier + prix)

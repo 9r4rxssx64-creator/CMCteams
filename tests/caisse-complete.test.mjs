@@ -124,3 +124,78 @@ test('deux produits ne peuvent pas avoir le même prix (le webhook les distingue
   const prix = [...worker.matchAll(/prix: (\d+), devise: '([A-Z]{3})'/g)].map((m) => m[1] + m[2]);
   assert.equal(new Set(prix).size, prix.length, 'deux produits au même prix : ' + prix.join(', '));
 });
+
+/* ── PAYPAL PERSO (Kevin 2026-09-18 « Pour l'instant utilise mon PayPal comme ça.
+   perso ») ────────────────────────────────────────────────────────────────────
+   Sans clés PayPal il n'y a PAS de capture automatique : le lien paypal.me est le
+   chemin réel. Son trou : on ouvrait un onglet et on ne savait plus rien — ni qui,
+   ni quoi, ni où le joindre. Ces gardes vérifient que le panier est enregistré
+   AVANT d'ouvrir PayPal, et qu'il ressort là où Kevin regarde. */
+
+test('le lien paypal.me porte le montant du CATALOGUE, jamais un montant reçu', async () => {
+  const { lienPaypalMe, PAYPAL_ME } = await import('../services/kdmc-vente/worker.js');
+  assert.equal(lienPaypalMe({ prix: 47, devise: 'EUR' }), PAYPAL_ME + '/47EUR');
+  assert.equal(lienPaypalMe({ prix: 17, devise: 'EUR' }), PAYPAL_ME + '/17EUR');
+  /* Un prix absurde ne doit jamais fabriquer une URL absurde (…/NaNEUR) : on
+     retombe sur le lien nu, l'acheteur saisit le montant lui-même. */
+  assert.equal(lienPaypalMe({ prix: 'gratuit', devise: 'EUR' }), PAYPAL_ME);
+  assert.equal(lienPaypalMe({ prix: 0, devise: 'EUR' }), PAYPAL_ME);
+});
+
+test('les paniers ouverts remontent à Kevin, les livrés n\'y sont plus', async () => {
+  const { resumeIntentions } = await import('../services/kdmc-vente/worker.js');
+  const t = Date.UTC(2026, 8, 18, 12, 0, 0);
+  const r = resumeIntentions([
+    { ref: 'K1', produit: 'kit-ia', email: 'a@b.fr', montant: 47, devise: 'EUR', etat: 'intention', ts: t - 2 * 36e5, ts_iso: 'x' },
+    { ref: 'K2', produit: 'avis-ia', email: 'c@d.fr', montant: 17, devise: 'EUR', etat: 'dit_paye', ts: t - 36e5, ts_iso: 'y' },
+    { ref: 'K3', produit: 'kit-ia', email: 'e@f.fr', montant: 47, devise: 'EUR', etat: 'livre', ts: t, ts_iso: 'z' },
+  ], t);
+  assert.equal(r.n, 2, 'un panier LIVRÉ est une vente, pas un panier en attente');
+  assert.equal(r.dit_paye, 1, 'ceux qui disent avoir payé doivent ressortir');
+  assert.equal(r.ca_potentiel, 64, '47 + 17 : ce que Kevin peut encore encaisser');
+  assert.equal(r.liste[0].ref, 'K2', 'le plus récent en premier');
+  assert.equal(r.liste[0].heures, 1, 'l\'âge du panier doit être lisible');
+  assert.equal(r.liste.filter((x) => x.ref === 'K3').length, 0);
+  /* Robustesse : une ligne illisible ne doit pas casser le tableau de bord. */
+  assert.equal(resumeIntentions([null, undefined, {}], t).n, 0);
+  assert.equal(resumeIntentions(null, t).n, 0);
+});
+
+test('le panier est enregistré AVANT PayPal, sans aucune clé', () => {
+  assert.match(worker, /p === '\/caisse\/intention' && req\.method === 'POST'/, 'route d\'intention absente');
+  const bloc = worker.slice(worker.indexOf("p === '/caisse/intention'"), worker.indexOf("p === '/caisse/capture'"));
+  assert.ok(!/PAYPAL_CLIENT_ID/.test(bloc), 'l\'intention exige une clé PayPal : elle ne servirait à rien aujourd\'hui');
+  for (const champ of ['email', 'consentement', 'montant: produit.prix', "etat: 'intention'"]) {
+    assert.ok(bloc.includes(champ), 'le panier n\'enregistre pas ' + champ);
+  }
+  /* Kevin doit les voir : sinon on enregistre dans le vide. */
+  assert.match(worker, /intentions,/, 'les paniers ne remontent pas au tableau de bord');
+});
+
+test('« J\'ai payé » relie le paiement au panier, et le panier se ferme à la livraison', () => {
+  /* La référence porte déjà produit + e-mail + consentement : l'acheteur ne
+     retape rien, et Kevin livre en connaissance de cause. */
+  assert.match(worker, /const refInt = String\(b\.ref \|\| ''\)/, '/reclamer n\'accepte pas la référence de panier');
+  assert.match(worker, /reference_inconnue/, 'une référence inventée doit être refusée');
+  assert.match(worker, /intention\.etat = 'dit_paye'/, 'le panier ne change pas d\'état quand l\'acheteur dit avoir payé');
+  assert.match(worker, /consentement: intention \? intention\.consentement : null/, 'le consentement ne voyage pas avec la demande');
+  const valider = worker.slice(worker.indexOf("p === '/admin/valider'"), worker.indexOf("p === '/admin/tableau'"));
+  assert.ok(/c\.etat = 'livre'/.test(valider), 'un panier livré à la main resterait « en attente » dans le tableau de bord');
+});
+
+test('la page enregistre le panier puis ouvre PayPal, et la référence survit à l\'aller-retour', () => {
+  assert.match(kitjs, /\/caisse\/intention/, 'la page n\'enregistre pas le panier');
+  const bloc = kitjs.slice(kitjs.indexOf('function panierPuisPaypal'), kitjs.indexOf('function ouvreCaisse'));
+  /* L'oubli qui coûterait cher : ouvrir PayPal sans mémoriser la référence. Au
+     retour, le champ serait vide et l'acheteur devrait la retaper de tête. */
+  assert.ok(bloc.includes('ecrisRef(d.ref)'), 'la référence n\'est pas mémorisée avant d\'ouvrir PayPal');
+  assert.ok(bloc.includes('window.open'), 'PayPal ne s\'ouvre pas');
+  assert.match(kitjs, /refPanier\.value = lisRef\(\)/, 'la référence n\'est pas rendue à l\'acheteur au retour');
+  assert.match(kitjs, /ref: \(\$\('refPanier'\)/, 'le formulaire « j\'ai payé » n\'envoie pas la référence');
+  /* Le montant affiché vient du serveur : data-secours n'est qu'un dernier filet. */
+  assert.match(kitjs, /d\.lien \|\| btn\.getAttribute\('data-secours'\)/, 'la page préfère son propre lien au lien du serveur');
+  for (const f of VENTE) {
+    const h = lit('shops/kit-ia/' + f + '.html');
+    assert.match(h, /id="refPanier"/, f + '.html : pas de champ pour la référence de panier');
+  }
+});
