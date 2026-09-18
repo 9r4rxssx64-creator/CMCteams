@@ -7,6 +7,30 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 18/09/2026 21:00 UTC
+
+- **Branche** : `claude/suivi-domaine-suite` · **Commit** : `c17fd06b` · **Run** : `35393318295`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35393318295
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3917 — merge auto refusé. Cause exacte ci-dessous.
+GraphQL: refusing to allow a GitHub App to create or update workflow `.github/workflows/publier-site-prive.yml` without `workflows` permission (mergePullRequest)
+[claude/suivi-domaine-suite 09172dde4] diag: pourquoi l'auto-merge de claude/suivi-domaine-suite est refusé [skip ci]
+ ! [remote rejected]     HEAD -> claude/suivi-domaine-suite (refusing to allow a GitHub App to create or update workflow `.github/workflows/publier-site-prive.yml` without `workflows` permission)
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 18/09/2026 20:53 UTC
 
 - **Branche** : `claude/suivi-domaine-suite` · **Commit** : `d7a760b3` · **Run** : `35393219931`
@@ -446,25 +470,4 @@ pull request create failed: GraphQL: Something went wrong while executing your q
 ^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 16/09/2026 22:16 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `ae13542e` · **Run** : `35155879915`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35155879915
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3826 — merge auto refusé. Cause exacte ci-dessous.
-[claude/video-review-wqnqdw b75824d24] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
-##[error]Process completed with exit code 1.
 ```
