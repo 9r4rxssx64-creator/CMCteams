@@ -1,5 +1,13 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-18 (13h) — v9.906 : plus aucune équipe inventée (suite de la vérification totale)
+- **v9.905 est EN LIGNE et vérifiée sur le vrai domaine** (relevé « voir comme Kevin » run 35347636713, iPhone, connecté) : CMC **Éq.9 = CAMILLERI, DEGIOVANNI, EL MISSOURI, MORTER, SCHWIETZER, SIRIO, TOULET, VOUKASSOVITCH** — TOULET et DEGIOVANNI sont bien avec MORTER et CAMILLERI, comme le PDF. Éq.11 = les 8 du PDF. 36 équipes · 247 personnes · 0 erreur JS · light v1.45 · 0 requête en échec.
+- **Défaut trouvé en creusant un test intermittent** (1 essai sur 3) : l'app rangeait **VERZELLO O** (en CONGÉS au PDF d'octobre) dans une **« Éq.21 » qui n'existe nulle part**, et par moments quelqu'un dans une équipe réelle dont il n'est pas membre. Cause : les passes qui « devinent » les équipes d'après les jours de repos (pour les mois sans PDF) écrivent dans le même champ que les tableaux du PDF.
+- **Fix v9.906, une seule porte** (`_cmcSyncChefsTFromBoards`, là où le PDF fait déjà autorité) : sur un mois qui a son PDF, tout identifiant qui n'est pas un tableau du PDF — ou une équipe de travail dont la personne n'est pas membre — est retiré. Groupes d'absence laissés tranquilles ; mois sans PDF inchangés.
+- **Garde** `npm run test:equipes-inventees` (dans `test:ci`, prouvée par sabotage) : 4 mois, **1028 rangements, 0 incohérent**. Comparatif app ⇄ light : 3 essais sur 3 verts (avant : 2 sur 3).
+- Seed + boards régénérés (parser v9.906). Leçon **#276**.
+
+
 ## 2026-09-18 (00h) — « Il manque TOULET et DEGIOVANNI dans l'équipe 11 » : Kevin avait raison (v9.905 / light v1.45)
 - **Les DONNÉES étaient justes.** Le PDF n'imprime aucun numéro d'équipe : c'est l'ORDRE, et il le donne deux fois (récap p.1 : 6 colonnes × 2 rangées ; grilles p.2+ : blocs de haut en bas). Les deux lectures concordent, et les deux surfaces aussi. En septembre, TOULET F et DEGIOVANNI R sont dans le bloc n°9 = **CMC Éq.9**, avec SCHWIETZER, SIRIO, MORTER, EL MISSOURI, VOUKASSOVITCH, CAMILLERI. Cellules : **30 814/30 814 identiques au PDF** sur 4 mois, des deux côtés.
 - **Ce que Kevin VOYAIT** venait de `emp.team` (DEF_EMP) : un découpage FIGÉ par tranches de matricules (U00236→U00245 = « c11 »). MORTER/CAMILLERI y sont « c11 », TOULET/DEGIOVANNI « c12 » → « il manque TOULET et DEGIOVANNI ». **Mesuré : 36/36 équipes fausses** dans la vue Équipes (sept. 2026).
