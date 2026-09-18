@@ -62,6 +62,7 @@ const APPS = [
   { chemin: 'lingua', quoi: 'lingua' },
   { chemin: 'shops/dashboard', quoi: 'dashboard' },
   { chemin: 'shops/sourcing', quoi: 'sourcing' },
+  { chemin: 'dossiers', quoi: 'dossiers (archive Epstein : index des sources officielles)' },  // 18.09 — 5e endroit obligatoire, sinon GitHub eteint = 404
   /* 11/09/2026 — la parité avec ROUTES échouait (6 entrées) depuis que ces routes existent :
      personne ne l'avait relancée. tools/cuisine = cujina/cocina/cuisine.kd-mc.com. */
   { chemin: 'tools/cuisine', quoi: 'cuisine (A Cüjina de Mùnegu)' },

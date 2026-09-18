@@ -42,6 +42,28 @@ export const CARTE_MIN = 2.2;   // une carte ne dure jamais moins (lisible)
 export const CARTE_MUETTE = 3.2;
 
 export function lireScripts(url = SCRIPTS) { return JSON.parse(readFileSync(url, 'utf8')); }
+export const SCRIPTS_METIERS = new URL('./metiers.json', import.meta.url);
+/* Le catalogue COMPLET : les scripts écrits à la main + les 233 « métier × tâche »
+   fabriqués par metiers-videos.mjs (18.09, niche choisie sur des chiffres réels).
+   Les deux sources passent la MÊME porte de vérité. En cas d'identifiant commun,
+   l'écrit à la main gagne : c'est lui qu'un humain a relu.
+   Fichier métiers absent → on continue avec les scripts à la main (fail-open :
+   un catalogue supplémentaire ne doit jamais empêcher de rendre une vidéo). */
+export function fusionne(base, metiers) {
+  /* PURE, donc testable en l'EXÉCUTANT avec une collision forcée — aujourd'hui
+     les identifiants ne se croisent pas (avis-01 vs devis-01), donc une garde
+     qui se contente de relire le catalogue réel ne prouverait RIEN (mesuré :
+     sabotage inerte). Le jour où une famille de métier s'appellerait « kit », un
+     MP4 en écraserait un autre sans un bruit. */
+  const vus = new Set((base.videos || []).map((v) => v.id));
+  const ajout = (metiers && metiers.videos || []).filter((v) => !vus.has(v.id));
+  return { ...base, videos: [...(base.videos || []), ...ajout] };
+}
+export function catalogue() {
+  let metiers = { videos: [] };
+  try { metiers = JSON.parse(readFileSync(SCRIPTS_METIERS, 'utf8')); } catch (_) { /* pas encore fabriqué */ }
+  return fusionne(lireScripts(), metiers);
+}
 
 /* ── Vérité du script (avant tout rendu) ─────────────────────────────────── */
 export const SANS_ACCENT = /\b(ca|deja|prepare[sz]?|reponses?|telephone|precise?s?|tres|apres|ecrite?s?|reunions?|systeme|probleme|premiere|derniere|verifie[sz]?|numero|equipe|meme|etre|ete|prete?s?|regles?|genere|cree[sz]?|creer|resume|releve|decris|realise)\b/gi;
@@ -216,7 +238,7 @@ export async function rendVideo(v, { marque, dossier, log }) {
 }
 
 export async function principal(env = process.env, log = console.log) {
-  const s = lireScripts();
+  const s = catalogue();
   const connus = produitsConnus();
   const mauvais = s.videos.map((v) => ({ v, r: valideScript(v, { produits: connus }) })).filter((x) => !x.r.ok);
   if (mauvais.length) throw new Error('scripts refusés : ' + mauvais.map((x) => x.v.id + ' (' + x.r.erreurs.join(' ; ') + ')').join(' · '));

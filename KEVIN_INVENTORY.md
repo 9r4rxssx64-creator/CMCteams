@@ -2698,3 +2698,33 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 **Commandes ajoutées** : `npm run bilan` · `npm run bilan:court` ·
 `node tools/pipeline/pipeline.mjs suivi --id <mNNN> --action "…"` (posait problème : elle
 n'existait pas, d'où 61 messages en retard).
+
+## 🗂️ Archive Epstein — dossiers.kd-mc.com (2026-09-18)
+
+Index des **sources officielles** de l'affaire Epstein. **Aucun document n'est hébergé** : chaque
+fiche renvoie vers l'institution qui l'a publiée (commission Oversight, ministère de la Justice
+américain, greffes via CourtListener). Ni photo de victime, ni « photo privée » — les éditeurs
+officiels les retirent eux-mêmes avant publication.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/dossiers/sources.json` | Le catalogue : 7 collections officielles, titre, institution, nombre de pages, lien d'origine | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/dossiers/sources.json) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/dossiers/sources.json) |
+| `tools/dossiers/page.mjs` | Fabrique la page depuis le catalogue (`node tools/dossiers/page.mjs`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/dossiers/page.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/dossiers/page.mjs) |
+| `dossiers/index.html` | La page publiée (générée — ne pas éditer à la main) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/dossiers/index.html) | — |
+| `dossiers/dossiers.css` · `dossiers.js` | Style iPhone + recherche instantanée (générés) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/dossiers) | — |
+| `tests/dossiers.test.mjs` | La garde : sources officielles seulement, aucune image, liens en `nofollow`, total mesuré | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/dossiers.test.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/dossiers.test.mjs) |
+| `.github/workflows/dossiers-liens.yml` | Pingue chaque source depuis la CI (l'agent n'a pas le réseau) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/dossiers-liens.yml) | [▶️ Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/dossiers-liens.yml) |
+
+**La page en ligne :** [dossiers.kd-mc.com](https://dossiers.kd-mc.com/)
+
+## 🎬 Machine à vidéos — niche « IA au travail » (2026-09-18)
+
+233 vidéos prêtes, une par situation réelle de métier, chacune renvoyant vers la page de ce métier.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/metiers-videos.mjs` | Fabrique les scripts depuis les 47 métiers (`npm run pub:metiers`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/metiers-videos.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/metiers-videos.mjs) |
+| `tools/pub/metiers.json` | Les 233 scripts (généré — ne pas éditer à la main) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/metiers.json) | — |
+| `tests/metiers-videos.test.mjs` | La garde : porte de vérité + **variété** (anti-démonétisation) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/metiers-videos.test.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/metiers-videos.test.mjs) |
+
+**▶️ Lancer un lot :** [Pub — vidéos et posts-liens](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) — champ `videos` : `devis-01,devis-02,relance-01…`
