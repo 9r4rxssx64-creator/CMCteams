@@ -39,6 +39,15 @@ export class ConversationDO {
     });
   }
 
+  /** Politique e2e_strict (system_config.FEATURE_E2E_STRICT), rechargée au plus toutes les 60 s. */
+  async e2eStrict() {
+    try {
+      if (!this._configTs || Date.now() - this._configTs > 60000) { this.config = await this.loadConfig(); this._configTs = Date.now(); }
+      const v = this.config && this.config.FEATURE_E2E_STRICT;
+      return v === 'true' || v === '1';
+    } catch (_) { return false; }
+  }
+
   async loadConfig() {
     try {
       const stmt = await this.env.APEX_CHAT_DB.prepare('SELECT key, value FROM system_config').all();
@@ -291,7 +300,7 @@ export class ConversationDO {
       }
     });
 
-    server.addEventListener('close', () => {
+    server.addEventListener('close', async () => {
       const session = this.sessions.get(server);
       this.sessions.delete(server);
       if (session) {
@@ -304,6 +313,9 @@ export class ConversationDO {
           ts: Date.now()
         });
       }
+      // Audit 17/09/2026 (P1) : une fermeture (app tuée, réseau coupé) rend durable ce qui a
+      // été acquitté — sinon l'éviction du DO peut suivre et emporter le buffer.
+      try { await this.flushToD1(); } catch (_) { /* journalisé + re-queue dans flushToD1 */ }
     });
 
     return new Response(null, { status: 101, webSocket: client });
@@ -332,6 +344,11 @@ export class ConversationDO {
         // Nouveau message chiffré (ciphertext)
         if (!msg.ciphertext) return ws.send(JSON.stringify({ type: 'error', message: 'ciphertext required' }));
         if (msg.ciphertext.length > 100000) return ws.send(JSON.stringify({ type: 'error', message: 'ciphertext too large (max 100KB)' }));
+        // Audit 17/09/2026 (P1) : l'interrupteur admin « e2e_strict » n'était lu nulle part.
+        // Quand il est ON, un message non chiffré de bout en bout (préfixe E2E1:/E2E2:) est refusé.
+        if (await this.e2eStrict() && !/^E2E\d+:/.test(String(msg.ciphertext))) {
+          return ws.send(JSON.stringify({ type: 'error', code: 'e2e_required', message: 'Chiffrement de bout en bout obligatoire : la clé de ton contact doit être établie avant d\'envoyer' }));
+        }
 
         // P0 FIX (audit) : utiliser blockConcurrencyWhile pour seq atomic
         await this.state.blockConcurrencyWhile(async () => {
@@ -357,6 +374,11 @@ export class ConversationDO {
         };
 
         this.pendingMessages.push(messageRecord);
+        // Audit 17/09/2026 (P1) : le buffer n'était vidé qu'au 10e message ou au message
+        // SUIVANT après 5 s — jamais par une alarme (alarm() existait, setAlarm n'était
+        // appelé nulle part) ni à la fermeture. Un DO évincé emportait jusqu'à 9 messages
+        // déjà ACQUITTÉS au client. L'alarme garantit un flush ≤ 5 s après le dernier message.
+        this._armFlushAlarm();
 
         // Fan-out aux AUTRES clients (pas au sender — il reçoit déjà son ack
         // et a déjà affiché le message localement → évite le doublon).
@@ -704,6 +726,17 @@ export class ConversationDO {
     }
   }
 
+  /** Programme une alarme 5 s (idempotent, best-effort : un mock sans setAlarm ne casse rien). */
+  _armFlushAlarm() {
+    try {
+      const st = this.state && this.state.storage;
+      if (st && typeof st.setAlarm === 'function') {
+        const p = st.setAlarm(Date.now() + 5000);
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      }
+    } catch (_) { /* best-effort */ }
+  }
+
   async flushToD1() {
     if (this.pendingMessages.length === 0) return;
 
@@ -742,8 +775,10 @@ export class ConversationDO {
   }
 
   async alarm() {
-    // Hibernation alarm — flush si pending
+    // Alarme armée par _armFlushAlarm() à chaque message : flush ≤ 5 s après le dernier.
     await this.flushToD1();
+    // Si le flush a échoué (re-queue), on réessaie plus tard plutôt que d'attendre le message suivant.
+    if (this.pendingMessages.length > 0) this._armFlushAlarm();
   }
 }
 

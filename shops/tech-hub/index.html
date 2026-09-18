@@ -310,15 +310,15 @@ cf.innerHTML='<div class="cart-total"><span>Total</span><span class="amount">'+f
 +'<button class="btn-checkout" onclick="showPayment('+total+')">💳 Commander — '+fmtP(total)+'"</button>'}
 function nlSub(){var e=document.getElementById("nlEmail");if(!e||e.value.indexOf("@")<1)return toast("Email invalide","error");
 var email=e.value;
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_newsletter",{to_email:email,store:STORE_NAME,message:"Nouvel abonné newsletter "+STORE_NAME}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:email,name:STORE_NAME,from_name:STORE_NAME,title:"Newsletter "+STORE_NAME,store:STORE_NAME,message:"Nouvel abonné newsletter "+STORE_NAME+" : "+email,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
 e.value=""}
 /* INIT */
 function sendContact(){
 var name=document.querySelector('[type=text]');var email=document.querySelector('[type=email]');var msg=document.querySelector('textarea');
 if(!name||!email||!msg||!email.value)return toast("Remplissez tous les champs","error");
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_contact",{from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{reply_to:email.value,name:name.value,email:email.value,from_name:name.value,from_email:email.value,title:"Message contact "+STORE_NAME,message:msg.value,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
 function notifyPayment(total){
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_318elaz","template_payment",{store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),timestamp:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{name:STORE_NAME+" — Paiement",from_name:STORE_NAME,title:"Paiement initié "+STORE_NAME,message:"Paiement initié "+STORE_NAME+" — "+fmtP(total)+"\n"+S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),time:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
 function showPayment(total){
 var m=document.createElement("div");m.id="payModal";
 m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
@@ -380,8 +380,9 @@ items.forEach(function(i){decrementStock(i.id)});
 
 /* Email confirmation client + notif Kevin */
 if(typeof emailjs!=="undefined"){
-emailjs.init("nUsorWTtC");
-emailjs.send("service_318elaz","template_order_confirm",{
+emailjs.init("nUso3vcsGadvrWTtC");
+emailjs.send("service_4s16z8l","template_fzva9uf",{
+name:STORE_NAME+" — Commande",from_name:STORE_NAME,title:"Commande "+orderId+" — "+STORE_NAME,message:"Commande "+orderId+" — "+STORE_NAME+" — "+fmtP(total)+" ("+method+")\n"+items.map(function(i){return i.name+" x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),time:new Date().toLocaleString("fr-FR"),
 order_id:orderId,store:STORE_NAME,total:fmtP(total),method:method,
 items:items.map(function(i){return i.name+" x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
 timestamp:new Date().toLocaleString("fr-FR")

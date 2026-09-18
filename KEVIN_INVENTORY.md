@@ -1,7 +1,291 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+## 🔗 Facebook — aperçu des liens + posts-liens — 2026-09-17
+
+Sans image d'aperçu, un lien partagé est un rectangle gris. Les 6 pages du Kit en ont une maintenant.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/produits/apercus.mjs` | Fabrique les 6 images 1200×630 (charte du Kit) et pose les balises dans les pages (`npm run apercus`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/apercus.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/apercus.mjs) |
+| `shops/kit-ia/og/*.png` | Les images servies à Facebook, WhatsApp, LinkedIn | [voir le dossier](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/kit-ia/og) | — |
+| `tools/pub/liens.mjs` | Le post AVEC LIEN de la Page Facebook : texte, rotation des pages, créneau | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/liens.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/liens.mjs) |
+| `tests/apercus-liens.test.mjs` | Garde (dans test:ci) : image présente, 1200×630, balises justes | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/apercus-liens.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/apercus-liens.test.mjs) |
+
+## 🤖 Chaîne pub AUTONOME — scripts IA → rendu → release → Metricool → mémoire — 2026-09-17
+
+Chaque lundi 08:00 UTC, la routine « Pub — vidéos de la semaine » fait tout, seule (Kevin 17.09 « tout automatique et autonome »).
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/nouveaux.mjs` | L'IA écrit de nouveaux scripts (cible réelle du produit), porte de vérité identique aux scripts à la main, 3 essais sinon niche sautée | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/nouveaux.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/nouveaux.mjs) |
+| `tools/pub/programmation.mjs` | Mémoire Metricool par script : `--plan` (créneaux libres), `--prepare` (ce que la routine programme), `--ajoute` (enregistre les posts, refuse les doublons) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/programmation.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/programmation.mjs) |
+| `.github/workflows/pub-videos.yml` | Un seul workflow, 3 modes : `videos` / `nouveaux` (écriture + rendu + release + PR) / `programmer` (mémoire + tableau de bord) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/pub-videos.yml) | [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) |
+| `tests/pub-nouveaux.test.mjs` | Garde (9 contrôles, faux modèle) dans test:ci | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/pub-nouveaux.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/pub-nouveaux.test.mjs) |
+
+## 🛒 Tableau de bord Commerce — dans l'admin du domaine — 2026-09-17
+
+Tout ce qui a été construit pour vendre, en tuiles, avec les vrais chiffres de la caisse : **[ouvrir le tableau de bord](https://kd-mc.com/admin/commerce.html)** (Face ID, compte Kevin). Tuile « 🛒 Commerce » ajoutée dans [l'admin du domaine](https://kd-mc.com/admin/).
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `kdmc-home/admin/commerce.html` | La page (tuiles, CSP ouverte vers la caisse) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/admin/commerce.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/kdmc-home/admin/commerce.html) |
+| `kdmc-home/admin/commerce.js` | La logique : verrou SSO (admin + Face ID), lecture caisse en Bearer, Livrer/Refuser, Lancer, rendu — logique pure testée hors navigateur | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/admin/commerce.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/kdmc-home/admin/commerce.js) |
+| `kdmc-home/admin/commerce-data.json` | GÉNÉRÉ (ne pas éditer) : produits, pages, vidéos, planning Metricool, relevés marché avec sources | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/kdmc-home/admin/commerce-data.json) | — |
+| `tools/produits/tableau-de-bord.mjs` | Le générateur (`npm run commerce:data`, `--verifier` en CI) — une source pour chaque chose | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/tableau-de-bord.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/tableau-de-bord.mjs) |
+| `tools/pub/programmation.json` | Mémoire publique des 12 posts Metricool (ids + créneaux, aucune clé) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/programmation.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/programmation.json) |
+| `services/kdmc-vente/worker.js` | Caisse : nouvelles routes `GET /admin/tableau` (ventes, file, Club, contenu, sondes de livraison, workflows) et `POST /admin/lancer` (5 workflows, liste fermée) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
+| `tests/commerce-tableau.test.mjs` | Garde : JSON = sources, prix = caisse, workflows identiques, marché sourcé, rendu sûr (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/commerce-tableau.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/commerce-tableau.test.mjs) |
+| `tests/verify-commerce-tableau-reel.mjs` | Preuve en vrai navigateur 375 px : 20 contrôles (verrou, tuiles, Bearer, Livrer, panne, 44 px) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-commerce-tableau-reel.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/verify-commerce-tableau-reel.mjs) |
+## 💬 Apex Chat v1.1.290 — audit « stable et commercialisable » — 2026-09-17
+
+| Fichier | Ce que c'est | Liens |
+|---|---|---|
+| `messaging-app/sw.js (v1.1.290)` | Service Worker **module** — il tournait en repli sans cache ni notification depuis des mois | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/sw.js) |
+| `messaging-app/tests/unit/sw-module.test.js` | **NOUVEAU** — garde : SW module, 0 import() dynamique, versions alignées | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/sw-module.test.js) |
+| `messaging-app/tests/unit/api-routes-front-vs-worker.test.js` | **NOUVEAU** — chaque route /api appelée par la page existe dans le worker (2 étaient en 404) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-routes-front-vs-worker.test.js) |
+| `messaging-app/tests/unit/no-duplicate-definitions.test.js` | **NOUVEAU** — aucune fonction définie deux fois (K._doTranslate l'était) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/no-duplicate-definitions.test.js) |
+| `messaging-app/tests/unit/api-worker-bad-json.test.js` | **NOUVEAU** — JSON invalide = 400, jamais 500 ni télémétrie (14 routes) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/api-worker-bad-json.test.js) |
+| `messaging-app/tests/unit/conversation-do-durabilite.test.js` | **NOUVEAU** — aucun message acquitté ne se perd (alarme, fermeture, panne) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/conversation-do-durabilite.test.js) |
+| `messaging-app/tests/unit/conversation-do-rappels-erreur.test.js` | **NOUVEAU** — les 6 rappels d'erreur « best-effort » du DO sont réellement déclenchés (cliquet 100 % fonctions) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/conversation-do-rappels-erreur.test.js) |
+| `messaging-app/tests/e2e/retour-modale-et-effacement.spec.js` | **NOUVEAU** — vrai navigateur : Retour ferme bien les modales, effacement IndexedDB attendu, plus de tempête de télémétrie | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/e2e/retour-modale-et-effacement.spec.js) |
+| `.gitleaksignore` | **NOUVEAU** — faux positifs Gitleaks confirmés à la main (1 entrée, justifiée) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.gitleaksignore) |
+| `audit/apex-chat/annexes/2026-09-17-ameliorations-ux-ui.md` | **NOUVEAU** — audit UX/UI mesuré en vrai navigateur (110 vues, 3 largeurs, backlog P0→P3, top 10) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/annexes/2026-09-17-ameliorations-ux-ui.md) |
+| `audit/apex-chat/annexes/2026-09-17-ameliorations-code-archi.md` | **NOUVEAU** — passe améliorations code/archi/perf/tests chiffrée (backlog, top 10, config ESLint) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/annexes/2026-09-17-ameliorations-code-archi.md) |
+| `messaging-app/tools/fonctions-reelles.mjs` | **NOUVEAU** — harnais « toutes les fonctions en réel » : 19 vues + 179 boutons en vrai Chromium, 103 routes du worker, F01…F85 (`npm run test:fonctions-reelles`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tools/fonctions-reelles.mjs) |
+| `audit/apex-chat/06-FONCTIONS-REELLES.md` | **NOUVEAU** — tableau F01…F85 avec verdict réel, boutons par vue, routes, auto-critique | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/06-FONCTIONS-REELLES.md) |
+| `audit/apex-chat/fonctions-reelles.json` | **NOUVEAU** — résultat brut du harnais (régénère le tableau avec `--rapport`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/fonctions-reelles.json) |
+| `messaging-app/tests/unit/csp-connect-src.test.js` | **NOUVEAU** — CSP en liste blanche = exactement les hôtes que le code appelle | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/csp-connect-src.test.js) |
+| `messaging-app/tests/unit/rgpd-et-interrupteurs.test.js` | **NOUVEAU** — suppression de compte, export RGPD, interrupteurs admin réels, e2e_strict appliqué | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tests/unit/rgpd-et-interrupteurs.test.js) |
+| `messaging-app/tools/backup-decrypt.mjs` | **NOUVEAU** — déchiffre une sauvegarde quotidienne (`JWT_SIGN_KEY=… node tools/backup-decrypt.mjs fichier.json.enc`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/tools/backup-decrypt.mjs) |
+| `messaging-app/aide.html` | **NOUVEAU** — page d'aide (installation iPhone, SMS, PIN, nouveau téléphone, Premium, données, assistance) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/aide.html) |
+| `messaging-app/mentions.html` | **NOUVEAU** — mentions légales (éditeur, hébergeurs, contact) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/mentions.html) |
+| `messaging-app/icons/icon-180.png` | **NOUVEAU** — icône iOS PNG (avec 192 et 512) : l'icône d'accueil était une capture grise | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/icons/icon-180.png) |
+| `messaging-app/workers/api-worker.js (v1.1.290)` | DELETE /api/users/me, GET /api/users/me/export, sauvegarde chiffrée, rate limit check-phone, profil sous jeton, médias nosniff, invitations 8 caractères | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/api-worker.js) |
+| `messaging-app/workers/durable-objects/ConversationDO.js` | alarme de flush + flush à la fermeture + e2e_strict appliqué | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/workers/durable-objects/ConversationDO.js) |
+| `messaging-app/index.html (v1.1.290)` | SW module, routes /api corrigées, toasts, en-tête, retour iOS, CGU versionnées, suppression de compte, renvoi SMS, signalement, bandeau installation, CSP liste blanche, version par HEAD | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/index.html) |
+| `messaging-app/cgu.html · privacy.html` | cohérentes avec le code (Firebase retiré, effacement immédiat, sous-traitants IA réels), datées 17/09/2026 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/messaging-app/cgu.html) |
+| `.github/workflows/deploy-apex-chat.yml` | numéros en secrets (plus en clair), migrations qui échouent pour de vrai, vérification live après déploiement | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/deploy-apex-chat.yml) |
+| `audit/apex-chat/03-FINDINGS.md` | passe 3 du 17/09 : 20 findings corrigés, 1 P0 domaine (Firebase /apex anonyme) à décider, reste chiffré | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/audit/apex-chat/03-FINDINGS.md) |
+
+Liens utiles : [Apex Chat en ligne](https://apex-chat.kd-mc.com/) · [Aide](https://apex-chat.kd-mc.com/aide.html) · [Runs des tests](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/messaging-app-tests.yml) · [Déploiements du worker](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/deploy-apex-chat.yml) · [Pentest Strix](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/strix-scan.yml)
+
+## 🎬 Machine à vidéos sans visage — 12 pubs pour les 6 produits — 2026-09-17
+
+Des cartes de texte plein écran lues par la voix du domaine, collées par ffmpeg sur le runner, publiées à une adresse publique hors dépôt (release GitHub « pub-videos ») que Metricool va chercher.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/scripts.json` | Les 12 scripts publics (5 cartes, légende, hashtags) — 3 avis, 2 bureau, 2 étudiant, 2 immo, 2 kit, 1 club | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/scripts.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/scripts.json) |
+| `tools/pub/video.mjs` | Le rendu : voix du domaine par carte, ffmpeg, MP4 1080×1920 + fiche .json ; muet si la voix tombe, et il le dit | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/video.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/video.mjs) |
+| Release `pub-videos` (hors dépôt) | Les 12 MP4 publics rendus par le run 35219079657 + `index.json` — [ouvrir](https://github.com/9r4rxssx64-creator/CMCteams/releases/tag/pub-videos) | [avis-01.mp4](https://github.com/9r4rxssx64-creator/CMCteams/releases/download/pub-videos/avis-01.mp4) | — |
+| `.github/workflows/pub-videos.yml` | Le bouton « rendre les vidéos » (artifact) + « publier » (release) — [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/pub-videos.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/pub-videos.yml) |
+| `tests/pub-videos.test.mjs` | La garde : porte de vérité des scripts (8 sabotages), repli du texte, plan, commandes ffmpeg, workflow (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/pub-videos.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/pub-videos.test.mjs) |
+
+## 🏭 Fabrique de produits — 4 nouvelles niches à vendre — 2026-09-17
+
+Un seul moteur écrit un kit complet en base privée à partir d'une fiche publique ; les 4 niches (bureau 37 €, étudiant 27 €, avis clients 17 €, immobilier 67 €) ont chacune leur page sur kit.kd-mc.com et passent par la même caisse et le même lecteur.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/produits/catalogue.json` | Les fiches PUBLIQUES des 4 produits (titres, briefs, prix) — jamais le contenu payant | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/catalogue.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/catalogue.json) |
+| `tools/produits/fabrique.mjs` | Le moteur : rédaction par l'IA, contrôle strict (3 essais), écriture en base D1 | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/fabrique.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/fabrique.mjs) |
+| `tools/produits/pages.mjs` | Génère les 4 pages de vente à partir du catalogue (`--verifier` en CI) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/produits/pages.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/produits/pages.mjs) |
+| `.github/workflows/produit-fabrique.yml` | Le bouton « fabriquer un produit » (à blanc par défaut) — [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/produit-fabrique.yml) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/produit-fabrique.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/produit-fabrique.yml) |
+| `shops/kit-ia/bureau.html` | Page de vente Kit IA au bureau, 37 € — [en ligne](https://kit.kd-mc.com/bureau.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/bureau.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/bureau.html) |
+| `shops/kit-ia/etudiant.html` | Page de vente Kit IA de l'étudiant, 27 € — [en ligne](https://kit.kd-mc.com/etudiant.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/etudiant.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/etudiant.html) |
+| `shops/kit-ia/avis.html` | Page de vente 40 réponses aux avis, 17 € — [en ligne](https://kit.kd-mc.com/avis.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/avis.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/avis.html) |
+| `shops/kit-ia/immo.html` | Page de vente Kit IA de l'agent immobilier, 67 € — [en ligne](https://kit.kd-mc.com/immo.html) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/immo.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/immo.html) |
+| `tests/produits-fabrique.test.mjs` | La garde : porte de vérité discriminante, prix = caisse, pages à jour, vrai navigateur (dans test:ci) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/produits-fabrique.test.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/produits-fabrique.test.mjs) |
+
+## 🐝 Bee dans Lingua — les améliorations sont revenues chez elle — 2026-09-17
+
+**▶️ Essayer (une fois déployé)** : ouvre [lingua.kd-mc.com](https://lingua.kd-mc.com) — touche Bee,
+regarde-la sauter (elle se ramasse, s'étire, s'écrase, rebondit) et cligner des yeux naturellement
+(jamais deux fois pareil, et parfois deux battements coup sur coup).
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`lingua/app.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/app.js) | `beeClinNaturel()` — **un seul** clignement pour les trois Bee (mascotte, accueil, visage du coach) au lieu de trois boucles recopiées |
+| [`lingua/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/lingua/index.html) | Le saut « dessin animé » (`rigJump`) + le regard qui se détourne quand elle réfléchit (`rxPense`) |
+| [`tests/verify-lingua-bee-vivante.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-lingua-bee-vivante.mjs) | **Garde en VRAI navigateur** (dans `test:ci`) : le saut écrase ET étire (-36 px), le regard se détourne, la durée du clignement varie (110-177 ms) et 1 fois sur 5 c'est double — `npm run test:lingua-bee` |
+| [`.github/workflows/bee-gardes.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/.github/workflows/bee-gardes.yml) | **Les 3 gardes de Bee tournent enfin sur GitHub**, à chaque PR qui touche Lingua ou Javis (avant : câblées dans `test:ci`, qui ne tourne dans aucun workflow GitHub — donc jamais exécutées sur une PR) |
+| [`tests/workflows-valides.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/workflows-valides.test.mjs) | **Garde** : aucun de tes 152 workflows ne peut plus être refusé au démarrage en silence (un fichier invalide échouait 413 fois sans une ligne de journal) — `npm run test:workflows-valides` |
+
+**Ce qui n'est PAS reparti, et pourquoi** : la bouche qui suit le son et le repli sur la voix du
+téléphone **venaient déjà de Lingua** — c'est Javis qui les lui avait empruntées. On ne recopie pas
+ce qu'on a emprunté (ça ferait deux versions qui divergent, leçon #142).
+
+
+## 🤖 Javis — le personnage flottant + l'app installable — 2026-09-16
+
+**▶️ Essayer (une fois déployé)** : ouvre [arbre.kd-mc.com](https://arbre.kd-mc.com) connecté en admin — le bouton rond doré apparaît en bas à droite, au-dessus du bouton ➕ existant.
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/javis/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tools/javis/javis-widget.js) | La SOURCE : bouton flottant, personnage animé, chat, SSO admin-only. À copier tel quel dans une nouvelle app (ce domaine n'a pas de bundler — chaque app garde sa propre copie, comme `_depSsoAutoAdmin`) |
+| [`arbre/javis-widget.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/arbre/javis-widget.js) | La copie réellement chargée par `arbre/index.html` (preuve vivante) |
+| [`javis/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/index.html) | L'app **installable sur ton téléphone** (plein écran, personnage + chat) |
+| [`javis/manifest.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/manifest.json) · [`javis/sw.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/javis/sw.js) | PWA : « Ajouter à l'écran d'accueil », icône, hors-ligne |
+| [`tests/verify-javis-bee.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-javis-bee.mjs) | **Garde** : les 3 copies identiques à l'octet + les bons hôtes dans chaque CSP + chaque image/vidéo citée existe (`npm run test:javis-bee`, dans `test:ci`) |
+| [`tests/verify-javis-bee-reelle.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/tests/verify-javis-bee-reelle.mjs) | **Garde en VRAI navigateur** (dans `test:ci`) : la vidéo se lit et avance, un toucher change de mouvement, si la vidéo casse le dessin reste (jamais d'écran vide), **la bouche suit vraiment le son** (1,20 → 0,30) et sa voix en panne bascule sur celle du téléphone — `npm run test:javis-bee-reelle` |
+| [`services/kdmc-router/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/persona-personnage-javis-hqd55e/services/kdmc-router/worker.js) | L'adresse de Bee : **javis.kd-mc.com** (ajoutée le 16.09, avec son étiquette d'app) |
+
+**Bee**, la mascotte de Lingua — mêmes images, **et maintenant ses vraies vidéos** (`lingua/bee/live/*.mp4` :
+repos, coucou, danse, saut, vol, marche), réutilisées telles quelles : une seule source de vérité, aucun
+fichier dupliqué. Dans l'app installable elle bouge pour de vrai ; sur une page normale le bouton flottant
+reste le dessin animé en CSS (3 Mo de vidéo ne s'imposent pas à une page ouverte en 4G).
+Elle parle à `apis.kd-mc.com/ai` (déjà en prod, gratuit Qwen d'abord). Voix + dictée natives (gratuites).
+**Pas encore fait, honnêtement** : les lèvres synchronisées phonétiquement (la bouche bouge en rythme,
+pas au son exact), et le déploiement domaine-large (pour l'instant : arbre + l'app installable).
+
+## 📣 Réseaux sociaux — le moyen unique — 2026-09-16
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`services/kdmc-social/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-social/worker.js) | Publier · lire · messages · file, pour TOUS tes projets |
+| [`services/kdmc-social/social.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-social/social.test.mjs) | 19 contrôles · 4 gardes prouvés par sabotage |
+| [`.github/workflows/deploy-kdmc-social.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/deploy-kdmc-social.yml) | Déploiement + preuve live (publier reste fermé sans Face ID) |
+| [`tests/social-env-parite.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/social-env-parite.test.mjs) | Empêche le bug de noms de jetons de revenir |
+| [`.github/workflows/social-scheduler.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/social-scheduler.yml) | Pipeline vidéo existant — noms de jetons corrigés + diagnostic |
+
+`npm run test:social` et `npm run test:social-env` (les deux dans `test:ci`).
+
+**▶️ Voir l'état de tes réseaux** : [Actions → Deploy kdmc-social](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-social.yml) (le journal imprime la matrice)
+
+## 💶 Encaisser → vérifier → livrer — 2026-09-16
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`services/kdmc-vente/worker.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/worker.js) | Le worker : webhook PayPal, recherche API, file manuelle, anti-rejeu, `/contenu` |
+| [`services/kdmc-vente/vente.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/vente.test.mjs) | 26 contrôles · 3 gardes prouvés par sabotage |
+| [`services/kdmc-vente/wrangler.toml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/services/kdmc-vente/wrangler.toml) | Réglages + le stockage KV (id `059260f5…`, créé le 16.09) |
+| [`.github/workflows/deploy-kdmc-vente.yml`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/.github/workflows/deploy-kdmc-vente.yml) | Déploiement : tests obligatoires, puis preuve live (un faux webhook DOIT être refusé) |
+| [`shops/croupier/acces.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/acces.html) | La page « J'ai payé, donne-moi mon accès » |
+| [`shops/croupier/acces.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/acces.js) | Sa logique — elle ne décide rien, elle obéit au worker |
+| [`tests/croupier-acces.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-acces.test.mjs) | 6 contrôles dont la **parité menu ⇄ catalogue du worker** |
+
+`npm run test:vente` et `npm run test:croupier-acces` (les deux dans `test:ci`).
+
+**▶️ Lancer le déploiement** : [Actions → Deploy kdmc-vente](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-vente.yml)
+
+## 🎯 L'entraîneur de paiements — 2026-09-16
+
+**▶️ Essayer** : [croupier.kd-mc.com/entrainement.html](https://croupier.kd-mc.com/entrainement.html)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/entrainement.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/entrainement.html) | L'écran (système `editorial`, hors-ligne, `connect-src 'none'`) |
+| [`shops/croupier/entrainement.js`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/entrainement.js) | Le moteur : rapports, génération des exercices, score local |
+| [`tests/croupier-entrainement.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-entrainement.test.mjs) | 40 contrôles dont 400 tirages vérifiés · prouvés discriminants |
+
+`npm run test:croupier-entrainement` (dans `test:ci`).
+
+---
+
+## 🎲 Devenir croupier — nouveau produit — 2026-09-15
+
+**▶️ La page** : [croupier.kd-mc.com](https://croupier.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/croupier/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/croupier/index.html) | Le guide gratuit (1 437 mots), système de design `editorial` |
+| [`tests/croupier-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/croupier-page.test.mjs) | La garde : jeu responsable, exactitude des paiements, jetons du design, honnêteté commerciale |
+
+`npm run test:croupier` (dans `test:ci`). Produit payant à venir : l'entraîneur de paiements.
+
+---
+
+## ⏸ Rotation aux tables — moteur + test (CMCteams v9.904) — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/index.html) (près de `var ROTATION`) | Le moteur : `rotationEtat`, `rotationDebutTour`, `rotationLimiteMin`, `rotationMaxLegalMin`, `rotationDepassements` |
+| [`tests/rotation-tables.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotation-tables.test.mjs) | 22 contrôles dans un vrai navigateur, prouvés discriminants par 4 sabotages |
+
+`npm run test:rotation-tables` (dans `test:ci`).
+
+---
+
+## 🎨 Dette de thème CMCteams — le cliquet — 2026-09-15
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`tools/audit/theme-signature.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature.mjs) | Compte les couleurs de marque écrites en dur. La dette peut baisser, jamais monter. |
+| [`tools/audit/theme-signature-baseline.json`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tools/audit/theme-signature-baseline.json) | Le chiffre figé : **1 680** au 15.09.2026 |
+
+`npm run test:theme-signature` (dans `test:ci`). Une baisse volontaire se re-fige avec `--maj-baseline`.
+
+---
+
+## 🎨 Rotaplan — page de vente refaite (système « levels ») — 2026-09-15
+
+**▶️ La page en ligne** : [rotaplan.kd-mc.com](https://rotaplan.kd-mc.com/)
+
+| Fichier | À quoi ça sert |
+|---|---|
+| [`shops/rotaplan/index.html`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/shops/rotaplan/index.html) | La page de vente, refaite sous le système de design `levels` |
+| [`tests/rotaplan-page.test.mjs`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/tests/rotaplan-page.test.mjs) | La garde : sécurité, liens, jetons du système, cibles iPhone, sitemap, honnêteté des chiffres |
+| [`vendor/agent-toolkit/awesome-design-skills/skills/levels/`](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/video-review-wqnqdw/vendor/agent-toolkit/awesome-design-skills/skills/levels/DESIGN.md) | Le système de design choisi (67 disponibles) |
+
+Lancer la garde : `npm run test:rotaplan` (elle tourne aussi dans `npm run test:ci`).
+
+---
+
+## 🎬 Lire une vidéo (TikTok, Insta, YouTube…) — 2026-09-15
+
+Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcription horodatée).
+
+| Quoi | Ouvrir |
+|---|---|
+| **Le mode d'emploi + la grille de lecture des vidéos de vente** | [.claude/skills/lire-video/SKILL.md](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/lire-video/SKILL.md) |
+| Le modèle de job (à recopier dans `.github/workflows/` puis retirer) | [workflow-modele.yml](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.claude/skills/lire-video/workflow-modele.yml) |
+| La leçon #267 (les 6 canaux mesurés, les pièges) | [LESSONS.md](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+| Le job qui a transcrit les 13 minutes | [run 35008743938](https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35008743938) |
+
+
+## 🧅 Tor en clair — 2026-09-15
+
+| Quoi | Ouvrir |
+|---|---|
+| **L'outil (à utiliser)** | [tor.kd-mc.com](https://tor.kd-mc.com) · secours : [github.io/CMCteams/tools/tor/](https://9r4rxssx64-creator.github.io/CMCteams/tools/tor/) |
+| Le code de la page | [tools/tor/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/index.html) · [modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/main/tools/tor/index.html) |
+| La garde du catalogue (12 contrôles) | [tests/tor-catalogue.test.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/tor-catalogue.test.mjs) |
+| La tuile sur ton portail (privée, Kevin seul) | [kdmc-home/index.html](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/index.html) — zone `#tor-zone` |
+| La preuve « qui voit la tuile » (8 contrôles, 5 profils) | [tests/verify-tor-tuile-portail.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-tuile-portail.mjs) |
+| Publier vers le miroir GitLab (à la main) | [.github/workflows/publier-gitlab.yml](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/publier-gitlab.yml) — le seul chemin pour lancer un job GitLab depuis une session. Demande le secret `GITLAB_TOKEN` (collé dans GitHub → Secrets, **jamais dans une conversation**) |
+| L'outil qui ouvre vraiment les .onion | [tools/tor/verif-onion.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/tor/verif-onion.mjs) — **ouvre le Tor Browser, laisse-le ouvert, puis `npm run tor:verif`**. Sans Tor il refuse de répondre (jamais de faux « tout est mort »). Aussi lançable par le job GitLab `tor-adresses`, à la demande |
+| La preuve navigateur (43 contrôles) | [tests/verify-tor-page.mjs](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-tor-page.mjs) |
+| **Voir le résultat côté GitLab** (Kevin, 1 coup d'œil) | [pipelines de la branche ci-veille](https://gitlab.com/kdmc-group/Kdmc-project/-/pipelines?ref=ci-veille) — le rapport est l'artifact « tor-adresses.json » du job `tor-adresses`. Je ne peux pas le lire d'ici : le jeton `write_repository` sait pousser du code, pas interroger l'API (mesuré : HTTP 404) |
+
+
 > Mis à jour automatiquement par Claude à chaque commit important.
-> Dernière mise à jour : **2026-09-11** (livre de cuisine : la voix passe même avec l'iPhone en mode silencieux)
+> Dernière mise à jour : **2026-09-12** (scanner de marché Choppiness Index sur le tableau de bord bot.kd-mc.com)
+
+### 12 septembre 2026 — Scanner de marché (Choppiness Index), inspiré d'une pub mais construit honnêtement
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `services/kdmc-router/worker.js` | **Modifié.** Nouveau `taChoppiness()` (indicateur technique standard) + `GET /__bot/scan` (24 cryptos liquides, lecture seule, ne touche aucun bot) — placé AVANT la vérification Railway exprès : marche même si la flotte est en panne. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `tools/crypto-bot-dashboard/index.html` | **Modifié.** Carte « 🔎 Scanner marché » avec bouton « Scanner maintenant », deux catégories honnêtes (🚀 sort du calme / 🌀 comprimé), aucune promesse. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) |
+| `services/kdmc-router/bot.test.mjs` | **Modifié.** 51→61 contrôles, prouvés par 4 sabotages. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/bot.test.mjs) |
+
+### 11 septembre 2026 (19h55) — Stratégie agressive +++ sur les 6 bots crypto (toujours faux argent)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `crypto-bot/config.py` | **Modifié.** Nouvelle méthode `Config.risk_warnings()` : détecte et signale toujours la combinaison dangereuse « ne vend jamais à perte + aucun frein catastrophe » (trouvée en vrai sur le bot principal en poussant ce changement) et la concentration de position ≥ 50 %. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/config.py) |
+| `crypto-bot/bot.py` | **Modifié.** Affiche les avertissements de `risk_warnings()` au démarrage (console + `audit.jsonl`). | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/bot.py) |
+| `crypto-bot/.env.example` | **Réécrit.** Reflète les valeurs réellement déployées sur les 6 bots (agressif +++), avec les anciennes valeurs prudentes notées en commentaire pour revenir en arrière ; complète les champs qui manquaient depuis toujours (stratégies meanrev/dipup, mode « ne vend jamais à perte », frein catastrophe). | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/.env.example) |
+| `crypto-bot/test_multi.py` | **Modifié.** 49→59 contrôles : le préréglage agressif est validé de bout en bout (jusque dans les objets stratégie), et la nouvelle garde `risk_warnings()` est testée (dont un faux négatif corrigé avant livraison). Prouvé par 4 sabotages. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/crypto-bot/test_multi.py) |
+| 6 bots Railway (`crypto-bot`, `crypto-bot-p1` à `p5`) | **Reconfigurés en direct** (variables Railway) : risque par trade 1→4 %, position max 25→60 %, bougies 3 min au lieu de 15/5 min, seuils d'achat relâchés sur les 3 familles de stratégie, plafonds de perte/jour et de baisse élargis mais jamais retirés. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) |
+
+### 11 septembre 2026 (17h30) — Robots crypto : les 6 tournent, et le bilan ne s'efface plus
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/crypto-bot-dashboard/index.html` | **Modifié.** Nouvelle carte « 🧾 Bilan — depuis le premier relevé » : pour chaque bot, d'où il part, où il en est, l'écart, le nombre de redémarrages, et 😴 s'il n'a plus donné signe de vie depuis 3 h. | [🧪 Ouvrir le tableau de bord](https://bot.kd-mc.com/) · [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/crypto-bot-dashboard/index.html) |
+| `services/kdmc-router/worker.js` | **Modifié.** Le domaine enregistre lui-même l'état de la flotte dans sa mémoire (KV) — 1 relevé par heure max, 30 jours d'historique, premier relevé jamais écrasé — et le rend par `GET /__bot/history` (admin). Le bilan survit donc à l'effacement des journaux Railway et aux redémarrages des bots. | [voir le code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `services/kdmc-router/bot.test.mjs` | **Modifié + enfin lancé.** 51 contrôles (37 avant) : écriture du relevé, 1 par heure, premier relevé intouchable, accès admin obligatoire, et la flotte reste affichée si la mémoire tombe. `npm run test:bot-dashboard`, **câblé dans `test:ci`** (il n'était lancé nulle part). Prouvé par 4 sabotages. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/bot.test.mjs) |
 
 ### 11 septembre 2026 — la voix du livre de cuisine passe même en mode silencieux
 
@@ -17,6 +301,33 @@
 | `tools/cuisine/icon.svg` + `icon-32/180/192/512.png` + `manifest.json` | **Nouveau.** Icône d'écran d'accueil du livre de cuisine aux couleurs du drapeau de Monaco (rouge/blanc) avec le blason doré ; manifest « Cüjina » plein écran. **Sur l'iPhone : supprimer l'ancienne icône puis refaire « Sur l'écran d'accueil ».** | [voir l'icône](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/cuisine/icon.svg) · [ouvrir le livre](https://9r4rxssx64-creator.github.io/CMCteams/tools/cuisine/) |
 | `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
 | `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
+
+### 15 septembre 2026 (suite) — qui a le droit d'aller dans quelle application
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| **La page où tu règles ça** | Fiche de chaque personne → **🔐 Où elle peut aller** : partout dans le domaine, ou seulement les apps que tu coches ; plus « 🚫 Fermer une application précise ». | [👆 Qui se connecte](https://kd-mc.com/admin/) |
+| `services/kdmc-router/worker.js` | Modifié : la table des applications (alias regroupés) et la règle qui décide. C'est le domaine qui tranche, pas chaque app — une règle recopiée 26 fois finit par se contredire. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/worker.js) |
+| `kdmc-home/admin/admin.js` + `index.html` | Modifié : le réglage sur chaque fiche, cibles tactiles 44 px, et un garde-fou qui t'empêche d'enfermer quelqu'un « dans une app » sans en choisir aucune. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/admin/admin.js) |
+| `tests/verify-perimetre-apps.mjs` | **Nouveau.** 42 contrôles qui font tourner le vrai domaine : portée, blocage, alias, admin jamais enfermé dehors, comptes existants intacts. 7 sabotages le font rougir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-apps.mjs) |
+| `tests/verify-perimetre-page.mjs` | **Nouveau.** Ouvre ta page admin dans un vrai navigateur (écran iPhone) et vérifie qu'un doigt obtient bien le résultat : 18 contrôles. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-perimetre-page.mjs) |
+| `CLAUDE.md` + `LESSONS.md` #252 | La règle écrite noir sur blanc, pour qu'elle ne se perde pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `kdmc-home/kdmc-sso.js` | Modifié (« va plus loin ») : un refus de périmètre ne jette plus ton pass — tu restes connecté à l'app où tu es chez toi, et l'app peut expliquer le refus en français. Transmet aussi l'app d'où vient un nouvel inscrit. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/kdmc-sso.js) |
+| `kdmc-home/kdmc-portal.js` | Modifié : à l'inscription, dit au domaine de quelle app la personne vient, pour que son compte s'ouvre là — pas au portail, qui n'est que la réception. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/kdmc-home/kdmc-portal.js) |
+| `tests/verify-sso-client-perimetre.mjs` | **Nouveau.** Fait tourner le vrai client partagé dans Node : 9 contrôles, 2 sabotages rouges. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-sso-client-perimetre.mjs) |
+| `LESSONS.md` #253 | Tester un contrôle d'accès en suivant le VRAI parcours (l'inscription passe par le portail), et ne jamais jeter un pass valide sur un refus. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
+### 15 septembre 2026 — pour que ton dépôt puisse passer en PRIVÉ sans éteindre tes sites
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/workflows/publier-site-prive.yml` | **Nouveau.** Publie tes sites sur Cloudflare Pages à partir d'un paquet **trié** (les applications, rien d'autre) : c'est ce qui remplace GitHub Pages une fois le dépôt privé. Contrôle le paquet **avant** l'envoi et sonde les 26 adresses après. Zéro tâche programmée. | [▶️ Lancer](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/publier-site-prive.yml) |
+| `tools/audit/sonde-site-publie.mjs` | **Nouveau.** Ouvre les **26 adresses** du domaine sur un site publié et exige une vraie page. Les adresses sont lues dans la table du routeur — jamais une liste recopiée à la main qui vieillirait en silence. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/audit/sonde-site-publie.mjs) |
+| `tools/gitlab/publier.sh` | **Réécrit.** Envoyait **tout le dépôt** moins quelques exclusions (2 049 fichiers de code serveur, 37 498 d'Apex…). Envoie maintenant le même paquet trié que GitHub, avec le même contrôle avant envoi. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/gitlab/publier.sh) |
+| `services/kdmc-router/prepare-secours.mjs` | Modifié : plus aucun document de travail dans le paquet (règle sur tous les `.md` + liste noire explicite), et le livre de cuisine + la page d'accueil des boutiques y entrent enfin. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-documents-travail-parite.mjs` | Modifié : sait lire la **nouvelle forme** du miroir (liste blanche) sans baisser l'exigence, et refuse de valider s'il ne sait plus dire ce qui peut être embarqué. 5 sabotages le font passer au rouge. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-documents-travail-parite.mjs) |
+| `index.html` et 4 pages publiées | Modifié : 27 renvois vers l'ancienne adresse `github.io` remplacés par tes vrais sous-domaines, et le journal de ce qui se construit n'est plus publié. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/index.html) |
+| `LESSONS.md` #251 | La leçon : mettre un dépôt en privé ne sert à rien tant qu'on n'a pas compté **toutes** les portes par lesquelles le code sort. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
 
 ### 10 septembre 2026 (nuit) — « voir comme toi » : je peux maintenant regarder tes vraies pages
 
@@ -117,6 +428,46 @@ le **03** pour ce qui était cassé, le **05** pour ce que je n'ai pas pu voir.
 | `tests/vercel-config.test.mjs` | Empêche les deux erreurs qui t'envoyaient un mail « Preview deployment failed » à chaque push (clé interdite dans `vercel.json`, `ignoreCommand` > 256 caractères) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/vercel-config.test.mjs) |
 | `tools/agent/README-vercel.md` | L'explication du filtre Vercel, écrite là où elle ne casse rien (le JSON n'accepte aucun commentaire) | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/agent/README-vercel.md) |
 > Dernière mise à jour : **2026-09-06 après-midi** (arbre v3.18 « Munegu » fusionné · tests navigateur qui tournent enfin (GitLab + GitHub) · Vercel ne bloque plus les fusions · arbre v3.17 : v3.7→v3.14 rapatrié de GitLab, données servies par le domaine via D1 · surveillance du domaine remise en route · Départs light v1.39 · poster grand format · dépôt public sécurisé)
+
+## 📷 Arbre — la photo de Gérard, et l'import qui ne fait plus perdre de photos — session 2026-09-11
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-photo-gerard.json` *(envoyé dans la conversation, **hors dépôt**)* | La photo de ton père, prête à importer : **Réglages → Importer**. Marquée « complément » : elle s'ajoute à sa fiche **sans rien remplacer**. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (v3.20, `fusionnerFiche`) | L'import **complète** une fiche au lieu de la remplacer, et garde toujours photos, documents et commentaires de l'appareil — même quand on réimporte un export texte (qui, lui, n'emporte jamais les photos). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/photo-vers-fiche.mjs` | Prépare **n'importe quelle photo** pour **n'importe qui** : `--photo <image> --id <identifiant>`. Elle est traitée par la fonction même de l'app (2200 px, qualité 0,9), le fichier est écrit **hors du dépôt** — et depuis le 11.09 l'outil **refuse** d'écrire si l'app **en ligne** ne sait pas encore compléter une fiche (elle l'écraserait). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/photo-vers-fiche.mjs) |
+| `tools/arbre/app-en-ligne.mjs` | Répond à une seule question avant d'envoyer quoi que ce soit à l'iPhone : **quelle version tourne vraiment en ligne, et sait-elle compléter une fiche ?** (lit `origin/main`). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/app-en-ligne.mjs) |
+| `tools/arbre/verify-cadrage.mjs` | **Preuve en vrai navigateur du cadrage automatique** : des photos au sujet connu (visage en haut, personne en pied, photo détourée) et la mesure avant/après, affiche imprimée comprise. `npm run arbre:verif-cadrage`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-cadrage.mjs) |
+| `tests/arbre-cadrage.test.mjs` | Garde permanente : les photos se cadrent sur le sujet **partout** (carte, fiche, miniatures, affiche) et à chaque affichage. `npm run test:arbre-cadrage`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-cadrage.test.mjs) |
+| `tools/arbre/verify-photo-fusion.mjs` | Vérifie en **vrai navigateur** qu'ajouter une photo ne fait rien perdre, que la carte l'affiche, et qu'un export texte réimporté n'efface plus les photos. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-photo-fusion.mjs) |
+| `tests/arbre-photo-fusion.test.mjs` | La garde hors ligne (dans `test:ci`) : la fusion existe, elle est **câblée**, les listes sont protégées, un champ vide n'efface pas. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-photo-fusion.test.mjs) |
+
+## 👨‍👩‍👧 Arbre — ajouter la famille de Marie-France (Kim, Déborah, sa fille) — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre-ajout-marie-france.json` *(envoyé dans la conversation, **hors dépôt** — aucun nom réel dans le code public)* | Le petit fichier à importer sur l'iPhone : **Réglages → Importer → choisir ce fichier**. Il ajoute Kim LORENZI (époux), Déborah (leur fille) et la fille de Déborah. Il ne contient **que** ces trois personnes : la fiche de Marie-France n'est pas touchée, donc ses photos et ses actes sont conservés. | *(fichier privé, envoyé directement)* |
+| `arbre/index.html` (`normaliserConjoints`) | Un couple noté d'un **seul** côté s'affichait comme deux personnes séparées. Réparé à chaque sauvegarde : le lien manquant est **ajouté** en miroir, jamais effacé (une fiche pas encore synchronisée n'est pas supprimée). | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-ajout-famille.mjs` | Vérifie en **vrai navigateur** sur la famille synthétique (0 donnée réelle) que l'import ajoute sans rien écraser, que le couple s'affiche, que l'enfant est sous ses deux parents et la petite-fille sous sa mère. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-ajout-famille.mjs) |
+| `tools/arbre/mesure-couples.mjs` | Mesure (pas un avis) l'écart réel entre les cartes d'un foyer, y compris avec **deux** conjointes : 222 px de pas pour une carte de 158 px → **64 px de blanc**, aucun chevauchement. Vérifie aussi qu'un enfant ajouté n'est pas rattaché d'office au mauvais parent. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/mesure-couples.mjs) |
+
+## 🔗 Arbre v3.19 — « à relier » : les branches qui flottent enfin nommées — session 2026-09-10
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `arbre/index.html` (v3.19) | Un bloc séparé du tronc s'appelle « 🔗 Branche à rattacher · Famille … (N) » et dit **qui** rattacher. Les personnes seules sont groupées **par cause** (fiche du parent introuvable · relié dans l'autre arbre · couple sans parents ni enfants · aucun lien renseigné) puis par lignée. Panneau « 🔗 À relier » dans Réglages : le compte des **deux** arbres, chaque nom ouvre sa fiche. | [Ouvrir l'arbre](https://arbre.kd-mc.com/) · [Code](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/arbre/index.html) |
+| `tools/arbre/verify-relier.mjs` | Vérifie en **vrai navigateur**, sur les deux arbres : personne ne disparaît, chaque détaché est rangé sous sa cause, le panneau liste les mêmes personnes que l'arbre, un nom ouvre bien sa fiche. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/arbre/verify-relier.mjs) |
+| `tests/arbre-relier.test.mjs` | La garde hors ligne (dans `test:ci`) : le classement existe, il est **câblé**, les 4 causes sont distinctes, le compteur est écrit après la mise en page. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/arbre-relier.test.mjs) |
+
+## 📣 Prévenir ne suffit pas : faire rectifier, puis vérifier — session 2026-09-10 (branche `claude/sarzance-family-tree-3jxi7i`)
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `CLAUDE.md` (règle en tête) | La règle absolue en 4 temps : **prévenir** → **réveiller** la session vivante → **faire rectifier** → **vérifier soi-même** en refaisant la mesure. Vaut pour toutes les sessions, tous projets présents et futurs. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/CLAUDE.md) |
+| `tests/messages-suivis.test.mjs` | La garde qui rend la règle impossible à oublier : tout message **ouvert** de plus de **2 jours** sans suivi daté fait **échouer** `test:ci`. `npm run test:messages-suivis` | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis.test.mjs) |
+| `tests/messages-suivis-baseline.json` | Le cliquet : 42 anciens messages figés pour ne pas bloquer sur la dette existante — toute **nouvelle** négligence, elle, est refusée. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/messages-suivis-baseline.json) |
+| `services/kdmc-router/prepare-secours.mjs` | La bouée de secours du domaine copiait **cuisine.kd-mc.com** et **shops.kd-mc.com** nulle part depuis le 13.08 : si GitHub retombe, ces adresses renvoient 404 pendant que les autres tiennent. Bouché. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-router-secours.mjs` | Le contrôle accusait 4 dossiers d'être « oubliés » alors qu'ils sont copiés avec leur parent. Un faux rouge coûte aussi cher qu'un faux vert. **43/6 → 49/0**. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-router-secours.mjs) |
 
 ## 🔀 Coordination des branches — session 2026-09-06 soir (branche `claude/verify-cmcteams-light-data-rzlvau`)
 
@@ -2272,3 +2623,47 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 | Le garde | Vérifie que les 23 restent surveillées, sans volume ni spam | [verify-deploiement-declenche.mjs](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-deploiement-declenche.mjs) |
 
 **Rien dans le journal = tout va bien.** Il ne se remplit que sur panne.
+
+## 🧰 Kit IA de l'indépendant — produit numérique neuf (2026-09-16)
+
+| Fichier | Rôle | Voir | Modifier |
+|---|---|---|---|
+| `shops/kit-ia/index.html` | Page de vente + « j'ai payé, je récupère mon accès » | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/index.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/index.html) |
+| `shops/kit-ia/lire.html` | Lecteur : module 1 gratuit, le reste avec le code | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/lire.html) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/lire.html) |
+| `shops/kit-ia/kit.js` | Logique (récupération d'accès, lecteur, bouton Copier) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/kit.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/kit.js) |
+| `shops/kit-ia/kit.css` | Style « Swiss moderne », clair/sombre | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/kit.css) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/shops/kit-ia/kit.css) |
+| `tests/kit-ia.test.mjs` | 6 preuves (parité prix, CSP, 0 contenu payant public, 2 vrais navigateurs) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-ia.test.mjs) | — |
+| `services/kdmc-vente/worker.js` | Caisse : produit `kit-ia`, `/apercu`, `/lire` (contenu en base D1) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-vente/worker.js) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/services/kdmc-vente/worker.js) |
+| Base D1 `kdmc-contenu` | Les 7 modules (hors dépôt, privé) | [Cloudflare D1](https://dash.cloudflare.com/?to=/:account/workers/d1) | — |
+| Site live | `https://kit.kd-mc.com/` (après fusion + déploiement du routeur) | [ouvrir](https://kit.kd-mc.com/) | — |
+| `tools/club/semaine.mjs` | La machine du lundi : rédige, contrôle, publie la consigne de la semaine, prévient les abonnés | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/club/semaine.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/club/semaine.mjs) |
+| `.github/workflows/club-semaine.yml` | Le bouton que la routine appuie chaque lundi (essai à blanc possible) | [lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/club-semaine.yml) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/.github/workflows/club-semaine.yml) |
+| `tests/club-semaine.test.mjs` | 16 preuves hors ligne (porte de vérité, faux réseau, rien publié si refusé, relances J-14) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/club-semaine.test.mjs) | — |
+| `tools/kit/metiers.json` | Source unique des 47 métiers × 5 situations (pages « l'IA pour [métier] ») | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/kit/metiers.json) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/kit/metiers.json) |
+| `tools/kit/pages-metiers.mjs` | Générateur déterministe des pages métiers + sitemap (`npm run kit:metiers`) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/kit/pages-metiers.mjs) | [modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/kit/pages-metiers.mjs) |
+| `shops/kit-ia/pour/` | 47 pages « l'IA pour un plombier / coiffeur / … » + index, en ligne sur kit.kd-mc.com/pour/ | [voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/shops/kit-ia/pour) | [ouvrir](https://kit.kd-mc.com/pour/index.html) |
+| `tests/kit-metiers.test.mjs` | 5 preuves : pages == source, CSP, 0 contenu payant, liens, sitemap | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/kit-metiers.test.mjs) | — |
+| Routine « Club IA — contenu de la semaine » | Session Claude automatique chaque lundi 07:00 UTC : nouvelle consigne en base + e-mail aux abonnés + point à Kevin | [Routines](https://claude.ai/code) | — |
+
+---
+
+## 2026-09-17 — Paquet de reprise & comparatif d'IA
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `TRANSFERT-COMPLET.md` | **Tout notre travail en un document** : dépôts, 30 adresses, 28 workers, Firebase, 105 noms de secrets, 40 sessions, 219 branches, les règles, ce qui reste à faire, le comparatif d'IA et la bascule en 4 étapes | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) · [✏️ Modifier](https://github.com/9r4rxssx64-creator/CMCteams/edit/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) · [⬇️ Brut](https://raw.githubusercontent.com/9r4rxssx64-creator/CMCteams/claude/work-summary-ai-alternatives-cj6s29/TRANSFERT-COMPLET.md) |
+| `tools/transfert/export.mjs` | L'outil `npm run transfert` : fabrique le paquet de reprise (18 documents + INDEX + inventaire + archive) avec garde anti-fuite de secrets | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/claude/work-summary-ai-alternatives-cj6s29/tools/transfert/export.mjs) |
+
+**Commandes ajoutées** : `npm run transfert` (fabrique le paquet + l'archive) ·
+`npm run transfert:liste` (dit seulement ce qui serait copié).
+
+### 2026-09-17 (suite) — Bilan du pipeline
+
+| Fichier | À quoi ça sert | Liens |
+|---|---|---|
+| `BILAN-BRANCHES.md` | **Le point complet** : chaque session une par une (état, branche, fusion, discussions), **les 211 branches non déclarées toutes listées**, chaque discussion ouverte, ce qui attend Kevin | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/BILAN-BRANCHES.md) |
+| `tools/pipeline/bilan.mjs` | `npm run bilan` — refabrique ce bilan avec les chiffres du jour (registre × dépôt réel × API GitHub) | [📖 Voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/pipeline/bilan.mjs) |
+
+**Commandes ajoutées** : `npm run bilan` · `npm run bilan:court` ·
+`node tools/pipeline/pipeline.mjs suivi --id <mNNN> --action "…"` (posait problème : elle
+n'existait pas, d'où 61 messages en retard).

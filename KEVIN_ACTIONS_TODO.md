@@ -9,6 +9,226 @@
 
 ---
 
+## 🗂 TOUT CE QUI T'ATTEND, EN UNE PAGE (vérifié le 16.09.2026)
+
+Trié par **ce que ça te coûte de ne pas le faire**, pas par ordre d'arrivée.
+Chaque ligne renvoie à sa section plus bas.
+
+### 🔴 Ça te coûte MAINTENANT
+
+| Quoi | Pourquoi ça presse | Temps |
+|---|---|---|
+| **Ton vrai IBAN** (ou dis-moi de retirer le bouton) | Tes 6 boutiques affichent `MC98 •••• •••• ••••` et « Copier l'IBAN » **copie des points**. Un client qui choisit « virement » tombe dans le vide, **en ce moment** | 1 min |
+| **Régénérer `AGENT_SECRET`** | Seule protection de ton agent en ligne. Qui l'a lance ses cycles — chaque cycle appelle l'IA, **c'est ton argent** | 2 min |
+| **Changer le code famille de l'arbre** + **révoquer le jeton GitLab** `glpat-wD6Q…` | Le code **est** l'adresse des données : qui l'a lit et modifie l'arbre — des infos de personnes vivantes | 3 min |
+| 👆 **Resserrer le jeton GitLab du secret `GITLAB_TOKEN`** | Mesuré le 17.09 : il porte `api` et **lit les 35 secrets de CI** du projet GitLab. Il n'a besoin que de pousser du code et de lire un résultat. GitLab **refuse** que je fabrique le jeton étroit moi-même (« User does not have permission ») — il faut tes deux gestes. **(1)** GitLab → Kdmc-project → Settings → Access tokens → nouveau jeton, rôle Maintainer, portées **`write_repository` + `read_api` seulement** ; **(2)** GitHub → ce dépôt → Settings → Secrets → Actions → `GITLAB_TOKEN` → Update. Puis **Revoke** sur l'ancien, même page GitLab | 3 min |
+
+### 🟡 Ça débloque des revenus
+
+| Quoi | Ce que ça ouvre | Temps |
+|---|---|---|
+| **Rien à faire pour le Kit IA** (kit.kd-mc.com, 47 €) : il est construit, le contenu est en base, la caisse tourne. Tu peux le LIRE et me dire ce que tu changes | Ton premier produit numérique neuf, hors casino, vendable | 0 min |
+| **4 nouveaux kits en base, prêts à vendre** (17.09 16h50) : avis clients 17 € (kit.kd-mc.com/avis.html), bureau 37 € (/bureau.html), étudiant 27 € (/etudiant.html), immobilier 67 € (/immo.html) — 7 modules chacun, module 1 gratuit. **Rien à faire** : lis-en un et dis-moi ce que tu changes | 4 produits numériques de plus, chacun avec ses vidéos programmées | 0 min |
+| **Club IA au Boulot (59 €/an)** : rien à faire non plus, la routine du lundi tourne seule. Si tu veux l'arrêter : dis-le, je coupe la routine | Le revenu RÉCURRENT (accès annuel + nouveauté chaque semaine) | 0 min |
+| ~~E-mails du Kit / Club / boutiques (EmailJS)~~ ✅ interrupteur basculé par Kevin le 17.09 (mesuré : plus de 403). Troisième couche trouvée derrière : le service `service_318elaz` n'existe pas dans ton compte (`HTTP 400 The service ID not found`). J'ai basculé la caisse, la machine du lundi et les 4 boutiques clonées sur ton vrai service `service_4s16z8l` + gabarit `template_fzva9uf` (ceux de La Détente et Chez Lolo). **Preuve : run 35212409745 « Essai d'e-mail à Kevin : ENVOYÉ »** (tu as reçu ce mail). Dis-moi juste si la mise en page du mail te va | Codes d'achat, point du lundi, rappels J-14, formulaires des boutiques | fait |
+| *(facultatif)* Vérifier dans EmailJS que le gabarit `template_newsletter` affiche bien le champ `message` | Sinon le code d'accès n'arrive pas par e-mail (il reste affiché à l'écran) | 2 min |
+| ~~Compte Metricool~~ ✅ fait le 16.09 (Instagram + TikTok + YouTube prouvés) | Le seul chemin vers TikTok — **Facebook reporté « plus tard »** (Kevin 16.09), voir ⚪ | fait |
+| **Ton tableau de bord Commerce est en ligne** : [ouvre-le](https://kd-mc.com/admin/commerce.html) (Face ID, compte Kevin) — ventes réelles, file à valider en 1 clic, produits, vidéos, boutons de lancement. **Rien à faire.** Si un bouton « Lancer » répond « GitHub HTTP 403 », c'est que le jeton `APEX_GITHUB_PAT` n'a pas le droit `workflow` : dis-le-moi, je passe par le lien GitHub en attendant | Voir tout ce qui a été construit pour vendre, et commander depuis le téléphone | 0 min |
+| **La pub se fait toute seule chaque lundi 08:00** (routine « Pub — vidéos de la semaine ») : nouveaux scripts écrits par l'IA (immo + Club), vidéos rendues, publiées, programmées dans Metricool, tableau de bord mis à jour. **Rien à faire.** Pour l'arrêter ou changer les niches : dis-le, je règle la routine | Kevin 17.09 « création auto régulière de contenus, mise en ligne, pub, tout automatique » | 0 min |
+| **16 vidéos programmées** (14 le 17.09 à la main, + 2 écrites par l'IA et posées par la chaîne autonome pour lun 28.09) sur tes 4 réseaux, du jeu 18.09 au lun 28.09, 10h et 12h, publication automatique. **Rien à faire** — sauf si tu veux en retirer une : [ouvre le planning Metricool](https://app.metricool.com/planner/calendar?blogId=7000185) et supprime-la **avant jeudi 18.09 10h** | Première pub réelle pour les 4 niches + le Kit + le Club (vidéos sans visage, ta voix du domaine) | 0 min |
+| **Zapier** — 2 liens (compte déjà existant) | Facebook + Instagram sans créer d'app Meta | 2 min |
+| **Telegram** — @BotFather | Publier + lire + messages, zéro validation | 2 min |
+| **App PayPal** (client id · secret · webhook) | Livraison **instantanée** après paiement. Sans ça tu valides à la main — ça marche quand même | 5 min |
+| **App Meta** *(facultatif)* | Lire commentaires et mentions → repérer des clients | ~10 min |
+
+### ⚪ Quand tu veux — rien ne casse en attendant
+
+| Quoi | Pourquoi |
+|---|---|
+| ~~Facebook dans Metricool~~ ✅ fait le 17.09 13:14 (Page Kdmc, id 1373991005790862 mesuré) | Cause réelle : session Safari du mauvais compte → onglet privé | fait |
+| Droit **Vectorize** sur le jeton Cloudflare | Sinon la mémoire RAG d'Apex ne se déploie jamais |
+| **Accès au compte Cloudflare « 9r4 »** | Il est verrouillé derrière GitHub ; j'en ai besoin pour certains réglages |
+| Passer le **dépôt en privé** | À faire **en dernier** (ça casse les pages publiées tant que ce n'est pas réglé) |
+| **Compte développeur Apple** (99 $/an) : oui ou non ? | Décide si on publie des apps sur l'App Store |
+| **Combien de gilets**, et broderie logo seul ou logo + prénoms ? | Bloque la commande La Détente |
+| Mot de passe **Sentry** — *seulement si tu avais copié celui du guide* | Un document public suggérait un mot de passe précis |
+| **Crédit image Google à zéro** | C'est ça qui cassait les figurines |
+
+> **Rappel qui vaut pour toute cette page** : tu ne me donnes **jamais** un mot de passe.
+> Uniquement des **jetons**, que tu crées et que tu peux révoquer.
+
+---
+
+## 📣 RÉSEAUX SOCIAUX — tout ce que tu dois aller chercher (16.09.2026)
+
+**Mesuré** (journal CI, pas une supposition) : sur tes 7 jetons réseaux, **un seul
+existe** — YouTube. Facebook, Instagram, Telegram et TikTok sont vides.
+
+> ⚠️ **Ne me donne JAMAIS tes mots de passe.** Ce dépôt est public, et un mot de passe
+> Facebook = accès total et permanent (messages, paiements, publicité). Ce qu'il me
+> faut, ce sont des **jetons** : limités à ce que tu autorises, et **révocables d'un
+> clic**. Tu les crées toi-même, tu ne me donnes jamais ton identifiant.
+
+### Par ordre de valeur — la 1️⃣ suffit pour démarrer
+
+| # | Ce que tu vas chercher | Temps | Ce que ça débloque |
+|---|---|---|---|
+| **1️⃣** | ~~Compte Metricool~~ ✅ branché et prouvé — reste **ajouter Facebook** dans Metricool | 1 min | **TikTok + Instagram + Facebook + YouTube** d'un coup, publication automatique |
+| 2️⃣ | **Zapier** — 2 liens à taper (tu as déjà le compte) | 2 min | Facebook Pages + Instagram, sans créer d'app Meta |
+| 3️⃣ | **Telegram** — @BotFather | 2 min | Publier + lire + messages, sans aucune validation |
+| 4️⃣ | **App Meta** *(facultatif)* | ~10 min | Contrôle total via mon worker : lire les commentaires, publier finement |
+| 5️⃣ | **App TikTok** *(à éviter)* | long | Rien de plus que Metricool. **Ne le fais que si Metricool ne te convient pas.** |
+
+---
+
+### 1️⃣ Metricool — le seul chemin vers TikTok, et il couvre tout le reste
+
+> ✅ **FAIT le 16.09** : compte créé, marque « Kdmc » (Instagram, TikTok, YouTube), connecteur
+> Claude branché, **chaîne prouvée** : un brouillon de test est dans ton planificateur (rien
+> ne part en public, tu peux le supprimer). Il reste **un geste** :
+> 👆 **Ajouter ta Page Facebook** dans Metricool → *Connections* — **reporté à plus tard**
+> (Kevin 16.09 : « note dans les tâches à faire pour plus tard pour Facebook »). Pas pressé.
+> **17.09 12:51 — la Page « Kdmc » EXISTE** (capture Kevin : menu Facebook, profil « Kdmc » avec
+> Tableau de bord professionnel). Cause n°1 réglée. Metricool ne la voit pas encore (mesuré
+> `getBrandSettings` 17.09 : Instagram + TikTok + YouTube, pas Facebook) → il reste le clic
+> Metricool → *Connections* → Facebook, avec le profil **Kevin Mc** (admin de la Page).
+> Réglages de la Page à corriger (vus sur la capture) : bio « Viral » et catégorie
+> « Musique/groupe » ne collent pas au Kit IA → bio proposée + catégorie « Formation ».
+> **13:05 — bio + « Formation » faits par Kevin.** Essai Metricool → Facebook : écran « précédemment
+> connecté… ne permet pas de publier » puis « no page bound to this account » = **cause n°4**
+> (autorisation du 16.09 donnée AVANT la création de la Page). Correctif donné : Facebook →
+> Paramètres → Intégrations professionnelles → retirer Metricool → reconnecter en cochant Kdmc.
+> **13:14 — ✅ FAIT.** Vraie cause : Safari réutilisait une session Facebook du mauvais compte
+> (cause n°3). Onglet privé Safari → Metricool a redemandé l'identifiant → Page **Kdmc** branchée.
+> Mesuré `getBrandSettings` 17.09 13:15 : `facebookData: 1373991005790862`. Les 4 réseaux sont
+> reliés (Facebook, Instagram, TikTok, YouTube). Plus rien à faire côté Facebook.
+
+#### 🔧 « Je n'arrive pas à connecter Facebook » — à reprendre plus tard, les causes dans l'ordre
+
+Sources : le centre d'aide Metricool ([je n'arrive pas à connecter Facebook](https://help.metricool.com/i-cant-connect-facebook-ibc3b),
+[guide complet](https://help.metricool.com/connect-facebook-on-metricool-complete-guide-5ark1),
+[permissions Business Manager](https://help.metricool.com/meta-business-manager-permissions-z266r)).
+
+| # | Cause probable | Ce que tu fais (iPhone) |
+|---|---|---|
+| **1** | **Tu n'as pas de Page** — Metricool ne connecte QUE des **Pages** Facebook, jamais un profil personnel (même en mode « professionnel » ou « créateur »). C'est de loin la cause n°1. | Appli Facebook → **Menu** (☰) → **Pages** → **Créer** → nom « Kdmc » (ou « Croupier Pro ») → catégorie « Formation » → Créer. 2 min. Puis retour dans Metricool → *Connections* → Facebook. |
+| 2 | **Une permission refusée** dans la fenêtre bleue de Facebook — si tu décoches une case, Metricool ne peut pas finir. | Recommence et laisse **toutes** les cases cochées. |
+| 3 | **Mauvais compte Facebook** ouvert dans Safari (la Page appartient à un autre profil). | Ouvre facebook.com dans un nouvel onglet Safari → déconnecte-toi → reviens dans Metricool → reconnecte avec le profil qui **administre** la Page. |
+| 4 | **Ancienne autorisation cassée** (Metricool déjà autorisé une fois, à moitié). | Facebook → Réglages → **Intégrations professionnelles** → retire « Metricool » → reconnecte depuis Metricool. |
+| 5 | **Rien ne marche** | Plan B : lien Zapier « Facebook Pages » (je te le redonne dans le chat) — même règle : il faut une **Page**. |
+
+> Ce que ça change pour la suite : **Instagram + TikTok + YouTube sont déjà branchés et
+> prouvés** — Facebook n'est pas bloquant. Facebook s'ajoutera quand la Page existera.
+> ⚠️ **Rien sur le casino/croupier ne sera publié** (Kevin 16.09 : « attends pour le produit
+> du casino ») — la pub attend le nouveau commerce, hors casino.
+
+👆 Crée un compte gratuit sur [metricool.com](https://metricool.com/) puis connecte tes
+comptes (Facebook, Instagram, TikTok, YouTube) dans **Planificateur → Connecter**.
+
+**Pourquoi c'est le premier de la liste** : TikTok n'autorise la publication automatique
+qu'aux outils qui ont passé **leur audit**. Metricool l'a passé — donc ce que ni toi ni
+moi ne pouvons faire directement, Metricool le fait. Et le même compte sert aussi pour
+Instagram, Facebook et YouTube.
+
+**Le gratuit suffit pour démarrer** : 50 publications/mois (≈ 1,6 par jour), 1 marque,
+sans limite de durée. Si un jour ça déborde, on regardera le payant à ce moment-là.
+
+Ensuite je branche le connecteur Metricool côté Claude et **je publie pour toi**.
+
+### 2️⃣ Zapier — 2 liens, tu as déjà un compte
+
+👆 Je te donne les **deux liens exacts dans le chat** (ils ne sont volontairement pas
+écrits ici : ce dépôt est public, et un lien de connexion ne doit pas traîner en ligne).
+Tu tapes, tu te connectes avec Facebook, c'est fini — **aucune app Meta à créer**.
+
+Si tu as perdu les liens, demande-les-moi, je les régénère en 10 secondes.
+
+### 3️⃣ Telegram — 2 minutes, personne à convaincre
+
+👆 Sur ton iPhone : Telegram → cherche **@BotFather** → envoie `/newbot` → choisis un
+nom. Il te renvoie un jeton qui ressemble à `1234567890:AAH…`. Crée un canal, ajoute ton
+bot comme **administrateur**, et envoie-moi le jeton + le nom du canal.
+
+### 4️⃣ App Meta — seulement si tu veux le contrôle fin
+
+Utile pour **lire les commentaires et les mentions** (repérer des clients potentiels),
+ce que Metricool ne fait pas aussi bien.
+
+👆 [developers.facebook.com/apps](https://developers.facebook.com/apps) → « Créer une
+app » → type **Business** → produit **Facebook Login** → dans
+[l'explorateur d'API](https://developers.facebook.com/tools/explorer/), choisis ta Page
+et coche `pages_manage_posts`, `pages_read_engagement`, `instagram_basic`,
+`instagram_content_publish` → « Générer un jeton d'accès ».
+
+⚠️ Prérequis : ton Instagram doit être en **compte professionnel** et **relié à ta Page
+Facebook** (réglages Instagram → « Passer à un compte professionnel »).
+
+⚠️ Le jeton donné dure **1 heure**. Dis-le-moi : je t'explique comment l'échanger contre
+un jeton **60 jours**, renouvelé ensuite tout seul.
+
+### 5️⃣ TikTok en direct — honnêtement, ne le fais pas
+
+Une app sur [developers.tiktok.com](https://developers.tiktok.com/) + leur audit, pour
+finir au même endroit que Metricool. **À ne faire que si Metricool ne te va pas.**
+
+### Où tu poses les jetons
+
+**Depuis ton iPhone, un collage par réseau** — je te fais la page dès que tu as le
+premier. Sinon, en
+[secrets GitHub](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new),
+sous ces noms **exacts** (une majuscule de travers et le jeton n'arrive jamais) :
+`TELEGRAM_BOT_TOKEN` · `TELEGRAM_CHAT_ID` · `FACEBOOK_PAGE_TOKEN` · `FACEBOOK_PAGE_ID` ·
+`INSTAGRAM_ACCESS_TOKEN` · `INSTAGRAM_USER_ID`.
+
+### Ce qui marche DÉJÀ, sans que tu fasses rien
+
+- **YouTube** : jeton présent et valide (104 caractères), le pipeline vidéo l'utilise.
+- **Le moyen de publier** (`kdmc-social`) : déployé, testé, surveillé. Il attend les jetons.
+
+---
+
+## 💶 PAIEMENTS — 5 minutes, une seule fois (16.09.2026)
+
+**Ce n'est PAS bloquant.** La machine encaisse déjà : sans ça, chaque vente arrive dans ta
+file et tu valides en 1 clic. Avec ça, le client est servi **tout seul, instantanément**,
+et tu ne fais plus rien du tout.
+
+Je ne peux pas le faire à ta place : créer une application dans TON compte PayPal exige
+**ta session connectée**. C'est la seule vraie limite — le reste est déjà fait et testé.
+
+👆 **1. Créer l'application** → [developer.paypal.com/dashboard/applications/live](https://developer.paypal.com/dashboard/applications/live)
+   « Create App » → nom : `KDMC Vente` → type **Merchant** → Create.
+   Tu obtiens un **Client ID** et un **Secret**.
+
+👆 **2. Créer le webhook** (même page, ton app → section *Webhooks* → « Add Webhook ») :
+   - **URL** : `https://kdmc-vente.9r4rxssx64.workers.dev/webhook/paypal`
+   - **Événement à cocher** : `Payment capture completed` (celui-là seulement)
+   - Tu obtiens un **Webhook ID**.
+
+👆 **3. Coller les 3 valeurs** → [Settings → Secrets → New secret](https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions/new)
+   Un secret par valeur, **noms exacts** (une majuscule de travers = la clé n'arrive jamais) :
+
+   | Nom du secret | Ce que tu colles dedans |
+   |---|---|
+   | `PAYPAL_CLIENT_ID` | le Client ID de l'étape 1 |
+   | `PAYPAL_SECRET` | le Secret de l'étape 1 |
+   | `PAYPAL_WEBHOOK_ID` | le Webhook ID de l'étape 2 |
+
+👆 **4. Relancer le déploiement** → [Actions → Deploy kdmc-vente → Run workflow](https://github.com/9r4rxssx64-creator/CMCteams/actions/workflows/deploy-kdmc-vente.yml)
+
+**Comment tu sauras que ça marche** : le journal du déploiement imprime la santé du worker.
+`"paypal_recherche":true` et `"paypal_webhook":true` = c'est bon. Il imprime aussi le refus
+d'un faux paiement — la preuve qu'on ne livre rien sans preuve.
+
+### Pendant que tu y es — deux choses que j'ai trouvées dans les boutiques
+
+| Quoi | Le problème, en clair |
+|---|---|
+| **L'IBAN est faux** | Les 6 boutiques affichent `MC98 •••• •••• ••••` et le bouton « Copier l'IBAN » copie **des points**. Donne-moi le vrai (ou dis-moi de retirer le bouton) — aujourd'hui il ne sert qu'à faire perdre un client. |
+| **Revolut sans montant** | Ton lien Revolut n'emporte pas la somme : le client la tape lui-même, donc il se trompe. PayPal, lui, l'emporte. Je peux afficher le montant à recopier en gros à côté du bouton. |
+
+---
+
 ## 🔴 URGENT — 4 mots de passe sont connus de tout le monde
 
 Ils étaient écrits en clair dans le dépôt, qui est **public**. Je les ai masqués, mais
@@ -31,13 +251,48 @@ Ils étaient écrits en clair dans le dépôt, qui est **public**. Je les ai mas
 
 ---
 
+## 🟣 PASSER LE DÉPÔT EN PRIVÉ — 1 seul clic pour toi, et il vient EN DERNIER
+
+> Tu m'as dit le 15.09 : « que personne ne puisse voir mon code, mes liens, tout ce qui se
+> construit — seuls les sites restent accessibles ». Voici où on en est, honnêtement.
+
+**Ce que j'ai vérifié (pas supposé)** : GitHub ne sert un site depuis un dépôt **privé** qu'avec
+un **abonnement payant**. Ton compte est en gratuit. **Si tu cliques « privé » maintenant,
+kd-mc.com s'éteint.** Il faut donc héberger le site ailleurs d'abord — c'est fait.
+
+**Ce que j'ai trouvé en le préparant** : ton code sortait par **DEUX** portes, pas une. Le miroir
+`kdmc-site.pages.dev` publiait **le dépôt entier** (2 049 fichiers de code serveur, 37 498 du
+source d'Apex, 193 automatisations, 188 tests). Passer GitHub en privé **n'aurait rien caché**.
+Les deux portes envoient maintenant le même paquet trié : les applications, et rien d'autre.
+
+**L'ordre à respecter** — je fais 1 à 4, tu ne fais que le 5 :
+
+| # | Quoi | Qui |
+|---|---|---|
+| 1 | Publier le site sur Cloudflare Pages (paquet trié) | moi |
+| 2 | Vérifier que les **26 adresses** répondent vraiment sur la nouvelle publication | moi |
+| 3 | Basculer le routeur du domaine vers cette publication | moi |
+| 4 | Vérifier kd-mc.com en vrai, page par page | moi |
+| 5 | **Passer le dépôt en privé** → [Réglages du dépôt, tout en bas](https://github.com/9r4rxssx64-creator/CMCteams/settings) → « Change repository visibility » → **Private** | 👆 **toi** |
+
+**Deux choses que je préfère te dire franchement :**
+
+- **Passer en privé n'efface pas le passé.** Tout ce qui a été publié reste chez qui l'a copié.
+  C'est pourquoi les 4 codes de la section 🔴 ci-dessus doivent être **changés**, pas seulement
+  cachés. Le privé protège la **suite**, pas ce qui est déjà sorti.
+- **Ton compte Cloudflare s'ouvre avec ton compte GitHub.** Si un jour tu perds l'accès à
+  GitHub, tu perds aussi la main sur l'hébergement de tes sites. Ça mérite un second moyen de
+  connexion (je peux te préparer la marche à suivre quand tu veux).
+
+---
+
 ## 🟠 UNE RÉPONSE SUFFIT — je fais le travail derrière
 
 Rien à installer, rien à configurer. Tu réponds, je m'occupe du reste.
 
 | # | Ma question | Ce que je fais avec ta réponse |
 |---|---|---|
-| 5 | **Le dépôt est public et contient les noms de tes collègues et de tes proches** (261 noms d'effectif, les 6 Pit Boss, le nom de Laurence). Trois choix : **(a)** on assume, **(b)** je remplace les noms par des matricules dans l'app et la correspondance part dans Firebase (chantier, mais c'est le vrai correctif), **(c)** on passe le dépôt en privé (le plus rapide, mais ça casse la publication du site — je mesure d'abord). | J'exécute l'option choisie |
+| 5 | ~~**Le dépôt est public et contient les noms de tes collègues et de tes proches.** (a) on assume · (b) matricules + correspondance dans Firebase · (c) dépôt en privé~~ → **Tu as répondu (c) le 15.09.2026.** J'ai mesuré, et le chemin est préparé : voir la section « 🟣 PASSER LE DÉPÔT EN PRIVÉ » ci-dessous. | Fait — plus rien à décider ici |
 | 6 | **Les boutiques peuvent être modifiées par n'importe qui.** Deux règles Firebase autorisent l'écriture **sans aucune condition**. Je les ferme ? | Je durcis les règles et je vérifie que les boutiques marchent toujours |
 | 7 | **N'importe quelle branche de travail peut déployer la production d'Apex Chat.** Je restreins à `main` seulement ? | Je corrige le déploiement |
 | 8 | **`arbre/research/ACTES-VERIF.md`** contient les dates et lieux de naissance d'environ **18 personnes vivantes** + une adresse — dans un dépôt public. Je le retire du dépôt ? | Je le sors et je le remplace par une note |

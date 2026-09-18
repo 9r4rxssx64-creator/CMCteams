@@ -38,7 +38,7 @@
 <body>
 <div class="wrap">
 <h1>🔒 Charte Privée</h1>
-<p class="meta">Apex Chat — Charte vie privée — En vigueur depuis le 27 avril 2026</p>
+<p class="meta">Apex Chat — Charte vie privée — version du 17 septembre 2026 (remplace celle du 27 avril 2026)</p>
 
 <div class="ok">
 <strong>🔒 Notre promesse</strong> : tes échanges sont chiffrés en transit (HTTPS/TLS) et stockés sur un serveur privé sous accès restreint. Nous ne prétendons pas être un « serveur aveugle » aujourd'hui — cette page t'explique <strong>exactement</strong> quelles données existent, où elles sont, et qui peut y accéder.
@@ -50,10 +50,11 @@
 <tr><td>Numéro de téléphone</td><td>Authentification + invitations</td><td>Tant que ton compte existe</td></tr>
 <tr><td>Pseudo</td><td>Identité publique dans l'app</td><td>Tant que ton compte existe</td></tr>
 <tr><td>Prénom + nom</td><td>Identité administrateur</td><td>Tant que ton compte existe</td></tr>
-<tr><td>Date dernière connexion</td><td>Présence "en ligne"</td><td>30 jours</td></tr>
+<tr><td>Date dernière connexion</td><td>Présence "en ligne"</td><td>Tant que ton compte existe</td></tr>
 <tr><td>Liste de tes contacts (uid only)</td><td>Notifier "X est sur Apex Chat"</td><td>Tant que les liens existent</td></tr>
 <tr><td>Métadonnées messages (qui→qui, quand, taille)</td><td>Routage technique</td><td>30 jours</td></tr>
-<tr><td>Adresses IP (hashées)</td><td>Sécurité, anti-fraude</td><td>30 jours</td></tr>
+<tr><td>Adresses IP (hashées), appareil, ville approximative</td><td>Sécurité, anti-fraude, « mes appareils »</td><td>Tant que ton compte existe (effacé avec lui)</td></tr>
+<tr><td>Sauvegarde quotidienne de la base</td><td>Restauration en cas de panne</td><td>14 jours, chiffrée</td></tr>
 <tr><td>Type de device + OS + version app</td><td>Compatibilité, push notif</td><td>Tant que le device est enregistré</td></tr>
 </table>
 
@@ -80,9 +81,9 @@ Pour des raisons de modération et de sécurité du service privé, l'administra
 <h3>Sous-traitants techniques</h3>
 <ul>
   <li><strong>Cloudflare Inc.</strong> (hébergement) : voit le trafic technique chiffré, sans contenu</li>
-  <li><strong>Firebase / Google</strong> (auth téléphone) : voit ton numéro pour envoyer le SMS de vérification</li>
-  <li><strong>Vonage / Twilio</strong> (SMS invitations) : voit les numéros invités pour envoyer SMS</li>
-  <li><strong>Anthropic / OpenAI / autres IA</strong> : voit uniquement les requêtes IA que TU envoies (résumé, traduction). Ces requêtes ne sont jamais déclenchées sans ton consentement.</li>
+  <li><strong>Vonage</strong> (SMS) : voit ton numéro pour envoyer le code de vérification et les invitations</li>
+  <li><strong>Cloudflare Workers AI (modèles Qwen)</strong>, <strong>Anthropic</strong>, <strong>Groq</strong> : voient uniquement le texte des fonctions IA que TU déclenches (résumé, traduction, réponses suggérées). Les réponses suggérées se calculent sur le dernier message reçu quand la conversation est ouverte ; tu peux les désactiver dans les réglages IA.</li>
+  <li><strong>GitHub, Inc.</strong> (GitHub Pages) : héberge les fichiers de la page, ne voit aucune donnée de compte</li>
 </ul>
 
 <h2>4. Cookies et stockage local</h2>
@@ -90,10 +91,10 @@ Pour des raisons de modération et de sécurité du service privé, l'administra
 
 <h2>5. Tes droits RGPD</h2>
 <ul>
-  <li><strong>Droit d'accès</strong> : Réglages → Mes données → tu vois tout</li>
-  <li><strong>Droit à la portabilité</strong> : Réglages → Exporter (JSON + ZIP médias)</li>
+  <li><strong>Droit d'accès et portabilité</strong> : Réglages → Mes données → fichier JSON de tout ce que le serveur détient sur toi</li>
+  <li><strong>Copie lisible des conversations</strong> : Réglages → Exporter (depuis ton téléphone)</li>
   <li><strong>Droit de rectification</strong> : Réglages → Profil → tu modifies</li>
-  <li><strong>Droit à l'effacement</strong> : Réglages → Supprimer mon compte → effacement sous 7 jours</li>
+  <li><strong>Droit à l'effacement</strong> : Réglages → Supprimer mon compte → effacement immédiat (les sauvegardes chiffrées disparaissent sous 14 jours)</li>
   <li><strong>Droit d'opposition</strong> : tu peux refuser le partage avec sous-traitants techniques en désinstallant l'app</li>
 </ul>
 
@@ -119,7 +120,7 @@ Réclamation possible auprès de la CCIN (Monaco) : <a href="https://ccin.mc">cc
 
 <div class="footer-back">
 <a class="btn" href="./">Retour à Apex Chat</a>
-<p class="meta" style="margin-top:14px">Conditions générales : <a href="./cgu.html">cgu.html</a></p>
+<p class="meta" style="margin-top:14px"><a href="./cgu.html">Conditions d'utilisation</a> · <a href="./mentions.html">Mentions légales</a> · <a href="./aide.html">Aide</a></p>
 </div>
 </div>
 </body>

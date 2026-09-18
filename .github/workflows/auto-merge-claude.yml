@@ -195,7 +195,7 @@ jobs:
           if [ -z "$PR" ]; then
             gh pr create --base main --head "$BRANCH" \
               --title "Auto-merge $BRANCH into main (claude-code automation)" \
-              --body "Tests pre-commit + JS syntax + no markers OK. Trigger: ${{ github.actor }}. Voir CLAUDE.md erreur #33 (branch jamais mergée = deploiement fantome)." \
+              --body "Tests pre-commit + JS syntax + no markers OK. Trigger: ${{ github.actor }}. Voir CLAUDE.md, erreur n°33 (branche jamais fusionnée = déploiement fantôme)." \
               || true
             PR=$(gh pr list --head "$BRANCH" --base main --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
           fi

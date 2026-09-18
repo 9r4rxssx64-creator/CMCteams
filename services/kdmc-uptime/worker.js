@@ -81,6 +81,11 @@ const SITES = [
   'chez-lolo.kd-mc.com',
   'bot.kd-mc.com',
   'beatbot.kd-mc.com',
+  'rotaplan.kd-mc.com',   /* offre B2B Rotaplan (page de vente) — ajoutée 15.09.2026 */
+  'kit.kd-mc.com',        /* Kit IA (indépendants) — produit numérique, 16.09 */
+  'croupier.kd-mc.com',   /* Devenir croupier — guide de métier */
+  'javis.kd-mc.com',    /* Javis — app installable de Bee */
+  'tor.kd-mc.com',        /* « Tor en clair » — routée le 15.09 sans être surveillée */
   'autorisations.kd-mc.com',
   'arbre.kd-mc.com',
   'lingua.kd-mc.com',
@@ -105,12 +110,16 @@ const SITES = [
    le genre d'alerte qu'on finit par ne plus lire.
    Le runner GitHub, lui, a un vrai réseau : c'est lui qui les sonde et qui le prouve.
    `apex-v13-backend` retiré : il n'existe pas sur le compte (workers_list du 5.09). */
+/* kdmc-vente encaisse et livre : s'il tombe, un client paie et ne reçoit rien.
+   C'est la panne la plus chère du domaine — surveillée comme telle. */
 const WORKERS = [
   'apex-secrets-proxy',
   'kdmc-ais',
   'kdmc-live',
   'kdmc-rag',
   'apex-auth-worker',
+  'kdmc-vente',
+  'kdmc-social',
 ];
 
 /* Ces adresses exigent une session admin : un 401/403 est la BONNE réponse,

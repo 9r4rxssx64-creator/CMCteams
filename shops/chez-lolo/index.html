@@ -264,7 +264,7 @@ input,select,textarea{font-size:16px}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.nav-item:focus-visible,.card:focus-visible{outline:2px solid var(--p);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"CHEZ LOLO","description":"La boutique multi-univers de Lolo : textile, cosmétiques, goodies & accessoires. Livraison Monaco & France.","url":"https://chez-lolo.kd-mc.com/","image":"https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/img/og.png?ignore=crop","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Store","name":"CHEZ LOLO","description":"La boutique multi-univers de Lolo : textile, cosmétiques, goodies & accessoires. Livraison Monaco & France.","url":"https://chez-lolo.kd-mc.com/","image":"https://chez-lolo.kd-mc.com/img/og.png?ignore=crop","address":{"@type":"PostalAddress","addressLocality":"Monaco","addressCountry":"MC"},"priceRange":"€€","paymentAccepted":"PayPal, Revolut, Virement bancaire"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 <!-- PUB READY — Activer en ajoutant les IDs -->
 <!-- Google Ads: décommenter et ajouter ID -->
@@ -540,7 +540,7 @@ cf.innerHTML=_shipBarHtml(subtotal-discAmt)
 +'<button onclick="toggleCart();sv(\'cart\')" style="width:100%;padding:10px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;margin-top:6px;border:none">Voir le panier complet →</button>'}
 function nlSub(){var e=document.getElementById("nlEmail");if(!e||e.value.indexOf("@")<1)return toast("Email invalide","error");
 var email=e.value;
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:email,store:STORE_NAME,message:"Nouvel abonné newsletter "+STORE_NAME}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:email,store:STORE_NAME,message:"Nouvel abonné newsletter "+STORE_NAME}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
 e.value=""}
 /* INIT */
 function sendContact(){
@@ -548,9 +548,9 @@ var name=document.getElementById("ctName"),email=document.getElementById("ctEmai
 if(!name||!email||!msg)return toast("Formulaire introuvable","error");
 if(!name.value.trim()||!email.value.trim()||!msg.value.trim())return toast("Remplissez tous les champs","error");
 if(email.value.indexOf("@")<1)return toast("Email invalide","error");
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{from_name:name.value,from_email:email.value,message:msg.value,store:STORE_NAME}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
 function notifyPayment(total){
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),timestamp:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{store:STORE_NAME,amount:fmtP(total),items:S.cart.map(function(i){return i.name+" x"+i.qty}).join(", "),timestamp:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
 function showPayment(total){
 var m=document.createElement("div");m.id="payModal";
 m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
@@ -624,7 +624,7 @@ items.forEach(function(i){decrementStock(i.id)});
 trackPurchase(orderId,total,items);
 /* Email confirmation client + notif Kevin */
 if(typeof emailjs!=="undefined"){
-emailjs.init("nUsorWTtC");
+emailjs.init("nUso3vcsGadvrWTtC");
 emailjs.send("service_4s16z8l","template_fzva9uf",{
 order_id:orderId,store:STORE_NAME,total:fmtP(total),method:method,
 items:items.map(function(i){return i.name+" x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n"),
@@ -868,14 +868,14 @@ if(typeof ldAdminLogout==="function"){var _o=ldAdminLogout;ldAdminLogout=functio
    if(pod.length){try{
      var ck={};try{ck=JSON.parse(localStorage.getItem("cl_checkout")||localStorage.getItem("ld_checkout")||"{}")}catch(_){}
      var lines=pod.map(function(i){return "• "+i.name+" ["+i.size+"] x"+i.qty+" — vêtement:"+i.garment+" couleur:"+i.color+" emplacement:"+i.placement;}).join("\n");
-     if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — à imprimer",title:"🎨 PRODUIT À IMPRIMER (Printify) — "+STORE_NAME,store:STORE_NAME,message:"PRODUITS PERSONNALISÉS À PRODUIRE VIA TON PRINTIFY :\n\n"+lines+"\n\nCLIENT :\n"+(ck.name||"")+"\n"+(ck.addr||"")+"\n"+((ck.zip||"")+" "+(ck.city||""))+"\n"+(ck.country||"France")+"\n\n→ Tu valides puis tu places la commande dans ton Printify."}).catch(function(){});}
+     if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — à imprimer",title:"🎨 PRODUIT À IMPRIMER (Printify) — "+STORE_NAME,store:STORE_NAME,message:"PRODUITS PERSONNALISÉS À PRODUIRE VIA TON PRINTIFY :\n\n"+lines+"\n\nCLIENT :\n"+(ck.name||"")+"\n"+(ck.addr||"")+"\n"+((ck.zip||"")+" "+(ck.city||""))+"\n"+(ck.country||"France")+"\n\n→ Tu valides puis tu places la commande dans ton Printify."}).catch(function(){});}
      var q=[];try{q=JSON.parse(localStorage.getItem("cl_pod_orders")||"[]")}catch(_){}q.push({ts:Date.now(),items:pod,ship:ck});localStorage.setItem("cl_pod_orders",JSON.stringify(q.slice(-100)));
      /* 🚀 Auto-création commande Printify via worker partagé (statut on-hold, aucun débit auto). L'email ci-dessus reste la trace de secours. */
      (function(){
        var cfg=window._clOrderCfg; if(!cfg||!cfg.worker_url)return;
        var HEXFR={"#15171a":"Noir","#0f1722":"Marine","#1d3a5f":"Marine","#ffffff":"Blanc","#c9c4ba":"Blanc","#2f4538":"Vert","#3a4636":"Kaki","#5a6650":"Kaki","#3a0f12":"Bordeaux","#5b1a1a":"Bordeaux","#7a5c1e":"Sable","#b08d57":"Sable","#8a8d92":"Ardoise"};
        var its=pod.map(function(i){return {name:i.name,garment:i.garment,design_data:i.printImg,size:i.size,color:HEXFR[String(i.color||"").toLowerCase()]||"Noir",placement:i.placement,quantity:i.qty};});
-       fetch(cfg.worker_url.replace(/\/$/,"")+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:r,shop:"chez-lolo",shopName:STORE_NAME,label:STORE_NAME+" "+(r||""),pushUrl:"https://9r4rxssx64-creator.github.io/CMCteams/shops/chez-lolo/index.html?ld_admin=1",items:its,address:{name:ck.name||"",addr:ck.addr||"",zip:ck.zip||"",city:ck.city||"",email:ck.email||"",phone:ck.phone||"",country:ck.country||"France"}})})
+       fetch(cfg.worker_url.replace(/\/$/,"")+"/order",{method:"POST",headers:{"Content-Type":"application/json","x-ld-app":cfg.app_tag||"ld-order-v1"},body:JSON.stringify({orderId:r,shop:"chez-lolo",shopName:STORE_NAME,label:STORE_NAME+" "+(r||""),pushUrl:"https://chez-lolo.kd-mc.com/index.html?ld_admin=1",items:its,address:{name:ck.name||"",addr:ck.addr||"",zip:ck.zip||"",city:ck.city||"",email:ck.email||"",phone:ck.phone||"",country:ck.country||"France"}})})
        .then(function(x){return x.json()}).then(function(j){ if(j&&j.ok&&typeof toast==="function")toast("🚀 Commande envoyée en production Printify"+(j.printify_order_id?" (#"+j.printify_order_id+")":"")+(j.warnings&&j.warnings.length?(" — à vérifier : "+j.warnings.join(", ")):"")); }).catch(function(){});
      })();
      if(LD_ADMIN)setTimeout(clInstallAdminUI,100);

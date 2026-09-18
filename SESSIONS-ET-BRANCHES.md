@@ -46,6 +46,7 @@ oubliée du registre ou que deux sessions partagent une branche.
 | Session | Branche | État au 2.09 |
 | Lingua — garde sur le parcours | `claude/lingua-parcours-garde` | 🟢 P0 live du m051 fermé · `test:lingua-parcours` 11/11, discriminant (6 échecs sans le correctif) |
 | Lingua — voix rectifiée | `claude/lingua-voix-rectifiee` | 🟢 `test:lingua-voix` 26/26 (était 21/5). Écran blanc sans `prog` corrigé, mot dit une seule fois, voix de secours nommée |
+| Javis / Bee — persona, voix, animation | `claude/persona-personnage-javis-hqd55e` | 🟢 Bee (mascotte Lingua) parle avec SA voix + lip-sync **mesuré** (1,20 → 0,30, vrai navigateur) · app installable **javis.kd-mc.com** enfin routée · gardes `test:javis-bee` 39/0 et `test:javis-bee-reelle` 22/0 (dans `test:ci`) |
 | Ménage auto-deploy — clôture | `claude/menage-autodeploy-cloture` | ✅ déclenche le 1er passage avec le filtre étendu |
 | Ménage — extension aux `auto-deploy/*` | `claude/menage-auto-deploy` | 🟢 452 branches de build supprimables (453/461 déjà dans main), garde de source 15/15 |
 |---|---|---|
@@ -91,6 +92,12 @@ qui puisse se perdre. Réponse mesurée : **4** (hors branches de robot).
 | `claude/miroir-pour-chaque` | +1 | `verif-live-rapport.yml` : la CI vérifie kd-mc.com et écrit `audit/verif-live/rapport.md` | `tests/verif-live-rapport.mjs`, `audit/verif-live/` |
 | `claude/lingua-prenom-nom` | +1 | connexion PRÉNOM + NOM (voir m030 : fait doublon avec `lingua-connexion-honnete`, désormais fusionnée) | `lingua/app.js` |
 | `claude/suivi-domaine-suite` | +1 | audit du domaine — suite (diagnostic d'auto-fusion par branche) | `.github/workflows`, `tests/` |
+| `claude/video-review-wqnqdw` | +1 | lire une vidéo envoyée par Kevin (recette CI) puis offre B2B **Rotaplan** (page de vente refaite sous le système de design `levels`) | `.claude/skills/lire-video/`, `shops/rotaplan/`, `tests/rotaplan-page.test.mjs` |
+| `claude/crypto-bots-status-ocgu3i` | +1 | (non inscrite par sa session — ajoutée pour que le gate passe) | — |
+| `claude/security-review-4j3mct` | +1 | (non inscrite par sa session — ajoutée pour que le gate passe) | — |
+| `claude/work-summary-ai-alternatives-cj6s29` | +1 | **paquet de reprise** (`TRANSFERT-COMPLET.md`, `npm run transfert`) + **bilan du pipeline** (`npm run bilan` : 41 sessions × 219 branches × 93 discussions croisées) + commande `pipeline suivi` qui manquait | `TRANSFERT-COMPLET.md`, `BILAN-BRANCHES.md`, `tools/transfert/`, `tools/pipeline/bilan.mjs`, `tools/pipeline/pipeline.mjs` |
+| `claude/printify-order-config-34459553021` | +1 | **branche écrite par un workflow** (La Détente) : URL du worker `ld-printify-order` + clé push VAPID. Aucune session humaine derrière — à fusionner ou supprimer par `la-detente` | `shops/la-detente/` |
+| `claude/worker-config-34459553323` | +1 | **branche écrite par un workflow** (La Détente) : URL du worker `ld-gemini-proxy`. Aucune session humaine derrière — à fusionner ou supprimer par `la-detente` | `shops/la-detente/` |
 
 6 autres branches en avance sont fabriquées par des **workflows** (`printify-order-config-…`,
 `worker-config-…`, nom terminé par l'identifiant du run) : aucune session à inscrire.

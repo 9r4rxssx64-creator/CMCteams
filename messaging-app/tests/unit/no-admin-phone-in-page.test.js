@@ -38,6 +38,8 @@ const FIXTURES_TESTS = [
   '+33612345678', '+33612345601', '+33612345602', '+33612345603', '+33612000000', '0612000000',
   '+33600000000', '+33600000001', '+33600000002', '+33600000010', '0600000010', '+33600000020', '0600000020',
   '+33600000091', '+33600000092', '0600000001',
+  // 17/09/2026 : harnais tools/fonctions-reelles.mjs (hors tests/, donc scanné) — suites de zéros, synthétiques
+  '+33600000003', '+33600000009',
   '+33611111111', '0611111111', '+33611112222', '+33622222222', '+33633333333', '+33699999999', '+33999999999',
 ];
 
@@ -81,6 +83,27 @@ describe('Vie privée — aucun numéro de téléphone réel dans le dépôt', (
       if (t.length) fautifs.push(`${f.replace(APP + '/', '')} → ${t.join(', ')}`);
     }
     expect(fautifs, 'Un numéro non listé est apparu dans les tests :\n' + fautifs.join('\n')).toEqual([]);
+  });
+
+  // 17/09/2026 (audit P0) : deux numéros RÉELS vivaient en clair dans
+  // `.github/workflows/deploy-apex-chat.yml` sous un commentaire disant « jamais dans le
+  // repo ». Ce garde ne regardait que la page et les tests → il passait au vert. Il couvre
+  // désormais TOUT le dossier de l'app (code, workers, docs, config) et TOUS les workflows.
+  it("ni le reste de l'app, ni les workflows GitHub ne portent un numéro réel", () => {
+    const racines = [APP, join(APP, '..', '.github', 'workflows')];
+    const exclus = /\/(node_modules|coverage|test-results|playwright-report|tests)\//;
+    const fautifs = [];
+    const walk = (dir) => {
+      for (const n of readdirSync(dir)) {
+        const p = join(dir, n);
+        if (statSync(p).isDirectory()) { if (!exclus.test(p + '/')) walk(p); continue; }
+        if (!/\.(m?js|html|md|toml|ya?ml|json|sh|txt|sql)$/.test(n)) continue;
+        const t = inconnus(readFileSync(p, 'utf8'), [...EXEMPLES_PAGE, ...FIXTURES_TESTS]);
+        if (t.length) fautifs.push(`${p.replace(APP + '/', '')} → ${t.join(', ')}`);
+      }
+    };
+    for (const r of racines) walk(r);
+    expect(fautifs, 'Numéro réel trouvé hors des exemples autorisés :\n' + fautifs.join('\n')).toEqual([]);
   });
 
   it('garde discriminant : un numéro inconnu est bien détecté', () => {

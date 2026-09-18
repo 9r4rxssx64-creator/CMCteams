@@ -155,6 +155,9 @@ def run(live: bool) -> None:
                   + (" — 🟢 NE VEND JAMAIS À PERTE (attend la remontée)"
                      if cfg.hold_until_profit else ""))
     audit.console("Kill switch : BOT_KILL=1 (Railway) ou fichier 'KILL' pour tout couper.")
+    for w in cfg.risk_warnings():
+        audit.log("RISK_WARNING", detail=w)
+        audit.console(f"⚠️ RISQUE : {w}")
 
     # Repart de la réalité du compte (state.json éphémère sur Railway) : adopte
     # les cryptos déjà détenues comme positions gérées → elles seront revendues

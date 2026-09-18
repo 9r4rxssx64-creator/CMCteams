@@ -51,6 +51,12 @@ async function parle({ cours, voix = VOIX_IPHONE, froid = false }) {
     localStorage.setItem('lingua_g_accounts', JSON.stringify([{ id: 'a1', name: 'Kevin', avatar: '🐝', code: '', created: 1 }]));
     localStorage.setItem('lingua_g_current', JSON.stringify('a1'));
     localStorage.setItem('lingua_a_a1_course', JSON.stringify(c));
+    /* SANS cette clé, l'app plante au démarrage — « Cannot read properties of undefined
+       (reading 'u0-0') » — et rend une page BLANCHE : aucun bouton, donc le test attendait
+       15 s un 🔊 qui ne pouvait pas exister (mesuré 10.09 : le parcours utilisateur réel,
+       lui, l'affiche bien — c'était le montage du test qui était périmé, pas l'app).
+       Il faut la progression DE LA LANGUE testée : `{}` seul ne suffit pas. */
+    localStorage.setItem('lingua_a_a1_prog', JSON.stringify({ [c]: {} }));
     localStorage.setItem('lingua_a_a1_sound', JSON.stringify(true));
     localStorage.setItem('lingua_a_a1_voice', JSON.stringify('coral'));  /* une voix « en ligne » */
     window.__dit = [];

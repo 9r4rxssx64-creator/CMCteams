@@ -82,6 +82,11 @@ jobs:
   # documents de travail publiés, destination des automatisations, assets wrangler à fabriquer,
   # registre des sessions) étaient « câblées » sans jamais tourner sur une PR. Elles tournent
   # ici : 0 dépendance npm (node seul), ~20 s, à chaque PR vers main et sur main.
+  # AJOUT 17.09 (tor-securite) : `test:tor` était câblée « dans test:ci »… mais test:ci
+  # n'est exécuté par AUCUN workflow GitHub (mesuré : les occurrences sont des commentaires),
+  # seulement par le job « tests » de GitLab, injoignable sans jeton. Une garde qui ne tourne
+  # nulle part est un faux vert (leçon #103). Elle rejoint donc ce job : 0 dépendance npm,
+  # node seul — vérifié en local avec node_modules absent.
   gardes-depot-public:
     runs-on: ubuntu-latest
     steps:
@@ -95,13 +100,13 @@ jobs:
         run: |
           for g in test:no-pin-leak test:depot-public-sain test:secret-jamais-persiste \
                    test:documents-travail test:destinations-workflows test:wrangler-assets \
-                   test:pipeline-sessions; do
+                   test:pipeline-sessions test:workflows-valides test:tor; do
             echo "::group::$g"
             if npm run -s "$g"; then echo "::endgroup::"; else
               echo "::endgroup::"; echo "::error title=$g::garde en échec — voir le groupe $g ci-dessus"; exit 1
             fi
           done
-          echo "✅ 7 gardes du dépôt public vertes"
+          echo "✅ 8 gardes du dépôt public vertes"
 
   e2e-tests:
     runs-on: ubuntu-latest

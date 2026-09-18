@@ -1,42 +1,57 @@
 #!/bin/bash
-# Publier tout le site sur Cloudflare Pages (projet kdmc-site).
-# Le contenu est place a la racine ET sous /CMCteams/ : github.io servait tout
-# derriere ce prefixe, et les apps (index.html notamment) chargent des chemins
-# absolus /CMCteams/... — sans la copie, ces chargements tombent dans le vide.
+# Publier LE SITE (pas le dépôt) sur Cloudflare Pages — projet kdmc-site.
 set -euo pipefail
-# ⚠️ CE DÉPÔT EST PRIVÉ, LE SITE PUBLIÉ EST PUBLIC.
-# Tout ce qui n'est pas destiné à des inconnus doit être exclu ICI, sinon la
-# publication le met en ligne. Ajouté le 5.09.2026 en synchronisant les deux
-# dépôts : les documents ci-dessous ne vivent que sur GitLab (privé) précisément
-# parce qu'ils nomment des personnes vivantes de la famille ou portent des
-# identifiants de compte. Les publier annulerait la raison de les y garder.
-# NB : arbre/research/actesimg/ N'EST PAS exclu — l'app arbre s'en sert
-# réellement à l'exécution (19 références dans arbre/index.html, vérifié).
+
+# ═════════════════════════════════════════════════════════════════════════════
+# RÉÉCRIT LE 15.09.2026 — Kevin : « passe tout en privé, que personne ne puisse
+# voir mon code ». En le préparant, j'ai mesuré ce que ce script envoyait :
 #
-# MESURÉ le 5.09 avant d'élargir : AUCUNE page ne charge un fichier .md depuis
-# le site. Les seuls renvois vers des .md dans le code sont des adresses
-# ABSOLUES vers github.com / raw.githubusercontent.com (c'est ainsi qu'Apex
-# relit ses documents), et aucun service worker n'en met en cache. D'où
-# `--exclude='*.md'` : la règle se maintient toute seule, un document ajouté
-# demain est exclu sans qu'on pense à l'écrire ici. Les noms qui suivent
-# restent listés pour les cas qui ne sont PAS des Markdown.
-tar cf /tmp/site.tar --exclude=.git --exclude=.gitlab-ci.yml --exclude='*.patch' \
-  --exclude='*.md' \
-  --exclude='patrimoine' \
-  --exclude='patrimoine-resultats' \
-  --exclude='pipeline' \
-  --exclude='audit' \
-  --exclude='memo' \
-  --exclude='tools/gitlab' \
-  --exclude='CLAUDE_HANDOFF.json' \
-  --exclude='actes.json' \
-  .
-mkdir -p /tmp/_deploy/CMCteams
-tar xf /tmp/site.tar -C /tmp/_deploy
-tar xf /tmp/site.tar -C /tmp/_deploy/CMCteams
-find /tmp/_deploy -type f -size +24M -print -delete   # limite 25 Mo/fichier chez Pages
-echo "fichiers a publier : $(find /tmp/_deploy -type f | wc -l)"
+#   AVANT : `tar cf … .` = LE DÉPÔT ENTIER moins une douzaine d'exclusions.
+#           Partaient donc en ligne, sur une adresse publique :
+#             services/       2 049 fichiers  (le code de TOUS les workers)
+#             apex-ai/       37 498 fichiers  (tout le source TypeScript d'Apex)
+#             .github/          193 fichiers  (les automatisations)
+#             tests/            188 fichiers
+#
+#   Autrement dit : mettre le dépôt GitHub en privé n'aurait RIEN caché, parce
+#   que le même code était publié ici. Deux portes, on n'en fermait qu'une.
+#
+#   APRÈS : on envoie le MÊME paquet trié que la publication GitHub — les
+#           applications, et rien d'autre. Un seul fabricant de paquet pour les
+#           deux chemins : deux recettes séparées finissent toujours par
+#           diverger, et c'est la divergence qui fait fuiter.
+#
+# Ce script reste le chemin de SECOURS (si GitHub est indisponible). Le chemin
+# normal est .github/workflows/publier-site-prive.yml.
+# ═════════════════════════════════════════════════════════════════════════════
+
+RACINE="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$RACINE"
+
+node services/kdmc-router/prepare-secours.mjs --pages
+PAQUET="services/kdmc-router/pages-upload"
+test -d "$PAQUET" || { echo "ERREUR : paquet absent"; exit 1; }
+
+# ── Garde AVANT envoi : publier est irréversible ─────────────────────────────
+# Ce qui est parti a été servi. On contrôle donc ici, pas après.
+fuite=0
+md=$(find "$PAQUET" -name '*.md' | wc -l)
+[ "$md" -eq 0 ] || { echo "ERREUR : $md document(s) Markdown dans le paquet"; fuite=1; }
+for interdit in services tests .github .git pipeline audit apex-ai; do
+  [ ! -e "$PAQUET/$interdit" ] || { echo "ERREUR : $interdit ne doit jamais être publié"; fuite=1; }
+done
+maps=$(find "$PAQUET" -name '*.map' | wc -l)
+[ "$maps" -eq 0 ] || { echo "ERREUR : $maps carte(s) de code source (.map)"; fuite=1; }
+[ "$fuite" -eq 0 ] || { echo "PUBLICATION ANNULÉE — le paquet contient ce qui doit rester privé."; exit 1; }
+
+echo "fichiers a publier : $(find "$PAQUET" -type f | wc -l)"
+
 npx --yes wrangler@3 pages project create kdmc-site --production-branch=main 2>/dev/null \
   || echo "(projet kdmc-site deja present)"
-npx --yes wrangler@3 pages deploy /tmp/_deploy --project-name=kdmc-site --branch=main --commit-dirty=true
+npx --yes wrangler@3 pages deploy "$PAQUET" --project-name=kdmc-site --branch=main --commit-dirty=true
 echo "OK site publie -> https://kdmc-site.pages.dev"
+
+# Vérification réelle : les 26 adresses répondent-elles depuis le site publié ?
+# Un « deploy OK » qui sert des pages vides n'est pas une réussite (leçon #95).
+sleep 10
+node tools/audit/sonde-site-publie.mjs https://kdmc-site.pages.dev --racine

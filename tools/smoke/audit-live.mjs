@@ -18,7 +18,7 @@
  * du projet — worker/firebase/domaine — échouée/bloquée = la classe « CORS commande »).
  */
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { connecte, masque } from './session-kevin.mjs';
 
 const BASE = (process.argv[2] || 'https://kd-mc.com').replace(/\/$/, '');
@@ -53,6 +53,113 @@ const SURFACES = [
   { url: 'https://bot.' + ROOT + '/', name: 'Bot crypto (tableau de bord)', selKey: 'body' },
   { url: 'https://beatbot.' + ROOT + '/', name: 'Beatbot (robot piscine, admin)', selKey: 'body' },
   { url: 'https://autorisations.' + ROOT + '/', name: 'Autorisations (admin)', selKey: 'body' },
+  // « Tor en clair » (15.09.2026) : page publique, sans connexion — un simple balayage
+  // suffit. Ajoutée ici dès sa mise en ligne : une surface absente de cette liste est une
+  // surface que personne ne surveille (audit domaine 05/09, 25/26 → 26/26).
+  { url: 'https://tor.' + ROOT + '/', name: 'Tor en clair', selKey: 'body' },
+  /* Rotaplan (15.09.2026) : page de vente B2B, publique. Même raison que « Tor en clair » —
+     une surface routée mais absente d'ici n'est surveillée par personne. */
+  { url: 'https://rotaplan.' + ROOT + '/', name: 'Rotaplan (offre B2B)', selKey: 'h1' },
+  /* Bee / Javis (16.09.2026) : l'app installable de l'assistante de Kevin. Elle est
+     fail-CLOSED — elle ne s'affiche QUE pour un admin prouvé par Face ID, ce qu'une
+     session de CI ne peut pas fabriquer (et ne doit pas). Ce qu'on vérifie ici est donc
+     exactement ce qui DOIT être vrai pour tout le monde : la page existe, elle se monte,
+     elle ne jette rien, et elle DIT clairement pourquoi Bee n'est pas là — jamais un
+     écran noir inexpliqué. */
+  { url: 'https://javis.' + ROOT + '/', name: 'Bee (app installable)', selKey: 'body', deep: async (page) => {
+      const t = await page.evaluate(() => document.body.innerText || '');
+      const bee = await page.locator('#javis-launcher .bee-rig').count().catch(() => 0);
+      if (bee > 0) return { ok: true, note: 'Bee est affichée (session reconnue admin prouvé)' };
+      return { ok: /personnelle à Kevin|Bee/i.test(t),
+        note: /personnelle à Kevin/i.test(t)
+          ? 'fail-closed correct : Bee cachée + message clair (session nommée, pas Face ID)'
+          : 'PAGE MUETTE : ni Bee ni explication' };
+    } },
+  /* Tableau de bord Commerce (admin) : sans session, la page DOIT afficher le verrou
+     (pas une page blanche, pas une erreur JS). Sa CSP autorise la caisse ; le JSON
+     statique doit être servi (sinon le tableau ne se construit jamais). */
+  { url: 'https://' + ROOT + '/admin/commerce.html', name: 'Commerce — tableau de bord (admin)', selKey: '#app .msg', deep: async (page) => {
+      const txt = await page.textContent('#app').catch(() => '');
+      if (!/Accès administrateur/.test(txt)) return { ok: false, note: 'verrou absent : « ' + txt.slice(0, 80) + ' »' };
+      const r = await page.request.get('https://' + ROOT + '/admin/commerce-data.json').catch(() => null);
+      if (!r || r.status() !== 200) return { ok: false, note: 'commerce-data.json HTTP ' + (r ? r.status() : 'KO') };
+      const j = await r.json().catch(() => null);
+      if (!j || !Array.isArray(j.produits) || j.produits.length < 6) return { ok: false, note: 'commerce-data.json illisible ou vide' };
+      return { ok: true, note: 'verrou affiché, données statiques servies (' + j.produits.length + ' produits, ' + j.videos.length + ' vidéos)' };
+    } },
+  { url: 'https://kit.' + ROOT + '/', name: "Kit IA de l'indépendant (vente)", selKey: 'h1', deep: async (page) => {
+      // « Déjà publié au Club » : la page lit le sommaire du Club sur le VRAI worker et la
+      // VRAIE base (au moins 1 consigne hebdo depuis le 16.09, s2026-38). Bloc caché =
+      // worker injoignable, base vide ou source≠club-ia → la promesse « chaque semaine »
+      // n'est pas prouvée sur le domaine.
+      try {
+        await page.waitForSelector('#clubSemaine:not([hidden])', { timeout: 15000 });
+        const titres = await page.$$eval('#clubListe li strong', (els) => els.map((e) => e.textContent.trim()));
+        if (!titres.length) return { ok: false, note: 'vitrine Club visible mais vide' };
+        if (titres.some((t) => /^Module|Ton assistant/i.test(t))) return { ok: false, note: 'un module du kit dans la vitrine du Club : ' + titres.join(' | ') };
+        return { ok: true, note: 'vitrine Club : ' + titres.length + ' consigne(s) réelle(s) — « ' + titres[0] + ' »' };
+      } catch (e) { return { ok: false, note: 'vitrine « Déjà publié au Club » jamais affichée (worker /apercu?produit=club-ia muet ou sommaire sans club-ia)' }; }
+    } },
+  { url: 'https://kit.' + ROOT + '/pour/index.html', name: "Kit IA — l'IA par métier (index)", selKey: 'h1', deep: async (page) => {
+      const n = await page.$$eval('ul.liste li a[href$=".html"]', (els) => els.length).catch(() => 0);
+      return n >= 40 ? { ok: true, note: n + ' métiers listés' } : { ok: false, note: 'index métiers : ' + n + ' liens (≥ 40 attendus)' };
+    } },
+  { url: 'https://kit.' + ROOT + '/pour/plombier.html', name: "Kit IA — l'IA pour un plombier", selKey: 'h1', deep: async (page) => {
+      const h1 = await page.textContent('h1').catch(() => '');
+      const situ = await page.$$eval('ul.liste li', (els) => els.length).catch(() => 0);
+      const css = await page.evaluate(() => getComputedStyle(document.body).fontFamily).catch(() => '');
+      if (!/plombier/i.test(h1)) return { ok: false, note: 'h1 ≠ plombier : ' + h1.slice(0, 60) };
+      if (situ !== 5) return { ok: false, note: situ + ' situations (5 attendues)' };
+      if (!/Manrope|Inter|system/i.test(css)) return { ok: false, note: 'feuille ../kit.css non appliquée (police ' + css.slice(0, 40) + ')' };
+      return { ok: true, note: '5 situations, feuille de style appliquée' };
+    } },
+  /* Fabrique de produits (17.09) : les 4 pages de niche, lues depuis le catalogue PUBLIC
+     (tools/produits/catalogue.json) pour que la vérification ne dérive jamais de la vente :
+     prix affiché, bouton PayPal au même montant, formulaire de récupération sur le bon produit.
+     Le contenu (base D1) est prouvé à part par produit-fabrique.yml. */
+  ...JSON.parse(readFileSync(new URL('../produits/catalogue.json', import.meta.url), 'utf8')).produits.map((p) => ({
+    url: 'https://kit.' + ROOT + '/' + p.slug + '.html', name: 'Kit IA — niche « ' + p.court + ' » (' + p.prix + ' €)', selKey: 'h1', deep: async (page) => {
+      const mini = (await page.textContent('.prix-mini').catch(() => '') || '').trim();
+      const paypal = await page.getAttribute('#payer-paypal', 'href').catch(() => '');
+      const opt = await page.$eval('#produit option', (o) => o.value).catch(() => '');
+      const lire = await page.$$eval('a[href^="lire.html?produit="]', (els) => els.length).catch(() => 0);
+      if (mini !== p.prix + ' €') return { ok: false, note: 'prix affiché « ' + mini + ' » ≠ ' + p.prix + ' € (la caisse vérifie ce montant)' };
+      if (!String(paypal).toLowerCase().includes(p.prix + 'eur')) return { ok: false, note: 'lien PayPal sans le montant ' + p.prix + ' EUR : ' + paypal };
+      if (opt !== p.id) return { ok: false, note: 'formulaire de récupération sur « ' + opt + ' » au lieu de ' + p.id };
+      if (!lire) return { ok: false, note: 'aucun lien vers lire.html?produit=' + p.id };
+      return { ok: true, note: p.prix + ' € affiché = PayPal = caisse, récupération sur ' + p.id + ', ' + lire + ' lien(s) lecteur' };
+    } })),
+  { url: 'https://kit.' + ROOT + '/lire.html', name: 'Kit IA — lecteur (module 1 gratuit)', selKey: '#module h2', deep: async (page) => {
+      // Sans code, le lecteur demande /apercu?produit=kit-ia : le sommaire est celui du KIT
+      // (7 modules, 1 ouvert, 6 verrouillés). Les consignes du Club n'apparaissent qu'avec
+      // un code Club (mesuré run 35162308998 : 7 entrées — ma 1re attente « ≥ 8 » était fausse,
+      // pas la page). Ce qui se prouve ici : 7 modules, le 1er rendu, 6 verrous visibles.
+      const h2 = await page.textContent('#module h2').catch(() => '');
+      const nb = await page.$$eval('#sommaire li', (els) => els.length).catch(() => 0);
+      const verrous = await page.$$eval('#sommaire .verrou', (els) => els.length).catch(() => 0);
+      if (nb !== 7) return { ok: false, note: 'sommaire ' + nb + ' entrées (7 modules du kit attendus)' };
+      if (verrous !== 6) return { ok: false, note: verrous + ' verrous (6 attendus : seul le module 1 est gratuit)' };
+      if (!h2) return { ok: false, note: 'module 1 non rendu' };
+      return { ok: true, note: '7 modules, 6 verrouillés, module 1 rendu « ' + h2.slice(0, 50) + ' »' };
+    } },
+  /* Les 4 lecteurs de niche (17.09) : SANS code, lire.html?produit=<id> demande
+     /apercu?produit=<id> au vrai worker sur la vraie base → 7 modules du BON produit (fil
+     d'Ariane = nom du produit, module 1 = son premier titre du catalogue), 6 verrous. C'est
+     la seule preuve que le contenu fabriqué en base (produit-fabrique.yml) est servi en vrai. */
+  ...JSON.parse(readFileSync(new URL('../produits/catalogue.json', import.meta.url), 'utf8')).produits.map((p) => ({
+    url: 'https://kit.' + ROOT + '/lire.html?produit=' + p.id, name: 'Kit IA — lecteur « ' + p.court + ' »', selKey: '#module h2', deep: async (page) => {
+      const h2 = (await page.textContent('#module h2').catch(() => '') || '').trim();
+      const nb = await page.$$eval('#sommaire li', (els) => els.length).catch(() => 0);
+      const verrous = await page.$$eval('#sommaire .verrou', (els) => els.length).catch(() => 0);
+      const sur = (await page.textContent('#sur a').catch(() => '') || '').trim();
+      const nom = p.nom.split(' — ')[0];
+      if (nb !== p.modules.length) return { ok: false, note: 'sommaire ' + nb + ' entrées (' + p.modules.length + ' attendues pour ' + p.id + ')' };
+      if (verrous !== p.modules.length - 1) return { ok: false, note: verrous + ' verrous (' + (p.modules.length - 1) + ' attendus)' };
+      if (!h2.startsWith('Module 1 — ' + p.modules[0].titre)) return { ok: false, note: 'module 1 ≠ catalogue : « ' + h2.slice(0, 70) + ' »' };
+      if (sur !== nom) return { ok: false, note: 'fil d\'Ariane « ' + sur + ' » ≠ « ' + nom + ' » (mauvais produit servi ?)' };
+      return { ok: true, note: nb + ' modules du bon produit, ' + verrous + ' verrous, module 1 « ' + h2.slice(11, 60) + ' »' };
+    } })),
+  { url: 'https://croupier.' + ROOT + '/', name: 'Devenir croupier (guide)', selKey: 'h1' },
   { url: 'https://arbre.' + ROOT + '/', name: 'Arbre généalogique', selKey: '#gate', deep: async (page) => {
       // Depuis l'arbre v3.16 (5.09.2026) il n'y a PLUS de code par défaut dans la page : le
       // code famille se vérifie sur le domaine (POST /__arbre/unlock) et n'existe NULLE PART
@@ -89,6 +196,23 @@ const SURFACES = [
       const ver = await page.evaluate(() => (document.querySelector('#ver') || {}).textContent || '').catch(() => '');
       const base = j.count + ' fiches servies (' + (j.source || '?') + ', seedVersion ' + (j.seedVersion || '?') + ') · grille ' + (gate ? 'affichée' : 'ABSENTE') + ' · mauvais code refusé (' + bj.reason + ')' + (ver ? ' · ' + ver : '');
       if (!gate) return { ok:false, note: base + ' — la grille devrait être affichée sans code' };
+      /* « FUSIONNÉ » NE VEUT PAS DIRE « EN LIGNE » (erreur #33, et vécu le 11.09.2026 : une
+         correction écrite en v3.20 dormait sur une branche pendant que l'iPhone de Kevin tournait
+         en v3.18 — je lui ai envoyé un fichier que son app ne savait pas lire). On compare donc la
+         version RÉELLEMENT SERVIE à celle du dépôt : si le domaine sert plus ancien, c'est rouge,
+         et le message dit les deux numéros. Plus récent (déploiement en cours d'un autre commit)
+         n'est pas une faute : on le signale sans échouer. */
+      const vLive = (await page.evaluate(() => {
+        const m = String(document.documentElement.outerHTML).match(/var APP_VER="([^"]+)"/);
+        return m ? m[1] : '';
+      }).catch(() => '')) || (ver.match(/v[\d.]+/) || [''])[0];
+      let vRepo = '';
+      try { vRepo = (readFileSync('arbre/index.html', 'utf8').match(/var APP_VER="([^"]+)"/) || [])[1] || ''; } catch (e) { /* hors dépôt : on ne compare pas */ }
+      const num = (v) => String(v || '').replace(/^v/, '').split('.').map((n) => +n || 0);
+      const plusAncien = (a, b) => { const x = num(a), y = num(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) < (y[i] || 0); } return false; };
+      if (vRepo && vLive && plusAncien(vLive, vRepo)) {
+        return { ok:false, note: base + ' — DÉPLOIEMENT FANTÔME : le domaine sert ' + vLive + ' alors que le dépôt est en ' + vRepo + ' (publication non faite ou cache)' };
+      }
       const codeHash = (process.env.ARBRE_CODE_SHA256 || '').trim().toLowerCase();
       if (!/^[0-9a-f]{64}$/.test(codeHash)) return { ok:true, note: base + ' · cartes non comptées (secret ARBRE_CODE_SHA256 absent — rendu prouvé hors ligne par verify-domaine)' };
       // Opt-in : avec l'empreinte du code, on entre vraiment et on compte les cartes
@@ -224,9 +348,9 @@ const SURFACES = [
             if (u < 5 || !note) return { ok:false, note:'🇲🇨 cours monégasque incomplet : ' + u + ' unités, note honnête ' + note };
           }
         } catch (e) { mc = ' · 🇲🇨 sonde monégasque indispo'; }
-        // la version RÉELLEMENT servie (preuve que le déploiement est passé, pas le dépôt)
-        const ver = await page.evaluate(() => { const b = document.querySelector('.ver, .version, [data-ver]'); return b ? b.textContent.trim() : (window.APP_VER || ''); }).catch(() => '');
-        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts + (ver ? ' · version servie ' + ver : '') };
+        // (la version servie est désormais lue pour TOUTES les surfaces, avant le `deep` —
+        //  voir lireVersionServie(). Ce doublon local a été retiré.)
+        return { ok:true, note: langs + ' langues · ' + units + ' unités · ' + tabs + ' onglets · ' + stories + ' histoires 📖 · ' + games + ' jeux ⚡🃏 · stats 📊 · prononciation 🎤 · ' + faits + ' anecdotes + ' + chiffres + ' chiffres + ' + motsV + ' mots, tous sourcés 📜' + mc + voix + ' · vies ' + hearts };
       } catch (e) { return { ok:false, note:'exception deep: ' + String(e).slice(0,80) }; }
     } },
   { url: 'https://studio.' + ROOT + '/', name: 'Créa Studio', selKey: '#bnav', deep: async (page) => {
@@ -259,6 +383,42 @@ if (AS_KEVIN) console.log('Mode CONNECTÉ (Kevin) — code admin : ' + masque(PI
 
 const SHOT_DIR = 'audit-live-shots';
 mkdirSync(SHOT_DIR, { recursive: true });
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   QUELLE VERSION EST RÉELLEMENT SERVIE — sur CHAQUE surface, à chaque balayage.
+
+   Pourquoi ça vaut le coup : sans ça, personne ne peut prouver qu'une mise en ligne
+   est passée. On relançait des correctifs à l'aveugle sans savoir si la page servie
+   était déjà la nouvelle (mesuré le 17/09 : Lingua a servi l'ancien `app.js` pendant
+   ~10 min après un déploiement pourtant terminé — le cache réseau, `app.js` étant
+   appelé sans numéro de version dans l'URL).
+
+   Il y avait DÉJÀ une lecture de version dans ce fichier… enfermée dans la branche
+   « enquête 404 %22 », donc elle ne se déclenchait que si une requête cassait :
+   en pratique, jamais. Une capacité qui existe mais ne s'exécute pas ne compte pas
+   (erreur #28 « Declaration ≠ Deployment »).
+
+   Fail-open TOTAL : une app qui n'expose pas sa version n'est JAMAIS marquée en échec —
+   on l'écrit, c'est tout. Le garde `npm run test:versions-exposees` est là pour ça.
+   ───────────────────────────────────────────────────────────────────────────── */
+const VER_CANDIDATS = ['APP_VER', 'LINGUA_VER', 'KDMC_VER', 'AX_VER', 'VERSION', '__VER'];
+async function lireVersionServie(page) {
+  try {
+    return await page.evaluate((cands) => {
+      const bon = (v) => (typeof v === 'string' && v.trim() && v.trim().length <= 48) ? v.trim() : '';
+      const lire = (k) => { try { return bon(window[k]); } catch (e) { return ''; } };
+      for (const k of cands) { const v = lire(k); if (v) return v; }
+      /* toute globale nommée <APP>_VER / <APP>_VERSION — c'est la convention du domaine */
+      let cles = []; try { cles = Object.keys(window); } catch (e) { cles = []; }
+      for (const k of cles) { if (!/_(VER|VERSION)$/.test(k)) continue; const v = lire(k); if (v) return v; }
+      /* repli DOM : le badge de version visible (règle « badge version visible toujours ») */
+      const el = document.querySelector('[data-ver], .ver, .version, #ver, .ax-version, #versionBadge');
+      if (el) { const t = ((el.getAttribute && el.getAttribute('data-ver')) || el.textContent || '').trim();
+        if (t && t.length <= 48) return t; }
+      return '';
+    }, VER_CANDIDATS);
+  } catch (e) { return ''; }
+}
 
 const browser = await chromium.launch();
 let hardFail = 0;
@@ -402,6 +562,19 @@ for (const s of SURFACES) {
     await page.waitForTimeout(5000); // laisse le JS/live faire ses appels réseau
 
     if (!(await page.$(s.selKey))) { res.ok = false; res.notes.push('élément clé absent: ' + s.selKey); }
+
+    /* lue AVANT le `deep` : les globales sont posées au chargement, et le badge de version
+       vit sur le PREMIER écran — après une navigation interne, il a déjà disparu. */
+    const verServie = await lireVersionServie(page);
+    /* Bee est un fichier RECOPIÉ dans plusieurs pages : sa version est indépendante de celle
+       de l'app qui la porte. On l'affiche EN PLUS quand elle est là, sinon on ne saurait pas
+       quelle Bee tourne sur une page qui, elle, annonce déjà sa propre version. */
+    const verBee = await page.evaluate(() => {
+      try { return (typeof window.JAVIS_VER === 'string' && window.JAVIS_VER.trim()) || ''; }
+      catch (e) { return ''; }
+    }).catch(() => '');
+    res.notes.push('version servie : ' + (verServie || '❓ non exposée par la page')
+      + (verBee && verBee !== verServie ? ' · Bee ' + verBee : ''));
 
     if (s.deep) { try { const d = await s.deep(page); res.notes.push('deep: ' + d.note); if (!d.ok) res.ok = false; } catch (e) { res.ok = false; res.notes.push('deep KO: ' + (e && e.message ? e.message : e)); } }
 

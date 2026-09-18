@@ -3,6 +3,15 @@
 **Date** : 2026-09-10 · **Version** : `v1.1.288`
 **Règle appliquée** : *une fonction non listée est une fonction non testée*. Aucun « etc. ».
 
+
+> **17/09/2026 — toutes les fonctions testées EN RÉEL.** Le harnais `messaging-app/tools/fonctions-reelles.mjs`
+> (`npm run test:fonctions-reelles`) exécute chaque ligne de cette cartographie dans un vrai Chromium (19 vues via
+> `K.sv`, 179 boutons cliqués, 0 mort) et contre le vrai `api-worker.js` (103 routes, base D1 simulée), et ajoute
+> **F79…F85** (sondes : Face ID virtuel, aller-retour E2E, cliquet, WebRTC, clé push, crons, sauvegarde chiffrée
+> re-déchiffrée). Résultat mesuré : **83 ✅ · 2 ❌ · 0 ⚪ / 85** — tableau complet dans `06-FONCTIONS-REELLES.md`.
+> Les 2 ❌ : le coffre à clés `lib/key-vault.js` n'est chargé par aucune balise (F36, P1) ; `PATCH /api/conversations/:id`
+> → 500 (F30, P2). Une fonction non listée ici reste une fonction non testée — la liste est désormais la même des deux côtés.
+
 **Colonne « Couverture »** :
 ✅ = un test nommé cible explicitement cette fonction · 🟡 = couverte indirectement (le fichier
 est mesuré par la couverture globale, mais aucun test ne porte son nom) · ❌ = aucun test.
@@ -185,3 +194,21 @@ valent d'être nommés à part, parce que c'est eux qui font tenir l'audit dans 
 sont deux vues d'affichage réservées à l'admin, en lecture seule — le risque est un écran vide,
 pas une fuite. Elles sont consignées comme telles au `05-JOURNAL.md` plutôt que noyées dans un
 « etc. ».
+
+
+---
+
+## Corrections du 2026-09-17
+
+- **F61–F67** (`/api/ai/*`) : couverts par `tests/unit/api-worker-premium-ai.test.js` (summarize 11, translate 11, smart-reply 10,
+  search 9, rewrite 7, image 12, voice 10), **pas** par `ia-worker.test.js` (autre worker) — attribution corrigée.
+- **F46** (avatar) : 7 tests unitaires, pas seulement e2e → ✅.
+- Le routeur expose **96** couples méthode/chemin (pas 64) ; non listés ici : 8 actions admin `/api/admin/users/:id/{block,…}`
+  (`ban`/`unban` : 0 test par la route), `heartbeat`, `location/:id`, `admin/commands`, `whitelist-bulk`, `heal-dm`,
+  `configure-core-pair`, fiche `contact/:id` ×4, `members` ×3, conv `PATCH/DELETE`, `ws-diag`, `force-update` ×3, `test/*`.
+- **Nouvelles fonctions (v1.1.290)** : **F79** `DELETE /api/users/me` (suppression de compte, cascade D1/R2/KV) ✅ 3 tests ·
+  **F80** `GET /api/users/me/export` (export RGPD) ✅ 2 tests · **F81** `e2e_strict` appliqué par le DO ✅ 2 tests ·
+  **F82** renvoi du code SMS (client) 🟡 sans test · **F83** signalement côté utilisateur (client) 🟡 sans test ·
+  **F84** sauvegarde chiffrée + rotation ✅ 5 tests · **F85** alarme de flush DO ✅ 5 tests.
+- **Bilan mesuré** (passe tests) : 53 fonctions fixées par un test de comportement, 12 partielles (e2e seul, assertion
+  multi-statut, Chromium seul, stub), 13 vues client jamais exécutées par un test (F07–F19) — reste P2.

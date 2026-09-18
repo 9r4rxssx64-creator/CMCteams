@@ -488,15 +488,15 @@ cf.innerHTML=shipProgressHtml()+bulkHintHtml()+'<div class="cart-total"><span>To
 +'<button class="btn-checkout" onclick="showCheckout('+cartTotal()+')">💳 Commander — '+fmtP(cartTotal())+'</button>'}
 function nlSub(){var e=document.getElementById("nlEmail");if(!e||e.value.indexOf("@")<1)return toast("Email invalide","error");
 var email=e.value;
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — Newsletter",email:email,from_name:STORE_NAME,from_email:email,title:"Nouvel abonné newsletter",message:"Nouvel abonné newsletter "+STORE_NAME+" : "+email,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — Newsletter",email:email,from_name:STORE_NAME,from_email:email,title:"Nouvel abonné newsletter",message:"Nouvel abonné newsletter "+STORE_NAME+" : "+email,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Bienvenue ! Vérifiez vos emails 📧")}).catch(function(){toast("Inscrit ! 📧")})}else{toast("Bienvenue ! Vérifiez vos emails 📧")}
 e.value=""}
 /* INIT */
 function sendContact(){
 var name=document.querySelector('[type=text]');var email=document.querySelector('[type=email]');var msg=document.querySelector('textarea');
 if(!name||!email||!msg||!email.value)return toast("Remplissez tous les champs","error");
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,reply_to:email.value,name:name.value,email:email.value,from_name:name.value,from_email:email.value,title:"Message contact "+STORE_NAME,message:msg.value,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,reply_to:email.value,name:name.value,email:email.value,from_name:name.value,from_email:email.value,title:"Message contact "+STORE_NAME,message:msg.value,store:STORE_NAME,time:new Date().toLocaleString("fr-FR")}).then(function(){toast("Message envoyé ! Réponse sous 24h 📧");name.value="";email.value="";msg.value=""}).catch(function(){toast("Envoyé ! Réponse sous 24h 📧")})}else{toast("Message envoyé ! Réponse sous 24h 📧")}}
 function notifyPayment(total){
-if(typeof emailjs!=="undefined"){emailjs.init("nUsorWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — Paiement",title:"Paiement initié",message:"Paiement initié "+STORE_NAME+" — "+fmtP(total)+"\n"+S.cart.map(function(i){return i.name+" x"+i.qty}).join("\n"),store:STORE_NAME,amount:fmtP(total),time:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
+if(typeof emailjs!=="undefined"){emailjs.init("nUso3vcsGadvrWTtC");emailjs.send("service_4s16z8l","template_fzva9uf",{to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — Paiement",title:"Paiement initié",message:"Paiement initié "+STORE_NAME+" — "+fmtP(total)+"\n"+S.cart.map(function(i){return i.name+" x"+i.qty}).join("\n"),store:STORE_NAME,amount:fmtP(total),time:new Date().toLocaleString("fr-FR")}).catch(function(){})}}
 function showPayment(total){
 var m=document.createElement("div");m.id="payModal";
 m.style.cssText="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:16px";
@@ -833,7 +833,7 @@ items.forEach(function(i){decrementStock(i.id)});
 
 /* Email confirmation client + notif Kevin */
 if(typeof emailjs!=="undefined"){
-emailjs.init("nUsorWTtC");
+emailjs.init("nUso3vcsGadvrWTtC");
 var _ordItems=items.map(function(i){return i.name+" ["+(i.size||"M")+"] x"+i.qty+" = "+fmtP(i.price*i.qty)}).join("\n");
 var _ordShip=[ck.name,ck.addr,(ck.zip||"")+" "+(ck.city||""),ck.country||"France",ck.phone].filter(Boolean).join("\n");
 emailjs.send("service_4s16z8l","template_fzva9uf",{
@@ -1270,7 +1270,7 @@ function _ldOrderRescueEmail(orderId,order,reason){
   var ck=(order&&(order.shipping))||S.checkout||{};
   var lines=((order&&order.items)||[]).map(function(i){return "- "+i.name+" ×"+(i.qty||1)+(i.size?" ("+i.size+")":"")}).join("\n");
   var addr=[ck.name,ck.addr||ck.address,ck.zip,ck.city,ck.country].filter(Boolean).join(" · ");
-  emailjs.init("nUsorWTtC");
+  emailjs.init("nUso3vcsGadvrWTtC");
   emailjs.send("service_4s16z8l","template_fzva9uf",{
    to_email:LD_ADMIN_EMAIL,name:STORE_NAME+" — COMMANDE À TRAITER",from_name:STORE_NAME,from_email:LD_ADMIN_EMAIL,
    title:"⚠️ Commande "+orderId+" à envoyer manuellement",

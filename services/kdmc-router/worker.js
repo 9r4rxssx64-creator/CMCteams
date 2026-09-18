@@ -57,8 +57,108 @@ const ROUTES = {
   'outils.kd-mc.com': '/CMCteams/kdmc-home/outils',
   // Portail boutiques : vivait SEULEMENT sur github.io (le portail y renvoyait en dur,
   // hors du domaine, en affichant « kd-mc.com → shops » — une adresse fausse).
+  'javis.kd-mc.com': '/CMCteams/javis', // Javis / Bee — l'assistant de Kevin, app installable (Kevin 2026-09-16)
+  'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
+  'rotaplan.kd-mc.com': '/CMCteams/shops/rotaplan',
+  'kit.kd-mc.com': '/CMCteams/shops/kit-ia', // Kit IA de l'indépendant — produit numérique neuf (Kevin 2026-09-16)
+  'croupier.kd-mc.com': '/CMCteams/shops/croupier', // Devenir croupier — guide de métier (Kevin 2026-09-15) // Rotaplan — planning des équipes en rotation, offre B2B (Kevin 2026-09-15)
   'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PÉRIMÈTRE : « chaque app distincte, mais toutes liées dans le domaine »
+   (Kevin 2026-09-15)
+
+   Ce qu'il a demandé, mot pour mot : « quelqu'un d'extérieur peut s'enregistrer
+   et être seulement dans une app, et d'autres feront partie du domaine entier
+   (sauf partie admin) […] admin possibilité de bloquer dans une app ».
+
+   Une personne a donc une PORTÉE :
+     · 'app'     → elle n'existe que dans les apps listées dans `acces`
+     · 'domaine' → elle circule dans toutes les apps (l'admin reste à part :
+                   il ne s'obtient QUE par Face ID sur un uid admin, jamais ici)
+   Plus une liste `bloque` : l'admin ferme UNE app précise, même en portée domaine.
+
+   OÙ C'EST APPLIQUÉ, ET POURQUOI ICI : au routeur, jamais dans les apps. Le
+   routeur est la seule porte par laquelle passent les 26 adresses ; recopier la
+   règle dans 26 pages, c'est 26 versions qui divergent (leçon #142), et il
+   suffirait d'en oublier une pour que le périmètre ne veuille plus rien dire.
+
+   COMMENT : une personne hors périmètre n'est pas « bloquée », elle n'est pas
+   RECONNUE — `/__sso/whoami` répond `ok:false`. Les apps publiques (boutiques,
+   cuisine) restent donc visitables par tout le monde comme avant : l'inconnu
+   reste un inconnu. Les apps qui exigent une identité (arbre, coffre, CMCteams)
+   refusent d'elles-mêmes. Aucune des 26 apps n'a une ligne à changer, et rien ne
+   peut casser si ce code se trompe : au pire il ne reconnaît personne.
+
+   ALIAS : plusieurs adresses = UNE app (cuisine/cocina/cujina, departs et
+   cmcteams-light). Sinon on bloquerait quelqu'un sur l'alias de l'app qu'on
+   vient de lui ouvrir.
+
+   PARITÉ OBLIGATOIRE avec ROUTES : une adresse servie sans clé d'app ici
+   échapperait au périmètre en SILENCE. La garde `test:perimetre-apps` refuse
+   qu'un sous-domaine existe des deux côtés sans correspondance.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const APPS = {
+  'kd-mc.com': 'portail', 'www.kd-mc.com': 'portail',
+  'cmcteams.kd-mc.com': 'cmcteams',
+  'apex-ai.kd-mc.com': 'apex-ai',
+  'apex-chat.kd-mc.com': 'apex-chat',
+  'la-detente.kd-mc.com': 'la-detente',
+  'chez-lolo.kd-mc.com': 'chez-lolo',
+  'dashboard.kd-mc.com': 'dashboard',
+  'sourcing.kd-mc.com': 'sourcing',
+  'coffre.kd-mc.com': 'coffre',
+  'departs.kd-mc.com': 'departs', 'cmcteams-light.kd-mc.com': 'departs',
+  'bot.kd-mc.com': 'bot',
+  'beatbot.kd-mc.com': 'beatbot',
+  'autorisations.kd-mc.com': 'autorisations',
+  'arbre.kd-mc.com': 'arbre',
+  'lingua.kd-mc.com': 'lingua',
+  'studio.kd-mc.com': 'studio',
+  'cuisine.kd-mc.com': 'cuisine', 'cocina.kd-mc.com': 'cuisine', 'cujina.kd-mc.com': 'cuisine',
+  'worldmonitor.kd-mc.com': 'worldmonitor',
+  'osint.kd-mc.com': 'osint',
+  'ia.kd-mc.com': 'ia',
+  'outils.kd-mc.com': 'outils',
+  'shops.kd-mc.com': 'shops',
+  'kit.kd-mc.com': 'kit',
+  'rotaplan.kd-mc.com': 'rotaplan', 'croupier.kd-mc.com': 'croupier', /* manquaient depuis le 15.09 : garde périmètre rouge (mesuré 16.09) */
+  'tor.kd-mc.com': 'tor',
+  'rotaplan.kd-mc.com': 'rotaplan',
+  'croupier.kd-mc.com': 'croupier',
+  'javis.kd-mc.com': 'javis',
+};
+function appDe(host) { return APPS[String(host || '').toLowerCase().replace(/:.*$/, '')] || ''; }
+
+/* Décide si CETTE fiche a le droit d'exister dans CETTE app. Fonction PURE :
+   aucune entrée/sortie, testable en vrai (elle est exportée et exécutée par la
+   garde, pas cherchée au texte — un contrôle qui lit une chaîne de caractères
+   ment dans les deux sens, leçon #103).
+
+   FAIL-OPEN VOULU, et c'est le point le plus important de tout ce fichier :
+   sans fiche, ou sur une adresse inconnue, on répond OUI. Les ~191 comptes déjà
+   enregistrés n'ont pas de champ `portee` → ils restent dans TOUT le domaine.
+   Personne ne perd un accès le jour où ce code part en ligne ; la restriction
+   ne s'applique qu'à ceux que l'admin range, et aux NOUVEAUX inscrits. */
+function perimetre(acc, app) {
+  if (!app) return { ok: true, raison: 'adresse_hors_domaine' };
+  /* LE PORTAIL EST LA RÉCEPTION : toujours ouvert, à tout le monde. C'est par lui
+     que CHAQUE app fait passer l'inscription et la connexion (`ensureSession`
+     renvoie sur kd-mc.com/?return=…). Le fermer à quelqu'un = lui interdire de
+     se connecter nulle part, y compris à l'app qu'on vient de lui ouvrir. Trouvé
+     en suivant le VRAI parcours d'un nouvel inscrit, pas par les tests : ils
+     inscrivaient chacun directement sur son app, ce que le domaine ne fait jamais. */
+  if (app === 'portail') return { ok: true, raison: 'portail' };
+  if (!acc) return { ok: true, raison: 'sans_fiche' };
+  const bloque = Array.isArray(acc.bloque) ? acc.bloque : [];
+  if (bloque.indexOf(app) >= 0) return { ok: false, raison: 'bloque_ici' };
+  if (acc.portee !== 'app') return { ok: true, raison: 'domaine' };
+  const acces = Array.isArray(acc.acces) ? acc.acces : [];
+  return acces.indexOf(app) >= 0
+    ? { ok: true, raison: 'app_autorisee' }
+    : { ok: false, raison: 'hors_perimetre' };
+}
 
 // Proxy MÊME ORIGINE vers l'API des décès INSEE (matchID) — données PUBLIQUES,
 // lecture seule. L'API matchID ne renvoie PAS d'en-tête CORS → un appel direct
@@ -872,8 +972,11 @@ function ispInfo(cf) {
   return { isp, vpn };
 }
 /* Enrichit (ou crée) la fiche à chaque connexion : MAX de renseignements. */
-async function enrich(env, request, uid, name, cgu, pre) {
+async function enrich(env, request, uid, name, cgu, pre, opts) {
   if (!env || !env.ACCOUNTS) return;
+  /* opts.origine = l'app d'où vient un NOUVEL inscrit (transmise par le portail).
+     Ne sert qu'à la création de la fiche ; une fiche existante n'en tient pas compte. */
+  const origine = (opts && opts.origine) || '';
   /* Toutes les apps de la même personne alimentent UN SEUL dossier. */
   const inUid = uid;
   uid = await canonFor(env, uid, name);
@@ -897,7 +1000,25 @@ async function enrich(env, request, uid, name, cgu, pre) {
      → évite une 2e lecture KV sur le chemin chaud. undefined = on lit nous-même. */
   const prev = pre !== undefined ? pre : await accGet(env, uid);
   const isNew = !prev;
-  const acc = prev || { uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [] };
+  /* PÉRIMÈTRE — une NOUVELLE fiche naît fermée : elle n'existe que dans l'app où la
+     personne s'est inscrite (Kevin 2026-09-15 : « quelqu'un d'extérieur peut
+     s'enregistrer et être seulement dans une app »). C'est l'admin qui ouvre ensuite
+     au domaine entier. Le sens compte : une inscription n'ouvre JAMAIS toutes les
+     portes toute seule, et un oubli de rangement laisse la personne dehors plutôt que
+     partout (moindre privilège).
+     Les fiches DÉJÀ existantes ne reçoivent rien ici : sans champ `portee`, elles
+     restent en portée domaine — personne ne perd un accès le jour du déploiement. */
+  /* L'app ouverte au nouvel inscrit = celle d'où il VIENT (origine transmise par le
+     portail), sinon l'adresse où il s'inscrit. Jamais « portail » seul : c'est la
+     réception, elle est ouverte à tous — l'y enfermer reviendrait à ne l'ouvrir
+     nulle part. Sans origine connue, la liste reste vide : la personne a le
+     portail (toujours) et Kevin est prévenu pour décider. */
+  const appIci = host ? (APPS[host] || '') : '';
+  const premiere = (origine && origine !== 'portail') ? origine : (appIci && appIci !== 'portail' ? appIci : '');
+  const acc = prev || {
+    uid, name, created: now, cgu_at: 0, hits: 0, devices: [], places: [], apps: {}, history: [],
+    portee: host ? 'app' : 'domaine', acces: premiere ? [premiere] : [], bloque: [],
+  };
   const prevSeen = acc.last_seen || 0;
   const prevCountry = acc.last_country || '';
   /* `structural` = quelque chose de NOUVEAU à persister tout de suite (nouvelle fiche,
@@ -990,6 +1111,16 @@ async function enrich(env, request, uid, name, cgu, pre) {
   if (!structural && now - prevSeen < 120e3) return;
   /* Nouvel appareil sur une fiche EXISTANTE → trace dans le journal admin
      (signal fort avec si peu d'utilisateurs) + alerte push si configurée. */
+  /* NOUVEL INSCRIT fermé à une app → Kevin doit le SAVOIR, sinon la personne
+     attend une ouverture que personne ne sait devoir faire. Journal admin + push
+     (opt-in par config, fail-open : jamais une connexion cassée par une notif). */
+  if (isNew && acc.portee === 'app') {
+    const ouvert = (acc.acces && acc.acces.length) ? acc.acces.join(', ') : 'portail seulement';
+    await audLog(env, { ev: 'nouvel_inscrit', uid, detail: (acc.name || uid) + ' · ouvert à : ' + ouvert });
+    await notifyPush(env, '🆕 KDMC — nouvel inscrit',
+      (acc.name || uid) + ' vient de créer un compte. Ouvert à : ' + ouvert + '. À toi de décider s\'il circule plus loin.',
+      { tag: 'kdmc-nouvel-inscrit', url: 'https://kd-mc.com/admin/#fiche-' + encodeURIComponent(uid) });
+  }
   if (newDevice && !isNew) {
     await audLog(env, { ev: 'new_device', uid, detail: devKey + (place ? ' · ' + place : '') });
     await notifyPush(env, '🔐 KDMC — nouvel appareil',
@@ -1071,8 +1202,25 @@ async function handleSso(request, url, env) {
       const acc = await accGet(env, s.uid);
       /* Révocation à distance : token émis avant « Déconnecter partout » → refusé. */
       if (revoked(acc, s)) return J({ ok: false, reason: 'session_revoquee' });
+      /* PÉRIMÈTRE (Kevin 2026-09-15) : cette personne existe-t-elle dans CETTE app ?
+         Hors périmètre → on ne la RECONNAÎT pas (ok:false), on ne la « bloque » pas :
+         les apps publiques restent visitables comme par n'importe quel inconnu, les
+         apps à identité refusent d'elles-mêmes. Zéro ligne à changer dans les 26 apps.
+         L'admin (uid admin + Face ID prouvé) n'est jamais restreint — sinon une erreur
+         de rangement enfermerait Kevin dehors de son propre domaine. */
+      const estAdmin = ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified;
+      const app = appDe(request.headers.get('host'));
+      const per = perimetre(acc, app);
+      if (!per.ok && !estAdmin) {
+        return J({
+          ok: false, reason: per.raison, hors_perimetre: true, app,
+          message: per.raison === 'bloque_ici'
+            ? 'Ton accès à cette application a été fermé par l\'administrateur.'
+            : 'Ton compte n\'est pas ouvert sur cette application.',
+        });
+      }
       await enrich(env, request, s.uid, s.name, s.cgu, acc);
-      return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: ADMIN_UIDS.indexOf(s.uid) >= 0 && !!s.verified });
+      return J({ ok: true, uid: s.uid, name: s.name, cgu: s.cgu, verified: !!s.verified, admin: estAdmin, app, portee: (acc && acc.portee === 'app') ? 'app' : 'domaine' });
     }
     return J({ ok: false });
   }
@@ -1177,7 +1325,31 @@ async function handleSso(request, url, env) {
     const name = String(b.name || '').slice(0, 80).trim();
     const cgu = !!b.cgu;
     if (!uid || !name) return J({ ok: false, reason: 'uid+name requis' });
-    await enrich(env, request, uid, name, cgu);
+    /* PÉRIMÈTRE : inutile de fabriquer une session que `whoami` refusera juste après
+       (sinon la page boucle : « connecte-toi » → connecté → pas reconnu → « connecte-toi »).
+       On répond ici, une fois, avec la raison en clair. La fiche se cherche à son
+       emplacement CANONIQUE : une même personne a un seul dossier, quel que soit
+       l'identifiant que l'app envoie (sinon on contournerait le périmètre en se
+       présentant sous l'uid d'une autre app). */
+    /* `pour` = l'app d'où la personne VIENT (le portail la reçoit avec ?return=…
+       et nous le transmet). C'est cette app-là qu'on ouvre à un nouvel inscrit —
+       pas le portail, qui n'est qu'une réception. Adresse contrôlée : si ce n'est
+       pas un sous-domaine servi, on l'ignore (jamais d'app inventée). */
+    const origine = appDe(String(b.pour || '').replace(/^https?:\/\//, '').split('/')[0]);
+    {
+      const app = appDe(request.headers.get('host'));
+      const accCanon = await accGet(env, await canonFor(env, uid, name));
+      const per = perimetre(accCanon, app);
+      if (!per.ok) {
+        return J({
+          ok: false, reason: per.raison, hors_perimetre: true, app,
+          message: per.raison === 'bloque_ici'
+            ? 'Ton accès à cette application a été fermé par l\'administrateur.'
+            : 'Ton compte n\'est pas ouvert sur cette application.',
+        });
+      }
+    }
+    await enrich(env, request, uid, name, cgu, undefined, { origine });
     const token = await ssoSign(secret, uid, name, cgu);
     const cookie = `${SSO_COOKIE}=${token}; Domain=.kd-mc.com; Path=/; Max-Age=${SSO_TTL}; Secure; HttpOnly; SameSite=Lax`;
     /* token renvoyé dans le corps : le portail le met dans le lien de retour
@@ -1429,6 +1601,53 @@ async function handleAdmin(request, url, env) {
     await audLog(env, { ev: 'revoke_sessions', uid });
     return J({ ok: true, uid, revoked_at: acc.revoked_at });
   }
+  /* ── PÉRIMÈTRE : qui a le droit d'exister dans quelle app (Kevin 2026-09-15) ──
+     GET  ?uid=…                       → l'état de cette personne + la liste des apps
+     POST {uid, portee, acces, bloque} → range la personne
+     Derrière le MÊME portail admin que le reste (`me` = grant du code admin prouvé
+     via /__admin/login, ou session Face ID d'un uid admin). Aucun second mot de
+     passe inventé pour l'occasion : un secret par app est un secret qu'on oublie
+     de changer.  */
+  if (path === '/__admin/acces' && request.method === 'GET') {
+    const uid = url.searchParams.get('uid') || '';
+    const apps = [...new Set(Object.values(APPS))].sort();
+    if (!uid) return J({ ok: true, apps });
+    const a = await accGet(env, uid);
+    if (!a) return J({ ok: false, reason: 'not_found', apps });
+    return J({
+      ok: true, uid, name: a.name || '', apps,
+      portee: a.portee === 'app' ? 'app' : 'domaine',
+      acces: Array.isArray(a.acces) ? a.acces : [],
+      bloque: Array.isArray(a.bloque) ? a.bloque : [],
+      /* Par où elle est réellement passée — pour ouvrir en connaissance de cause
+         au lieu de deviner. */
+      vues: Object.keys(a.apps || {}).map(appDe).filter(Boolean),
+    });
+  }
+  if (path === '/__admin/acces' && request.method === 'POST') {
+    let b = {}; try { b = await request.json(); } catch { /* corps vide */ }
+    const uid = String(b.uid || '').slice(0, 80).trim();
+    if (!uid) return J({ ok: false, reason: 'uid requis' });
+    const acc = await accGet(env, uid);
+    if (!acc) return J({ ok: false, reason: 'not_found' });
+    /* On n'accepte QUE des clés d'app connues : une valeur libre créerait un accès
+       vers une app qui n'existe pas (et un « blocage » qui ne bloque rien). */
+    const connues = new Set(Object.values(APPS));
+    const propre = (v) => [...new Set((Array.isArray(v) ? v : []).map((x) => String(x || '').trim()))]
+      .filter((x) => connues.has(x)).slice(0, 40);
+    if (b.portee !== undefined) acc.portee = b.portee === 'app' ? 'app' : 'domaine';
+    if (b.acces !== undefined) acc.acces = propre(b.acces);
+    if (b.bloque !== undefined) acc.bloque = propre(b.bloque);
+    /* Garde-fou : enfermer quelqu'un dans « une app » sans dire LAQUELLE le met
+       dehors de partout, en silence. On refuse plutôt que de le faire à moitié. */
+    if (acc.portee === 'app' && (!acc.acces || !acc.acces.length)) {
+      return J({ ok: false, reason: 'portée « une app » sans aucune app choisie — la personne n\'aurait accès à rien' });
+    }
+    acc.acces_at = Date.now();
+    await accPut(env, acc, true);
+    await audLog(env, { ev: 'perimetre', uid, portee: acc.portee, acces: acc.acces, bloque: acc.bloque });
+    return J({ ok: true, uid, portee: acc.portee, acces: acc.acces || [], bloque: acc.bloque || [] });
+  }
   if (path === '/__admin/account' && request.method === 'GET') {
     const uid = url.searchParams.get('uid') || '';
     const a = await accGet(env, uid);
@@ -1542,6 +1761,136 @@ function taRating(h, l, c) {
   const score = total ? (buy - sell) / total : 0;
   const label = score >= 0.5 ? 'Achat fort' : score >= 0.1 ? 'Achat' : score > -0.1 ? 'Neutre' : score > -0.5 ? 'Vente' : 'Vente forte';
   return { price, score: Math.round(score * 100) / 100, label, rsi: rsi == null ? null : Math.round(rsi * 10) / 10, ma_buy: maBuy, ma_sell: maSell, osc_buy: oscBuy, osc_sell: oscSell, macd_up: macd > macdSig };
+}
+/* ===== SCANNER DE MARCHÉ — Choppiness Index (Kevin 2026-09-12, capture pub Facebook
+   « Captain Trading ») =====
+   CE QUI EST VRAI DANS LA PUB, CE QUI NE L'EST PAS : le Choppiness Index (E.W. Dreiss,
+   1990er) est un VRAI indicateur technique standard, formule ci-dessous, aucune
+   invention. « Claude AI scanne le marché pour toi » est une phrase publicitaire — je
+   n'ai aucun accès magique à TradingView ; ce que je peux VRAIMENT faire est calculer
+   ce même indicateur, honnêtement, sur les VRAIES bougies Binance publiques (même
+   source que /__bot/analysis), et te montrer le résultat sans l'habiller de promesses.
+   FORMULE (standard, non modifiée) : CI(n) = 100 · log10( Σ TrueRange(n) / (PlusHaut(n)
+   − PlusBas(n)) ) / log10(n). CI proche de 100 = marché SANS direction (comprimé,
+   "coiled" — pourrait partir dans un sens ou l'autre). CI proche de 0 = tendance
+   FORTE et directionnelle déjà en cours. Ni l'un ni l'autre n'est une prédiction —
+   c'est une PHOTO technique du moment, exactement comme /__bot/analysis le dit déjà.
+   Lecture SEULE : le scan ne modifie AUCUN réglage d'AUCUN bot — Kevin décide. */
+function taChoppiness(h, l, c, p) {
+  if (c.length < p + 1) return null;
+  let trSum = 0;
+  for (let i = c.length - p; i < c.length; i++) {
+    trSum += Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1]));
+  }
+  const hh = Math.max(...h.slice(-p)), ll = Math.min(...l.slice(-p));
+  const rng = hh - ll;
+  if (rng <= 0) return 0;
+  return (100 * Math.log10(trSum / rng)) / Math.log10(p);
+}
+/* Liste CURATÉE (pas l'intégralité du marché — évite les micro-caps illiquides/
+   pump-and-dump qu'un scan "toutes paires" ferait remonter) : 24 paires USDT parmi
+   les plus liquides de Binance, sous la limite de 50 sous-requêtes/appel du Worker
+   Cloudflare (24 fetch en parallèle, marge large). */
+const SCAN_PAIRS = [
+  'BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'SOL/USDT', 'XRP/USDT', 'ADA/USDT',
+  'DOGE/USDT', 'AVAX/USDT', 'DOT/USDT', 'LINK/USDT', 'LTC/USDT', 'BCH/USDT',
+  'ATOM/USDT', 'UNI/USDT', 'ETC/USDT', 'XLM/USDT', 'NEAR/USDT', 'APT/USDT',
+  'ARB/USDT', 'OP/USDT', 'FIL/USDT', 'ICP/USDT', 'HBAR/USDT', 'SUI/USDT',
+];
+async function taScanPair(sym) {
+  const pair = sym.replace('/', '');
+  try {
+    const r = await fetch(`https://data-api.binance.vision/api/v3/klines?symbol=${pair}&interval=1h&limit=60`);
+    if (!r.ok) return { symbol: sym, err: 'binance HTTP ' + r.status };
+    const k = await r.json();
+    if (!Array.isArray(k) || k.length < 30) return { symbol: sym, err: 'bougies insuffisantes (' + (k.length || 0) + ')' };
+    const h = k.map((x) => Number(x[2])), l = k.map((x) => Number(x[3])), c = k.map((x) => Number(x[4]));
+    const ciNow = taChoppiness(h, l, c, 14);
+    const ciPrev = taChoppiness(h.slice(0, -10), l.slice(0, -10), c.slice(0, -10), 14);
+    const price = c[c.length - 1];
+    const chg24 = c.length > 24 ? ((price / c[c.length - 25] - 1) * 100) : null;
+    if (ciNow == null) return { symbol: sym, err: 'CI incalculable (pas assez de bougies)' };
+    const delta = ciPrev == null ? null : ciNow - ciPrev;
+    let cat = 'neutre';
+    if (delta != null && delta <= -15) cat = 'sort_du_calme';        // CI chute vite = tendance qui démarre
+    else if (ciNow >= 61.8) cat = 'comprime';                        // seuil usuel du Choppiness Index
+    return {
+      symbol: sym, price, chg24: chg24 == null ? null : Math.round(chg24 * 100) / 100,
+      ci: Math.round(ciNow * 10) / 10, ci_delta: delta == null ? null : Math.round(delta * 10) / 10,
+      cat,
+    };
+  } catch (e) { return { symbol: sym, err: String(e && e.message || e).slice(0, 120) }; }
+}
+/* ===== JOURNAL PERSISTANT DE LA FLOTTE (Kevin 2026-09-11 « bilan de ce qu'ils ont
+   pu gagner ou perdre ») =====
+   POURQUOI : jusqu'ici le bilan se lisait UNIQUEMENT dans les logs Railway, qui sont
+   PURGÉS (mesuré le 11.09 : plus rien avant le 19 août) et qui repartent de zéro à
+   chaque redéploiement (un bot papier relancé réaffiche equity=10000). Résultat :
+   impossible de répondre à « combien ont-ils gagné depuis le début ». Le journal
+   ci-dessous garde la trace DANS KV, donc elle survit aux deux.
+   COMMENT : à chaque consultation de la flotte, on enregistre un relevé — au plus un
+   par heure (BOT_SNAP_MS) pour ne pas marteler KV. `bot:hist` garde les 720 derniers
+   relevés (~30 jours d'historique horaire), `bot:first` garde le TOUT PREMIER relevé
+   de chaque bot et n'est JAMAIS écrasé : c'est lui qui permet de dire « depuis le
+   (date), ce bot est passé de X à Y », même bien au-delà des 30 jours.
+   Fail-open total : une panne KV ne doit jamais casser l'affichage de la flotte. */
+const BOT_SNAP_MS = 60 * 60 * 1000;   /* au plus 1 relevé par heure */
+const BOT_HIST_CAP = 720;             /* ~30 jours en horaire */
+async function botSnapshot(env, bots, now) {
+  if (!env || !env.ACCOUNTS || !Array.isArray(bots)) return;
+  const t = Number(now) || Date.now();
+  try {
+    const hist = JSON.parse((await env.ACCOUNTS.get('bot:hist')) || '[]');
+    const last = hist.length ? hist[hist.length - 1] : null;
+    if (last && t - Number(last.t || 0) < BOT_SNAP_MS) return;   /* déjà relevé il y a moins d'une heure */
+    const b = {};
+    for (const x of bots) {
+      if (!x || !x.name || x.equity == null || !isFinite(Number(x.equity))) continue;
+      b[x.name] = { e: Math.round(Number(x.equity) * 100) / 100, n: Number(x.net) || 0, a: Number(x.buys) || 0, v: Number(x.sells) || 0 };
+    }
+    if (!Object.keys(b).length) return;   /* rien de chiffré à enregistrer */
+    hist.push({ t, b });
+    await env.ACCOUNTS.put('bot:hist', JSON.stringify(hist.slice(-BOT_HIST_CAP)));
+    /* Premier relevé par bot : écrit UNE fois, jamais modifié ensuite. */
+    const first = JSON.parse((await env.ACCOUNTS.get('bot:first')) || '{}');
+    let addedFirst = false;
+    for (const [name, v] of Object.entries(b)) {
+      if (!first[name]) { first[name] = { t, e: v.e }; addedFirst = true; }
+    }
+    if (addedFirst) await env.ACCOUNTS.put('bot:first', JSON.stringify(first));
+  } catch { /* fail-open : le bilan est un bonus, jamais un blocage */ }
+}
+/* Bilan lisible : pour chaque bot, d'où il part, où il en est, et l'écart.
+   `reprises` compte les remises à zéro visibles (un bot papier redéployé repart à
+   son capital de départ) — sans ça, un écart nul cacherait un redémarrage. */
+function botBilan(hist, first) {
+  const out = {};
+  const names = new Set();
+  (hist || []).forEach((p) => Object.keys(p.b || {}).forEach((n) => names.add(n)));
+  Object.keys(first || {}).forEach((n) => names.add(n));
+  for (const name of names) {
+    const pts = (hist || []).filter((p) => p.b && p.b[name] != null).map((p) => ({ t: p.t, ...p.b[name] }));
+    const f = (first || {})[name] || (pts[0] ? { t: pts[0].t, e: pts[0].e } : null);
+    const l = pts.length ? pts[pts.length - 1] : null;
+    let reprises = 0;
+    for (let i = 1; i < pts.length; i++) {
+      /* une chute de plus de 1 % pile sur la valeur ronde de départ = redémarrage */
+      if (pts[i].a === 0 && pts[i].v === 0 && pts[i - 1].a + pts[i - 1].v > 0) reprises++;
+    }
+    out[name] = {
+      depuis: f ? f.t : null,
+      depart: f ? f.e : null,
+      actuel: l ? l.e : null,
+      ecart: (f && l) ? Math.round((l.e - f.e) * 100) / 100 : null,
+      achats: l ? l.a : null,
+      ventes: l ? l.v : null,
+      net_realise: l ? l.n : null,
+      releves: pts.length,
+      vu_le: l ? l.t : null,
+      reprises,
+    };
+  }
+  return out;
 }
 function fleetTradeStats(logs) {
   const fifo = {}; let buys = 0, sells = 0, wins = 0, losses = 0, net = 0;
@@ -1688,10 +2037,32 @@ async function handleBot(request, url, env) {
     const needCode = !!(env && env.KDMC_ADMIN_PIN_SHA256);
     return J({ ok: false, reason: needCode ? 'need_admin_code' : 'admin_only' }, null, 403);
   }
+  const path = url.pathname;
+
+  /* SCANNER DE MARCHÉ (Choppiness Index, Kevin 2026-09-12) : lecture SEULE, ne
+     touche à AUCUN réglage d'AUCUN bot. Traité AVANT botCtx() exprès : le scan
+     ne parle qu'à Binance (public, sans clé) — il n'a besoin ni de RAILWAY_TOKEN
+     ni de résoudre le service Railway, donc il marcherait même si la flotte de
+     bots était en panne. 24 paires liquides en parallèle, ≤50 sous-requêtes
+     Worker (marge large). Classé : ce qui bouge déjà en premier (sort_du_calme),
+     ce qui est comprimé ensuite (comprime), le reste après — à l'intérieur de
+     chaque groupe, l'écart au seuil décide. */
+  if (path === '/__bot/scan' && request.method === 'GET') {
+    const out = await Promise.all(SCAN_PAIRS.map(taScanPair));
+    const rank = { sort_du_calme: 0, comprime: 1, neutre: 2 };
+    out.sort((a, b) => {
+      const ra = rank[a.cat] != null ? rank[a.cat] : 3, rb = rank[b.cat] != null ? rank[b.cat] : 3;
+      if (ra !== rb) return ra - rb;
+      const da = a.ci_delta != null ? a.ci_delta : 0, db = b.ci_delta != null ? b.ci_delta : 0;
+      if (da !== db) return da - db;                       // chute la plus forte d'abord
+      return (b.ci != null ? b.ci : -1) - (a.ci != null ? a.ci : -1); // plus comprimé d'abord
+    });
+    return J({ ok: true, scanned: SCAN_PAIRS.length, results: out });
+  }
+
   if (!env.RAILWAY_TOKEN) return J({ ok: false, reason: 'railway_token_absent', detail: 'Secret RAILWAY_TOKEN non déployé sur le worker (relancer deploy-kdmc-router).' });
   const ctx = await botCtx(env);
   if (ctx.err) return J({ ok: false, reason: ctx.err, detail: ctx.detail });
-  const path = url.pathname;
 
   if (path === '/__bot/status' && request.method === 'GET') {
     const dp = await railGql(env, `query { deployments(first: 1, input: { projectId: "${ctx.projectId}", serviceId: "${ctx.serviceId}", environmentId: "${ctx.environmentId}" }) { edges { node { id status createdAt } } } }`);
@@ -1726,7 +2097,20 @@ async function handleBot(request, url, env) {
     }));
     /* Tri par net réalisé décroissant ; les bots absents/sans logs en dernier. */
     bots.sort((a, b) => (((b.net == null) ? -1e9 : b.net) - ((a.net == null) ? -1e9 : a.net)));
+    /* Trace durable (survit à la purge des logs Railway et aux redéploiements). */
+    await botSnapshot(env, bots, Date.now());
     return J({ ok: true, bots });
+  }
+
+  /* Bilan DURABLE (Kevin 2026-09-11) : ce que le journal KV a vu, pas ce que les logs
+     Railway veulent bien garder. Renvoie le résumé par bot + la série pour la courbe. */
+  if (path === '/__bot/history' && request.method === 'GET') {
+    let hist = [], first = {};
+    try { hist = JSON.parse((await env.ACCOUNTS.get('bot:hist')) || '[]'); } catch { hist = []; }
+    try { first = JSON.parse((await env.ACCOUNTS.get('bot:first')) || '{}'); } catch { first = {}; }
+    const bilan = botBilan(hist, first);
+    /* La série complète peut peser : on rend au plus 200 points, les plus récents. */
+    return J({ ok: true, bilan, points: hist.slice(-200), releves: hist.length });
   }
 
   /* ANALYSE EXPERT (Kevin 2026-07-10 « qu'il serve à faire des analyses ») :
@@ -2313,4 +2697,4 @@ async function tuyaScheduleTick(env) {
 }
 
 /* Export nommé pour les tests régression (Cloudflare utilise seulement le default export). */
-export { enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean, tuyaHistoryTick };
+export { APPS, ROUTES, appDe, perimetre, ssoSign, enrich, adminGrant, beatbotTargetOk, tuyaStringToSign, tuyaSign, tuyaSha256Hex, tuyaHmacHex, tuyaSurfaceCheck, tuyaScheduleTick, tuyaStartClean, tuyaHistoryTick };
