@@ -231,12 +231,19 @@
      ici, une fois, et le worker le garde dans son coffre. Tant qu'il n'est pas
      posé, le bouton « virement » n'apparaît même pas sur les pages de vente. */
   function sectionBanque(live) {
-    if (!live) return '';
-    var b = (live.banque) || {};
-    var h = '<div class="kdmc-card tile"><h3>🏦 Virement — mon IBAN <span class="chip ' + (b.iban ? 'ok' : 'warn') + '">' + (b.iban ? 'ouvert' : 'fermé') + '</span></h3>';
-    h += '<div class="meta">' + (b.iban
-      ? 'Rangé dans le coffre du worker, jamais dans le dépôt : ' + esc(b.iban) + (b.bic ? ' · BIC ' + esc(b.bic) : '') + (b.titulaire ? ' · ' + esc(b.titulaire) : '') + (b.pose_iso ? ' · posé le ' + esc(dt(b.pose_iso)) : '')
-      : 'Tant que ton IBAN n\'est pas posé, le bouton « payer par virement » n\'apparaît pas sur tes pages. Pose-le ici : il ne partira jamais dans le dépôt.') + '</div>';
+    /* Cette tuile est une ACTION, pas un rapport : elle doit être là MÊME quand
+       la caisse ne répond pas. La faire disparaître dans ce cas (ce qu'elle
+       faisait le 18.09) est exactement le moment où Kevin en a besoin et où il
+       ne voit rien du tout — sans savoir pourquoi. */
+    var b = (live && live.banque) || {};
+    var lu = !!live;
+    var etat = !lu ? 'illisible' : (b.iban ? 'ouvert' : 'fermé');
+    var h = '<div class="kdmc-card tile"><h3>🏦 Virement — mon IBAN <span class="chip ' + (!lu ? 'err' : (b.iban ? 'ok' : 'warn')) + '">' + etat + '</span></h3>';
+    h += '<div class="meta">' + (!lu
+      ? 'La caisse n\'a pas répondu, donc je ne peux pas te dire si un IBAN est déjà rangé. Tu peux quand même l\'enregistrer ici : si ça échoue, c\'est que ta session admin a expiré — recharge la page et reconnecte-toi.'
+      : (b.iban
+        ? 'Rangé dans le coffre du worker, jamais dans le dépôt : ' + esc(b.iban) + (b.bic ? ' · BIC ' + esc(b.bic) : '') + (b.titulaire ? ' · ' + esc(b.titulaire) : '') + (b.pose_iso ? ' · posé le ' + esc(dt(b.pose_iso)) : '')
+        : 'Tant que ton IBAN n\'est pas posé, le bouton « payer par virement » n\'apparaît pas sur tes pages. Pose-le ici : il ne partira jamais dans le dépôt.')) + '</div>';
     h += '<div class="forme"><input class="champ" id="ibanIn" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="FR76 …" aria-label="IBAN">'
       + '<input class="champ" id="bicIn" type="text" autocomplete="off" placeholder="BIC (facultatif)" aria-label="BIC">'
       + '<input class="champ" id="titulaireIn" type="text" autocomplete="off" placeholder="Titulaire du compte" aria-label="Titulaire">'

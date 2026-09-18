@@ -172,8 +172,14 @@ test('IBAN : la tuile dit « fermé » tant qu\'il n\'est pas posé, et ne montr
   assert.ok(pose.includes('ouvert') && pose.includes('0189'), 'la tuile doit confirmer que c\'est posé');
   assert.ok(!/FR76\s?3000/.test(pose), 'IBAN affiché en clair');
   assert.ok(!C.sectionBanque({ banque: { iban: '<img src=x onerror=alert(1)>' } }).includes('<img src=x'), 'donnée non échappée');
-  assert.equal(C.sectionBanque(null), '');
+  /* Caisse muette : la tuile DOIT rester — c'est une action, pas un rapport.
+     La faire disparaître, c'est laisser Kevin devant une page sans rien, sans
+     savoir pourquoi (constaté le 18.09 : « toujours pas de tuile »). */
+  const muet = C.sectionBanque(null);
+  assert.ok(muet.includes('mon IBAN'), 'la tuile IBAN disparaît quand la caisse ne répond pas');
+  assert.ok(muet.includes('illisible') && muet.includes('id="ibanIn"'), 'caisse muette : il faut dire pourquoi ET laisser enregistrer quand même');
   assert.ok(C.rendu(data, { ...LIVE, banque: {} }, null).includes('mon IBAN'), 'tuile jamais montée dans la page');
+  assert.ok(C.rendu(data, null, 'HTTP 403').includes('mon IBAN'), 'tuile absente quand la caisse répond 403 : c\'est exactement là qu\'elle sert');
   /* Et les deux boutons doivent être câblés, sinon c'est un décor. */
   const js = readFileSync(new URL('../kdmc-home/admin/commerce.js', import.meta.url), 'utf8');
   assert.match(js, /\/admin\/reglages/, 'le bouton Enregistrer n\'appelle rien');
