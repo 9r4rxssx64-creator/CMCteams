@@ -12318,7 +12318,7 @@ function cmcOpenContactKevin(){
         fil.slice(-20).forEach(function(m){
           b+='<div style="display:flex;justify-content:'+(m.moi?'flex-end':'flex-start')+';margin-bottom:6px">'
             +'<div style="max-width:82%;padding:7px 10px;border-radius:12px;font-size:14px;line-height:1.4;white-space:pre-wrap;'
-            +(m.moi?'background:rgba(201,162,39,.16);color:#f0e0b0':'background:rgba(74,160,120,.18);color:#d8f0e0')+'">'
+            +(m.moi?'background:var(--cmc-gold-soft);color:#f0e0b0':'background:rgba(74,160,120,.18);color:#d8f0e0')+'">'
             +(m.moi?'':'<div style="font-size:11px;color:#7fd0a8;font-weight:700;margin-bottom:2px">Kevin</div>')
             +esc(m.text)+'</div></div>';
         });
