@@ -70,6 +70,12 @@ const CHEMINS = [
   { p: '/SESSIONS-ET-BRANCHES.md', quoi: 'carte des sessions de travail', grave: 1, docTravail: true },
   { p: '/CLAUDE_HANDOFF.json', quoi: 'passation entre sessions', grave: 1, docTravail: true },
   { p: '/pipeline/sessions.json', quoi: 'registre des sessions de travail', grave: 1, docTravail: true },
+  /* Kevin 2026-09-18 : « que personne ne puisse tout voir, les noms de chaque personne ».
+     MESURÉ le 18.09 : la publication servait tests/fixtures/*.pdf — les CINQ PLANNINGS SBM
+     D'ORIGINE (10 Mo), téléchargeables par n'importe qui. Retirés depuis ; sondés ici pour
+     que le jour où le retrait échoue, on le sache. */
+  { p: '/tests/fixtures/septembre-2026-v2.pdf', quoi: 'planning SBM d\'origine (tout le personnel, un mois entier)', grave: 3, docTravail: true },
+  { p: '/tests/fixtures/octobre-2026.pdf', quoi: 'planning SBM d\'origine (tout le personnel, un mois entier)', grave: 3, docTravail: true },
   { p: '/audit/github-reponse-support.md', quoi: 'échange avec le support GitHub', grave: 2, docTravail: true },
   { p: '/arbre/research/RECHERCHES.md', quoi: 'notes de recherche généalogique', grave: 2, docTravail: true },
   { p: '/patrimoine/00-A-FAIRE.md', quoi: 'dossier patrimoine', grave: 3, docTravail: true },
