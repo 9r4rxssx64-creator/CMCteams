@@ -117,3 +117,42 @@ jobs:
             | tee /tmp/w.json; echo
           grep -q '"ignore":true' /tmp/w.json || { echo "DANGER : un webhook non signé a été accepté"; exit 1; }
           echo "OK — un paiement non prouvé ne délivre rien."
+
+          # ── CAISSE (18.09) : ce qui protège l'argent doit être VU en vrai ──────
+          echo "— la caisse refuse une commande sans consentement —"
+          curl -sS -X POST "$URL/caisse/commande" -H 'content-type: application/json' \
+            -d '{"produit":"kit-ia","email":"preuve@example.com"}' | tee /tmp/c1.json; echo
+          grep -q '"error":"consentement"' /tmp/c1.json || { echo "DANGER : on peut commander sans consentir à la livraison immédiate"; exit 1; }
+
+          echo "— la caisse refuse une commande sans e-mail (accès non livrable) —"
+          curl -sS -X POST "$URL/caisse/commande" -H 'content-type: application/json' \
+            -d '{"produit":"kit-ia","consentement":true}' | tee /tmp/c2.json; echo
+          grep -q '"error":"email"' /tmp/c2.json || { echo "DANGER : on peut commander sans e-mail"; exit 1; }
+
+          echo "— la caisse refuse un produit inventé —"
+          curl -sS -X POST "$URL/caisse/commande" -H 'content-type: application/json' \
+            -d '{"produit":"gratuit-ia","email":"p@example.com","consentement":true}' | tee /tmp/c3.json; echo
+          grep -q '"error":"produit_inconnu"' /tmp/c3.json || { echo "DANGER : un produit hors catalogue est accepté"; exit 1; }
+
+          echo "— une capture sur une référence inventée ne délivre rien —"
+          curl -sS -X POST "$URL/caisse/capture" -H 'content-type: application/json' \
+            -d '{"ref":"KZZZZZZZZ"}' | tee /tmp/c4.json; echo
+          grep -q '"error":"commande_inconnue"' /tmp/c4.json || { echo "DANGER : une référence inventée passe la caisse"; exit 1; }
+
+          # Dit la vérité sur l'état : caisse branchée ou repli paypal.me.
+          if grep -q '"caisse":true' /tmp/h.json; then
+            echo "CAISSE ACTIVE : les clés PayPal sont posées, l'achat est automatique de bout en bout."
+            curl -sS -X POST "$URL/caisse/commande" -H 'content-type: application/json' \
+              -d '{"produit":"avis-ia","email":"preuve@example.com","consentement":true}' > /tmp/c5.json
+            node -e '
+              const j = JSON.parse(require("fs").readFileSync("/tmp/c5.json","utf8"));
+              if (!j.ok || !/^https:\/\/www\.(sandbox\.)?paypal\.com\//.test(j.approbation || "")) {
+                console.log("ÉCHEC : la caisse ne rend pas de lien de paiement PayPal :", JSON.stringify(j).slice(0,200)); process.exit(1);
+              }
+              console.log("commande créée, réf", j.ref, "→ lien de paiement PayPal obtenu.");
+            '
+          else
+            grep -q '"error":"caisse_absente"' <(curl -sS -X POST "$URL/caisse/commande" -H 'content-type: application/json' -d '{"produit":"kit-ia","email":"p@example.com","consentement":true}') \
+              || { echo "ÉCHEC : sans clés PayPal, la caisse doit le DIRE (caisse_absente) pour que la page retombe sur paypal.me"; exit 1; }
+            echo "CAISSE EN REPLI : clés PayPal absentes → le bouton rouvre paypal.me. Rien n'est cassé, mais la validation reste manuelle."
+          fi

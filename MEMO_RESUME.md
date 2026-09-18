@@ -81,6 +81,61 @@ Versions : CMCteams **v9.907**, page Départs **v1.47**, seed + boards régéné
 - Leçon **#265**. Seed + boards régénérés (parser v9.905).
 
 
+## 2026-09-18 14:30 — « Tout est prévu derrière, jusqu'à l'encaissement ? » → NON. Mesuré, puis corrigé.
+
+**La réponse honnête, avant de coder** (inventaire ligne par ligne) : la chaîne de vente
+avait des trous par lesquels l'argent partait.
+
+| Maillon | Avant (mesuré) | Maintenant |
+|---|---|---|
+| Le bouton « Payer » | un lien `paypal.me` ouvert dans un AUTRE onglet | une **vraie caisse** : commande créée côté serveur (Orders v2) |
+| Après le paiement | **rien ne ramenait l'acheteur** | PayPal renvoie sur `merci.html`, on capture, le code s'affiche |
+| Le produit acheté | **deviné par le montant** (d'où des prix tous différents) | écrit dans `custom_id`, recoupé à la capture |
+| Trace d'une intention d'achat | **aucune** — un client qui ferme l'onglet n'a jamais existé | `cmd:<ref>` en KV, avec e-mail, montant, horodatage |
+| Consentement rétractation | une phrase en FAQ, **rien d'enregistré** | case obligatoire + **texte exact horodaté** avec la commande |
+| CGV / mentions / contact | **aucun lien** depuis les pages de vente | `cgv.html` + `mentions.html`, liées partout, contact affiché |
+| Justificatif d'achat | **aucun** | reçu numéroté `KDMC-<année>-<n>`, relisable par `/recu` |
+
+**Ce qui protège l'argent** : `controleCapture()` est une fonction **pure exportée** — elle refuse
+un statut non `COMPLETED`, un autre produit, une autre devise, un montant plus bas (tolérance
+voulue d'un centime pour les arrondis PayPal). Elle est **exécutée** par le test, pas lue : un
+premier essai de garde « qui lit le code » laissait passer `if (false && …)` — sabotage au vert,
+donc garde inutile. Corrigé avant d'être gardé.
+
+**Fail-open partout** : sans clés PayPal, `/caisse/commande` répond `caisse_absente` et le bouton
+rouvre l'ancien `paypal.me` (`data-secours`). Une caisse en panne ne bloque jamais une vente.
+Si l'e-mail de livraison échoue (c'est **déjà arrivé le 16.09**), le code s'affiche à l'écran et
+la page le dit au lieu de mentir.
+
+**Deux vrais bugs trouvés par les gardes existantes** pendant ce travail, pas par moi :
+(a) mes styles en ligne étaient **refusés par la CSP** → la case à cocher se serait affichée de
+travers (trouvé par le test en vrai navigateur) ; (b) la case faisait **22 px**, sous le minimum
+tactile de 44 px du dépôt. Les deux corrigés à la source (feuille de style + générateur).
+
+**Piège permanent bouché** : régénérer les pages de niche **effaçait les balises d'aperçu**
+(og:image) → retour au rectangle gris sur Facebook. Le générateur les pose maintenant lui-même.
+
+**Garde** `test:caisse-complete` (8 contrôles, dans `test:ci`), **prouvée discriminante** :
+consentement retiré → 1 échec · PayPal ne renvoie nulle part → 1 · liens légaux retirés → 1 ·
+repli supprimé → 1 · deux produits au même prix → 1 · contrôle du montant neutralisé → 1.
+
+**Ce que je NE peux pas faire à sa place** : créer l'application PayPal sur SON compte
+(login sur son compte, impossible pour un automatisme). Tant que `PAYPAL_CLIENT_ID` et
+`PAYPAL_SECRET` ne sont pas posés, la caisse reste en repli `paypal.me`. **Une seule action,
+une fois** — et `PAYPAL_WEBHOOK_ID` n'est plus nécessaire pour ce chemin.
+
+## 2026-09-18 13:50 — Voix : la pub ne parle plus comme un professeur
+
+Kevin : « les voix, c'est pas le top, on dirait un robot ». Cause mesurée : le moteur HD
+(`gpt-4o-mini-tts`) accepte une **consigne de jeu**, figée sur « professeur de langue » — écrite
+pour Lingua, donc scolaire et plate dans une publicité. `/__lingua/tts` accepte maintenant
+`i=<style>` en **liste blanche** (prof · pub · calme · energie) ; l'endpoint est public, du texte
+libre laisserait un inconnu piloter notre moteur. Défaut inchangé = `prof` → **Lingua ne bouge
+pas d'un cheveu**. Le style entre dans la **clé de cache**, sinon une phrase déjà lue resterait
+servie à l'ancienne et on n'entendrait aucun changement (piège vécu le 11.08).
+Garde `test:voix-styles`, prouvée par sabotage (style hors du cache → 1 échec ; liste blanche
+contournée → 2 échecs).
+
 ## 2026-09-18 01:40 — Facebook : les aperçus sont EN LIGNE et le 1ᵉʳ post-lien est programmé (mesuré)
 
 **Ce qui restait à prouver** ce matin : les 6 images d'aperçu existaient dans le dépôt, mais

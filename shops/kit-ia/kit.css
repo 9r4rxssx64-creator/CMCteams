@@ -104,3 +104,10 @@ footer a,.petit a,.sur a{display:inline-flex;align-items:center;min-height:44px}
 .nav-modules{display:flex;gap:var(--e16);margin:var(--e32) 0}
 .nav-modules .btn{flex:1}
 .verrouille{text-align:center}
+/* ── Caisse (18.09) ───────────────────────────────────────────────────────
+   L'e-mail et le consentement sont demandés AVANT que le paiement ne parte.
+   Ces règles vivent ici et pas en style="" : la CSP `style-src 'self'` refuse
+   les styles en ligne — mesuré en vrai navigateur, la case s'affichait de travers. */
+.consent{display:flex;align-items:center;gap:var(--e16);font-weight:400;color:var(--texte2);font-size:var(--t14);margin:var(--e8) 0 var(--e16)}
+.consent input[type=checkbox]{width:44px;height:44px;min-height:44px;flex:0 0 auto;margin:0;accent-color:var(--accent);cursor:pointer}
+.consent span{flex:1 1 auto}
