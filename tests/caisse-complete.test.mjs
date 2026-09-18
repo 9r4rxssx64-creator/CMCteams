@@ -215,3 +215,14 @@ test('Kevin livre un panier en un doigt, et jamais deux fois', () => {
   assert.match(dash, /data-livrer/, 'aucun bouton Livrer dans la tuile Paniers');
   assert.match(dash, /\/admin\/livrer-panier/, 'le bouton n\'appelle pas la route');
 });
+
+test('essayer des références en rafale est débité AVANT toute lecture', () => {
+  /* Une référence valide rend le code d'accès — c'est voulu (l'acheteur qui a
+     perdu le sien). Donc le compteur d'essais doit tomber AVANT la lecture,
+     sinon on peut balayer les références sans jamais être freiné. */
+  const bloc = worker.slice(worker.indexOf("p === '/reclamer'"), worker.indexOf("p === '/acces'"));
+  const debit = bloc.indexOf('tropDeTentatives');
+  const lecture = bloc.indexOf("VENTES.get('cmd:' + refInt)");
+  assert.ok(debit > 0 && lecture > 0, 'débit ou lecture de référence absents');
+  assert.ok(debit < lecture, 'le débit d\'essais passe APRÈS la lecture : les références sont balayables');
+});

@@ -832,6 +832,14 @@ export default {
       try { b = await req.json(); }
       catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'reclam_body' }, 400, origin); }
 
+      /* Le débit passe AVANT toute lecture : une référence valide rend le code
+         d'accès à celui qui la présente (c'est voulu — l'acheteur qui a perdu son
+         code). Sans débit ici, on pourrait essayer des références en rafale. */
+      const ip = req.headers.get('CF-Connecting-IP') || 'inconnue';
+      if (await tropDeTentatives(env, ip)) {
+        return json({ ok: false, error: 'trop_de_tentatives', detail: 'trop d\'essais dans l\'heure, réessaie plus tard', step: 'reclam_debit' }, 429, origin);
+      }
+
       /* Référence d'intention (PayPal perso) : elle porte déjà le produit,
          l'e-mail et le consentement horodaté. L'acheteur n'a qu'à la recopier —
          c'est le fil qui relie son paiement à son accès. */
@@ -854,11 +862,6 @@ export default {
       const email = nettoieEmail(b.email || (intention && intention.email) || '');
       if (!emailPlausible(email)) {
         return json({ ok: false, error: 'email', detail: 'adresse e-mail incomplète', step: 'reclam_email' }, 400, origin);
-      }
-
-      const ip = req.headers.get('CF-Connecting-IP') || 'inconnue';
-      if (await tropDeTentatives(env, ip)) {
-        return json({ ok: false, error: 'trop_de_tentatives', detail: 'trop d\'essais dans l\'heure, réessaie plus tard', step: 'reclam_debit' }, 429, origin);
       }
 
       /* Chemin automatique : seulement PayPal, seulement si configuré. */
