@@ -9732,3 +9732,36 @@ refusés à qui n'est pas admin.
 
 **Ce qui reste à Kevin** : poser son IBAN une fois dans Commerce → 🏦 Virement (3 champs, 1 bouton).
 Rien d'autre.
+
+## 2026-09-18 — Archive Epstein : les sources officielles, rangées (dossiers.kd-mc.com)
+
+Kevin voulait « tous les documents Epstein + toutes les photos publiques ET PRIVÉES » + 3-4 vidéos
+virales/jour monétisées sur YouTube/TikTok/Instagram/Facebook. **Trois faits vérifiés ont changé la
+décision**, et Kevin a choisi **l'archive seule, sans vidéos sur ce sujet** :
+
+1. **YouTube ne paiera pas.** Règles publicitaires : *« Content which focuses on child abuse… will
+   remain ineligible for full monetization. »* L'affaire EST du trafic de mineures → « limited ads »
+   au mieux, quelle que soit la qualité.
+2. **4 vidéos/jour au même gabarit = démonétisation.** Politique « inauthentic content » du
+   15.07.2025 : contenu **produit en masse / au modèle** inéligible. Risque : la chaîne entière
+   sortie du programme partenaire, pas seulement une vidéo.
+3. **Les « photos privées » n'existent pas en public.** Le DOJ et la commission Oversight publient
+   en retirant **l'identité des victimes ET le matériel d'abus sur mineurs**. Ce qui circule
+   ailleurs sous ce nom est faux ou illégal à détenir. **Refus assumé, non négociable.**
+   + Risque business réel : ~65 000 pages où des centaines de noms apparaissent ; être cité ≠ être
+   coupable ; Kevin serait l'éditeur, depuis Monaco.
+
+**Livré** : `dossiers.kd-mc.com` — 7 collections officielles (Oversight DOJ 33 295 p., succession
++20 000 p., bibliothèque Epstein du DOJ, assignations bancaires, dossiers judiciaires CourtListener),
+recherche instantanée, **aucun document hébergé** : chaque fiche renvoie à l'original.
+Adresse déclarée aux **5 endroits** (`ROUTES`, `APPS`, `custom_domain`, `apps.json` ×2, bouée de
+secours) — la garde `test:router-secours` a d'ailleurs attrapé le 5ᵉ que j'allais oublier.
+
+**Gardes** : `npm run test:dossiers` (8 contrôles, câblé dans `test:ci`) — sources officielles en
+HTTPS uniquement (un domaine qui IMITE une institution est refusé), **aucune balise `<img>`**,
+CSP sans images externes, `rel="noopener nofollow"` sur chaque lien sortant, total de pages
+**mesuré** et jamais arrondi, iPhone 44px/16px, page utile sans JavaScript.
+Prouvées par sabotage : source non officielle → 2 échecs · domaine imitateur → 2 échecs · une image
+servie → 1 échec · `nofollow` retiré → 1 échec.
+**Preuve réseau** : `.github/workflows/dossiers-liens.yml` (bouton) pingue chaque source depuis le
+runner — 401/403 = anti-robot, **pas** un lien mort, la distinction est codée.

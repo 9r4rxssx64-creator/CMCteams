@@ -124,6 +124,10 @@
     "javis.kd-mc.com": {
       "name": "Javis",
       "icon": "🐝"
+    },
+    "dossiers.kd-mc.com": {
+      "icon": "🗂️",
+      "name": "Dossiers publics"
     }
   }
 }
