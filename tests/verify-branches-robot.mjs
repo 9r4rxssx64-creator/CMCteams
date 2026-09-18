@@ -112,6 +112,17 @@ for (const f of readdirSync(WF).filter((x) => x.endsWith('.yml'))) {
 }
 chk(orphelins > 0, `${orphelins} workflow(s) à branche orpheline contrôlés (le garde a quelque chose à garder)`);
 
+/* Deuxième ceinture : la config du projet Vercel refuse aussi les branches de
+   captures par motif. On ne sait pas si Vercel lit cette clé depuis la branche de
+   production ou depuis la branche poussée (dans ce 2e cas elle est inopérante sur
+   une orpheline) — elle ne remplace donc PAS le script, elle le double. */
+const CFG = 'tools/agent/vercel.json';
+if (existsSync(CFG)) {
+  let g = {};
+  try { g = (JSON.parse(readFileSync(CFG, 'utf8')).git || {}).deploymentEnabled || {}; } catch { g = {}; }
+  chk(g['claude/voir-*'] === false, `${CFG} refuse aussi les branches de captures par motif (claude/voir-*)`);
+}
+
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));
 console.log(`=== ${R.ok.length} OK / ${R.ko.length} FAIL ===`);
