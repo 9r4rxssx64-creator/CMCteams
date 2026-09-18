@@ -1330,6 +1330,17 @@ dans le journal de build de Vercel (pas deviné) :
   **34 dépôts sans un seul mail** — pendant que les branches de captures, qui ne l'avaient pas,
   en produisaient. 5 sabotages, tous rouges (dont un qui passait au vert parce que mon contrôle
   lisait le mot dans son propre commentaire — corrigé). Leçon **#268**.
+- **Les deux mails que tu m'as montrés étaient antérieurs au correctif** (21h03 et 21h11 ; le
+  correctif est en service depuis 19h20 le lendemain). Je ne me suis pas contenté de le
+  supposer : j'ai **relancé une prise de captures pour de vrai** (run 35392993876) et mesuré
+  côté Vercel. **Résultat : la branche a bien reçu la muselière, et Vercel n'a créé AUCUN
+  déploiement** — dernier déploiement du projet à 19h37, branche poussée à 20h44, rien entre les
+  deux. Avant le correctif, la même opération produisait un build en erreur et un mail.
+- **Deuxième ceinture** : la configuration du projet Vercel refuse aussi ces branches par motif
+  (`claude/voir-*`). Honnêtement : je ne sais pas si Vercel lit cette consigne depuis la branche
+  principale ou depuis la branche poussée — dans le second cas elle ne sert à rien sur une
+  branche de captures. Elle ne coûte rien, elle double la première ; c'est la première qui est
+  sûre.
 
 ## 15 septembre 2026 (suite) — chaque app distincte, toutes liées : qui a le droit d'aller où
 

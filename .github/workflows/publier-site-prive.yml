@@ -165,8 +165,36 @@ jobs:
           if [ "$st" != "0" ]; then
             echo "::error::sonde sortie $st sur $U (2 = rien n'a pu être mesuré : le site n'a pas répondu du tout)"
             head -25 sonde.log | while IFS= read -r l; do echo "::error::$l"; done
+            exit $st
           fi
-          exit $st
+
+          # ── L'ADRESSE DONT LE DOMAINE VA RÉELLEMENT DÉPENDRE ────────────────
+          # Ci-dessus on a sondé l'adresse ÉPHÉMÈRE de ce déploiement
+          # (<hash>.kdmc-site.pages.dev). Ce n'est PAS celle que le routeur ira
+          # chercher : lui pointera sur l'alias stable `kdmc-site.pages.dev`.
+          # Prouver l'une et basculer sur l'autre, c'est vérifier une porte et en
+          # ouvrir une autre. On sonde donc AUSSI l'alias de production — c'est la
+          # seule mesure qui autorise la bascule du domaine.
+          if [ "${GITHUB_REF_NAME}" = "main" ]; then
+            A="https://kdmc-site.pages.dev"
+            for i in 1 2 3 4 5 6; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$A/" || echo 000)
+              echo "alias de production, tentative $i : $A → HTTP $code"
+              [ "$code" = "200" ] && break
+              sleep 10
+            done
+            set +e
+            node tools/audit/sonde-site-publie.mjs "$A" --racine 2>&1 | tee sonde-alias.log
+            sa=${PIPESTATUS[0]}
+            set -e
+            if [ "$sa" != "0" ]; then
+              echo "::error::alias de production $A NON conforme (sortie $sa) — le routeur ne doit PAS basculer dessus"
+              head -25 sonde-alias.log | while IFS= read -r l; do echo "::error::$l"; done
+              exit $sa
+            fi
+            echo "alias de production vérifié : $A sert bien les 26 adresses."
+          fi
+          exit 0
 
       # ── L'ADRESSE STABLE, celle que le routeur utilisera vraiment ──────────
       # Kevin 2026-09-18, avant de basculer le domaine : la sonde ci-dessus teste

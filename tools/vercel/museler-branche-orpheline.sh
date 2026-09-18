@@ -39,6 +39,13 @@
 # recopiée dans un seul workflow ne protège que celui-là : on la met en commun
 # pour que le prochain workflow à branche orpheline l'ait par construction.
 #
+# ── DEUXIÈME CEINTURE, dans `tools/agent/vercel.json` de main ───────────────
+# `git.deploymentEnabled` y liste aussi `"claude/voir-*": false` (Vercel accepte
+# les motifs minimatch). HONNÊTETÉ : je ne sais PAS si Vercel lit cette clé
+# depuis la branche de production ou depuis la branche poussée. Dans le 2e cas
+# elle ne sert à rien sur une orpheline (qui ne porte aucune config) — d'où ce
+# script, qui lui est certain. Elle ne coûte rien et couvre le 1er cas.
+#
 # Garde : tests/verify-branches-robot.mjs (câblée dans test:ci).
 # Usage : bash tools/vercel/museler-branche-orpheline.sh   (avant `git commit`)
 set -eu
