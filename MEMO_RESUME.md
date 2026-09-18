@@ -1308,6 +1308,28 @@ JetBrains Mono réellement rendues (`document.fonts.check`), données structuré
 (3 sabotages → 3 échecs distincts, restauration → vert).
 
 ---
+## 18 septembre 2026 — le mail d'échec Vercel : une parade existait, un seul workflow l'avait
+
+Tu m'envoies « **Preview deployment failed for kdmc-agent-monaco** ». J'ai lu la cause exacte
+dans le journal de build de Vercel (pas deviné) :
+
+> `The specified Root Directory "tools/agent" does not exist.`
+
+- **Ce qui se passait** : Vercel déploie **toute** branche poussée. Les branches de captures
+  d'écran (`claude/voir-…`) sont volontairement **orphelines** — elles ne contiennent que les
+  images. Vercel cherchait son dossier `tools/agent`, ne le trouvait pas, échouait… et
+  **t'envoyait un mail**. Exactement ce que ta règle anti-spam interdit.
+- **Le `[skip ci]` ne servait à rien** : c'est une consigne pour GitHub, pas pour Vercel.
+- **Ce qui m'a le plus appris** : la parade **existait depuis des semaines**, écrite en clair
+  dans le workflow de sauvegarde de la base Apex Chat. Deux workflows créent des branches
+  orphelines ; **un seul était protégé**, et c'est l'autre qui a fini par t'écrire. Une parade
+  recopiée protège son fichier, pas la règle.
+- **Corrigé** : les deux passent maintenant par **le même** petit script, et un garde refuse
+  qu'un futur workflow à branche orpheline naisse sans lui.
+- **Preuve, sans rien relancer** : ce fichier vit sur la branche des sauvegardes depuis
+  **34 dépôts sans un seul mail** — pendant que les branches de captures, qui ne l'avaient pas,
+  en produisaient. 5 sabotages, tous rouges (dont un qui passait au vert parce que mon contrôle
+  lisait le mot dans son propre commentaire — corrigé). Leçon **#268**.
 
 ## 15 septembre 2026 (suite) — chaque app distincte, toutes liées : qui a le droit d'aller où
 

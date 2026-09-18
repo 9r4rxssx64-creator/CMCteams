@@ -314,6 +314,16 @@ Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcrip
 | `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
 | `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
 
+### 18 septembre 2026 — plus de mail d'échec Vercel sur les branches de captures
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/vercel/museler-branche-orpheline.sh` | **Nouveau.** Empêche Vercel de déployer — et donc de rater — une branche qui ne contient que des captures d'écran. C'est ce qui t'envoyait « Preview deployment failed ». Partagé par les deux workflows concernés, pour qu'aucun ne l'oublie. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/vercel/museler-branche-orpheline.sh) |
+| `.github/workflows/voir-comme-kevin.yml` | Modifié : c'est lui qui t'écrivait. Il appelle désormais la parade. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/voir-comme-kevin.yml) |
+| `.github/workflows/apex-chat-d1-backup.yml` | Modifié : il avait la parade recopiée chez lui ; il utilise maintenant la commune. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/apex-chat-d1-backup.yml) |
+| `tests/verify-branches-robot.mjs` | Modifié : refuse qu'un workflow crée une branche de ce type sans la parade. 5 sabotages le font rougir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-branches-robot.mjs) |
+| `LESSONS.md` #268 | Une parade recopiée ne protège que son fichier — on la met en commun dès le 2e appelant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
 ### 15 septembre 2026 (suite) — qui a le droit d'aller dans quelle application
 
 | Fichier | À quoi ça sert | Ouvrir |
