@@ -1,5 +1,27 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-18 (15h) — v9.907 / light v1.47 : la recherche marche enfin, les mois passés disparaissent, et rien n'est plus appelé « chef » à tort
+
+**Trois demandes de Kevin, trois causes racines mesurées en vrai navigateur.**
+
+### 1. « Je cherche l'équipe à Morter, il ne trouve rien. Ne me montre pas son équipe. »
+- **Ce n'était pas le moteur** : `globalSearch('morter')` trouvait bien MORTER. **Le champ de saisie n'apparaissait jamais.** La loupe appelle `dc()`, et `dc()` ne réécrit que `#content` — or la barre de recherche vit dans la **barre du haut**. Kevin tapait sur la loupe : rien. « Il ne trouve rien » était littéral — il n'y avait pas où écrire.
+- Même cause pour les résultats : chaque lettre repassait par `dc()`, donc rien n'était peint.
+- **Corrigé** : la barre du haut a son propre rafraîchissement idempotent (`_dcTopbar`), les résultats ont leur conteneur dédié (le curseur ne saute plus), le libellé **dit l'équipe du mois** (« MORTER L • CMC Éq.9 (16/3) »), la comparaison est normalisée des deux côtés (« MENARD » trouve « MÉNARD »), on cherche aussi dans prénom/nom/e-mail, et un employé n'est plus renvoyé vers la vue Employés (réservée à l'admin → page blanche).
+- **Garde** `npm run test:recherche-nom` — 10 contrôles, vraie page, clic réel sur la loupe, 5 noms vérifiés contre le PDF. **Prouvée par sabotage** (2 puis 5 échecs).
+
+### 2. « Enlève les mois passés. Seulement en historique pour moi l'admin. »
+- Trois chemins mènent à un mois passé : la flèche « ‹ » (**rendue à 11 endroits**), l'état gardé par l'appareil, et la liste déroulante de la page Départs. **Une porte par chemin**, jamais 11 retouches : `prevM()` refuse et le dit · `cmcClampMois()` (en tête de `dc()`) ramène au mois en cours · `fillMoSel()` (light) ne propose plus de mois passé hors admin.
+- Les 11 flèches sont grisées par **une seule passe DOM idempotente** après rendu. L'admin garde tout l'historique, y compris en vue-employé.
+- **Garde** `npm run test:mois-passes` — 7 contrôles, les DEUX surfaces, employé ET admin. **Prouvée par sabotage** (4 échecs).
+
+### 3. « En haut il y a marqué 8 chefs mais ce n'est pas une équipe de chef. Corrige et vérifie toutes les infos. »
+- Kevin avait raison : CMC Éq.10 est une **équipe ordinaire**, et la page annonçait « 8 chefs ». Cause : un nom de variable historique (`CHEFS_T`, l'ordre de départ) avait **déteint sur le texte affiché** — la liste contient TOUS les membres du tableau, pas des chefs.
+- **Corrigé, 3 textes** : le sous-titre dit « 8 personnes · séquence … », la colonne s'intitule **Nom** (et non « Chef »), et le contrôle des repos dit « (8 personnes) ». Aucune donnée touchée — seulement ce qui est écrit.
+- **« Vérifie toutes les infos » : je l'ai fait pour de bon.** Nouvelle garde `npm run test:entetes-light` qui ouvre **les 157 tableaux générés**, un par un, et compare CE QUI EST ÉCRIT EN HAUT au PDF : le mois, l'effectif annoncé (= lignes affichées = PDF), la séquence annoncée (= celle réellement utilisée), le libellé du tableau, les noms affichés **dans l'ordre du PDF**, et l'interdiction d'appeler « chef » un effectif. **Résultat : 157 tableaux · 0 anomalie · 0 erreur JS.** **Prouvée par sabotage** : en remettant l'ancien texte → **301 échecs**.
+
+Versions : CMCteams **v9.907**, page Départs **v1.47**, seed + boards régénérés (parser v9.907). Leçons **#277** et **#278**. Cliquet améliorations re-figé (2 `innerHTML` de plus, tous deux du HTML que l'app fabrique elle-même, données échappées).
+
 ## 2026-09-18 (13h) — v9.906 : plus aucune équipe inventée (suite de la vérification totale)
 - **v9.905 est EN LIGNE et vérifiée sur le vrai domaine** (relevé « voir comme Kevin » run 35347636713, iPhone, connecté) : CMC **Éq.9 = CAMILLERI, DEGIOVANNI, EL MISSOURI, MORTER, SCHWIETZER, SIRIO, TOULET, VOUKASSOVITCH** — TOULET et DEGIOVANNI sont bien avec MORTER et CAMILLERI, comme le PDF. Éq.11 = les 8 du PDF. 36 équipes · 247 personnes · 0 erreur JS · light v1.45 · 0 requête en échec.
 - **Défaut trouvé en creusant un test intermittent** (1 essai sur 3) : l'app rangeait **VERZELLO O** (en CONGÉS au PDF d'octobre) dans une **« Éq.21 » qui n'existe nulle part**, et par moments quelqu'un dans une équipe réelle dont il n'est pas membre. Cause : les passes qui « devinent » les équipes d'après les jours de repos (pour les mois sans PDF) écrivent dans le même champ que les tableaux du PDF.

@@ -194,7 +194,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.45";
+var APP_VER="v1.47";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -463,11 +463,26 @@ applyBoards(_liveFromLS());
 function teamForMeInMonth(){ if(!ME||!CURMO)return null; var ks=Object.keys(BOARDS);
   for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue; if((b.year+"-"+b.monthIdx)!==CURMO)continue;
     if((b.people||[]).some(function(p){return p.name===ME;}))return ks[i]; } return null; }
+/* v1.46 — MOIS PASSÉS : HISTORIQUE RÉSERVÉ À L'ADMIN (Kevin 2026-09-18, « enlève les mois
+ * passés dans l'app, seulement en historique pour moi l'admin »). Même règle que CMCteams :
+ * la liste déroulante n'offre plus que le mois en cours et les suivants, sauf en mode admin. */
+function depMoisPasse(y,mi){ var n=new Date(); return (y*12+mi) < (n.getFullYear()*12+n.getMonth()); }
+function depHistoriqueAutorise(){ try{ return isAdmin(); }catch(_){ return false; } }
 function fillMoSel(){ var s=document.getElementById("moSel"); if(!s)return; s.innerHTML="";
   var ms=DEP_GEN_MONTHS.slice();
   if(!ms.length){ var seen={}; Object.keys(BOARDS).forEach(function(k){var b=BOARDS[k];var mk=b.year+"-"+b.monthIdx;if(!seen[mk]){seen[mk]=1;ms.push({year:b.year,monthIdx:b.monthIdx,label:b.month});}}); }
+  if(!depHistoriqueAutorise()){
+    var gardes=ms.filter(function(m){return !depMoisPasse(m.year,m.monthIdx);});
+    // Filet : si TOUT est passé (aucun mois à venir chargé), on garde le plus récent —
+    // mieux vaut un mois ancien qu'une liste vide et une page sans planning.
+    if(gardes.length)ms=gardes;
+  }
   ms.sort(function(a,b){return (b.year*12+b.monthIdx)-(a.year*12+a.monthIdx);});
   ms.forEach(function(m){ var o=document.createElement("option"); o.value=m.year+"-"+m.monthIdx; o.textContent=(m.label||(m.year+"-"+(m.monthIdx+1))); if(o.value===CURMO)o.selected=true; s.appendChild(o); });
+  // Le mois affiché doit exister dans la liste proposée, sinon on bascule sur le 1er offert.
+  if(ms.length && !ms.some(function(m){return (m.year+"-"+m.monthIdx)===CURMO;})){
+    try{ setMonth(ms[0].year+"-"+ms[0].monthIdx); }catch(_){}
+  }
 }
 function setMonth(mk){ CURMO=mk;
   var target=teamForMeInMonth(); // priorité : MON équipe ce mois
@@ -586,7 +601,7 @@ function render(){
   var days=B.days, R=compute();
   var dow=["dim","lun","mar","mer","jeu","ven","sam"];
   var now=new Date(); var todayD=(now.getFullYear()===B.year&&now.getMonth()===B.monthIdx)?now.getDate():0;
-  var html="<thead><tr><th class='cNom'>"+(B.kind==="abs"?"Personne":"Chef")+"</th>";
+  var html="<thead><tr><th class='cNom'>Nom</th>";
   for(var d=1;d<=days;d++){ var wd=new Date(B.year,B.monthIdx,d).getDay();
     html+="<th class='"+((wd===0||wd===6)?"wknd":"")+(d===todayD?" today":"")+"'>"+dow[wd]+"<br>"+d+"</th>"; }
   html+="<th class='cNR'>NR</th><th class='cCq'>5e</th></tr></thead><tbody>";
@@ -617,7 +632,7 @@ function render(){
   var _pp=document.getElementById("posPanel"); if(_pp) _pp.innerHTML=(isAdmin()&&window._posOpen)?positionsPanelHTML(R):"";
   document.getElementById("hSub").textContent=B.kind==="abs"
     ? B.month+" · "+ST.order.length+" absents (M/CP/FORMATION)"
-    : B.month+" · "+ST.order.length+" chefs · séquence "+R.SEQ.join("·");
+    : B.month+" · "+ST.order.length+" personne"+(ST.order.length>1?"s":"")+" · séquence "+R.SEQ.join("·");
   // contrôle jours de repos : comparer chaque chef à l'ancre SUR LA PÉRIODE COMMUNE
   // (un chef en CP une partie du mois a moins de RH/R — normal, on ne compare que les jours planifiés des deux)
   var sched=function(nm,d){ var c=ST.codes[nm][d]||""; return c!=="" && ["CP","M","AF","ABS","ABI","FL","DEPL","DEP","SS"].indexOf(c)<0; };
@@ -633,7 +648,7 @@ function render(){
   document.getElementById("restCheck").innerHTML = B.kind==="abs"
     ? "🛌 Absents tout le mois (M/CP/FORMATION) — pas d'ordre de départ. Chacun a bien son planning."
     : (bad.length===0
-      ? (isAdmin() ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" chefs) — équipe validée." : "")
+      ? (isAdmin() ? "<b>✅ Jours de repos cohérents</b> sur la période commune ("+ST.order.length+" personne"+(ST.order.length>1?"s":"")+") — équipe validée." : "")
       : "<span class='warn'>⚠️ Repos différents</span> pour : "+bad.join(", ")+" → vérifier (lecture imprécise ou équipe miroir).");
   // bannière "Ma vue" : équipe + miroir de la personne choisie
   var mb=document.getElementById("meBanner");
@@ -812,10 +827,10 @@ function setMe(val){ var nm=val;
   // « ma vue » → MON équipe POUR LE MOIS affiché (pas le 1er board trouvé tous mois)
   if(nm){ var bid=teamForMeInMonth()||boardForName(nm); if(bid&&bid!==BID){ switchBoard(bid); return; } } render(); }
 
-function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; render(); paintAppDiag(); toast("Verrouillé — lecture seule"); }
+function toggleAdmin(){ if(isAdmin()){ document.body.classList.remove("admin"); document.getElementById("lockBtn").textContent="🔒 Admin"; try{fillMoSel();}catch(_){} render(); paintAppDiag(); toast("Verrouillé — lecture seule"); }
   else { document.getElementById("pinModal").classList.add("on"); setTimeout(function(){var e=document.getElementById("pinIn");if(e){e.value="";e.focus();}},60); } }
 function closePin(){ document.getElementById("pinModal").classList.remove("on"); }
-function _adminOn(){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); render(); paintAppDiag(); toast("Mode admin activé"); }
+function _adminOn(){ document.body.classList.add("admin"); document.getElementById("lockBtn").textContent="🔓 Quitter admin"; closePin(); try{fillMoSel();}catch(_){} render(); paintAppDiag(); toast("Mode admin activé"); }
 async function checkPin(){ var code=(document.getElementById("pinIn").value||"").trim();
   if(!code){ toast("Entre ton code"); return; }
   // Le code part au domaine, jamais comparé ici. Un code à 6 chiffres OU l'empreinte 64-hex
@@ -848,6 +863,8 @@ async function _depSsoAutoAdmin(){ try{
   if(j&&j.ok&&j.verified===true&&j.admin===true){
     document.body.classList.add("admin");
     var b=document.getElementById("lockBtn"); if(b)b.textContent="🔓 Quitter admin";
+    // v1.46 — Kevin reconnu par le domaine : lui rendre l'historique des mois passés.
+    try{fillMoSel();}catch(_){}
     try{render();paintAppDiag();}catch(_){}
   }
 }catch(_){/* SSO injoignable → PIN, rien de cassé */} }

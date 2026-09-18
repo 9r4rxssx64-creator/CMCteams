@@ -6080,7 +6080,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.906";
+var APP_VER="v9.907";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11678,6 +11678,9 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
+  // v9.907 — Un employé ne reste jamais sur un mois déjà passé (mémoire de l'appareil,
+  // lien partagé, retour d'impersonation…). L'admin garde tout l'historique.
+  try{if(typeof cmcClampMois==="function")cmcClampMois();}catch(_){}
   try{if(typeof _cmcSyncChefsTFromBoards==="function")_cmcSyncChefsTFromBoards(A.year,A.month);}catch(_){} // v9.860 : départs = vraies équipes du mois (caché par mois, no-op après 1x)
   // v9.693 Kevin "L'app saute et scintille, surtout quand elle réfléchit" :
   // OPTIMISATION détection équipes — cache invalidé sur changement effectif.
@@ -11814,6 +11817,9 @@ function dc(){
   }
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   if(A.view==="import")setTimeout(function(){if(typeof renderImportRollbackBanner==="function")renderImportRollbackBanner();},50);
+  // v9.907 — une SEULE porte pour les 11 flèches « ‹ » de l'app : quand le mois précédent
+  // n'est pas autorisé, la flèche devient inerte et dit pourquoi (plutôt qu'un bouton mort).
+  try{if(typeof _cmcMajFlechesMois==="function")_cmcMajFlechesMois();}catch(_){}
   }catch(ex){console.warn("dc() error:",ex);}finally{_dcRunning=false;}
 }
 // v9.58 — dc() debouncé via rAF pour éviter le scintillement lors de
@@ -17738,7 +17744,7 @@ function viewAsBack(){
 var _searchOpen=false,_searchQ="";
 // v10 Sprint 2 \u2014 Recherche globale enrichie : r\u00e9utilise CMD_PALETTE_ACTIONS (v9.82, l. 9037) au lieu d'un tableau dupliqu\u00e9. Source unique de v\u00e9rit\u00e9. Le bouton \ud83d\udd0d ouvre la recherche rapide (dropdown), \u2318K ouvre la palette compl\u00e8te (modal).
 function globalSearch(q){
-  _searchQ=q;if(!q||q.length<2){A._searchResults=[];dc();return;}
+  _searchQ=q;if(!q||q.length<2){A._searchResults=[];_searchPaintResults();return;}
   var ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   var isAdm=A.user&&A.user.id===AID;
   var results=[];
@@ -17751,8 +17757,26 @@ function globalSearch(q){
     });
   }
   // Employés
-  A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
-    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees')"});
+  // v9.907 (Kevin 2026-09-18 « je cherche l'équipe à Morter, il ne trouve rien, ne me montre
+  // pas son équipe ») : on compare des textes NORMALISÉS des deux côtés (avant, seule la
+  // recherche perdait ses accents → « MENARD » ne trouvait pas « MÉNARD »), on cherche aussi
+  // dans le prénom/nom de la fiche, et le résultat DIT l'équipe du mois.
+  var _norm=function(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");};
+  A.employees.filter(function(e){
+    var r=(A.reg&&A.reg[e.id])||{};
+    var hay=_norm(e.name)+" "+_norm(e.id)+" "+_norm(r.prenom)+" "+_norm(r.nom)+" "+_norm(r.email);
+    return hay.indexOf(ql)>=0;
+  }).slice(0,8).forEach(function(e){
+    var _tid=(typeof empTeamNow==="function")?empTeamNow(e):"";
+    var _te=(_tid&&_tid!=="?"&&typeof gt==="function")?gt(_tid):null;
+    var _eq=_te?(_te.name||_tid):(_tid&&_tid!=="?"?_tid:"");
+    var _lbl=e.name+(_eq?"  \u2022  "+_eq:"  \u2022  \u2754 pas d'\u00e9quipe ce mois")+"  ("+e.id+")";
+    // Admin \u2192 la fiche. Employ\u00e9 \u2192 le planning de l'\u00e9quipe (la vue Employ\u00e9s lui est
+    // ferm\u00e9e : y envoyer quelqu'un affichait une page BLANCHE).
+    var _act=isAdm
+      ? "editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees')"
+      : "sv('planning')";
+    results.push({cat:"\ud83d\udc64",label:_lbl,action:_act});
   });
   // Codes horaires
   Object.keys(CODES).filter(function(c){return c.toLowerCase().indexOf(ql)>=0||CODES[c].l.toLowerCase().indexOf(ql)>=0;}).slice(0,3).forEach(function(c){
@@ -17762,7 +17786,12 @@ function globalSearch(q){
   Object.keys(JEUX).forEach(function(jid){var j=JEUX[jid];if(j.nom.toLowerCase().indexOf(ql)>=0){results.push({cat:"\ud83c\udfb2",label:j.nom,action:"A.convTab='jeux';sv('convention')"});}});
   // Convention
   if(typeof conventionSearch==="function"){conventionSearch(q).slice(0,3).forEach(function(a){results.push({cat:"\ud83d\udcd6",label:"Art."+a.num+" "+a.titre,action:"A.convTab='articles';sv('convention')"});});}
-  A._searchResults=results.slice(0,30);dc();
+  A._searchResults=results.slice(0,30);_searchPaintResults();
+}
+/* v9.907 — Le corps des résultats est isolé pour pouvoir le repeindre SEUL (le champ
+ * de saisie garde alors le focus et le curseur). */
+function _searchResultsHTML(){
+  return (A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':_searchSuggestionsHTML());
 }
 // v10 Sprint 2 — Suggestions rapides quand la barre de recherche est vide
 function _searchSuggestionsHTML(){
@@ -17797,7 +17826,30 @@ function _searchOnKeydown(e){
     }
   } else if(e.key==="Escape"){toggleSearch();e.preventDefault();}
 }
-function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];dc();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
+/* v9.907 — La barre de recherche VIT DANS LA BARRE DU HAUT, que `dc()` ne redessine jamais
+ * (dc() ne réécrit que #content). Résultat mesuré avant ce correctif : on tapait sur la loupe,
+ * `_searchOpen` passait bien à true… et le champ n'apparaissait JAMAIS. D'où « il ne trouve
+ * rien » : il n'y avait même pas où écrire. On redessine donc la barre du haut, de façon
+ * idempotente (on ne réécrit que si le HTML change → aucun clignotement). */
+function _dcTopbar(){
+  try{
+    var tb=document.getElementById("topbar");
+    if(!tb||typeof vTopbar!=="function")return;
+    var h=vTopbar();
+    if(tb._cmcLastHtml!==h){tb.innerHTML=h;tb._cmcLastHtml=h;}
+  }catch(_){}
+}
+/* Les résultats se peignent DANS leur conteneur dédié : réécrire toute la barre du haut à
+ * chaque lettre détruirait le champ et ferait sauter le curseur (même piège que searchInput). */
+function _searchPaintResults(){
+  try{
+    var box=document.getElementById("globalSearchRes");
+    if(!box){_dcTopbar();return;}
+    var h=_searchResultsHTML();
+    if(box._cmcLastHtml!==h){box.innerHTML=h;box._cmcLastHtml=h;}
+  }catch(_){}
+}
+function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];_dcTopbar();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
 function vTopbar(){
   var u=A.user,_ut=u?empTeamNow((typeof empById==="function"&&empById(u.id))||u):"",isAdm=u&&u.id===AID,col=tc(u?_ut:"1"),t=gt(_ut);
   // Code du jour de l'utilisateur dans la topbar
@@ -17857,7 +17909,7 @@ function vTopbar(){
   </div>`
   +(_searchOpen?`<div style="position:absolute;top:100%;left:0;right:0;background:rgba(10,20,12,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.3);padding:8px 14px;z-index:89">
     <input id="globalSearchIn" class="inp" placeholder="\ud83d\udd0d Rechercher : employ\u00e9 \u00b7 code \u00b7 vue \u00b7 action \u00b7 convention\u2026  (Entr\u00e9e = ouvrir)" value="${esc(_searchQ)}" oninput="globalSearch(this.value)" onkeydown="_searchOnKeydown(event)" style="font-size:16px;padding:10px 14px;border-radius:20px">
-    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':_searchSuggestionsHTML())}
+    <div id="globalSearchRes">${_searchResultsHTML()}</div>
   </div>`:'');
 }
 
@@ -18098,7 +18150,52 @@ function goBack(){
     sv("accueil");
   }
 }
-function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
+/* ── MOIS PASSÉS : HISTORIQUE RÉSERVÉ À L'ADMIN (Kevin 2026-09-18) ────────────────────
+ * « Enlève les mois passés dans l'app. Seulement en historique pour moi l'admin. »
+ * Un employé ne remonte plus avant le mois en cours : la flèche « ‹ » s'arrête, et si son
+ * appareil avait gardé un vieux mois en mémoire, on le ramène au mois courant au rendu.
+ * Kevin (et lui seul) garde l'accès à tout l'historique ; en « vue-employé » il reste admin,
+ * sinon regarder le planning de quelqu'un lui ferait perdre son mois sans prévenir. */
+function cmcMoisCourant(){ var n=new Date(); return {y:n.getFullYear(), m:n.getMonth()}; }
+function cmcHistoriqueAutorise(){
+  try{ if(typeof _viewAs!=="undefined" && _viewAs) return true; }catch(_){}
+  return !!(A.user && A.user.id===AID);
+}
+function cmcEstMoisPasse(y,m){ var C=cmcMoisCourant(); return (y<C.y)||(y===C.y&&m<C.m); }
+/** Ramène l'affichage au mois courant si l'utilisateur n'a pas droit à l'historique.
+ *  @returns {boolean} true si le mois a été corrigé. */
+function cmcClampMois(){
+  if(cmcHistoriqueAutorise())return false;
+  if(!cmcEstMoisPasse(A.year,A.month))return false;
+  var C=cmcMoisCourant(); A.year=C.y; A.month=C.m; return true;
+}
+/** v9.907 — Grise la flèche « mois précédent » quand l'historique est fermé (non-admin).
+ *  Idempotent : n'écrit que si l'état change (aucun clignotement). @returns {void} */
+function _cmcMajFlechesMois(){
+  try{
+    var _y=A.year,_m=A.month; if(_m===0){_y--;_m=11;}else _m--;
+    var bloque=!cmcHistoriqueAutorise()&&cmcEstMoisPasse(_y,_m);
+    var els=document.querySelectorAll('[onclick="prevM()"]');
+    for(var i=0;i<els.length;i++){
+      var el=els[i],v=bloque?"1":"0";
+      if(el.getAttribute("data-moisbloque")===v)continue;
+      el.setAttribute("data-moisbloque",v);
+      el.style.opacity=bloque?".28":"";
+      el.style.pointerEvents=bloque?"none":"";
+      if(bloque){el.setAttribute("aria-disabled","true");el.title="Les mois d\u00e9j\u00e0 pass\u00e9s ne sont plus affich\u00e9s";}
+      else{el.removeAttribute("aria-disabled");el.title="";}
+    }
+  }catch(_){}
+}
+function prevM(){
+  var _y=A.year,_m=A.month;
+  if(_m===0){_m=11;_y--;}else _m--;
+  if(!cmcHistoriqueAutorise()&&cmcEstMoisPasse(_y,_m)){
+    if(typeof toast==="function")toast("Les mois d\u00e9j\u00e0 pass\u00e9s ne sont plus affich\u00e9s","info");
+    return;
+  }
+  A.year=_y;A.month=_m;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);
+}
 function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
 // v9.561 — Swipe horizontal DÉSACTIVÉ (Kevin: "ne doit pas changer de mois si je dirige à droite/gauche")
 // Kevin veut changer mois SEULEMENT via flèche en haut. Restaurable via lg("cmc_swipe_month_enabled",false)
