@@ -7,6 +7,26 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 18/09/2026 13:56 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `f79701f6` · **Run** : `35352550588`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35352550588
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and claude/verify-cmcteams-light-data-rzlvau, Head ref must be a branch (createPullRequest)
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 18/09/2026 01:06 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `68373cdc` · **Run** : `35293454319`
@@ -429,19 +449,6 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `0cdda164` · **Run** : `35151284266`
 - **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
 - **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35151284266
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 16/09/2026 17:26 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `2efb2ed7` · **Run** : `35127914959`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35127914959
 - **Ce que la machine a dit** :
 
 ```
