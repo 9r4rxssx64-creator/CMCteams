@@ -1254,6 +1254,7 @@ html[data-theme="light"] #topbar{
      Kevin = 6 chefs), pas la liste figée DEF_CHEFS_T (4 chefs). _cmcSyncChefsTFromBoards
      reconstruit CHEFS_T + teamHistory + miroir depuis ces boards → app == light. -->
 <script src="/CMCteams/tools/departs/boards-gen.js" onerror="window.__cmcBoardsLoadErr=1"></script>
+<script src="/CMCteams/tools/shared/convention-sbm.js" onerror="window.__cmcConvLoadErr=1"></script>
 <script>
 // v9.45 \u2014 Error boundary global renforc\u00e9 + unhandledrejection
 (function(){
@@ -2071,100 +2072,10 @@ function rotationDepassements(live,now){
 }
 // ── Convention Collective Jeux de Table SBM (1er avril 2015) ────────────────
 // Référence officielle pour gestion RH, droits employés, réponses IA
-var CONVENTION={
-  version:"1er avril 2015",
-  source:"Convention Collective Jeux de Table SBM",
-  signataires:"Soci\u00e9t\u00e9 des Bains de Mer (SBM) + syndicats repr\u00e9sentatifs",
-  regles:{
-    ageMin:21,
-    periodeEssaiMois:3,
-    contratInitialMois:12,
-    commissionAptitudeMois:18,
-    congesAnMois:2,
-    congesPeriodeEste:"1er mai \u2013 31 octobre",
-    congesMinConsecutives:4,
-    reposHebdoMinJours:1,
-    reposHebdoNormalJours:2,
-    reposMin6Semaines:10,
-    pauseSeniorsMin:40,
-    pauseStandardMin:60,
-    pauseDuree:20,
-    prime1Mai:150,
-    prime1MaiGroupeFerme:280,
-    heureDiviseur:169,
-    collationNuit:"3h \u00e0 7h",
-    ecolesPremiumMax:5,
-    ecolesPremiumDelaiAns:9,
-    ecolesMinIntervalleAns:1,
-    maladieIndemPct:85,
-    maladieDureeMaxJours:1095,
-    groupeFermeRetraiteMois:3,
-    detachementMaxMois:6,
-    majorationRepos5ePlus:50,
-    ratioChefsMin:25,
-    ratioChefsMax:30
-  },
-  articles:[
-    {num:1,titre:"D\u00e9finitions cl\u00e9s",cat:"base",contenu:"Encadrement : directeurs, sous-directeurs, inspecteurs, chefs de table. Groupe ferm\u00e9 : salari\u00e9s pr\u00e9sents avant mise en \u0153uvre CC. Nouveaux entrants : apr\u00e8s CC. Faisant-fonction : occuper un poste sup\u00e9rieur sans le titre. Secteur Jeux de table : employ\u00e9s et cadres jeux, hors annexes."},
-    {num:4,titre:"Recrutement",cat:"rh",contenu:"\u00c2ge minimum 21 ans \u00e0 l'ouverture du poste. Pi\u00e8ces : acte naissance, casier, CNI, dipl\u00f4mes, certificat m\u00e9dical, attestation \u00c9cole d'int\u00e9gration. Agr\u00e9ment administratif obligatoire (loi 1.103 du 12 juin 1987)."},
-    {num:5,titre:"\u00c9coles de jeux",cat:"formation",contenu:"5.1 \u00c9cole d'int\u00e9gration : tests aptitude, langue (anglais + 1 autre), calcul mental, m\u00e9moire, coordination. Note \u00e9liminatoire <8/20. Dur\u00e9e min 3 mois. 5.2 5 \u00e9coles premium apr\u00e8s int\u00e9gration dans les 9 ans. Min 1 an entre 2 \u00e9coles. Jeux : BJ, Punto, Pokers, Roulette anglaise/europ\u00e9enne, Craps."},
-    {num:6,titre:"Contrat de travail",cat:"rh",contenu:"Engagement employ\u00e9 niveau 1, contrat 12 mois. 3 premiers mois = p\u00e9riode d'essai. \u00c0 18 mois : Commission d'Aptitude propose CDI ou non-reconduction."},
-    {num:7,titre:"P\u00e9riode d'essai",cat:"rh",contenu:"Dur\u00e9e 3 mois r\u00e9ciproques. Rupture possible sans pr\u00e9avis ni indemnit\u00e9s."},
-    {num:8,titre:"D\u00e9tachements",cat:"rh",contenu:"Dur\u00e9e max 6 mois (retour service origine ensuite). D\u00e9tachement d'office : n\u00e9cessit\u00e9 fonctionnement. R\u00e9mun\u00e9ration : conditions du poste, garantie du salaire d'origine hors heures sup."},
-    {num:10,titre:"\u00c9volution de carri\u00e8re employ\u00e9s",cat:"carriere",contenu:"Niveaux 1 \u00e0 7 selon nombre de jeux valid\u00e9s. Niveau 7 = Expert Jeux Premium (tous jeux, 12 mois anciennet\u00e9 min). Changement de niveau au 1er du mois suivant notification. Expert valid\u00e9 par Commission d'Aptitude."},
-    {num:11,titre:"Promotions",cat:"carriere",contenu:"Expert/Sous-chef \u2192 Chef de table. Chef de table \u2192 Inspecteur. Inspecteur \u2192 Sous-directeur. Sous-directeur \u2192 Directeur. Conditions : 2 tests langue + \u00e9preuve orale + (inspecteurs/sous-dir) \u00e9val managers. Candidat = premier quart du classement."},
-    {num:12,titre:"Commission d'Aptitude",cat:"rh",contenu:"Compos\u00e9e : DG Jeux (voix pr\u00e9pond\u00e9rante), DRH, Directeur Formation, 3 d\u00e9l\u00e9gu\u00e9s du personnel jeux. D\u00e9cisions \u00e0 la majorit\u00e9."},
-    {num:13,titre:"R\u00e9mun\u00e9ration employ\u00e9s",cat:"salaire",contenu:"3 parties : fixe (garanti par niveau, +200\u20ac/mois par niveau), 1re variable (% CA jeux), 2e variable (% cagnottes). Minimum garanti 10,85 mois du salaire de r\u00e9f\u00e9rence. Versement mensuel + exc\u00e9dent en mars N+1. Indexation INSEE prix consommation France."},
-    {num:14,titre:"D\u00e9roulement carri\u00e8re Expert/Sous-chef/Chef",cat:"carriere",contenu:"Expert Jeux Premium + 5 ans \u2192 Niv 9/1 (Sous-chef). Sous-chef 9/1 + 3 ans \u2192 9/2. Sous-chef 9/2 + 5 ans ou Chef 11/1 + 5 ans \u2192 9/3 ou 11/2. Ensuite +1 \u00e9chelon tous les 4 ans."},
-    {num:15,titre:"R\u00e9mun\u00e9ration cadres",cat:"salaire",contenu:"Inspecteurs et sous-directeurs : salaire garanti fixe + variable (CA > 80M) + bonus annuel max 10%. Inspecteur \u2265 110% du chef de table le mieux pay\u00e9. Sous-directeur \u2265 125% du CdT le mieux pay\u00e9. Faisant-fonction : prime = 50% diff\u00e9rence salaires garantis."},
-    {num:17,titre:"Conditions d'emploi",cat:"travail",contenu:"17.2 Dur\u00e9e l\u00e9gale sans distinction jour/nuit. Temps effectif hors repas/habillage. Formations = temps effectif. 17.3 J.f\u00e9ri\u00e9s programm\u00e9s (1er mai, F\u00eate Nat). Prime 1er mai 150\u20ac bruts (sauf absents maladie/CP/injustifi\u00e9s). 17.4 2 mois cong\u00e9s/an : 1 mois bloc (1er mai \u2013 31 oct), 1 mois bloc (hiver), 4 sem cons\u00e9cutives min. 17.5 Repos hebdo min 1 jour (24h+11h=35h). Normalement 2 jours cons\u00e9cutifs. Hors forte affluence, 2e jour supprimable : 4 premiers r\u00e9cup\u00e9r\u00e9s sans majoration, au-del\u00e0 volontaire + 50% majoration. Min garanti 10 jours/6 sem. Taux horaire = 1/169e. 17.6 Forte affluence : juillet-ao\u00fbt, 16 d\u00e9c-15 janv, Grand Prix, P\u00e2ques. Planning publi\u00e9 vendredi <12h (4 sem \u00e0 venir). 17.7 Heures sup employ\u00e9s + inspecteurs. 17.8 Femmes enceintes et +55 ans : pause toutes les 40 min (au lieu 60). 17.9 Cantines habituelles. 3h-7h : collation."},
-    {num:18,titre:"Cong\u00e9s familiaux",cat:"conges",contenu:"Dispositions uniformis\u00e9es en 2019, \u00e9tendues depuis 2021 aux couples sous contrat d'union libre (Monaco) ou pacs\u00e9s (France). Mariage civil du salari\u00e9 : 4 jours ouvr\u00e9s. Naissance/adoption d'un enfant : 3 j. D\u00e9c\u00e8s (conjoint, enfant, p\u00e8re, m\u00e8re y compris parents adoptifs, fr\u00e8re, s\u0153ur, grand-p\u00e8re, grand-m\u00e8re, petit-enfant du salari\u00e9) : 3 j. D\u00e9c\u00e8s oncle/tante du salari\u00e9 : 1 j. Mariage d'un enfant ou enfant du conjoint : 2 j. D\u00e9c\u00e8s beau-p\u00e8re/belle-m\u00e8re : 1 j. D\u00e9c\u00e8s grand-p\u00e8re/grand-m\u00e8re/fr\u00e8re/s\u0153ur du conjoint : 1 j. R\u00c8GLES D'APPLICATION : jours \u00e0 prendre imp\u00e9rativement le jour de l'\u00e9v\u00e9nement, voire la veille ou le lendemain. Si salari\u00e9 en R/RH le jour J, cong\u00e9 pos\u00e9 \u00e0 compter du lendemain du R/RH. D\u00e9compt\u00e9s en jours ouvr\u00e9s, fractionnables uniquement par les R/RH. Si l'\u00e9v\u00e9nement intervient pendant cong\u00e9s pay\u00e9s, r\u00e9cup\u00e9rations ou maladie, le salari\u00e9 est consid\u00e9r\u00e9 comme d\u00e9j\u00e0 disponible : pas de report ni r\u00e9cup\u00e9ration. Source : Note d'information DRH Sophie VINCENT (2021-16-12). R\u00e9f\u00e9rence : Article 18 CC."},
-    {num:19,titre:"Cong\u00e9s sans solde",cat:"conges",contenu:"19.1 Dur\u00e9e >1 sem, non r\u00e9mun\u00e9r\u00e9, pr\u00e9avis 15 jours ouvrables (<3 mois) ou 2 mois (\u22653 mois), r\u00e9ponse DRH 10 j. 19.2 De plein droit 3 mois renouvelable 1x : accompagner ascendant/conjoint fin de vie, enfant malade/handicap\u00e9, mandat politique. 19.3 Convenances personnelles : max 1 an renouvelable 1x (CDI), retour aux m\u00eames conditions."},
-    {num:20,titre:"Temps partiel",cat:"rh",contenu:"Demande voie hi\u00e9rarchique. DRH pas oblig\u00e9e d'accepter. Max 1 an renouvelable, pr\u00e9avis 3 mois. R\u00e9mun\u00e9ration au prorata strict."},
-    {num:21,titre:"Absences maladie",cat:"absences",contenu:"Certificat m\u00e9dical en 2 exemplaires d\u00e8s 1er jour. Transmission \u00e9lectronique admise, original dans 3 j ouvrables. Arr\u00eat \u2265 21 jours : avis d'aptitude M\u00e9decine du Travail requis."},
-    {num:23,titre:"Indemnisation maladie",cat:"absences",contenu:"Indemnisation \u00e0 85% de 10,85 mois salaire r\u00e9f\u00e9rence (employ\u00e9s) ou salaire garanti (cadres). Min 91% salaire garanti mensuel brut (plafonn\u00e9 4x plafond SS = 12 680\u20ac \u00e0 signature). Au-del\u00e0 : 80%. Dur\u00e9e max 1 095 jours ou retraite l\u00e9gale."},
-    {num:25,titre:"Discipline",cat:"discipline",contenu:"Sanctions 1er niveau : r\u00e9primande verbale, mise en garde \u00e9crite, avertissement dossier. 2e niveau : mise \u00e0 pied, mutation d'office, r\u00e9trogradation, licenciement avec/sans pr\u00e9avis et/ou indemnit\u00e9. Proc\u00e9dure 2e niveau : Commission paritaire (3+3), convoqu\u00e9e >=8 jours calendaires, PV confidentiel. Appel 48h par recommand\u00e9."},
-    {num:26,titre:"D\u00e9part retraite",cat:"retraite",contenu:"Indemnit\u00e9s volontaires : 10 ans = \u00bd mois. 15 ans = 1 mois. 20 ans = 1,5 mois. 30 ans = 2 mois. Salaire r\u00e9f = moyenne 12 derniers mois. Mise retraite (employeur, \u226565 ans) = indemnit\u00e9 art 28. Groupe ferm\u00e9 : 3 mois salaire garanti."},
-    {num:27,titre:"Pr\u00e9avis rupture",cat:"rupture",contenu:"\u22652 ans : 2 mois. \u226510 ans ou cadre : 3 mois. D\u00e9mission : pr\u00e9avis divis\u00e9 par 2."},
-    {num:28,titre:"Indemnisation licenciement",cat:"rupture",contenu:"Indemnit\u00e9 l\u00e9gale cong\u00e9diement + indemnit\u00e9 sp\u00e9ciale si \u2265 10 ans : 1 mois (10), 2 mois (20), 3 mois (30). Groupe ferm\u00e9 : 3 mois + \u00bd mois/ann\u00e9e r\u00e9volue (>2 ans)."},
-    {num:30,titre:"Repr\u00e9sentation personnel",cat:"syndicat",contenu:"D\u00e9l\u00e9gu\u00e9s du Personnel : max 15h/mois. D\u00e9l\u00e9gu\u00e9s Syndicaux : 4h/mois (max 2/syndicat). Bureaux syndicaux (SG, SGA, Tr\u00e9s, Arch) : 20h/mois. Congr\u00e8s syndical : 16 j/an (1 personne)."},
-    {num:35,titre:"Suivi effectifs",cat:"effectifs",contenu:"Seuil information annuelle : effectif <380 personnes. Plancher absolu : 336 (cadres + employ\u00e9s). Chefs de table : 25-30% de l'effectif employ\u00e9s. Groupe ferm\u00e9 : ratio transitoire 33,5% \u00e0 ramener dans les 10 ans."},
-    {num:38,titre:"Date d'effet",cat:"base",contenu:"En vigueur depuis 1er avril 2015. Annule et remplace tous textes et usages conventionnels ant\u00e9rieurs."}
-  ],
-  congesFamiliaux:[
-    {evenement:"Mariage civil du salari\u00e9",jours:4,cat:"mariage"},
-    {evenement:"Naissance ou adoption d'un enfant",jours:3,cat:"naissance"},
-    {evenement:"D\u00e9c\u00e8s conjoint, enfant, p\u00e8re, m\u00e8re (y compris parents adoptifs), fr\u00e8re, s\u0153ur, grand-p\u00e8re, grand-m\u00e8re, petit-enfant du salari\u00e9",jours:3,cat:"deces"},
-    {evenement:"D\u00e9c\u00e8s de l'oncle ou de la tante du salari\u00e9",jours:1,cat:"deces"},
-    {evenement:"Mariage d'un enfant ou de l'enfant du conjoint",jours:2,cat:"mariage"},
-    {evenement:"D\u00e9c\u00e8s du beau-p\u00e8re ou de la belle-m\u00e8re",jours:1,cat:"deces"},
-    {evenement:"D\u00e9c\u00e8s du grand-p\u00e8re, de la grand-m\u00e8re, du fr\u00e8re ou de la s\u0153ur du conjoint",jours:1,cat:"deces"}
-  ],
-  congesFamiliauxRegles:{
-    extension2021:"Dispositions \u00e9tendues officiellement aux couples sous contrat d'union libre (Monaco) ou pacs\u00e9s (France).",
-    priseObligatoire:"Jours instaur\u00e9s pour lib\u00e9rer le salari\u00e9 en vue de l'\u00e9v\u00e9nement familial. \u00c0 prendre imp\u00e9rativement le jour de l'\u00e9v\u00e9nement, voire \u00e0 partir de la veille ou du lendemain.",
-    siReposHebdo:"Si le salari\u00e9 est en R/RH le jour de l'\u00e9v\u00e9nement, le cong\u00e9 pourra \u00eatre pos\u00e9 \u00e0 compter du lendemain du R/RH.",
-    decompte:"D\u00e9compt\u00e9s en jours ouvr\u00e9s. Fractionnables uniquement par les R/RH.",
-    siAbsence:"Si l'\u00e9v\u00e9nement intervient durant une p\u00e9riode d'absence (cong\u00e9s pay\u00e9s, r\u00e9cup\u00e9rations, maladie\u2026), le salari\u00e9 est consid\u00e9r\u00e9 comme d\u00e9j\u00e0 disponible et ne peut pas b\u00e9n\u00e9ficier de ces jours. Pas de report ni r\u00e9cup\u00e9ration.",
-    source:"Note d'information DRH Sophie VINCENT (2021-16-12). R\u00e9f\u00e9rence : Article 18 Convention Collective Jeux de Table SBM."
-  },
-  grilleEmployes:[
-    {poste:"Employ\u00e9",jeux:"1 jeu",niveau:"1",pctCA:0.003,pctCag:0.06,salMois:2300,salAn:24955},
-    {poste:"Employ\u00e9",jeux:"2 jeux",niveau:"2",pctCA:0.0045,pctCag:0.09,salMois:2765,salAn:30000},
-    {poste:"Employ\u00e9",jeux:"3 jeux",niveau:"3",pctCA:0.006,pctCag:0.12,salMois:3127,salAn:33928},
-    {poste:"Employ\u00e9",jeux:"4 jeux",niveau:"4",pctCA:0.0075,pctCag:0.15,salMois:4000,salAn:43400},
-    {poste:"Employ\u00e9",jeux:"5 jeux",niveau:"5",pctCA:0.009,pctCag:0.18,salMois:4700,salAn:50995},
-    {poste:"Employ\u00e9",jeux:"6 jeux",niveau:"6",pctCA:0.0105,pctCag:0.21,salMois:5413,salAn:58731},
-    {poste:"Expert Jeux Premium",jeux:"Tous",niveau:"7",pctCA:0.012,pctCag:0.24,salMois:6113,salAn:66326},
-    {poste:"Sous-chef de table",jeux:"Tous",niveau:"9/1",pctCA:0.0135,pctCag:0.27,salMois:6460,salAn:70091},
-    {poste:"Chef de table",jeux:"Tous",niveau:"11/1",pctCA:0.015,pctCag:0.3,salMois:7000,salAn:75950}
-  ],
-  grilleCadres:[
-    {poste:"Inspecteur <5 ans",pctCA:0.0006,salMois:8295,salAn:90000},
-    {poste:"Inspecteur +5 ans",pctCA:0.0007,salMois:8710,salAn:94500},
-    {poste:"Sous-Directeur",pctCA:0.0008,salMois:10452,salAn:113400}
-  ]
-};
+/* v9.908 — le contenu vit dans tools/shared/convention-sbm.js (13 Ko sortis du mono-fichier,
+   cf. garde test:file-size-guard). Repli sur un objet vide si le fichier ne charge pas :
+   la vue Convention s'affiche vide, aucune autre partie de l'app n'est touchée. */
+var CONVENTION=(typeof window!=="undefined"&&window.CMC_CONVENTION)?window.CMC_CONVENTION:{version:"",articles:[],remuneration:{},codes:{}};
 // Helper : rechercher dans la convention
 function conventionSearch(query){
   if(!query)return CONVENTION.articles;
@@ -2274,65 +2185,8 @@ function constitutionSearch(q){
 }
 // Référence officielle : colonne ACTIV du bulletin, 1-3 lettres par jour
 // Utilisé pour mapper les codes du planning aux significations officielles
-var BULLETIN_CODES={
-  source:"Note SBM du 6 janvier 1993 - Bernard L\u00e9\u00e8s, Directeur Affaires Juridiques et Sociales",
-  categories:{
-    presence:[
-      {code:"P",   l:"Jour de Pr\u00e9sence"},
-      {code:"RH",  l:"Repos Hebdomadaire"},
-      {code:"RTP", l:"Repos Travaill\u00e9 \u00e0 Payer"},
-      {code:"RTR", l:"Repos Travaill\u00e9 \u00e0 R\u00e9cup\u00e9rer (+ au compteur)"},
-      {code:"RRT", l:"R\u00e9cup\u00e9ration Repos Travaill\u00e9 (- au compteur)"},
-      {code:"RHS", l:"R\u00e9cup\u00e9ration Heures Suppl\u00e9mentaires"},
-      {code:"DP",  l:"Jour de Disposition"}
-    ],
-    conges:[
-      {code:"CP",  l:"Jour ouvrable de Cong\u00e9 Pay\u00e9"},
-      {code:"CRH", l:"Repos Hebdo inclus dans Cong\u00e9"},
-      {code:"CPS", l:"Cong\u00e9 Pay\u00e9 Samedi (5e pour 5 sem)"},
-      {code:"CPM", l:"1er jour P\u00e9riode Cong\u00e9 - droit fractionnement"},
-      {code:"CDP", l:"Jour Cong\u00e9 D\u00e9j\u00e0 Pay\u00e9"},
-      {code:"CDH", l:"Repos Hebdo inclus dans Cong\u00e9s D\u00e9j\u00e0 Pay\u00e9s"}
-    ],
-    fetes:[
-      {code:"FL",  l:"F\u00eate L\u00e9gale ch\u00f4m\u00e9e et pay\u00e9e"},
-      {code:"CFL", l:"F\u00eate L\u00e9gale incluse dans Cong\u00e9 Pay\u00e9"},
-      {code:"FTP", l:"F\u00eate L\u00e9gale Travaill\u00e9e \u00e0 Payer"},
-      {code:"FTR", l:"F\u00eate L\u00e9gale Travaill\u00e9e \u00e0 R\u00e9cup\u00e9rer (+ au compteur)"},
-      {code:"RFT", l:"R\u00e9cup\u00e9ration F\u00eate Travaill\u00e9e (- au compteur)"}
-    ],
-    masse:[
-      {code:"FCP", l:"Idem CP pour employ\u00e9 \u00e0 la masse"},
-      {code:"FCS", l:"Idem CPS pour employ\u00e9 \u00e0 la masse"},
-      {code:"FRH", l:"Idem CRH pour employ\u00e9 \u00e0 la masse"},
-      {code:"FFL", l:"Idem CFL pour employ\u00e9 \u00e0 la masse"}
-    ],
-    absences:[
-      {code:"M",   l:"Absence Maladie (indemnis\u00e9e ou non)"},
-      {code:"AT",  l:"Accident du Travail ou Trajet"},
-      {code:"MT",  l:"Cong\u00e9 Maternit\u00e9"},
-      {code:"ABS", l:"Absence toler\u00e9e non pay\u00e9e"},
-      {code:"ABI", l:"Absence Injustifi\u00e9e (sanction possible)"},
-      {code:"ABP", l:"Absence autoris\u00e9e exceptionnellement pay\u00e9e"},
-      {code:"AF",  l:"Absence R\u00e9mun\u00e9r\u00e9e Formation (= Pr\u00e9sence)"},
-      {code:"CL",  l:"Cong\u00e9 L\u00e9gal \u00e9v\u00e9nement familial"},
-      {code:"CEO", l:"Cong\u00e9 d'\u00c9ducation Ouvri\u00e8re"},
-      {code:"CSC", l:"Cong\u00e9 Suppl\u00e9mentaire Cadre"},
-      {code:"CSS", l:"Cong\u00e9 Sans Solde"}
-    ],
-    sanctions:[
-      {code:"PNE", l:"Pr\u00e9avis non Ex\u00e9cut\u00e9"},
-      {code:"AMP", l:"Mise \u00e0 Pied non r\u00e9mun\u00e9r\u00e9e"},
-      {code:"MPC", l:"Mise \u00e0 Pied Conservatoire (attente d\u00e9cision)"},
-      {code:"MPP", l:"Mise \u00e0 Pied Pay\u00e9e"}
-    ],
-    autres:[
-      {code:"PAT", l:"Paternit\u00e9"},
-      {code:"PRT", l:"Pr\u00eat (mis \u00e0 disposition autre service)"},
-      {code:"HC",  l:"Heures Compl\u00e9mentaires"}
-    ]
-  }
-};
+/* v9.908 — contenu dans tools/shared/convention-sbm.js (sorti du mono-fichier). */
+var BULLETIN_CODES=(typeof window!=="undefined"&&window.CMC_BULLETIN_CODES)?window.CMC_BULLETIN_CODES:{};
 // ═══ RÈGLES DES JEUX DE TABLE — CASINO DE MONACO ═══════════════════════
 // ── CALENDRIER D'AFFLUENCE CASINO MONACO (v9.53) ─────────────────────────
 // \u00c9v\u00e9nements qui augmentent fortement l'affluence : renfort personnel n\u00e9cessaire.
@@ -4423,6 +4277,11 @@ function fbApplyData(k,v){
   try{localStorage.setItem(k,JSON.stringify(vc));}catch(e){}
   // v9.853 — nouveau message employé (page CMCteams light) → notif Kevin (admin)
   if(k==="cmc_kevin_inbox"){ try{ _checkKevinInbox(vc); }catch(_){} }
+  // v9.908 — réponse de Kevin arrivée → l'employé est prévenu (l'inverse existait déjà)
+  if(k==="cmc_dep_reply"){ try{ _checkKevinReply(vc); }catch(_){} }
+  // v9.908 — le cloud vient de renvoyer des mois passés à un employé : on les retire aussitôt,
+  // sinon la synchro défait l'effacement quelques secondes après la connexion.
+  if(k==="cmc_ov"||k==="cmc_ov_meta"||k==="cmc_e"){ try{ setTimeout(cmcEffaceMoisPassesEmploye,0); }catch(_){} }
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
   // v9.580 — Invalider _gplCache quand cmc_ov change via Firebase SSE
   // (sinon vues affichent ancien planning même après nouvel import sur autre device)
@@ -6080,7 +5939,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.906";
+var APP_VER="v9.908";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -11678,6 +11537,9 @@ function dc(){
   if(_dcRunning)return; // Protection anti-boucle
   _dcRunning=true;
   try{
+  // v9.907 — Un employé ne reste jamais sur un mois déjà passé (mémoire de l'appareil,
+  // lien partagé, retour d'impersonation…). L'admin garde tout l'historique.
+  try{if(typeof cmcClampMois==="function")cmcClampMois();}catch(_){}
   try{if(typeof _cmcSyncChefsTFromBoards==="function")_cmcSyncChefsTFromBoards(A.year,A.month);}catch(_){} // v9.860 : départs = vraies équipes du mois (caché par mois, no-op après 1x)
   // v9.693 Kevin "L'app saute et scintille, surtout quand elle réfléchit" :
   // OPTIMISATION détection équipes — cache invalidé sur changement effectif.
@@ -11814,6 +11676,9 @@ function dc(){
   }
   if(A.view==="chat")setTimeout(function(){var m=document.getElementById("chatMsgs");if(m)m.scrollTop=m.scrollHeight;},60);
   if(A.view==="import")setTimeout(function(){if(typeof renderImportRollbackBanner==="function")renderImportRollbackBanner();},50);
+  // v9.907 — une SEULE porte pour les 11 flèches « ‹ » de l'app : quand le mois précédent
+  // n'est pas autorisé, la flèche devient inerte et dit pourquoi (plutôt qu'un bouton mort).
+  try{if(typeof _cmcMajFlechesMois==="function")_cmcMajFlechesMois();}catch(_){}
   }catch(ex){console.warn("dc() error:",ex);}finally{_dcRunning=false;}
 }
 // v9.58 — dc() debouncé via rAF pour éviter le scintillement lors de
@@ -12334,16 +12199,59 @@ async function cmcRequestAllPermissions(){
 // problème ou question. Passe par mon chat apex ») — Message direct à Kevin. Écrit dans
 // la boîte admin CMCteams (cmc_kevin_inbox) ET le chemin PARTAGÉ cross-app
 // (ax_cmc_kevin_inbox, FB_FIX) que le chat Apex lit → Kevin reçoit dans Apex.
+// v9.908 — clé de conversation d'une personne, IDENTIQUE des deux côtés (app et page light) :
+// NOM_PRENOM sans accents. C'est elle qui relie un message à la réponse de Kevin.
+function cmcMyDkey(uid){
+  try{
+    var id=uid||(A.user&&A.user.id)||"";
+    var r=(A.reg&&A.reg[id])||{};
+    var nom=(r.nom||((A.user&&A.user.name)||"").split(" ")[0]||"").toString();
+    var pre=(r.prenom||"").toString();
+    var raw=(nom+"_"+pre).toUpperCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+    var k=raw.replace(/[^A-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60);
+    return k||String(id).toUpperCase().replace(/[^A-Z0-9]+/g,"_");
+  }catch(_){ return ""; }
+}
+// Le fil complet vu par l'employé : ses messages + les réponses de Kevin, dans l'ordre.
+function cmcMonFilKevin(uid){
+  var id=uid||(A.user&&A.user.id)||"";
+  var fil=[];
+  try{ (lg("cmc_kevin_inbox",[])||[]).forEach(function(m){ if(m&&m.from===id)fil.push({moi:true,text:m.text||"",ts:m.ts||0}); }); }catch(_){}
+  try{
+    var all=lg("cmc_dep_reply",{})||{}; var arr=all[cmcMyDkey(id)];
+    if(Array.isArray(arr))arr.forEach(function(r){ if(r)fil.push({moi:false,text:r.text||"",ts:r.ts||0}); });
+  }catch(_){}
+  fil.sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  return fil;
+}
+// Une réponse de Kevin vient d'arriver pour MOI → je le sais tout de suite (toast ou notification).
+function _checkKevinReply(all){
+  try{
+    if(!A.user||A.user.id===AID)return;
+    var arr=(all&&typeof all==="object")?all[cmcMyDkey()]:null;
+    if(!Array.isArray(arr)||!arr.length)return;
+    var der=arr[arr.length-1]; if(!der||!der.ts)return;
+    var vu=parseInt(localStorage.getItem("cmc_kevin_reply_seen")||"0",10)||0;
+    if(der.ts<=vu)return;
+    localStorage.setItem("cmc_kevin_reply_seen",String(der.ts));
+    var apercu=String(der.text||"").slice(0,80);
+    if(document.visibilityState==="visible"){ if(typeof toast==="function")toast("💬 Réponse de Kevin : "+apercu); }
+    else if(typeof sendNotif==="function"){ sendNotif("💬 Réponse de Kevin",apercu,{tag:"kevinreply"}); }
+  }catch(_){}
+}
 function cmcSendToKevin(text){
   try{
     text=String(text||"").trim();
     if(!text)return false;
     if(text.length>2000)text=text.slice(0,2000);
     var u=A.user||{};
+    /* v9.908 — dkey OBLIGATOIRE : sans lui, le bouton « Répondre » de la boîte admin
+       n'apparaît pas et Kevin ne peut PAS répondre à un message venu de l'app (mesuré).
+       Même formule que la page light (NOM_PRENOM) → une seule conversation par personne. */
     var msg={id:"k_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
       from:u.id||"?", name:u.name||"Anonyme",
-      team:(u.teamHistory&&u.teamHistory[A.year+"-"+A.month])||u.team||"",
-      text:text, ts:Date.now(), app:"cmcteams", status:"new"};
+      team:(typeof empTeamNow==="function"?empTeamNow(u):"")||"",
+      text:text, ts:Date.now(), app:"cmcteams", status:"new", dkey:cmcMyDkey()};
     var box=lg("cmc_kevin_inbox",[]); if(!Array.isArray(box))box=[]; box.unshift(msg); if(box.length>300)box=box.slice(0,300); ls("cmc_kevin_inbox",box);
     var shared=lg("ax_cmc_kevin_inbox",[]); if(!Array.isArray(shared))shared=[]; shared.unshift(msg); if(shared.length>200)shared=shared.slice(0,200); ls("ax_cmc_kevin_inbox",shared);
     try{fbWrite("cmc_kevin_inbox",box);}catch(_){}
@@ -12399,6 +12307,26 @@ function cmcOpenContactKevin(){
     ov.innerHTML='<div style="max-width:520px;width:100%;background:#13201a;border:1px solid rgba(201,162,39,.4);border-radius:16px 16px 0 0;padding:18px;box-shadow:0 -8px 40px rgba(0,0,0,.5)">'
       +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:24px">💬</span><strong style="color:#c9a227;font-size:16px">Écrire à Kevin</strong></div>'
       +'<div style="font-size:13px;color:#a8c4b8;margin-bottom:10px">Un problème, une question ? Ton message arrive directement à Kevin.</div>'
+      /* v9.908 — le fil : ce que j'ai écrit, et ce que Kevin m'a répondu. Avant, l'employé
+         écrivait dans le vide : aucune réponse ne lui revenait dans l'app. */
+      +(function(){
+        var fil=[];try{fil=cmcMonFilKevin();}catch(_){}
+        if(!fil.length)return '';
+        var derMoi=0;fil.forEach(function(m){if(m.moi&&m.ts>derMoi)derMoi=m.ts;});
+        var nonLues=fil.filter(function(m){return !m.moi&&m.ts>derMoi;}).length;
+        var b='<div id="cmcFilKevin" style="max-height:200px;overflow-y:auto;margin-bottom:10px;padding:8px;background:rgba(5,16,10,.35);border:1px solid rgba(160,200,150,.15);border-radius:10px">';
+        fil.slice(-20).forEach(function(m){
+          b+='<div style="display:flex;justify-content:'+(m.moi?'flex-end':'flex-start')+';margin-bottom:6px">'
+            +'<div style="max-width:82%;padding:7px 10px;border-radius:12px;font-size:14px;line-height:1.4;white-space:pre-wrap;'
+            +(m.moi?'background:var(--cmc-gold-soft);color:#f0e0b0':'background:rgba(74,160,120,.18);color:#d8f0e0')+'">'
+            +(m.moi?'':'<div style="font-size:11px;color:#7fd0a8;font-weight:700;margin-bottom:2px">Kevin</div>')
+            +esc(m.text)+'</div></div>';
+        });
+        b+='</div>';
+        if(nonLues)b='<div style="font-size:13px;color:#7fd0a8;font-weight:700;margin-bottom:6px">\u2709 '+nonLues+' r\u00e9ponse'+(nonLues>1?'s':'')+' de Kevin</div>'+b;
+        try{var d=fil[fil.length-1];if(d&&!d.moi)localStorage.setItem("cmc_kevin_reply_seen",String(d.ts));}catch(_){}
+        return b;
+      })()
       +'<textarea id="cmcCkTxt" rows="4" placeholder="Ton message…" style="width:100%;box-sizing:border-box;padding:11px;font-size:16px;border-radius:10px;border:1px solid rgba(201,162,39,.3);background:rgba(5,16,10,.4);color:#f0e8d0;resize:vertical;margin-bottom:10px"></textarea>'
       +'<div style="display:flex;gap:8px">'
       +'<button onclick="(function(){var t=(document.getElementById(&quot;cmcCkTxt&quot;)||{}).value||&quot;&quot;;if(!t.trim()){toast(&quot;Écris ton message d\'abord&quot;,&quot;warn&quot;);return;}var ok=cmcSendToKevin(t);var o=document.getElementById(&quot;cmcContactKevin&quot;);if(o)o.remove();toast(ok?&quot;✅ Message envoyé à Kevin&quot;:&quot;⚠ Échec, réessaie&quot;,ok?&quot;ok&quot;:&quot;warn&quot;);})()" style="flex:1;min-height:50px;padding:13px;background:linear-gradient(135deg,#c9a227,#ffdc40);border:none;color:#0a1408;border-radius:11px;font-weight:800;font-size:15px;cursor:pointer">Envoyer</button>'
@@ -12436,7 +12364,11 @@ function vKevinInbox(){
       +'<span style="margin-left:auto;font-size:11px;color:#8a8a8a">'+_cmcRelTime(m.ts)+'</span></div>'
       +'<div style="font-size:14px;color:#e8e8e0;white-space:pre-wrap;line-height:1.5">'+esc(m.text||"")+'</div>'
       +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
-      +(m.dkey?'<button onclick="cmcReplyDepModal(\''+String(m.dkey||"").replace(/[^A-Z0-9_]/g,"")+'\',\''+esc((m.name||"").replace(/[\\\x27]/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">↩️ Répondre</button>':'')
+      /* v9.908 — un message SANS dkey (venu de l'app avant cette version) n'avait PAS de bouton
+         « Répondre » : on recalcule la clé depuis l'expéditeur, personne ne reste sans réponse. */
+      +(function(){var _dk=String(m.dkey||(typeof cmcMyDkey==="function"?cmcMyDkey(m.from):"")||"").replace(/[^A-Z0-9_]/g,"");
+        if(!_dk)return '';
+        return '<button onclick="cmcReplyDepModal(\''+_dk+'\',\''+esc((m.name||"").replace(/[\\\x27]/g,""))+'\')" class="btn" style="font-size:12px;padding:5px 10px;background:linear-gradient(135deg,#4aa078,#2f7d55);border:none;color:#fff;border-radius:8px">\u21a9\ufe0f R\u00e9pondre</button>';})()
       +((m.hasImg&&m.imgId)?'<button onclick="cmcViewDepImg(\''+esc(m.imgId)+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📷 Voir la photo</button>':'')
       +'<button onclick="cmcOpenFiche(\''+esc(m.from||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px">📇 Voir la fiche complète</button>'
       +'<button onclick="cmcDeleteInboxMsg(\''+esc(m.id||"")+'\')" class="btn ghost" style="font-size:12px;padding:5px 10px;color:#e88">🗑</button>'
@@ -16106,14 +16038,15 @@ function agentEmit(eventName,payload){
   agentSubscribe("horaires","post_import"); // v9.434 — réactif nouvelle importation
   agentSubscribe("horaires","post_save_ov");
 })();
-function agentsStart(){
-  if(!A.user||A.user.id!==AID)return; // Agents admin seulement
-  // v9.704 Kevin "On devait repartir à zéro mais il y avait encore l'équipe d'avril" :
-  // Auto-cleanup TOUS les mois antérieurs au mois courant. Tourne à CHAQUE login admin,
-  // pas un flag one-shot. Si Kevin est en mai 2026, supprime avril/mars/etc. de
-  // A.overrides + teamHistory + familyHistory + cmc_ref_* + cmc_verif_* + cmc_ci_*
-  // + cmc_comments_* + cmc_visual_planning_* + cmc_structured_* + cmc_team_mirror_*.
-  // Garde uniquement mois courant et mois futur immédiat.
+/* v9.908 — LES MOIS PASSÉS N'EXISTENT PLUS CHEZ L'EMPLOYÉ (Kevin 2026-09-18).
+   Ce n'est pas seulement « on ne les affiche plus » : ils sont RETIRÉS de son appareil —
+   plannings, équipes, familles et clés de travail du mois. Tout est LOCAL : aucune écriture
+   vers le cloud, sinon un employé effacerait l'historique de Kevin.
+   L'admin, lui, n'appelle jamais cette fonction : il garde tout pour ses vérifications et
+   ses statistiques. Rejouée après chaque arrivée de données du cloud (sinon la synchro
+   remettrait les mois passés cinq secondes plus tard). */
+function cmcEffaceMoisPassesEmploye(){
+  if(!A.user||A.user.id===AID)return 0;   // Kevin garde son historique
   try{
     // v9.716 Kevin "il a encore la mémoire d'avril dans Départs" :
     // Avant, _curMo se basait sur A.month (mois AFFICHÉ). Si Kevin navigue sur
@@ -16165,13 +16098,13 @@ function agentsStart(){
       });
     }
     if(_wipedPast>0){
-      try{ls("cmc_ov",A.overrides);}catch(_){}
-      try{ls("cmc_ov_meta",A.overrides_meta);}catch(_){}
-      try{ls("cmc_e",A.employees);}catch(_){}
-      if(typeof fbWrite==="function"){
-        try{fbWrite("cmc_ov",A.overrides);}catch(_){}
-        try{fbWrite("cmc_e",A.employees);}catch(_){}
-      }
+      /* PIÈGE : ls() n'écrit pas seulement sur l'appareil — pour les clés partagées
+         (cmc_ov, cmc_e…) il POUSSE AUSSI vers le cloud. Un employé qui efface ses mois
+         passés effacerait donc l'historique de TOUT LE MONDE, Kevin compris. On écrit
+         donc directement sur l'appareil, sans passer par ls(). */
+      try{localStorage.setItem("cmc_ov",JSON.stringify(A.overrides));}catch(_){}
+      try{localStorage.setItem("cmc_ov_meta",JSON.stringify(A.overrides_meta||{}));}catch(_){}
+      try{localStorage.setItem("cmc_e",JSON.stringify(A.employees));}catch(_){}
       // v9.716 — synchroniser AUSSI le shadow IndexedDB. Sans ça, l'IDB gardait
       // l'ancien cmc_ov (avec avril) et cmcRestoreFromAll pouvait le ré-injecter.
       try{
@@ -16181,9 +16114,28 @@ function agentsStart(){
           cmcIdbSet("cmc_e",A.employees);
         }
       }catch(_){}
-      console.log("[v9.716 auto-cleanup past months] "+_wipedPast+" mois antérieurs effacés (avant "+MFR[_curM]+" "+_curY+")");
+      console.log("[v9.908 mois passés effacés chez l'employé] "+_wipedPast+" mois antérieurs effacés (avant "+MFR[_curM]+" "+_curY+")");
     }
   }catch(_cleanupErr){}
+  return 1;
+}
+function agentsStart(){
+  // v9.908 — appelée à CHAQUE connexion : c'est le point de passage commun. L'employé y perd
+  // ses mois passés (localement), l'admin n'y perd rien.
+  try{ cmcEffaceMoisPassesEmploye(); }catch(_){}
+  if(!A.user||A.user.id!==AID)return; // Agents admin seulement
+  // v9.704 Kevin "On devait repartir à zéro mais il y avait encore l'équipe d'avril" :
+  // Auto-cleanup TOUS les mois antérieurs au mois courant. Tourne à CHAQUE login admin,
+  // pas un flag one-shot. Si Kevin est en mai 2026, supprime avril/mars/etc. de
+  // A.overrides + teamHistory + familyHistory + cmc_ref_* + cmc_verif_* + cmc_ci_*
+  // + cmc_comments_* + cmc_visual_planning_* + cmc_structured_* + cmc_team_mirror_*.
+  // Garde uniquement mois courant et mois futur immédiat.
+  /* v9.908 (Kevin 2026-09-18 : « les anciens s'effacent de la banque des données, tu les gardes
+     en historique pour moi l'admin, pour les vérifications, les statistiques »).
+     L'effacement des mois passés VIVAIT ICI, dans une fonction réservée à l'admin — donc
+     c'était l'inverse de ce qu'il veut : Kevin perdait son historique, et les employés, eux,
+     gardaient tout. L'effacement est déplacé dans cmcEffaceMoisPassesEmploye(), appliqué
+     UNIQUEMENT aux employés et UNIQUEMENT sur leur appareil. */
   // v9.703 Kevin diag "personnes dans mauvaises équipes" — re-trigger wipe pour
   // effacer les teamHistory erronés (BRASSEUR F en r4 au lieu de 4, etc.).
   // Le fix v9.703 (section detection + family override pour DEF_EMP) corrige le parseur
@@ -16946,7 +16898,21 @@ function vLoginRegister(){
            +'<input id="rMat" class="inp" placeholder="ex. U00071" value="'+esc(_loginMat)+'"'
            +' style="font-family:monospace;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px;font-size:16px"'
            +' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rEmail\').focus()">'
-           :'<input id="rMat" type="hidden" value="'+esc(isTmp?"":loginUid)+'">')
+           :'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Matricule SBM</div>'
+           +'<input id="rMat" class="inp" placeholder="ex. U00071" value="'+esc(loginUid)+'"'
+           +' style="font-family:monospace;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px;font-size:16px"'
+           +' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rAnSbm\').focus()">')
+    /* v9.908 (Kevin 2026-09-18) — l'ancienneté se renseigne dès la 1re connexion.
+       L'année suffit : c'est ce qu'on sait de tête, et c'est 4 chiffres à taper sur un iPhone. */
+    +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Anciennet\u00e9 <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(optionnel)</span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px">'
+    +'<div><div style="font-size:13px;color:#b0ccb0;margin-bottom:3px">Entr\u00e9e \u00e0 la SBM</div>'
+    +'<input id="rAnSbm" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="ex. 2015" style="font-size:16px;letter-spacing:2px"'
+    +' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rAnJeux\').focus()"></div>'
+    +'<div><div style="font-size:13px;color:#b0ccb0;margin-bottom:3px">Entr\u00e9e aux jeux</div>'
+    +'<input id="rAnJeux" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="ex. 2018" style="font-size:16px;letter-spacing:2px"'
+    +' onkeydown="if(event.key===\'Enter\')document.getElementById(\'rEmail\').focus()"></div>'
+    +'</div>'
     +'<div style="font-size:15px;color:#e09848;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:700">Email * <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(obligatoire \u2014 code de v\u00e9rification)</span></div>'
     +'<input id="rEmail" class="inp" type="email" placeholder="prenom.nom@sbm.mc" style="margin-bottom:6px" required onkeydown="if(event.key===\'Enter\')document.getElementById(\'rPw1\').focus()">'
     +'<div style="font-size:15px;color:#a0c898;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;font-weight:600">Mot de passe * <span style="font-weight:600;color:#6a8870;text-transform:none;letter-spacing:0">(min. 6 car.)</span></div>'
@@ -17080,7 +17046,13 @@ function stepRegister(){
   }
 
   // Sauvegarder identité (non vérifiée : le code OTP devra être saisi juste après)
-  A.reg[finalUid]={nom:nom,prenom:prenom,email:email,matricule:matIn||finalUid,createdAt:Date.now(),verified:false};
+  var _regNew={nom:nom,prenom:prenom,email:email,matricule:matIn||finalUid,createdAt:Date.now(),verified:false};
+  // v9.908 — ancienneté saisie à l'inscription (année → 1er janvier, même champ que la fiche admin)
+  var _isoSbm=_anneeToIso((document.getElementById("rAnSbm")||{}).value||"");
+  var _isoJeux=_anneeToIso((document.getElementById("rAnJeux")||{}).value||"");
+  if(_isoSbm)_regNew.dateEntreeSbm=_isoSbm;
+  if(_isoJeux)_regNew.dateEntreeJeux=_isoJeux;
+  A.reg[finalUid]=_regNew;
   ls("cmc_reg",A.reg);
   // v9.151 — clear stock\u00e9 LOCAL uniquement (filtr\u00e9 avant Firebase) pour que l'admin puisse voir
   A.passwords[finalUid]={h:hashPwStrong(pw1)};
@@ -17738,7 +17710,7 @@ function viewAsBack(){
 var _searchOpen=false,_searchQ="";
 // v10 Sprint 2 \u2014 Recherche globale enrichie : r\u00e9utilise CMD_PALETTE_ACTIONS (v9.82, l. 9037) au lieu d'un tableau dupliqu\u00e9. Source unique de v\u00e9rit\u00e9. Le bouton \ud83d\udd0d ouvre la recherche rapide (dropdown), \u2318K ouvre la palette compl\u00e8te (modal).
 function globalSearch(q){
-  _searchQ=q;if(!q||q.length<2){A._searchResults=[];dc();return;}
+  _searchQ=q;if(!q||q.length<2){A._searchResults=[];_searchPaintResults();return;}
   var ql=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   var isAdm=A.user&&A.user.id===AID;
   var results=[];
@@ -17751,8 +17723,26 @@ function globalSearch(q){
     });
   }
   // Employés
-  A.employees.filter(function(e){return e.name.toLowerCase().indexOf(ql)>=0||e.id.toLowerCase().indexOf(ql)>=0;}).slice(0,5).forEach(function(e){
-    results.push({cat:"\ud83d\udc64",label:e.name+" ("+e.id+")",action:"editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees')"});
+  // v9.907 (Kevin 2026-09-18 « je cherche l'équipe à Morter, il ne trouve rien, ne me montre
+  // pas son équipe ») : on compare des textes NORMALISÉS des deux côtés (avant, seule la
+  // recherche perdait ses accents → « MENARD » ne trouvait pas « MÉNARD »), on cherche aussi
+  // dans le prénom/nom de la fiche, et le résultat DIT l'équipe du mois.
+  var _norm=function(x){return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");};
+  A.employees.filter(function(e){
+    var r=(A.reg&&A.reg[e.id])||{};
+    var hay=_norm(e.name)+" "+_norm(e.id)+" "+_norm(r.prenom)+" "+_norm(r.nom)+" "+_norm(r.email);
+    return hay.indexOf(ql)>=0;
+  }).slice(0,8).forEach(function(e){
+    var _tid=(typeof empTeamNow==="function")?empTeamNow(e):"";
+    var _te=(_tid&&_tid!=="?"&&typeof gt==="function")?gt(_tid):null;
+    var _eq=_te?(_te.name||_tid):(_tid&&_tid!=="?"?_tid:"");
+    var _lbl=e.name+(_eq?"  \u2022  "+_eq:"  \u2022  \u2754 pas d'\u00e9quipe ce mois")+"  ("+e.id+")";
+    // Admin \u2192 la fiche. Employ\u00e9 \u2192 le planning de l'\u00e9quipe (la vue Employ\u00e9s lui est
+    // ferm\u00e9e : y envoyer quelqu'un affichait une page BLANCHE).
+    var _act=isAdm
+      ? "editEmpId='"+String(e.id).replace(/[^A-Za-z0-9_-]/g,'')+"';sv('employees')"
+      : "sv('planning')";
+    results.push({cat:"\ud83d\udc64",label:_lbl,action:_act});
   });
   // Codes horaires
   Object.keys(CODES).filter(function(c){return c.toLowerCase().indexOf(ql)>=0||CODES[c].l.toLowerCase().indexOf(ql)>=0;}).slice(0,3).forEach(function(c){
@@ -17762,7 +17752,12 @@ function globalSearch(q){
   Object.keys(JEUX).forEach(function(jid){var j=JEUX[jid];if(j.nom.toLowerCase().indexOf(ql)>=0){results.push({cat:"\ud83c\udfb2",label:j.nom,action:"A.convTab='jeux';sv('convention')"});}});
   // Convention
   if(typeof conventionSearch==="function"){conventionSearch(q).slice(0,3).forEach(function(a){results.push({cat:"\ud83d\udcd6",label:"Art."+a.num+" "+a.titre,action:"A.convTab='articles';sv('convention')"});});}
-  A._searchResults=results.slice(0,30);dc();
+  A._searchResults=results.slice(0,30);_searchPaintResults();
+}
+/* v9.907 — Le corps des résultats est isolé pour pouvoir le repeindre SEUL (le champ
+ * de saisie garde alors le focus et le curseur). */
+function _searchResultsHTML(){
+  return (A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':_searchSuggestionsHTML());
 }
 // v10 Sprint 2 — Suggestions rapides quand la barre de recherche est vide
 function _searchSuggestionsHTML(){
@@ -17797,7 +17792,30 @@ function _searchOnKeydown(e){
     }
   } else if(e.key==="Escape"){toggleSearch();e.preventDefault();}
 }
-function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];dc();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
+/* v9.907 — La barre de recherche VIT DANS LA BARRE DU HAUT, que `dc()` ne redessine jamais
+ * (dc() ne réécrit que #content). Résultat mesuré avant ce correctif : on tapait sur la loupe,
+ * `_searchOpen` passait bien à true… et le champ n'apparaissait JAMAIS. D'où « il ne trouve
+ * rien » : il n'y avait même pas où écrire. On redessine donc la barre du haut, de façon
+ * idempotente (on ne réécrit que si le HTML change → aucun clignotement). */
+function _dcTopbar(){
+  try{
+    var tb=document.getElementById("topbar");
+    if(!tb||typeof vTopbar!=="function")return;
+    var h=vTopbar();
+    if(tb._cmcLastHtml!==h){tb.innerHTML=h;tb._cmcLastHtml=h;}
+  }catch(_){}
+}
+/* Les résultats se peignent DANS leur conteneur dédié : réécrire toute la barre du haut à
+ * chaque lettre détruirait le champ et ferait sauter le curseur (même piège que searchInput). */
+function _searchPaintResults(){
+  try{
+    var box=document.getElementById("globalSearchRes");
+    if(!box){_dcTopbar();return;}
+    var h=_searchResultsHTML();
+    if(box._cmcLastHtml!==h){box.innerHTML=h;box._cmcLastHtml=h;}
+  }catch(_){}
+}
+function toggleSearch(){_searchOpen=!_searchOpen;_searchQ="";A._searchResults=[];_dcTopbar();if(_searchOpen)setTimeout(function(){var el=document.getElementById("globalSearchIn");if(el)el.focus();},50);}
 function vTopbar(){
   var u=A.user,_ut=u?empTeamNow((typeof empById==="function"&&empById(u.id))||u):"",isAdm=u&&u.id===AID,col=tc(u?_ut:"1"),t=gt(_ut);
   // Code du jour de l'utilisateur dans la topbar
@@ -17857,7 +17875,7 @@ function vTopbar(){
   </div>`
   +(_searchOpen?`<div style="position:absolute;top:100%;left:0;right:0;background:rgba(10,20,12,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(201,162,39,.3);padding:8px 14px;z-index:89">
     <input id="globalSearchIn" class="inp" placeholder="\ud83d\udd0d Rechercher : employ\u00e9 \u00b7 code \u00b7 vue \u00b7 action \u00b7 convention\u2026  (Entr\u00e9e = ouvrir)" value="${esc(_searchQ)}" oninput="globalSearch(this.value)" onkeydown="_searchOnKeydown(event)" style="font-size:16px;padding:10px 14px;border-radius:20px">
-    ${(A._searchResults&&A._searchResults.length)?'<div style="margin-top:6px;max-height:340px;overflow-y:auto">'+A._searchResults.map(function(r,i){return '<button onclick="'+r.action+';toggleSearch()" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;background:'+(i===0?'rgba(201,162,39,.10)':'rgba(255,255,255,.03)')+';border:none;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;text-align:left;color:'+(i===0?'#ffdc40':'#c8dcc0')+';font-size:14px;border-left:'+(i===0?'3px solid #c9a227':'3px solid transparent')+'"><span style="width:24px;text-align:center;flex-shrink:0">'+r.cat+'</span><span style="flex:1">'+esc(r.label)+'</span><span style="color:#a0cca0;font-size:11px;flex-shrink:0">'+(i===0?'\u21b5 Entr\u00e9e':'\u203a')+'</span></button>';}).join('')+'</div>':(_searchQ.length>=2?'<div style="margin-top:6px;padding:14px;text-align:center;color:#7a8a70;font-size:13px">\ud83d\udd0e Aucun r\u00e9sultat pour "<b>'+esc(_searchQ)+'</b>"</div>':_searchSuggestionsHTML())}
+    <div id="globalSearchRes">${_searchResultsHTML()}</div>
   </div>`:'');
 }
 
@@ -18098,7 +18116,52 @@ function goBack(){
     sv("accueil");
   }
 }
-function prevM(){if(A.month===0){A.month=11;A.year--;}else A.month--;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
+/* ── MOIS PASSÉS : HISTORIQUE RÉSERVÉ À L'ADMIN (Kevin 2026-09-18) ────────────────────
+ * « Enlève les mois passés dans l'app. Seulement en historique pour moi l'admin. »
+ * Un employé ne remonte plus avant le mois en cours : la flèche « ‹ » s'arrête, et si son
+ * appareil avait gardé un vieux mois en mémoire, on le ramène au mois courant au rendu.
+ * Kevin (et lui seul) garde l'accès à tout l'historique ; en « vue-employé » il reste admin,
+ * sinon regarder le planning de quelqu'un lui ferait perdre son mois sans prévenir. */
+function cmcMoisCourant(){ var n=new Date(); return {y:n.getFullYear(), m:n.getMonth()}; }
+function cmcHistoriqueAutorise(){
+  try{ if(typeof _viewAs!=="undefined" && _viewAs) return true; }catch(_){}
+  return !!(A.user && A.user.id===AID);
+}
+function cmcEstMoisPasse(y,m){ var C=cmcMoisCourant(); return (y<C.y)||(y===C.y&&m<C.m); }
+/** Ramène l'affichage au mois courant si l'utilisateur n'a pas droit à l'historique.
+ *  @returns {boolean} true si le mois a été corrigé. */
+function cmcClampMois(){
+  if(cmcHistoriqueAutorise())return false;
+  if(!cmcEstMoisPasse(A.year,A.month))return false;
+  var C=cmcMoisCourant(); A.year=C.y; A.month=C.m; return true;
+}
+/** v9.907 — Grise la flèche « mois précédent » quand l'historique est fermé (non-admin).
+ *  Idempotent : n'écrit que si l'état change (aucun clignotement). @returns {void} */
+function _cmcMajFlechesMois(){
+  try{
+    var _y=A.year,_m=A.month; if(_m===0){_y--;_m=11;}else _m--;
+    var bloque=!cmcHistoriqueAutorise()&&cmcEstMoisPasse(_y,_m);
+    var els=document.querySelectorAll('[onclick="prevM()"]');
+    for(var i=0;i<els.length;i++){
+      var el=els[i],v=bloque?"1":"0";
+      if(el.getAttribute("data-moisbloque")===v)continue;
+      el.setAttribute("data-moisbloque",v);
+      el.style.opacity=bloque?".28":"";
+      el.style.pointerEvents=bloque?"none":"";
+      if(bloque){el.setAttribute("aria-disabled","true");el.title="Les mois d\u00e9j\u00e0 pass\u00e9s ne sont plus affich\u00e9s";}
+      else{el.removeAttribute("aria-disabled");el.title="";}
+    }
+  }catch(_){}
+}
+function prevM(){
+  var _y=A.year,_m=A.month;
+  if(_m===0){_m=11;_y--;}else _m--;
+  if(!cmcHistoriqueAutorise()&&cmcEstMoisPasse(_y,_m)){
+    if(typeof toast==="function")toast("Les mois d\u00e9j\u00e0 pass\u00e9s ne sont plus affich\u00e9s","info");
+    return;
+  }
+  A.year=_y;A.month=_m;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);
+}
 function nextM(){if(A.month===11){A.month=0;A.year++;}else A.month++;dc();if(A.view==="planning")setTimeout(adjGrid,80);if(A.view==="departs")setTimeout(adjDeparts,300);}
 // v9.561 — Swipe horizontal DÉSACTIVÉ (Kevin: "ne doit pas changer de mois si je dirige à droite/gauche")
 // Kevin veut changer mois SEULEMENT via flèche en haut. Restaurable via lg("cmc_swipe_month_enabled",false)
@@ -23265,43 +23328,37 @@ function vMonProfil(){
   h+='<div><label for="profil_dateNaissance" style="font-size:12px;color:rgba(255,255,255,.55)">Date de naissance</label>'
     +'<input id="profil_dateNaissance" class="inp" type="date" value="'+esc(reg.dateNaissance||"")+'" style="margin-top:4px" oninput="empAutoSaveProfil()"></div>';
   h+='</div>';
-  // Carrière (lecture seule — modifié par l'admin)
-  if(reg.dateEntreeSbm||reg.dateEntreeJeux||emp.groupe){
-    h+='<div style="background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.2);border-radius:10px;padding:14px;margin-bottom:16px">';
-    h+='<div style="font-size:11px;color:#c9a227;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">\ud83c\udfaf Carri\u00e8re</div>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-    var _now=new Date();
-    if(reg.dateEntreeSbm){
-      var dS=new Date(reg.dateEntreeSbm);
-      var yS=_now.getFullYear()-dS.getFullYear()-(_now<new Date(_now.getFullYear(),dS.getMonth(),dS.getDate())?1:0);
-      h+='<div><div style="font-size:12px;color:rgba(255,255,255,.55)">Entr\u00e9e SBM</div>'
-        +'<div style="font-size:15px;color:#e0d8a0;font-weight:700;margin-top:2px">'+dS.toLocaleDateString("fr-FR")+'</div>'
-        +'<div style="font-size:12px;color:#5aaa70;margin-top:2px">\u2713 '+yS+' an'+(yS>1?'s':'')+' d\'anciennet\u00e9</div></div>';
+  // Carrière — v9.908 (Kevin 2026-09-18) : l'employé renseigne LUI-MÊME son ancienneté.
+  // Stockage : dateEntreeSbm / dateEntreeJeux (ISO), les MÊMES champs que l'admin remplit dans
+  // la fiche (vEmps). Une année seule est rangée au 1er janvier — aucun 2e champ qui divergerait.
+  h+='<div style="background:rgba(201,162,39,.05);border:1px solid rgba(201,162,39,.2);border-radius:10px;padding:14px;margin-bottom:16px">';
+  h+='<div style="font-size:11px;color:#c9a227;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">🎯 Mon ancienneté</div>';
+  h+='<div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:10px;line-height:1.45">L’année suffit. C’est enregistré tout seul, vous n’avez rien à valider.</div>';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  h+='<div><label for="profil_anneeSbm" style="font-size:12px;color:rgba(255,255,255,.55)">Année d’entrée à la SBM</label>'
+    +'<input id="profil_anneeSbm" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="ex. 2015" value="'+esc(_regAnnee(reg.dateEntreeSbm))+'" style="margin-top:4px;font-size:16px;letter-spacing:2px" oninput="empAutoSaveProfil()">'
+    +'<div id="profil_ancSbm" style="font-size:12px;color:#5aaa70;margin-top:3px;min-height:15px">'+esc(_ancienneteTxt(reg.dateEntreeSbm,"✓"," d’ancienneté"))+'</div></div>';
+  h+='<div><label for="profil_anneeJeux" style="font-size:12px;color:rgba(255,255,255,.55)">Année d’entrée aux jeux</label>'
+    +'<input id="profil_anneeJeux" class="inp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="ex. 2018" value="'+esc(_regAnnee(reg.dateEntreeJeux))+'" style="margin-top:4px;font-size:16px;letter-spacing:2px" oninput="empAutoSaveProfil()">'
+    +'<div id="profil_ancJeux" style="font-size:12px;color:#5aaa70;margin-top:3px;min-height:15px">'+esc(_ancienneteTxt(reg.dateEntreeJeux,"🎲"," dans les jeux"))+'</div></div>';
+  h+='</div>';
+  h+='<div style="margin-top:10px"><label for="profil_matricule" style="font-size:12px;color:rgba(255,255,255,.55)">Numéro de matricule SBM</label>'
+    +'<input id="profil_matricule" class="inp" type="text" placeholder="ex. '+esc(uid)+'" value="'+esc(reg.matricule||uid)+'" style="margin-top:4px;font-family:monospace;letter-spacing:2px;text-transform:uppercase" oninput="empAutoSaveProfil()">'
+    +'<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:3px">Si ce n’est pas le bon, corrigez-le : l’administrateur le voit.</div></div>';
+  // Groupe contractuel SBM (v9.42) — renseigné par l'admin
+  if(emp.groupe){
+    var _g=GROUPES.find(function(x){return x.id===emp.groupe;});
+    if(_g){
+      h+='<div style="margin-top:10px;padding:8px 10px;background:'+_g.color+'10;border:1px solid '+_g.color+'35;border-radius:8px">'
+        +'<div style="display:flex;align-items:center;gap:6px">'
+        +'<span style="font-size:14px">'+_g.icon+'</span>'
+        +'<span style="font-size:13px;color:'+_g.color+';font-weight:700">'+esc(_g.label)+'</span>'
+        +'</div>'
+        +'<div style="font-size:11px;color:#a8c8a0;margin-top:3px;line-height:1.4">'+esc(_g.descr)+'</div>'
+        +'</div>';
     }
-    if(reg.dateEntreeJeux){
-      var dJ=new Date(reg.dateEntreeJeux);
-      var yJ=_now.getFullYear()-dJ.getFullYear()-(_now<new Date(_now.getFullYear(),dJ.getMonth(),dJ.getDate())?1:0);
-      h+='<div><div style="font-size:12px;color:rgba(255,255,255,.55)">Entr\u00e9e aux jeux</div>'
-        +'<div style="font-size:15px;color:#e0d8a0;font-weight:700;margin-top:2px">'+dJ.toLocaleDateString("fr-FR")+'</div>'
-        +'<div style="font-size:12px;color:#5aaa70;margin-top:2px">\ud83c\udfb2 '+yJ+' an'+(yJ>1?'s':'')+' dans les jeux</div></div>';
-    }
-    h+='</div>';
-    // Groupe contractuel SBM (v9.42)
-    if(emp.groupe){
-      var _g=GROUPES.find(function(x){return x.id===emp.groupe;});
-      if(_g){
-        h+='<div style="margin-top:10px;padding:8px 10px;background:'+_g.color+'10;border:1px solid '+_g.color+'35;border-radius:8px">'
-          +'<div style="display:flex;align-items:center;gap:6px">'
-          +'<span style="font-size:14px">'+_g.icon+'</span>'
-          +'<span style="font-size:13px;color:'+_g.color+';font-weight:700">'+esc(_g.label)+'</span>'
-          +'</div>'
-          +'<div style="font-size:11px;color:#a8c8a0;margin-top:3px;line-height:1.4">'+esc(_g.descr)+'</div>'
-          +'</div>';
-      }
-    }
-    h+='<div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px;font-style:italic">Ces informations sont renseign\u00e9es par l\'administrateur.</div>';
-    h+='</div>';
   }
+  h+='</div>';
   // Notifications
   h+='<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px;margin-bottom:12px">';
   h+='<div style="font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Notifications</div>';
@@ -34233,6 +34290,7 @@ function vEmps(){
                 ${_r.dateEntreeJeux?(function(){var d=new Date(_r.dateEntreeJeux);var y=new Date().getFullYear()-d.getFullYear();return '<div style="font-size:11px;color:#5aaa70;margin-top:2px">\ud83c\udfb2 '+y+' an'+(y>1?'s':'')+' d\'anciennet\u00e9 jeux</div>';})():""}
                 </div>
               </div>
+              ${(function(){var m=(_r.matricule||"").toUpperCase();if(!m||m===String(emp.id).toUpperCase())return "";return '<div style="margin-top:8px;padding:7px 10px;background:rgba(224,152,72,.08);border:1px solid rgba(224,152,72,.3);border-radius:7px"><div style="font-size:11px;color:#e09848;text-transform:uppercase;letter-spacing:.5px">Matricule d\u00e9clar\u00e9 par l\'employ\u00e9</div><div style="font-size:14px;font-family:monospace;letter-spacing:2px;color:#f0c890;margin-top:2px">'+esc(m)+'</div><div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">Le compte est rang\u00e9 sous '+esc(emp.id)+' \u2014 \u00e0 v\u00e9rifier si l\'\u00e9cart est r\u00e9el.</div></div>';})()}
             </div>
           </div>`;
           })():""}
@@ -36195,6 +36253,49 @@ function adminSaveAllFields(id){
   }
   dc();
 }
+// v9.908 — ANCIENNETÉ : l'année seule suffit (Kevin travaille sur iPhone).
+// On range une année « 2015 » en « 2015-01-01 » dans le MÊME champ que l'admin (dateEntreeSbm /
+// dateEntreeJeux). Un 2e champ « anneeSbm » aurait fini par dire le contraire du premier (leçon #142).
+function _regAnnee(iso){
+  if(!iso)return "";
+  var m=String(iso).match(/^(\d{4})/);
+  return m?m[1]:"";
+}
+function _anneeToIso(v){
+  var y=String(v||"").replace(/[^0-9]/g,"");
+  if(y.length!==4)return null;               // pas une année → on ne touche à rien
+  var n=Number(y), cur=new Date().getFullYear();
+  if(n<1900||n>cur)return null;              // avant 1900 ou dans le futur → refusé
+  return y+"-01-01";
+}
+function _ancienneteTxt(iso,icone,suffixe){
+  if(!iso)return "";
+  var d=new Date(iso); if(isNaN(d))return "";
+  var now=new Date();
+  var y=now.getFullYear()-d.getFullYear()-(now<new Date(now.getFullYear(),d.getMonth(),d.getDate())?1:0);
+  if(y<0)return "";
+  return icone+" "+y+" an"+(y>1?"s":"")+(suffixe||"");
+}
+// Les 3 infos que l'employé saisit lui-même en plus (année → date, matricule tel quel)
+function _profilSaveCarriere(uid){
+  var changed=false;
+  [["profil_anneeSbm","dateEntreeSbm","profil_ancSbm","✓"," d’ancienneté"],
+   ["profil_anneeJeux","dateEntreeJeux","profil_ancJeux","🎲"," dans les jeux"]].forEach(function(f){
+    var el=document.getElementById(f[0]); if(!el)return;
+    var brut=(el.value||"").trim();
+    var iso=brut?_anneeToIso(brut):"";     // vidé → on efface ; année invalide → on garde l'existant
+    if(brut&&iso===null)return;
+    if(A.reg[uid][f[1]]!==iso){A.reg[uid][f[1]]=iso;changed=true;}
+    var ind=document.getElementById(f[2]);
+    if(ind)ind.textContent=_ancienneteTxt(iso,f[3],f[4]);
+  });
+  var em=document.getElementById("profil_matricule");
+  if(em){
+    var mv=(em.value||"").trim().toUpperCase();
+    if(mv&&A.reg[uid].matricule!==mv){A.reg[uid].matricule=mv;changed=true;}
+  }
+  return changed;
+}
 // Champs que l'employé peut modifier lui-même (whitelist sécurité)
 var _PROFIL_FIELDS=["email","adresse","usbm","poste","dateNaissance"];
 // Employé met à jour sa propre fiche — batch, une seule écriture Firebase
@@ -36209,6 +36310,7 @@ function empSaveProfil(){
     var v=(el.value||"").trim();
     if(A.reg[uid][f]!==v){A.reg[uid][f]=v;changed=true;}
   });
+  if(_profilSaveCarriere(uid))changed=true;
   if(changed)A.reg[uid].updatedAt=Date.now();
   ls("cmc_reg",A.reg);
   fbWrite("cmc_reg",A.reg);
@@ -36230,6 +36332,7 @@ function empAutoSaveProfil(){
       var v=(el.value||"").trim();
       if(A.reg[uid][f]!==v){A.reg[uid][f]=v;changed=true;}
     });
+    if(_profilSaveCarriere(uid))changed=true;
     if(changed){
       A.reg[uid].updatedAt=Date.now();
       ls("cmc_reg",A.reg);
@@ -38494,9 +38597,34 @@ function _cmcApplyValidatedTeams(iy,im){
 }
 
 
+/* v9.908 (Kevin 2026-09-18) — LA DEVINETTE NE PASSE JAMAIS DEVANT LE PDF.
+   La passe qui devine les équipes d'après les jours de repos renumérote tout le monde
+   (« 1 » devient « 11 »…). Sur un mois QUI A SON PDF, elle écrivait quand même : mesuré sur
+   FABRE SOCCAL Y — rangé en « 11 » alors que le PDF dit « BJ Éq.1 ». Ce n'était réparé
+   qu'APRÈS coup par la synchro des tableaux : entre les deux, l'app affichait la mauvaise
+   équipe, et le moindre changement d'ordre d'exécution la rendait définitive.
+   Désormais : quelqu'un qui figure dans un tableau du PDF de ce mois n'est plus touché ici.
+   Les autres (compte temporaire, personne absente du PDF) continuent d'être devinés. */
+function _cmcNomsDuPdf(key){
+  try{
+    var G=(typeof DEPARTS_GEN!=="undefined")?DEPARTS_GEN:(window.DEPARTS_GEN||null);
+    if(!G||!G.boards)return null;
+    var p=String(key).split("-"), y=parseInt(p[0],10), m=parseInt(p[1],10);
+    var noms=null;
+    Object.keys(G.boards).forEach(function(bk){
+      var b=G.boards[bk];
+      if(!b||b.year!==y||b.monthIdx!==m||b.kind==="abs"||!b.people)return;
+      if(!noms)noms={};
+      b.people.forEach(function(pe){ if(pe&&pe.name)noms[pe.name]=1; });
+    });
+    return noms;   // null = ce mois n'a pas de PDF → la devinette garde toute sa place
+  }catch(_){ return null; }
+}
 function _cmcDetectTeamsByRestPattern(iy,im){
   try{
     var key=iy+"-"+im;
+    var _pdfNoms=_cmcNomsDuPdf(key);
+    var _pdfAutorite=function(e){ return !!(_pdfNoms&&e&&e.name&&_pdfNoms[e.name]); };
     var ov=A.overrides[key]||{};
     var metaAll=(A.overrides_meta||{})[key]||{};   // v9.867 : jours de convention (bg=CONV)
     if(!Object.keys(ov).length){console.log("[v9.650 detectTeams] no data, skip");return{ok:false,reason:"no_data"};}
@@ -38646,7 +38774,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       if(typeof _cmcEnsureTeam==="function")_cmcEnsureTeam(teamId);
       teamGroups.push({teamId:teamId,fam:fam,restKey:grp[0].restKey,rest:grp[0].rest,fwBase:grp[0].fwBase,members:grp.slice()});
       grp.forEach(function(g){
-        if(!g.emp.teamHistory)g.emp.teamHistory={};g.emp.teamHistory[key]=teamId;
+        if(!g.emp.teamHistory)g.emp.teamHistory={};if(!_pdfAutorite(g.emp))g.emp.teamHistory[key]=teamId;
         if(!g.emp.familyHistory)g.emp.familyHistory={};g.emp.familyHistory[key]=fam;
       });
     });
@@ -38672,7 +38800,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
       if(host){
         T.members.forEach(function(g){
           if(!g.emp.teamHistory)g.emp.teamHistory={};
-          g.emp.teamHistory[key]=host.teamId;
+          if(!_pdfAutorite(g.emp))g.emp.teamHistory[key]=host.teamId;
           host.members.push(g);
         });
       }else{_kept.push(T);}
@@ -38691,7 +38819,7 @@ function _cmcDetectTeamsByRestPattern(iy,im){
         if(score>bestScore){bestScore=score;best=t;}
       });
       if(best){
-        if(!s.emp.teamHistory)s.emp.teamHistory={};s.emp.teamHistory[key]=best.teamId;
+        if(!s.emp.teamHistory)s.emp.teamHistory={};if(!_pdfAutorite(s.emp))s.emp.teamHistory[key]=best.teamId;
         if(!s.emp.familyHistory)s.emp.familyHistory={};s.emp.familyHistory[key]=s.fam;
         best.members.push(s);
       }
@@ -38913,7 +39041,7 @@ function _cmcDetectTeamsByDailyCodes(iy,im){
       teamGroups.push({teamId:teamId,family:domFam,rhDays:rhDays,daySig:ref.dn,count:members.length});
       members.forEach(function(m){
         if(!m.emp.teamHistory)m.emp.teamHistory={};
-        m.emp.teamHistory[key]=teamId;
+        if(!_pdfAutorite(m.emp))m.emp.teamHistory[key]=teamId;
         if(!m.emp.familyHistory)m.emp.familyHistory={};
         m.emp.familyHistory[key]=domFam;
         _cmcTeamLockAdd(key,m.emp.id); // v9.808 : autorité union-find → verrouille

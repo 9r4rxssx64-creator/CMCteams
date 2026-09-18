@@ -1,5 +1,66 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-18 (17h) — v9.908 / light v1.48 : ancienneté saisie par chacun, messages qui trouvent enfin leur réponse, mois passés vraiment effacés, noms plus exposés
+
+**Six demandes de Kevin d'un coup. Trois bugs réels trouvés en les vérifiant.**
+
+### 1. « Est-ce que tu as vérifié en te connectant comme d'autres personnes ? »
+- Non, je ne l'avais pas fait : je vérifiais en tant qu'ADMIN. Fait maintenant — **on se connecte comme 36 personnes**, une par équipe, toutes familles confondues, et on exige pour chacune : son équipe du mois = le PDF, **son équipe miroir** = le PDF, sa page Départs qui s'ouvre sur son équipe avec le miroir à côté, et son planning rempli.
+- **Bug trouvé** : la passe qui **devine** les équipes d'après les jours de repos écrivait par-dessus le PDF. Mesuré sur **FABRE SOCCAL Y** : rangé en « 11 » alors que le PDF dit **BJ Éq.1**. C'était rattrapé après coup par la synchro — donc entre les deux, la mauvaise équipe s'affichait, et un simple changement d'ordre la rendait définitive. **Corrigé** : qui figure dans un tableau du PDF n'est plus touché par la devinette.
+- **Garde** `npm run test:equipe-miroir` — 36 personnes, 0 anomalie. **Prouvée par sabotage** (équipe figée → **71 anomalies**).
+
+### 2. « Qu'ils puissent entrer leur année d'entrée SBM, aux jeux, et leur matricule »
+- Fait à la **1re connexion** et dans la **fiche**. L'année suffit (4 chiffres à taper sur iPhone), l'ancienneté se calcule et s'affiche dessous, tout s'enregistre **sans rien valider**. Une année absurde (1800, futur, « abc ») **n'efface pas** ce qui était juste.
+- Rangé dans les **mêmes champs** que ceux que l'admin remplit déjà — pas un 2ᵉ champ qui finirait par dire le contraire (leçon #142). L'admin voit le **matricule déclaré** quand il diffère du compte.
+- **Garde** `npm run test:anciennete` — 11 contrôles, connecté comme un vrai employé. Sabotage → 6 échecs.
+
+### 3. « Que les employés puissent m'envoyer des messages, que j'aie une alerte, que je puisse répondre »
+- Ça existait — **à moitié**. Le message partait bien (boîte admin + miroir lu par Apex), mais **sans clé de conversation** : le bouton « Répondre » ne s'affichait pas, donc **Kevin ne pouvait pas répondre** à un message venu de l'app. Et même s'il avait répondu, **l'app n'affichait la réponse nulle part**.
+- **Corrigé** : clé de conversation identique des deux côtés, bouton « Répondre » toujours là (recalculé pour les anciens messages), **fil de discussion** visible par l'employé dans sa fenêtre « Écrire à Kevin », et **alerte** quand Kevin répond. Personne d'autre ne voit la conversation.
+- **Garde** `npm run test:messages-kevin` — 14 contrôles, l'aller-retour complet. Sabotage → échec.
+
+### 4. « Seulement le mois en cours et les futurs importés, jamais les anciens — historique pour moi »
+- C'était **l'inverse** : l'effacement des mois passés vivait dans une fonction **réservée à l'admin** → Kevin perdait son historique, et les employés gardaient tout.
+- **Corrigé** : les employés perdent les mois passés **sur leur appareil** (plannings, équipes, familles, clés du mois), l'admin **garde tout**. Les mois futurs importés restent accessibles à tout le monde.
+- **Piège payé comptant** : `ls()` n'écrit pas que sur l'appareil, il **pousse aussi vers le cloud**. Un employé aurait effacé l'historique de **tout le monde**. Mesuré par la garde (3 écritures) puis corrigé : écriture locale directe.
+- **Garde** `npm run test:mois-passes` — 13 contrôles (7 + 6 nouveaux).
+
+### 5. « Que personne ne puisse tout voir, les noms de chaque personne »
+- **CMCteams** : rien avant connexion. ✅ **Page Départs** : ❌ — la liste « Ma vue » contenait les **261 noms du personnel**, construite **avant** l'identification, et le tableau était monté sous l'écran d'identification. Mesuré : on lisait « BRASSEUR F | CABALLERO PA | CAISSON JC… ».
+- **Corrigé (light v1.48)** : ni tableau ni liste de noms tant qu'on ne s'est pas identifié.
+- **Aucun e-mail, téléphone, adresse ni date de naissance d'employé** n'est dans le code publié (vérifié sur les 4 fichiers servis) — ces informations vivent dans Firebase derrière l'authentification.
+- **Limite dite honnêtement** : les noms et plannings restent dans un fichier de données **public** (`boards-gen.js`). Cacher l'écran arrête le curieux, pas quelqu'un qui connaît l'adresse du fichier. Le vrai verrou serait de servir ce fichier derrière la reconnaissance du domaine — **à décider avec Kevin**.
+- **Garde** `npm run test:noms-prives`.
+
+### 6. Mise à jour automatique
+- Re-vérifiée en vrai navigateur, les deux surfaces : l'app se met à jour **seule, 0 clic**, une seule fois, ne recharge pas quand rien n'a changé, et ne part pas en boucle si le serveur est en retard.
+
+**Dette** : le mono-fichier touchait son plafond. Plutôt que de relever le plafond, **13 Ko sortis** — la convention collective et les codes de bulletin vivent maintenant dans `tools/shared/convention-sbm.js` (donnée pure, repli sur vide si le fichier ne charge pas). Vérifié en vrai : 25 articles, 40 codes, vue Convention intacte.
+
+Versions : CMCteams **v9.908**, page Départs **v1.48**, seed régénéré (parser v9.908). Leçons **#280 à #283**.
+
+## 2026-09-18 (15h) — v9.907 / light v1.47 : la recherche marche enfin, les mois passés disparaissent, et rien n'est plus appelé « chef » à tort
+
+**Trois demandes de Kevin, trois causes racines mesurées en vrai navigateur.**
+
+### 1. « Je cherche l'équipe à Morter, il ne trouve rien. Ne me montre pas son équipe. »
+- **Ce n'était pas le moteur** : `globalSearch('morter')` trouvait bien MORTER. **Le champ de saisie n'apparaissait jamais.** La loupe appelle `dc()`, et `dc()` ne réécrit que `#content` — or la barre de recherche vit dans la **barre du haut**. Kevin tapait sur la loupe : rien. « Il ne trouve rien » était littéral — il n'y avait pas où écrire.
+- Même cause pour les résultats : chaque lettre repassait par `dc()`, donc rien n'était peint.
+- **Corrigé** : la barre du haut a son propre rafraîchissement idempotent (`_dcTopbar`), les résultats ont leur conteneur dédié (le curseur ne saute plus), le libellé **dit l'équipe du mois** (« MORTER L • CMC Éq.9 (16/3) »), la comparaison est normalisée des deux côtés (« MENARD » trouve « MÉNARD »), on cherche aussi dans prénom/nom/e-mail, et un employé n'est plus renvoyé vers la vue Employés (réservée à l'admin → page blanche).
+- **Garde** `npm run test:recherche-nom` — 10 contrôles, vraie page, clic réel sur la loupe, 5 noms vérifiés contre le PDF. **Prouvée par sabotage** (2 puis 5 échecs).
+
+### 2. « Enlève les mois passés. Seulement en historique pour moi l'admin. »
+- Trois chemins mènent à un mois passé : la flèche « ‹ » (**rendue à 11 endroits**), l'état gardé par l'appareil, et la liste déroulante de la page Départs. **Une porte par chemin**, jamais 11 retouches : `prevM()` refuse et le dit · `cmcClampMois()` (en tête de `dc()`) ramène au mois en cours · `fillMoSel()` (light) ne propose plus de mois passé hors admin.
+- Les 11 flèches sont grisées par **une seule passe DOM idempotente** après rendu. L'admin garde tout l'historique, y compris en vue-employé.
+- **Garde** `npm run test:mois-passes` — 7 contrôles, les DEUX surfaces, employé ET admin. **Prouvée par sabotage** (4 échecs).
+
+### 3. « En haut il y a marqué 8 chefs mais ce n'est pas une équipe de chef. Corrige et vérifie toutes les infos. »
+- Kevin avait raison : CMC Éq.10 est une **équipe ordinaire**, et la page annonçait « 8 chefs ». Cause : un nom de variable historique (`CHEFS_T`, l'ordre de départ) avait **déteint sur le texte affiché** — la liste contient TOUS les membres du tableau, pas des chefs.
+- **Corrigé, 3 textes** : le sous-titre dit « 8 personnes · séquence … », la colonne s'intitule **Nom** (et non « Chef »), et le contrôle des repos dit « (8 personnes) ». Aucune donnée touchée — seulement ce qui est écrit.
+- **« Vérifie toutes les infos » : je l'ai fait pour de bon.** Nouvelle garde `npm run test:entetes-light` qui ouvre **les 157 tableaux générés**, un par un, et compare CE QUI EST ÉCRIT EN HAUT au PDF : le mois, l'effectif annoncé (= lignes affichées = PDF), la séquence annoncée (= celle réellement utilisée), le libellé du tableau, les noms affichés **dans l'ordre du PDF**, et l'interdiction d'appeler « chef » un effectif. **Résultat : 157 tableaux · 0 anomalie · 0 erreur JS.** **Prouvée par sabotage** : en remettant l'ancien texte → **301 échecs**.
+
+Versions : CMCteams **v9.907**, page Départs **v1.47**, seed + boards régénérés (parser v9.907). Leçons **#277** et **#278**. Cliquet améliorations re-figé (2 `innerHTML` de plus, tous deux du HTML que l'app fabrique elle-même, données échappées).
+
 ## 2026-09-18 (13h) — v9.906 : plus aucune équipe inventée (suite de la vérification totale)
 - **v9.905 est EN LIGNE et vérifiée sur le vrai domaine** (relevé « voir comme Kevin » run 35347636713, iPhone, connecté) : CMC **Éq.9 = CAMILLERI, DEGIOVANNI, EL MISSOURI, MORTER, SCHWIETZER, SIRIO, TOULET, VOUKASSOVITCH** — TOULET et DEGIOVANNI sont bien avec MORTER et CAMILLERI, comme le PDF. Éq.11 = les 8 du PDF. 36 équipes · 247 personnes · 0 erreur JS · light v1.45 · 0 requête en échec.
 - **Défaut trouvé en creusant un test intermittent** (1 essai sur 3) : l'app rangeait **VERZELLO O** (en CONGÉS au PDF d'octobre) dans une **« Éq.21 » qui n'existe nulle part**, et par moments quelqu'un dans une équipe réelle dont il n'est pas membre. Cause : les passes qui « devinent » les équipes d'après les jours de repos (pour les mois sans PDF) écrivent dans le même champ que les tableaux du PDF.

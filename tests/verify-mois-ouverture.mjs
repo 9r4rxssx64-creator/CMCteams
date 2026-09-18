@@ -102,6 +102,13 @@ async function ouvrirLight(boardMemorise, moiMemorise) {
   page.on('pageerror', (e) => errs.push(String(e).slice(0, 140)));
   await page.addInitScript(([b, m]) => {
     try { if (b) localStorage.setItem('cmc_dep_board', b); if (m) localStorage.setItem('cmc_dep_me', m); } catch (_) {}
+    // v1.48 : la page ne construit plus rien tant qu'on ne s'est pas identifié (les noms du
+    // personnel étaient lisibles avant identification). Une personne qui a déjà ouvert la page
+    // a forcément cette identité sur son appareil — on la pose donc comme dans la vraie vie.
+    try {
+      const t = String(m || 'TEST T').trim().split(/\s+/);
+      localStorage.setItem('cmc_dep_identity', JSON.stringify({ nom: t[0] || 'TEST', prenom: t[1] || 'T', cgu: true, ts: Date.now() }));
+    } catch (_) {}
   }, [boardMemorise, moiMemorise]);
   await page.goto(LIGHT, { waitUntil: 'domcontentloaded', timeout: 60000 });
   await page.waitForTimeout(3000);
