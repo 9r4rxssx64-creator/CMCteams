@@ -183,13 +183,16 @@ test('« J\'ai payé » relie le paiement au panier, et le panier se ferme à la
   assert.ok(/c\.etat = 'livre'/.test(valider), 'un panier livré à la main resterait « en attente » dans le tableau de bord');
 });
 
-test('la page enregistre le panier puis ouvre PayPal, et la référence survit à l\'aller-retour', () => {
+test('la page enregistre le panier puis ouvre le paiement, et la référence survit à l\'aller-retour', () => {
   assert.match(kitjs, /\/caisse\/intention/, 'la page n\'enregistre pas le panier');
-  const bloc = kitjs.slice(kitjs.indexOf('function panierPuisPaypal'), kitjs.indexOf('function ouvreCaisse'));
+  const bloc = kitjs.slice(kitjs.indexOf('function ouvrePanier'), kitjs.indexOf('function ouvreCaisse'));
   /* L'oubli qui coûterait cher : ouvrir PayPal sans mémoriser la référence. Au
      retour, le champ serait vide et l'acheteur devrait la retaper de tête. */
   assert.ok(bloc.includes('ecrisRef(d.ref)'), 'la référence n\'est pas mémorisée avant d\'ouvrir PayPal');
-  assert.ok(bloc.includes('window.open'), 'PayPal ne s\'ouvre pas');
+  assert.ok(bloc.includes('window.open'), 'le paiement ne s\'ouvre pas');
+  /* Un virement n'a AUCUNE page à ouvrir : tout est à l'écran. Ouvrir un onglet
+     vide ferait croire à l'acheteur qu'il a raté une étape. */
+  assert.match(bloc, /d\.moyen !== 'virement'\) window\.open/, 'le virement ouvre un onglet pour rien');
   assert.match(kitjs, /refPanier\.value = lisRef\(\)/, 'la référence n\'est pas rendue à l\'acheteur au retour');
   assert.match(kitjs, /ref: \(\$\('refPanier'\)/, 'le formulaire « j\'ai payé » n\'envoie pas la référence');
   /* Le montant affiché vient du serveur : data-secours n'est qu'un dernier filet. */
@@ -225,4 +228,84 @@ test('essayer des références en rafale est débité AVANT toute lecture', () =
   const lecture = bloc.indexOf("VENTES.get('cmd:' + refInt)");
   assert.ok(debit > 0 && lecture > 0, 'débit ou lecture de référence absents');
   assert.ok(debit < lecture, 'le débit d\'essais passe APRÈS la lecture : les références sont balayables');
+});
+
+/* ── REVOLUT + IBAN (Kevin 2026-09-18 « Aussi mon Revolut et IBAN. Trouve des
+   solutions pour automatiser comme ça ») ───────────────────────────────────── */
+
+test('les trois moyens disent quoi faire, et le virement se tait tant qu\'il n\'y a pas d\'IBAN', async () => {
+  const { instructionsPaiement, PAYPAL_ME, REVOLUT_ME } = await import('../services/kdmc-vente/worker.js');
+  const produit = { prix: 47, devise: 'EUR' };
+  const pp = instructionsPaiement('paypal', produit, 'K7X2M4QP', {});
+  assert.equal(pp.lien, PAYPAL_ME + '/47EUR');
+  assert.ok(pp.consigne.includes('K7X2M4QP'), 'la référence doit être dans la consigne : c\'est tout le mécanisme');
+  const rv = instructionsPaiement('revolut', produit, 'K7X2M4QP', {});
+  assert.equal(rv.lien, REVOLUT_ME + '/47eur', 'Revolut veut la devise en minuscules');
+  assert.ok(rv.consigne.includes('K7X2M4QP'));
+  /* Sans IBAN rangé : PAS de virement. Un bouton qui mène au vide est pire que
+     pas de bouton (l'acheteur croit que le site est cassé). */
+  assert.equal(instructionsPaiement('virement', produit, 'K1', {}), null);
+  const vr = instructionsPaiement('virement', produit, 'K7X2M4QP', { iban: 'FR7630006000011234567890189', bic: 'AGRIFRPP', titulaire: 'K. D.' });
+  assert.equal(vr.iban, 'FR7630006000011234567890189');
+  assert.equal(vr.libelle, 'K7X2M4QP', 'le libellé du virement EST la référence : c\'est ce qui arrive sur le relevé');
+  assert.equal(vr.montant, 47);
+  /* Un moyen inventé ne doit rien produire. */
+  assert.equal(instructionsPaiement('bitcoin', produit, 'K1', { iban: 'FR7630006000011234567890189' }), null);
+});
+
+test('un IBAN mal tapé est refusé AVANT d\'être rangé (clé 97)', async () => {
+  const { ibanValide, normaliseIban, masqueIban } = await import('../services/kdmc-vente/worker.js');
+  /* Sans cette vérification, une faute de frappe enverrait tous les virements de
+     Kevin nulle part — et on ne s'en apercevrait qu'en cherchant l'argent. */
+  assert.equal(ibanValide('FR76 3000 6000 0112 3456 7890 189'), true, 'un IBAN valide avec espaces doit passer');
+  assert.equal(ibanValide('FR7630006000011234567890188'), false, 'un chiffre changé doit être vu');
+  assert.equal(ibanValide('FR7630006000011234567809189'), false, 'deux chiffres inversés doivent être vus');
+  assert.equal(ibanValide('MC5811222000010123456789030'), true, 'Monaco (MC) doit passer');
+  assert.equal(ibanValide(''), false);
+  assert.equal(ibanValide('pas un iban'), false);
+  assert.equal(normaliseIban('fr76 3000-6000'), 'FR7630006000');
+  /* Masqué à l'écran : assez pour reconnaître son compte, pas assez pour le donner. */
+  const m = masqueIban('FR7630006000011234567890189');
+  assert.ok(m.startsWith('FR76') && m.endsWith('0189') && !m.includes('30006000'), 'IBAN insuffisamment masqué : ' + m);
+});
+
+test('l\'IBAN ne figure NULLE PART dans le dépôt public', () => {
+  /* Le dépôt est public : un IBAN écrit ici serait moissonné le jour même.
+     Il vit dans le coffre du worker, posé depuis le tableau de bord. */
+  for (const f of ['services/kdmc-vente/worker.js', 'shops/kit-ia/kit.js', 'shops/kit-ia/index.html', 'shops/kit-ia/cgv.html', 'tools/produits/pages.mjs', 'kdmc-home/admin/commerce.js']) {
+    const t = lit(f);
+    const trouve = t.match(/\b(FR|MC|BE|DE|ES|IT|LU|CH|GB)\d{2}[ ]?[A-Z0-9]{4}(?:[ ]?[A-Z0-9]{4}){2,7}\b/g) || [];
+    const vrais = trouve.filter((x) => x.replace(/\s/g, '').length >= 15 && !/^(FR7630006000011234567890189|MC5811222000010123456789030)$/.test(x.replace(/\s/g, '')));
+    assert.deepEqual(vrais, [], f + ' : ce qui ressemble à un IBAN est écrit en clair → ' + vrais.join(', '));
+  }
+  assert.match(worker, /p === '\/admin\/reglages'/, 'aucun endroit pour ranger l\'IBAN hors du dépôt');
+  const bloc = worker.slice(worker.indexOf("p === '/admin/reglages'"), worker.indexOf("p === '/admin/livrer-panier'"));
+  assert.ok(/const g = await requireAdmin\(req\)/.test(bloc), 'DANGER : n\'importe qui pourrait lire ou changer l\'IBAN');
+  assert.ok(/ibanValide\(iban\)/.test(bloc), 'l\'IBAN est rangé sans être vérifié');
+  assert.ok(/masqueIban\(/.test(bloc), 'l\'IBAN complet est renvoyé à l\'écran');
+});
+
+test('la relance ne part qu\'une fois par panier, et jamais sans e-mail', () => {
+  /* Seule vraie automatisation possible sur des comptes personnels : on ne peut
+     pas constater le paiement, on peut rattraper celui qui s'est interrompu.
+     Deux relances = signalement spam, donc `relance_iso` est un cliquet. */
+  assert.match(worker, /p === '\/admin\/relancer' && req\.method === 'POST'/, 'aucune relance des paniers abandonnés');
+  const bloc = worker.slice(worker.indexOf("p === '/admin/relancer'"), worker.indexOf("p === '/admin/reglages'"));
+  assert.ok(/const g = await requireAdmin\(req\)/.test(bloc), 'DANGER : un inconnu pourrait déclencher des envois d\'e-mails');
+  assert.ok(/c\.relance_iso \|\| !c\.email/.test(bloc) || /!c\.email/.test(bloc), 'une relance pourrait partir deux fois ou sans adresse');
+  assert.ok(/EMAILJS_PRIVATE_KEY/.test(bloc), 'sans service e-mail, la relance doit le DIRE au lieu de compter des envois fantômes');
+});
+
+test('le compteur de relances annonce le VRAI nombre avant le clic', async () => {
+  const { resumeIntentions } = await import('../services/kdmc-vente/worker.js');
+  const t = Date.UTC(2026, 8, 18, 12, 0, 0);
+  const r = resumeIntentions([
+    { ref: 'A', produit: 'kit-ia', email: 'a@b.fr', montant: 47, etat: 'intention', ts: t - 3 * 36e5 },
+    { ref: 'B', produit: 'kit-ia', email: 'c@d.fr', montant: 47, etat: 'intention', ts: t - 3 * 36e5, relance_iso: 'déjà' },
+    { ref: 'C', produit: 'kit-ia', email: 'e@f.fr', montant: 47, etat: 'intention', ts: t - 60000 },
+    { ref: 'D', produit: 'kit-ia', email: '', montant: 47, etat: 'intention', ts: t - 5 * 36e5 },
+    { ref: 'E', produit: 'kit-ia', email: 'g@h.fr', montant: 47, etat: 'dit_paye', ts: t - 5 * 36e5 },
+  ], t);
+  assert.equal(r.relancables, 1, 'un seul est relançable : déjà relancé, trop récent, sans e-mail et « dit avoir payé » ne comptent pas');
+  assert.equal(r.n, 5);
 });

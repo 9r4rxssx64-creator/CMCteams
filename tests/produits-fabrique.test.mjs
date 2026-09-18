@@ -196,9 +196,15 @@ test('pages de vente : à jour sur le catalogue, CSP identique à la page mère,
       assert.ok(l, p.slug + ' : ' + b + ' absent');
       assert.ok(l[2].includes(p.prix + ' €') && l[1].toLowerCase().includes(p.prix + 'eur'), p.slug + ' : ' + b + ' ne porte pas ' + p.prix + ' EUR');
     }
-    const caisse = html.match(/data-caisse data-produit="([a-z-]+)"/);
-    assert.ok(caisse, p.slug + ' : pas de bouton de caisse');
-    assert.equal(caisse[1], p.id, p.slug + ' : la caisse est branchée sur le mauvais produit');
+    /* Trois moyens (Kevin 18.09 : PayPal, Revolut, virement), tous branchés sur
+       LE bon produit. Un bouton branché sur le mauvais id encaisserait le bon
+       montant et livrerait le mauvais kit. */
+    for (const moyen of ['paypal', 'revolut', 'virement']) {
+      const c = html.match(new RegExp('data-caisse[^>]*data-moyen="' + moyen + '"[^>]*data-produit="([a-z-]+)"'));
+      assert.ok(c, p.slug + ' : pas de bouton de caisse ' + moyen);
+      assert.equal(c[1], p.id, p.slug + ' : le bouton ' + moyen + ' est branché sur le mauvais produit');
+    }
+    assert.ok(/<p data-moyen-virement hidden>/.test(html), p.slug + ' : le virement s\'affiche sans qu\'on sache si l\'IBAN existe');
     assert.ok(/data-caisse-email/.test(html) && /data-caisse-consentement/.test(html), p.slug + ' : on peut payer sans e-mail ni consentement');
     assert.ok(html.includes('<option value="' + p.id + '">'), p.slug + ' : formulaire de récupération sans le produit');
     assert.ok(html.includes('lire.html?produit=' + p.id));

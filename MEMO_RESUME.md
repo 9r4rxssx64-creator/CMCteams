@@ -9697,3 +9697,38 @@ mémorisée → 1 échec ; garde admin retirée → 1 échec ; double livraison 
 `esc()` retiré → 1 échec). Preuve **live** ajoutée à `deploy-kdmc-vente.yml` : refus sans e-mail /
 produit inventé / sans consentement, panier complet → `paypal.me/kdmc/17EUR` + référence, référence
 inventée refusée, « j'ai payé » relié à la file.
+
+## 2026-09-18 (suite) — Revolut + IBAN : les trois moyens, un seul chemin
+
+Kevin : « Aussi mon Revolut et IBAN. Trouve des solutions pour automatiser comme ça. »
+
+**Honnêteté d'abord** : aucun des trois comptes (PayPal perso, Revolut perso, compte bancaire)
+n'a d'API qui permette de CONSTATER un paiement — il faudrait un compte **professionnel**.
+Ce qui est automatisé, et qui change tout : le panier est rangé avant le paiement, la référence
+sert de message/libellé, et Kevin livre en un doigt.
+
+- `/caisse/intention` accepte `moyen` : **paypal** (`paypal.me/kdmc/47EUR`), **revolut**
+  (`revolut.me/kdmc/47eur`), **virement** (IBAN + BIC + titulaire + **libellé = la référence**).
+  Le virement est même le mieux loti : le libellé arrive tel quel sur le relevé.
+- **L'IBAN ne rentre JAMAIS dans le dépôt** (public → moissonné le jour même). Il se pose depuis
+  le tableau de bord (`/admin/reglages`, admin seul), vit dans le coffre du worker, et n'est rendu
+  qu'à quelqu'un qui a ouvert un panier — jamais sur une page moissonnable. Affiché **masqué**
+  même à Kevin (`FR76 ***…*** 0189`). **Clé 97 (ISO 13616) vérifiée** avant rangement : une faute
+  de frappe enverrait tous les virements nulle part.
+- **Tant qu'aucun IBAN n'est posé, le bouton « virement » ne s'affiche pas** (révélé par `/health`).
+  Un bouton qui mène au vide est pire que pas de bouton.
+- Le virement **n'ouvre aucun onglet** : IBAN, BIC, montant et libellé s'affichent à l'écran avec
+  un bouton **Copier** sur chaque ligne (recopier un IBAN à la main sur un téléphone = erreurs).
+- **Relance des paniers abandonnés** (`/admin/relancer`, bouton dans la tuile) : e-mail à ceux qui
+  se sont interrompus depuis > 2 h. **Une seule fois par panier** (`relance_iso`) — au-delà c'est
+  du spam. Le compteur affiché avant le clic est le vrai nombre.
+
+**Gardes** : `caisse-complete` **20 contrôles**, `commerce-tableau` **13**. Prouvées par sabotage :
+clé 97 non vérifiée → 1 échec · virement proposé sans IBAN → 1 échec · relance sans cliquet →
+2 échecs · IBAN complet renvoyé à l'écran → 1 échec · tuile IBAN non montée → 1 échec · bouton
+relance non câblé → 1 échec. Preuve **live** dans `deploy-kdmc-vente.yml` : lien Revolut exact,
+moyen inventé refusé, virement qui se tait sans IBAN, et `/admin/reglages` + `/admin/relancer`
+refusés à qui n'est pas admin.
+
+**Ce qui reste à Kevin** : poser son IBAN une fois dans Commerce → 🏦 Virement (3 champs, 1 bouton).
+Rien d'autre.

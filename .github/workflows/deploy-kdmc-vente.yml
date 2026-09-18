@@ -201,4 +201,48 @@ jobs:
           grep -qE '^(401|403)$' /tmp/i7.code || { echo "DANGER : un inconnu peut se livrer un acces payant"; cat /tmp/i7.json; exit 1; }
           echo "OK — sans preuve d'admin, aucun acces ne part."
 
+          # ── REVOLUT + VIREMENT (Kevin 18.09 « Aussi mon Revolut et IBAN ») ────
+          echo "— Revolut ouvre un panier et rend le bon lien —"
+          curl -sS -X POST "$URL/caisse/intention" -H 'content-type: application/json' \
+            -d '{"produit":"avis-ia","email":"preuve@example.com","moyen":"revolut","consentement":true}' > /tmp/r1.json
+          cat /tmp/r1.json; echo
+          node -e '
+            const j = JSON.parse(require("fs").readFileSync("/tmp/r1.json","utf8"));
+            if (!j.ok || j.lien !== "https://revolut.me/kdmc/17eur") { console.log("ECHEC : lien Revolut inattendu :", j.lien || JSON.stringify(j).slice(0,160)); process.exit(1); }
+            if (j.moyen !== "revolut" || j.libelle !== j.ref) { console.log("ECHEC : le libelle doit etre la reference"); process.exit(1); }
+            console.log("Revolut : panier", j.ref, "->", j.lien);
+          '
+
+          echo "— un moyen invente est refuse —"
+          curl -sS -X POST "$URL/caisse/intention" -H 'content-type: application/json' \
+            -d '{"produit":"avis-ia","email":"p@example.com","moyen":"bitcoin","consentement":true}' | tee /tmp/r2.json; echo
+          grep -q '"error":"moyen_inconnu"' /tmp/r2.json || { echo "DANGER : un moyen de paiement invente est accepte"; exit 1; }
+
+          echo "— le virement suit l'IBAN range dans le coffre, jamais le depot —"
+          node -e '
+            const h = JSON.parse(require("fs").readFileSync("/tmp/h.json","utf8"));
+            const ouvert = (h.moyens || []).indexOf("virement") >= 0;
+            console.log("virement", ouvert ? "OUVERT (IBAN range)" : "FERME (aucun IBAN range — le bouton ne s\x27affiche pas)");
+            require("fs").writeFileSync("/tmp/vir.txt", ouvert ? "1" : "0");
+          '
+          if [ "$(cat /tmp/vir.txt)" = "0" ]; then
+            curl -sS -X POST "$URL/caisse/intention" -H 'content-type: application/json' \
+              -d '{"produit":"avis-ia","email":"p@example.com","moyen":"virement","consentement":true}' | tee /tmp/r3.json; echo
+            grep -q '"error":"moyen_indisponible"' /tmp/r3.json || { echo "DANGER : un virement est propose SANS IBAN — l acheteur paierait dans le vide"; exit 1; }
+            echo "OK — sans IBAN, le virement se tait au lieu d envoyer l acheteur nulle part."
+          fi
+
+          echo "— ranger un IBAN exige d'etre admin —"
+          curl -sS -o /tmp/r4.json -w '%{http_code}\n' -X POST "$URL/admin/reglages" \
+            -H 'content-type: application/json' -d '{"iban":"FR7630006000011234567890189"}' | tee /tmp/r4.code
+          grep -qE '^(401|403)$' /tmp/r4.code || { echo "DANGER : un inconnu peut changer l IBAN de Kevin (et detourner ses virements)"; cat /tmp/r4.json; exit 1; }
+          echo "OK — l IBAN n est modifiable que par l admin."
+
+          echo "— relancer les paniers abandonnes exige d'etre admin —"
+          curl -sS -o /tmp/r5.json -w '%{http_code}\n' -X POST "$URL/admin/relancer" \
+            -H 'content-type: application/json' -d '{}' | tee /tmp/r5.code
+          grep -qE '^(401|403)$' /tmp/r5.code || { echo "DANGER : un inconnu peut declencher des envois d e-mails"; cat /tmp/r5.json; exit 1; }
+          echo "TROIS MOYENS OK : PayPal, Revolut, virement — meme panier, meme reference, meme livraison."
+
+
 

@@ -74,9 +74,10 @@ ${modules}
     <label for="mail-${p.slug}">Ton adresse e-mail (c'est là qu'arrive ton accès)</label>
     <input id="mail-${p.slug}" type="email" inputmode="email" autocomplete="email" placeholder="toi@exemple.fr" data-caisse-email>
     <label class="consent"><input type="checkbox" data-caisse-consentement><span>${esc(CONSENTEMENT)}</span></label>
-    <p><button class="btn btn-primaire" id="payer-paypal" type="button" data-caisse data-produit="${p.id}" data-secours="https://paypal.me/kdmc/${p.prix}EUR">Payer ${prix} avec PayPal</button></p>
+    <p><button class="btn btn-primaire" id="payer-paypal" type="button" data-caisse data-moyen="paypal" data-produit="${p.id}" data-secours="https://paypal.me/kdmc/${p.prix}EUR">Payer ${prix} avec PayPal</button></p>
+    <p><button class="btn btn-secondaire" id="payer-revolut" type="button" data-caisse data-moyen="revolut" data-produit="${p.id}" data-secours="https://revolut.me/kdmc/${p.prix}eur">Payer ${prix} avec Revolut</button></p>
+    <p data-moyen-virement hidden><button class="btn btn-secondaire" id="payer-virement" type="button" data-caisse data-moyen="virement" data-produit="${p.id}">Payer ${prix} par virement</button></p>
     <div class="petit" data-caisse-avis hidden></div>
-    <p><a class="btn btn-secondaire" id="payer-revolut" href="https://revolut.me/kdmc/${p.prix}eur" rel="noopener" target="_blank">Payer ${prix} avec Revolut</a></p>
     <p class="petit">Quand tu touches &laquo;&nbsp;Payer&nbsp;&raquo;, une référence s'affiche ici&nbsp;: recopie-la dans le message PayPal. Ton code part par e-mail dès que le paiement est constaté, au plus tard sous 24&nbsp;h ouvrées &mdash; on préfère le dire plutôt que promettre l'instantané. Rien reçu&nbsp;? Le formulaire juste en dessous te le renvoie.</p>
   </div>
 

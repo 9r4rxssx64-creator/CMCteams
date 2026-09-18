@@ -153,6 +153,25 @@ test('paniers ouverts : la tuile dit le vide, montre qui dit avoir payé, échap
   assert.equal(C.sectionPaniers({}), '');
 });
 
+test('IBAN : la tuile dit « fermé » tant qu\'il n\'est pas posé, et ne montre jamais l\'IBAN entier', () => {
+  /* Kevin 18.09 : « Aussi mon Revolut et IBAN ». L'IBAN ne peut pas vivre dans
+     le dépôt (public) : il se pose ici. Tant qu'il n'est pas posé, le bouton
+     « virement » n'apparaît pas sur les pages de vente — c'est ce que dit la tuile. */
+  const vide = C.sectionBanque({ banque: {} });
+  assert.ok(vide.includes('fermé') && vide.includes('n\'apparaît pas'), 'la tuile doit dire que le virement est fermé et pourquoi');
+  assert.ok(vide.includes('id="ibanIn"'), 'pas de champ pour poser l\'IBAN');
+  const pose = C.sectionBanque({ banque: { iban: 'FR76 ******************* 0189', bic: 'AGRIFRPP', titulaire: 'K. D.', pose_iso: '2026-09-18T10:00:00.000Z' } });
+  assert.ok(pose.includes('ouvert') && pose.includes('0189'), 'la tuile doit confirmer que c\'est posé');
+  assert.ok(!/FR76\s?3000/.test(pose), 'IBAN affiché en clair');
+  assert.ok(!C.sectionBanque({ banque: { iban: '<img src=x onerror=alert(1)>' } }).includes('<img src=x'), 'donnée non échappée');
+  assert.equal(C.sectionBanque(null), '');
+  assert.ok(C.rendu(data, { ...LIVE, banque: {} }, null).includes('mon IBAN'), 'tuile jamais montée dans la page');
+  /* Et les deux boutons doivent être câblés, sinon c'est un décor. */
+  const js = readFileSync(new URL('../kdmc-home/admin/commerce.js', import.meta.url), 'utf8');
+  assert.match(js, /\/admin\/reglages/, 'le bouton Enregistrer n\'appelle rien');
+  assert.match(js, /\/admin\/relancer/, 'le bouton Relancer n\'appelle rien');
+});
+
 /* Sabotages faits le 17.09 pour prouver que la garde mord :
    - retirer 'audit-live.yml' de WORKFLOWS_ATTENDUS → test « MÊMES côté caisse » échoue
    - changer prix immo-ia à 66 dans commerce-data.json → 2 échecs (verifier + prix)
