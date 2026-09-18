@@ -2706,3 +2706,15 @@ officiels les retirent eux-mêmes avant publication.
 | `.github/workflows/dossiers-liens.yml` | Pingue chaque source depuis la CI (l'agent n'a pas le réseau) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/dossiers-liens.yml) | [▶️ Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/dossiers-liens.yml) |
 
 **La page en ligne :** [dossiers.kd-mc.com](https://dossiers.kd-mc.com/)
+
+## 🎬 Machine à vidéos — niche « IA au travail » (2026-09-18)
+
+233 vidéos prêtes, une par situation réelle de métier, chacune renvoyant vers la page de ce métier.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/metiers-videos.mjs` | Fabrique les scripts depuis les 47 métiers (`npm run pub:metiers`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/metiers-videos.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/metiers-videos.mjs) |
+| `tools/pub/metiers.json` | Les 233 scripts (généré — ne pas éditer à la main) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/metiers.json) | — |
+| `tests/metiers-videos.test.mjs` | La garde : porte de vérité + **variété** (anti-démonétisation) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/metiers-videos.test.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/metiers-videos.test.mjs) |
+
+**▶️ Lancer un lot :** [Pub — vidéos et posts-liens](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) — champ `videos` : `devis-01,devis-02,relance-01…`
