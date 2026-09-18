@@ -83,10 +83,11 @@ jobs:
           mkdir -p backups/apex-chat-d1
           cp /tmp/out/*.sql.enc backups/apex-chat-d1/
           ls -1 backups/apex-chat-d1/2*.sql.enc 2>/dev/null | sort | head -n -14 | xargs -r rm -f
-          # Anti-échec Vercel sur branche orpheline (idempotent, cf. kdmc-kv-backup).
-          mkdir -p tools/agent
-          printf '%s\n' '{ "git": { "deploymentEnabled": false }, "ignoreCommand": "exit 0" }' > tools/agent/vercel.json
-          git add backups/apex-chat-d1 tools/agent/vercel.json
+          # Anti-échec Vercel sur branche orpheline. Recopié ici en clair jusqu'au
+          # 18.09 ; désormais PARTAGÉ, parce que voir-comme-kevin.yml ne l'avait
+          # jamais reçu et envoyait des mails d'échec à Kevin.
+          bash tools/vercel/museler-branche-orpheline.sh
+          git add backups/apex-chat-d1
           git commit -m "backup: base D1 Apex Chat $(date -u +%Y-%m-%d) (chiffré) [skip ci]" || { echo "rien à committer"; exit 0; }
           git push -f origin d1-backups
 
