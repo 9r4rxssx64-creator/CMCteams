@@ -237,11 +237,11 @@
     h += '<div class="meta">' + (b.iban
       ? 'Rangé dans le coffre du worker, jamais dans le dépôt : ' + esc(b.iban) + (b.bic ? ' · BIC ' + esc(b.bic) : '') + (b.titulaire ? ' · ' + esc(b.titulaire) : '') + (b.pose_iso ? ' · posé le ' + esc(dt(b.pose_iso)) : '')
       : 'Tant que ton IBAN n\'est pas posé, le bouton « payer par virement » n\'apparaît pas sur tes pages. Pose-le ici : il ne partira jamais dans le dépôt.') + '</div>';
-    h += '<p><input id="ibanIn" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="FR76 …" aria-label="IBAN">'
-      + '<input id="bicIn" type="text" autocomplete="off" placeholder="BIC (facultatif)" aria-label="BIC">'
-      + '<input id="titulaireIn" type="text" autocomplete="off" placeholder="Titulaire du compte" aria-label="Titulaire">'
+    h += '<div class="forme"><input class="champ" id="ibanIn" type="text" inputmode="text" autocapitalize="characters" autocomplete="off" placeholder="FR76 …" aria-label="IBAN">'
+      + '<input class="champ" id="bicIn" type="text" autocomplete="off" placeholder="BIC (facultatif)" aria-label="BIC">'
+      + '<input class="champ" id="titulaireIn" type="text" autocomplete="off" placeholder="Titulaire du compte" aria-label="Titulaire">'
       + '<button class="btn p" data-banque="poser">Enregistrer</button>'
-      + (b.iban ? '<button class="btn d" data-banque="effacer">Retirer</button>' : '') + '</p>';
+      + (b.iban ? '<button class="btn d" data-banque="effacer">Retirer</button>' : '') + '</div>';
     h += '<div class="meta">La clé de contrôle est vérifiée avant l\'enregistrement : une faute de frappe enverrait tes virements nulle part.</div>';
     return h + '</div>';
   }

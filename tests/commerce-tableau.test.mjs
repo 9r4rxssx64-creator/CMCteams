@@ -160,6 +160,14 @@ test('IBAN : la tuile dit « fermé » tant qu\'il n\'est pas posé, et ne montr
   const vide = C.sectionBanque({ banque: {} });
   assert.ok(vide.includes('fermé') && vide.includes('n\'apparaît pas'), 'la tuile doit dire que le virement est fermé et pourquoi');
   assert.ok(vide.includes('id="ibanIn"'), 'pas de champ pour poser l\'IBAN');
+  /* Kevin est sur iPhone : un champ sans la classe `champ` retombe sur le style
+     par défaut du navigateur — 44px perdus et iOS zoome dès qu'il le touche. */
+  assert.ok(/<input class="champ" id="ibanIn"/.test(vide), 'le champ IBAN n\'est pas au gabarit tactile');
+  const html = readFileSync(new URL('../kdmc-home/admin/commerce.html', import.meta.url), 'utf8');
+  const regle = html.match(/input\.champ\{([^}]+)\}/);
+  assert.ok(regle, 'aucune règle CSS pour input.champ : le style ne suit pas le HTML');
+  assert.match(regle[1], /min-height:44px/, 'cible tactile sous 44px');
+  assert.match(regle[1], /font-size:16px/, 'sous 16px, iOS zoome tout seul à la saisie');
   const pose = C.sectionBanque({ banque: { iban: 'FR76 ******************* 0189', bic: 'AGRIFRPP', titulaire: 'K. D.', pose_iso: '2026-09-18T10:00:00.000Z' } });
   assert.ok(pose.includes('ouvert') && pose.includes('0189'), 'la tuile doit confirmer que c\'est posé');
   assert.ok(!/FR76\s?3000/.test(pose), 'IBAN affiché en clair');
