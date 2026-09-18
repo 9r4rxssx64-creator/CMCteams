@@ -38,7 +38,10 @@ await page.goto(BASE+'/index.html',{waitUntil:'domcontentloaded'});
 await page.waitForFunction(()=>window.A&&Array.isArray(A.employees)&&A.employees.length>100,{timeout:40000});
 // les équipes du mois arrivent APRÈS les employés (application du seed) : on les attend,
 // sinon on mesurerait « pas d'équipe ce mois » alors que la page n'a pas fini de se remplir.
-await page.waitForFunction(()=>{try{return A.employees.filter(e=>empTeamNow(e)!=='?').length>50;}catch(_){return false;}},{timeout:40000});
+// On attend que la synchro des tableaux du PDF ait donné SON équipe à l'expéditeur
+// précisément : « plus de 50 personnes rangées » ne garantit pas que ce soit LUI (mesuré,
+// échec intermittent). Même piège que la garde équipe/miroir.
+await page.waitForFunction((id)=>{try{const e=A.employees.find(x=>x.id===id);return e&&empTeamNow(e)!=='?';}catch(_){return false;}},'U00072',{timeout:60000});
 
 let OK=0, FAIL=0;
 const ok=(m,d)=>{OK++;console.log('  ✅ '+m+(d?' — '+d:''));};
