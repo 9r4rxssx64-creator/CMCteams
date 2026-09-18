@@ -111,6 +111,62 @@ await p2.close();
 
 console.log(`\nErreurs JS : ${errs.length}`);
 errs.slice(0,3).forEach(e=>console.log('   '+e));
+
+// ── v9.908 : les mois passés quittent VRAIMENT l'appareil de l'employé, et les mois
+//    FUTURS importés restent accessibles à tout le monde (Kevin 2026-09-18).
+console.log('\n4. Ce qui reste dans la banque de données');
+const p3 = await ctx.newPage(); p3.on('pageerror', e=>errs.push('banque: '+e));
+await p3.addInitScript(()=>{const S={cmc_dver:'30',cmc_v706_total_wiped:'1',cmc_fam_restored_v116:'1',cmc_v805_famreset:'1',cmc_uid:'U11804',cmc_lastact:String(Date.now()),cmc_seen_v10_678:'1',cmc_cookies_consent:'1'};for(const k in S)localStorage.setItem(k,S[k]);});
+await p3.goto(BASE+'/index.html',{waitUntil:'domcontentloaded'});
+await p3.waitForFunction(()=>window.A&&Array.isArray(A.employees)&&A.employees.length>100,{timeout:40000});
+const banque = await p3.evaluate(() => {
+  const N = new Date(), cur = N.getFullYear()*12 + N.getMonth();
+  const passe = (N.getMonth()===0) ? (N.getFullYear()-1)+'-11' : N.getFullYear()+'-'+(N.getMonth()-1);
+  const futur = (N.getMonth()===11) ? (N.getFullYear()+1)+'-0' : N.getFullYear()+'-'+(N.getMonth()+1);
+  const emp = A.employees.find(e => e.id !== 'U11804');
+  // on plante volontairement un mois passé dans la banque, comme le ferait une vieille synchro
+  A.overrides[passe] = A.overrides[passe] || { [emp.id]: { 1: 'RH', 2: '20/5' } };
+  if (!emp.teamHistory) emp.teamHistory = {};
+  emp.teamHistory[passe] = '9';
+  localStorage.setItem('cmc_team_mirror_' + passe, JSON.stringify({ '1': '7' }));
+
+  // 1) chez l'ADMIN : rien ne doit disparaître
+  A.user = A.employees.find(e => e.id === 'U11804');
+  cmcEffaceMoisPassesEmploye();
+  const adminGarde = !!A.overrides[passe] && !!emp.teamHistory[passe];
+
+  // 2) chez l'EMPLOYÉ : tout doit partir — et RIEN ne doit être envoyé au cloud
+  A.user = emp;
+  let versCloud = 0; const orig = window.fbWrite;
+  window.fbWrite = function(){ versCloud++; return orig.apply(this, arguments); };
+  cmcEffaceMoisPassesEmploye();
+  window.fbWrite = orig;
+
+  const futurDispo = !!(window.CMC_PLANNING_SEED && CMC_PLANNING_SEED.months && CMC_PLANNING_SEED.months[futur]);
+  return {
+    passe, futur, adminGarde,
+    planningParti: !A.overrides[passe],
+    equipePartie: !emp.teamHistory[passe],
+    cleMoisPartie: localStorage.getItem('cmc_team_mirror_' + passe) === null,
+    versCloud,
+    futurConnu: futurDispo,
+    futurAtteignable: (function(){ const p = futur.split('-'); return !cmcEstMoisPasse(+p[0], +p[1]); })()
+  };
+});
+banque.adminGarde ? ok(`admin : son historique reste intact (${banque.passe} toujours là)`)
+                  : ko('admin : son historique a été effacé — c’est exactement ce qu’il ne veut pas');
+banque.planningParti ? ok(`employé : le planning du mois passé a quitté son appareil (${banque.passe})`)
+                     : ko('employé : le planning du mois passé est encore sur son appareil');
+banque.equipePartie ? ok('employé : son équipe de ce mois passé est effacée aussi')
+                    : ko('employé : l’équipe du mois passé reste enregistrée');
+banque.cleMoisPartie ? ok('employé : les clés de travail de ce mois sont effacées')
+                     : ko('employé : des clés du mois passé traînent encore');
+banque.versCloud === 0 ? ok('employé : RIEN n’est envoyé au cloud (il n’efface pas l’historique de Kevin)')
+                       : ko(`employé : ${banque.versCloud} écriture(s) vers le cloud — danger pour l’historique de Kevin`);
+banque.futurAtteignable ? ok(`mois futur toujours accessible à tout le monde (${banque.futur})`)
+                        : ko(`le mois futur ${banque.futur} est refusé alors qu'il doit rester accessible`);
+await p3.close();
+
 console.log(`\n=== ${OK} OK / ${FAIL} FAIL ===`);
 await nav.close(); server.close();
 process.exit(FAIL || errs.length ? 1 : 0);

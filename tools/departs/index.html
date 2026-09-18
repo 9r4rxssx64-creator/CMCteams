@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.47</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.48</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.47";
+var APP_VER="v1.48";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -590,6 +590,20 @@ function compute(){
 function restSig(nm){ var s=[]; for(var d=1;d<=B.days;d++){ if(isRest(ST.codes[nm][d])) s.push(d); } return s.join(","); }
 
 function render(){
+  /* v1.48 (Kevin 2026-09-18, « que personne ne puisse tout voir, les noms de chaque personne ») —
+     TANT QU'ON NE S'EST PAS IDENTIFIÉ, LE TABLEAU N'EST PAS CONSTRUIT. Avant, il l'était sous
+     l'écran d'identification : les 6 noms de l'équipe étaient dans la page, lisibles par
+     quiconque ouvrait l'adresse (mesuré).
+     HONNÊTE : ça arrête le regard par-dessus l'épaule et le simple curieux, PAS quelqu'un qui
+     connaît l'adresse du fichier de données (boards-gen.js est public). Le vrai verrou, c'est
+     de servir ce fichier derrière la reconnaissance du domaine — à décider avec Kevin. */
+  try{
+    if(!_depHasIdentity()&&!isAdmin()){
+      var _g=document.getElementById("grid"); if(_g)_g.innerHTML="";
+      var _h=document.getElementById("hSub"); if(_h)_h.textContent="";
+      return;
+    }
+  }catch(_){}
   // v1.17 — droits d'édition NR/5e : admin OU chef d'équipe (sur son board) → classe body
   try{ document.body.classList.toggle("canmark", canEditMark());
        document.body.classList.toggle("chefme", isChefMe() && !isAdmin()); }catch(_){}
@@ -818,7 +832,12 @@ function personById(uid){ if(!uid)return null; var U=String(uid).toUpperCase(); 
   for(var i=0;i<ks.length;i++){ var b=BOARDS[ks[i]]; if(b.kind==="abs")continue;
     var p=(b.people||[]).find(function(x){return x.id&&String(x.id).toUpperCase()===U;}); if(p)return {bid:ks[i],name:p.name}; } return null; }
 function fillMeSel(){ var s=document.getElementById("meSel"); if(!s)return; s.innerHTML="";
-  var o0=document.createElement("option"); o0.value=""; o0.textContent="👤 Ma vue…"; s.appendChild(o0);
+  /* v1.48 — la liste « Ma vue » contenait les 261 noms du personnel, construite AVANT
+     l'identification : un visiteur qui ouvrait l'adresse avait l'annuaire complet dans la page
+     (mesuré : on lisait « BRASSEUR F | CABALLERO PA | CAISSON JC … »). On ne la remplit plus
+     tant que la personne ne s'est pas identifiée. */
+  if(!_depHasIdentity()&&!isAdmin()){ var oX=document.createElement("option"); oX.value=""; oX.textContent="\ud83d\udc64 Identifie-toi"; s.appendChild(oX); return; }
+  var o0=document.createElement("option"); o0.value=""; o0.textContent="\ud83d\udc64 Ma vue\u2026"; s.appendChild(o0);
   allNames().forEach(function(n){ var o=document.createElement("option"); o.value=n; o.textContent=n; if(n===ME)o.selected=true; s.appendChild(o); }); }
 function setMe(val){ var nm=val;
   // v1.12 — accepte aussi un matricule SBM (U…) : connexion par identifiant employé
