@@ -6011,7 +6011,7 @@ function _cmcSyncChefsTFromBoards(y,m){
       var lib=String(b.label||tid).replace(/^.*\u2014\s*/,"");
       var te=gt(tid);
       if(!te){ A.teams.push({id:tid,name:lib,color:(typeof TC!=="undefined"&&TC[tid])||"#c9a227",family:b.fam||"bj",_auto:true,_board:true}); }
-      else { if(te._nomBase==null)te._nomBase=te.name; te.name=lib; if(b.fam&&b.fam!=="cadres")te.family=b.fam; }
+      else { if(te._nomBase==null)te._nomBase=te.name; te.name=lib; }  // v9.905 : on ne touche QUE le libellé (changer la famille d'une équipe DEF_TEAMS déplace des gens, mesuré)
       b.people.forEach(function(p){ var e=byName[p.name]; if(e){ if(!e.teamHistory)e.teamHistory={}; if(e.teamHistory[key]!==tid){e.teamHistory[key]=tid;changed++;}
         // v9.901 : la famille du board (= section du PDF) accompagne l'équipe si elle manque
         if(b.fam&&b.fam!=="cadres"&&!/^P\d/.test(e.id)){ if(!e.familyHistory)e.familyHistory={}; if(!e.familyHistory[key]){e.familyHistory[key]=b.fam;changed++;} } } });
@@ -6045,6 +6045,29 @@ function _cmcSyncChefsTFromBoards(y,m){
         try{ A.teams=(A.teams||[]).filter(function(t){ return !(t&&t._board&&/^\d{4}-\d{2}-/.test(t.id)); }); }catch(_){}
         try{ (A.employees||[]).forEach(function(e){ var th=e&&e.teamHistory; if(!th)return; Object.keys(th).forEach(function(k){ if(/^\d{4}-\d{2}-/.test(String(th[k]||"")))th[k]=String(th[k]).replace(/^\d{4}-\d{2}-/,""); }); }); }catch(_){}
       }
+      // v9.905 — AUCUN NUMÉRO D'ÉQUIPE INVENTÉ SUR UN MOIS QUI A SON PDF.
+      // Plusieurs passes « devinent » les équipes d'après les jours de repos (utile pour
+      // les mois SANS PDF) et numérotent à la suite : sur octobre, VERZELLO O — que le PDF
+      // met en CONGÉS — se retrouvait rangé en « Éq.21 », une équipe qui n'existe nulle
+      // part. Ici les tableaux du PDF font autorité : tout identifiant du mois qui n'est
+      // pas un tableau du PDF (équipe de travail OU groupe d'absence) est retiré.
+      // « Pas d'équipe ce mois-ci » est honnête ; un numéro inventé, non.
+      try{
+        var idsPdf={}, membres={};
+        Object.keys(G.boards).forEach(function(bk){ var b2=G.boards[bk]; if(!b2||b2.year!==y||b2.monthIdx!==m)return;
+          var tid2=bk.replace(/^\d{4}-\d{2}-/,""); idsPdf[tid2]=1;
+          if(b2.kind!=="abs"){ membres[tid2]={}; (b2.people||[]).forEach(function(pp){ if(pp&&pp.name)membres[tid2][pp.name]=1; }); } });
+        if(Object.keys(idsPdf).length){
+          (A.employees||[]).forEach(function(e){ var th=e&&e.teamHistory; if(!th)return; var t=th[key];
+            if(!t||t==="amenage")return;
+            // (a) numéro qui n'existe pas dans le PDF de ce mois
+            if(!idsPdf[t]){ delete th[key]; return; }
+            // (b) équipe de TRAVAIL du PDF, mais cette personne n'y figure pas : c'est une
+            // supposition d'une passe « jours de repos », pas le PDF. (Les groupes d'ABSENCE
+            // sont laissés tranquilles : ils se déduisent des cellules, pas d'une liste.)
+            if(membres[t]&&!membres[t][e.name]) delete th[key]; });
+        }
+      }catch(_){}
       CHEFS_T=ct;                                     // départs = VRAIES équipes du mois
       var mm={}; if(G.mirror){ Object.keys(G.mirror).forEach(function(a){ var b2=G.mirror[a]; var sa=a.replace(/^\d{4}-\d{2}-/,""), sb=String(b2||"").replace(/^\d{4}-\d{2}-/,""); if(ct[sa]&&ct[sb])mm[sa]=sb; }); }
       try{ls("cmc_team_mirror_"+key,mm);}catch(_){}   // écrit TOUJOURS (même vide) → écrase le stale
@@ -6057,7 +6080,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.905";
+var APP_VER="v9.906";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
