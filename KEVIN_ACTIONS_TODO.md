@@ -9,6 +9,29 @@
 
 ---
 
+## 🛒 UNE SEULE ACTION pour que l'argent rentre tout seul (18.09.2026)
+
+**Ce que ça débloque** : aujourd'hui, quand quelqu'un paie, **rien ne le détecte**. Tu dois valider
+à la main depuis le tableau de bord. Avec ça : le client paie, il revient sur le site, son code
+s'affiche dans la seconde, son reçu est numéroté — sans toi, la nuit, en vacances.
+
+**Pourquoi je ne peux pas le faire à ta place** : il faut être connecté à TON compte PayPal.
+Aucun automatisme ne peut ouvrir ta session.
+
+1. Ouvre 👉 **https://developer.paypal.com/dashboard/applications/live**
+2. « Create App » → nom : `kd-mc.com` → type **Merchant** → Create.
+3. Copie **Client ID** et **Secret** (bouton « Show »).
+4. Colle-les ici, un par un 👉 **https://github.com/9r4rxssx64-creator/CMCteams/settings/secrets/actions**
+   · `PAYPAL_CLIENT_ID` · `PAYPAL_SECRET`
+5. Dis-le-moi : je relance le déploiement et je vérifie en vrai.
+
+**Bonne nouvelle** : `PAYPAL_WEBHOOK_ID` **n'est plus nécessaire** (l'ancienne méthode en demandait
+un troisième et te faisait créer un webhook à la main). Deux secrets, une fois, c'est tout.
+
+**Tant que ce n'est pas fait, rien n'est cassé** : le bouton rouvre `paypal.me` comme avant, et tu
+valides depuis le tableau de bord Commerce. C'est juste manuel.
+
+
 ## 🗂 TOUT CE QUI T'ATTEND, EN UNE PAGE (vérifié le 16.09.2026)
 
 Trié par **ce que ça te coûte de ne pas le faire**, pas par ordre d'arrivée.

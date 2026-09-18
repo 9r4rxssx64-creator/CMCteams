@@ -246,6 +246,137 @@ async function ppVerifieWebhook(env, req, corps) {
   return { ok: true };
 }
 
+/* ── CAISSE (PayPal Orders v2) — Kevin 2026-09-18 « tout est prévu jusqu'à
+   l'encaissement ? » ─────────────────────────────────────────────────────────
+   AVANT : le bouton ouvrait paypal.me dans un AUTRE onglet. Rien ne ramenait
+   l'acheteur, rien côté serveur ne savait qu'il avait voulu acheter, et le
+   produit devait être DEVINÉ par le montant (d'où des prix tous différents).
+   Un client qui fermait l'onglet était perdu — et on ne savait même pas qu'il
+   avait existé.
+   MAINTENANT : la commande est créée ICI (montant, produit et référence fixés
+   par nous), PayPal renvoie sur notre page de retour, et on CAPTURE nous-mêmes.
+   Le produit n'est plus deviné : il est écrit dans custom_id.
+   FAIL-OPEN : sans clés PayPal, /caisse/commande répond ok:false et la page
+   garde les boutons paypal.me — aucune régression. */
+/* Le texte exact que l'acheteur coche. On le RANGE avec la commande : en cas de
+   contestation, ce qui compte n'est pas la case mais la preuve horodatée de ce
+   qui a été accepté, mot pour mot. */
+export const CONSENTEMENT = "Je demande que mon accès soit ouvert tout de suite, et je reconnais qu'une fois ouvert je ne peux plus me rétracter.";
+
+/* Reçu numéroté — un justificatif d'achat, pas une facture fiscale (KDMC n'est
+   pas assujetti à la TVA ici ; le dire est plus honnête que d'imprimer « TVA 0 »
+   sans le justifier). Numéro continu : KDMC-<année>-<compteur>. */
+async function ecritRecu(env, { cmd, cap, produit, code }) {
+  try {
+    const an = new Date().getUTCFullYear();
+    const cle = 'compteur:recu:' + an;
+    const n = Number((await env.VENTES.get(cle)) || 0) + 1;
+    await env.VENTES.put(cle, String(n));
+    const numero = 'KDMC-' + an + '-' + String(n).padStart(4, '0');
+    const recu = {
+      numero, date_iso: new Date().toISOString(),
+      vendeur: VENDEUR,
+      acheteur: { email: cmd.email || cap.email || null },
+      article: { produit: cmd.produit, libelle: produit.nom, prix: produit.prix, devise: produit.devise },
+      total: { montant: cap.montant, devise: cap.devise },
+      paiement: { moyen: 'PayPal', transaction: cap.txId, reference: cmd.ref },
+      acces: { code, page: produit.livre },
+      consentement: cmd.consentement || null,
+      mention: "Prix TTC. KDMC ne facture pas de TVA (article 293 B du CGI / régime équivalent à Monaco).",
+    };
+    await env.VENTES.put('recu:' + numero, JSON.stringify(recu), { expirationTtl: 60 * 60 * 24 * 365 * 10 });
+    return numero;
+  } catch (_) { return null; }   // best-effort : jamais bloquer une livraison payée
+}
+
+/* Identité du vendeur — affichée sur le reçu ET sur les mentions légales. Une
+   vente à distance sans identité ni contact n'est pas légale. */
+export const VENDEUR = { nom: 'KDMC', responsable: 'Kevin DESARZENS', lieu: 'Monaco', contact: 'kevind@monaco.mc', site: 'https://kit.kd-mc.com/' };
+
+const TTL_CMD = 60 * 60 * 24 * 30;          // une commande en attente vit 30 jours
+const RETOUR = 'https://kit.kd-mc.com/merci.html';
+
+export function nouvelleRef() {
+  /* Référence courte, lisible au téléphone, sans caractères confondables. */
+  const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  const t = new Uint8Array(8); crypto.getRandomValues(t);
+  return 'K' + Array.from(t, (x) => A[x % A.length]).join('');
+}
+
+async function ppCreeCommande(env, { produitId, produit, ref, email }) {
+  const token = await ppToken(env);
+  const r = await fetch(PP_BASE + '/v2/checkout/orders', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json', 'PayPal-Request-Id': ref },
+    body: JSON.stringify({
+      intent: 'CAPTURE',
+      purchase_units: [{
+        reference_id: ref,
+        custom_id: produitId + '|' + ref,          // le produit ne se devine plus
+        description: String(produit.nom).slice(0, 127),
+        amount: { currency_code: produit.devise, value: produit.prix.toFixed(2) },
+      }],
+      payment_source: { paypal: { experience_context: {
+        brand_name: 'kd-mc.com', locale: 'fr-FR', shipping_preference: 'NO_SHIPPING',
+        user_action: 'PAY_NOW', landing_page: 'NO_PREFERENCE',
+        return_url: RETOUR + '?ref=' + ref, cancel_url: RETOUR + '?ref=' + ref + '&annule=1',
+      } } },
+    }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.id) throw new Error('commande HTTP ' + r.status + ' ' + JSON.stringify(j).slice(0, 200));
+  const lien = (j.links || []).find((l) => l.rel === 'payer' || l.rel === 'approve');
+  if (!lien) throw new Error('commande sans lien de paiement');
+  return { id: j.id, approbation: lien.href };
+}
+
+async function ppCapture(env, orderId) {
+  const token = await ppToken(env);
+  const r = await fetch(PP_BASE + '/v2/checkout/orders/' + encodeURIComponent(orderId) + '/capture', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json', 'PayPal-Request-Id': 'cap-' + orderId },
+  });
+  const j = await r.json().catch(() => ({}));
+  /* Une commande DÉJÀ capturée (client qui recharge la page) n'est pas une erreur. */
+  const deja = r.status === 422 && JSON.stringify(j).indexOf('ORDER_ALREADY_CAPTURED') >= 0;
+  if (!r.ok && !deja) throw new Error('capture HTTP ' + r.status + ' ' + JSON.stringify(j).slice(0, 200));
+  if (deja) {
+    const g = await fetch(PP_BASE + '/v2/checkout/orders/' + encodeURIComponent(orderId), { headers: { Authorization: 'Bearer ' + token } });
+    const gj = await g.json().catch(() => ({}));
+    return lisCapture(gj);
+  }
+  return lisCapture(j);
+}
+
+/* Le contrôle qui protège l'argent, sorti en fonction PURE : on ne fait jamais
+   confiance au navigateur, et une garde qui se contente de LIRE le code ne voit
+   pas qu'on l'a neutralisée (mesuré : `if (false && …)` passait au vert).
+   Celle-ci est exécutée par le test avec de vrais cas. */
+export function controleCapture(cmd, cap, produit, memeMontantFn) {
+  const eq = memeMontantFn || memeMontant;
+  if (!cmd || !cap || !produit) return { ok: false, raison: 'donnees_manquantes' };
+  if (cap.statut !== 'COMPLETED') return { ok: false, raison: 'non_paye', detail: 'statut PayPal : ' + (cap.statut || 'inconnu') };
+  if (cap.produitId !== cmd.produit) return { ok: false, raison: 'incoherent', detail: 'produit payé ' + cap.produitId + ', commandé ' + cmd.produit };
+  if (cap.devise !== produit.devise) return { ok: false, raison: 'incoherent', detail: 'devise ' + cap.devise + ' au lieu de ' + produit.devise };
+  if (!eq(cap.montant, produit.prix)) return { ok: false, raison: 'incoherent', detail: 'payé ' + cap.montant + ' au lieu de ' + produit.prix };
+  return { ok: true };
+}
+
+export function lisCapture(j) {
+  const u = ((j && j.purchase_units) || [])[0] || {};
+  const c = (((u.payments || {}).captures) || [])[0] || {};
+  const custom = String(c.custom_id || u.custom_id || '');
+  return {
+    statut: String(c.status || j.status || ''),
+    txId: c.id || j.id || null,
+    montant: Number((c.amount && c.amount.value) || 0),
+    devise: (c.amount && c.amount.currency_code) || '',
+    produitId: custom.split('|')[0] || null,
+    ref: custom.split('|')[1] || u.reference_id || null,
+    email: nettoieEmail((j.payer && j.payer.email_address) || ''),
+  };
+}
+
 /* ── Délivrance ──────────────────────────────────────────────────────────── */
 /* Anti-rejeu : si cette transaction a déjà délivré, on renvoie LE MÊME code
    (le client qui recharge sa page ne doit pas être puni) mais on n'en crée pas
@@ -503,6 +634,7 @@ export default {
         contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'),
         email_code: Boolean(env.EMAILJS_PRIVATE_KEY),
         ok: true, service: 'kdmc-vente',
+        caisse: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),   // vraie caisse (Orders v2) : commande + capture + livraison immédiate
         paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),
         paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID),
         produits: Object.keys(PRODUITS),
@@ -552,6 +684,66 @@ export default {
       const d = await delivre(env, { produitId: trouve[0], email: email || null, source: 'paypal-webhook', txId });
       if (!d.ok) return json(d, d.status || 500, origin);
       return json({ ok: true, produit: trouve[0], deja_delivre: d.deja_delivre }, 200, origin);
+    }
+
+    /* --- CAISSE : créer la commande (le bouton « Payer ») ----------------- */
+    if (p === '/caisse/commande' && req.method === 'POST') {
+      let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'cmd_body' }, 400, origin); }
+      const produitId = String((b && b.produit) || '');
+      const produit = PRODUITS[produitId];
+      if (!produit) return json({ ok: false, error: 'produit_inconnu', detail: produitId, step: 'cmd_produit' }, 400, origin);
+      const email = nettoieEmail((b && b.email) || '');
+      if (!email) return json({ ok: false, error: 'email', detail: 'e-mail requis pour recevoir l\'accès', step: 'cmd_email' }, 400, origin);
+      /* Contenu numérique livré tout de suite : la loi exige le consentement
+         EXPRÈS à l'exécution immédiate + la reconnaissance de perdre le droit de
+         rétractation. On le stocke HORODATÉ — c'est la preuve, pas la case. */
+      if (!(b && b.consentement === true)) return json({ ok: false, error: 'consentement', detail: 'consentement à la livraison immédiate requis', step: 'cmd_consentement' }, 400, origin);
+      if (!env.PAYPAL_CLIENT_ID || !env.PAYPAL_SECRET) {
+        return json({ ok: false, error: 'caisse_absente', detail: 'PayPal non configuré — la page garde les liens de paiement simples', step: 'cmd_config' }, 200, origin);
+      }
+      const ref = nouvelleRef();
+      let cmd;
+      try { cmd = await ppCreeCommande(env, { produitId, produit, ref, email }); }
+      catch (e) { return json({ ok: false, error: 'paypal', detail: String(e.message || e).slice(0, 200), step: 'cmd_paypal' }, 502, origin); }
+      await env.VENTES.put('cmd:' + ref, JSON.stringify({
+        ref, produit: produitId, email, montant: produit.prix, devise: produit.devise,
+        order: cmd.id, etat: 'en_attente',
+        consentement: { donne: true, texte: CONSENTEMENT, ts_iso: new Date().toISOString(), ip: req.headers.get('CF-Connecting-IP') || null },
+        ts: Date.now(), ts_iso: new Date().toISOString(),
+      }), { expirationTtl: TTL_CMD });
+      return json({ ok: true, ref, approbation: cmd.approbation }, 200, origin);
+    }
+
+    /* --- CAISSE : l'acheteur revient de PayPal → on capture et on livre ---- */
+    if (p === '/caisse/capture' && req.method === 'POST') {
+      let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'cap_body' }, 400, origin); }
+      const ref = String((b && b.ref) || '').toUpperCase();
+      const brut = ref ? await env.VENTES.get('cmd:' + ref) : null;
+      if (!brut) return json({ ok: false, error: 'commande_inconnue', detail: 'référence ' + ref, step: 'cap_ref' }, 404, origin);
+      const cmd = JSON.parse(brut);
+      if (cmd.etat === 'livre' && cmd.code) return json({ ok: true, code: cmd.code, deja_delivre: true, livre: PRODUITS[cmd.produit].livre, recu: cmd.recu || null }, 200, origin);
+      let cap;
+      try { cap = await ppCapture(env, cmd.order); }
+      catch (e) { return json({ ok: false, error: 'capture', detail: String(e.message || e).slice(0, 200), step: 'cap_paypal' }, 502, origin); }
+      /* On ne fait JAMAIS confiance au navigateur : le produit, la devise et le
+         montant viennent de la réponse PayPal et doivent correspondre à la commande. */
+      const produit = PRODUITS[cmd.produit];
+      const ctrl = controleCapture(cmd, cap, produit);
+      if (!ctrl.ok) return json({ ok: false, error: ctrl.raison, detail: ctrl.detail, step: 'cap_controle' }, ctrl.raison === 'non_paye' ? 402 : 409, origin);
+      const d = await delivre(env, { produitId: cmd.produit, email: cmd.email || cap.email || null, source: 'caisse-paypal', txId: cap.txId });
+      if (!d.ok) return json(d, d.status || 500, origin);
+      const recu = await ecritRecu(env, { cmd, cap, produit, code: d.code });
+      cmd.etat = 'livre'; cmd.code = d.code; cmd.tx = cap.txId; cmd.recu = recu; cmd.livre_iso = new Date().toISOString();
+      await env.VENTES.put('cmd:' + ref, JSON.stringify(cmd), { expirationTtl: TTL_CODE });
+      return json({ ok: true, code: d.code, deja_delivre: d.deja_delivre, livre: produit.livre, email_envoye: d.email_envoye, recu }, 200, origin);
+    }
+
+    /* --- Reçu (justificatif d'achat, numéroté) ---------------------------- */
+    if (p === '/recu') {
+      const n = String(url.searchParams.get('n') || '');
+      const brut = n ? await env.VENTES.get('recu:' + n) : null;
+      if (!brut) return json({ ok: false, error: 'recu_inconnu', detail: n, step: 'recu' }, 404, origin);
+      return json({ ok: true, recu: JSON.parse(brut) }, 200, origin);
     }
 
     /* --- Réclamation client : « j'ai payé » ------------------------------- */

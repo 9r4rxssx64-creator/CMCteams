@@ -30,12 +30,19 @@ test('PARITÉ : chaque produit livré sur kit.kd-mc.com est dans le menu, au bon
     const opt = menu.find((m) => m[1] === id);
     assert.ok(opt[2].includes(prix), `${id} : le menu dit « ${opt[2]} » mais le worker vérifie ${prix}`);
     assert.ok(p.livre.startsWith('https://kit.kd-mc.com/lire.html'), id + ' : lecteur attendu'); assert.equal(p.devise, 'EUR');
+    /* Depuis le 18.09 le bouton principal est un <button data-caisse> (commande créée
+       côté serveur) qui garde l'ancien paypal.me en data-secours. Le montant reste
+       l'invariant : il doit valoir celui que le worker vérifiera. */
     for (const b of boutons[id] || []) {
-      const ligne = INDEX.match(new RegExp('id="' + b + '" href="([^"]+)"[^>]*>([^<]+)<'));
+      const ligne = INDEX.match(new RegExp('id="' + b + '"[^>]*(?:href|data-secours)="([^"]+)"[^>]*>([^<]+)<'));
       assert.ok(ligne, b + ' absent');
       assert.ok(ligne[2].includes(prix), `${b} annonce « ${ligne[2]} » mais le worker vérifie ${prix}`);
       assert.ok(ligne[1].toLowerCase().includes(String(p.prix) + 'eur'), `${b} : le lien de paiement ne porte pas le montant ${p.prix} EUR (${ligne[1]})`);
     }
+  }
+  /* La caisse doit être branchée sur le bon produit pour CHACUN des deux paliers. */
+  for (const id of ['kit-ia', 'club-ia']) {
+    assert.ok(INDEX.includes('data-caisse data-produit="' + id + '"'), 'pas de bouton de caisse pour ' + id);
   }
   assert.ok(INDEX.includes('"price":"' + PRODUIT.prix + '"'), 'le prix des données structurées a divergé');
   assert.ok(VENTE.PRODUITS['club-ia'].contenu.includes('kit-ia'), 'le Club doit inclure le kit (c\'est ce que la page promet)');

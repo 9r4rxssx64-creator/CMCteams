@@ -119,6 +119,46 @@
     });
   }
 
+  /* ── CAISSE — le bouton « Payer » (Kevin 2026-09-18) ─────────────────────
+     AVANT : un lien paypal.me ouvert dans un autre onglet. On ne savait même
+     pas que quelqu'un avait voulu acheter, rien ne le ramenait, et son code se
+     perdait s'il fermait l'onglet.
+     MAINTENANT : e-mail + consentement à la livraison immédiate, la commande
+     est créée côté serveur (montant et produit fixés par nous), PayPal renvoie
+     sur merci.html, on capture et on livre.
+     REPLI : si la caisse répond « pas configurée » ou ne répond pas, on ouvre
+     le lien paypal.me d'origine — on ne laisse jamais un acheteur sans chemin. */
+  function ouvreCaisse(btn) {
+    var produit = btn.getAttribute('data-produit');
+    var bloc = btn.closest ? btn.closest('.encart, .carte') : null;
+    var champ = bloc && bloc.querySelector('[data-caisse-email]');
+    var coche = bloc && bloc.querySelector('[data-caisse-consentement]');
+    var avis = bloc && bloc.querySelector('[data-caisse-avis]');
+    var dis = function (t) { if (avis) { texte(avis, t); avis.hidden = !t; } };
+    if (!champ || !emailPlausible(champ.value)) { dis('Mets d’abord ton adresse e-mail : c’est là qu’arrive ton accès.'); if (champ) champ.focus(); return; }
+    if (!coche || !coche.checked) { dis('Coche la case au-dessus pour qu’on t’ouvre l’accès tout de suite.'); return; }
+    var ancien = btn.textContent; btn.disabled = true; texte(btn, 'On prépare le paiement…'); dis('');
+    fetch(API + '/caisse/commande', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ produit: produit, email: champ.value.trim(), consentement: true }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d && d.ok && d.approbation) { location.href = d.approbation; return; }
+        /* Caisse absente ou en panne → l'ancien chemin, jamais un cul-de-sac. */
+        var secours = btn.getAttribute('data-secours');
+        if (secours) { dis('On t’envoie sur PayPal. Reviens ensuite récupérer ton accès plus bas.'); window.open(secours, '_blank', 'noopener'); }
+        else dis('La caisse ne répond pas : ' + ((d && d.detail) || 'raison inconnue'));
+      })
+      .catch(function (e) {
+        var secours = btn.getAttribute('data-secours');
+        if (secours) { window.open(secours, '_blank', 'noopener'); dis('Réseau capricieux : on t’a ouvert PayPal. Reviens récupérer ton accès plus bas.'); }
+        else dis('Pas de réseau : ' + String((e && e.message) || e));
+      })
+      .finally(function () { btn.disabled = false; texte(btn, ancien); });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-produit][data-caisse]'), function (btn) {
+    btn.addEventListener('click', function (ev) { ev.preventDefault(); ouvreCaisse(btn); });
+  });
+
   /* ── Page de vente : ce qui est déjà publié au Club (preuve de fraîcheur) ─
      /apercu ne sert que le module gratuit, mais son SOMMAIRE liste tout, dont
      les consignes hebdomadaires (source === 'club-ia'). On montre les 3 plus
