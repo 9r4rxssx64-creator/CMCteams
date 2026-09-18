@@ -24,6 +24,10 @@ export const SCRIPTS = new URL('./scripts.json', import.meta.url);
 export const SORTIE = fileURLToPath(new URL('./out/', import.meta.url));
 export const TTS = 'https://lingua.kd-mc.com/__lingua/tts';
 export const VOIX = 'nova';
+/* Kevin 2026-09-18 « la voix, on dirait un robot » : le moteur du domaine accepte une
+   CONSIGNE DE JEU, jusqu'ici figée sur « professeur de langue » (écrite pour Lingua).
+   Une pub demande un autre jeu : proche du micro, complice, jamais commercial. */
+export const STYLE_VOIX = 'pub';
 export const POLICE = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
 export const THEMES = {
   sombre: { fond: '#0D0F14', texte: '#FFFFFF', accent: '#E8B830' },
@@ -122,11 +126,11 @@ export function argsConcat(liste, sortie) {
 export function fichierConcat(chemins) { return chemins.map((c) => 'file \'' + String(c).replace(/'/g, "'\\''") + '\'').join('\n') + '\n'; }
 
 /* ── Réseau + processus (CI seulement) ───────────────────────────────────── */
-export async function voix(texte, { voixId = VOIX, log = () => {} } = {}) {
+export async function voix(texte, { voixId = VOIX, style = STYLE_VOIX, log = () => {} } = {}) {
   for (let essai = 1; essai <= 2; essai++) {
     try {
       const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 20000);
-      const r = await fetch(TTS + '?v=' + voixId + '&t=' + encodeURIComponent(texte), { signal: ctrl.signal });
+      const r = await fetch(TTS + '?v=' + voixId + '&i=' + encodeURIComponent(style) + '&t=' + encodeURIComponent(texte), { signal: ctrl.signal });
       clearTimeout(t);
       const type = r.headers.get('content-type') || '';
       if (r.ok && /audio/.test(type)) return Buffer.from(await r.arrayBuffer());
@@ -193,7 +197,7 @@ export async function principal(env = process.env, log = console.log) {
   if (!choisies.length) throw new Error('aucune vidéo pour VIDEOS=' + env.VIDEOS);
   const dossier = env.PUB_OUT || SORTIE; mkdirSync(dossier, { recursive: true });
   if (!existsSync(POLICE)) throw new Error('police absente : ' + POLICE + ' (installer fonts-dejavu-core)');
-  log(choisies.length + ' vidéo(s) à rendre : ' + choisies.map((v) => v.id).join(', ') + ' · voix ' + VOIX + ' du domaine · sortie ' + dossier);
+  log(choisies.length + ' vidéo(s) à rendre : ' + choisies.map((v) => v.id).join(', ') + ' · voix ' + VOIX + ' du domaine (jeu : ' + STYLE_VOIX + ') · sortie ' + dossier);
   let ok = 0; const fiches = [];
   for (const v of choisies) {
     log('▶ ' + v.id + ' (' + v.produit + ', ' + v.lignes.length + ' cartes, thème ' + v.theme + ')');
