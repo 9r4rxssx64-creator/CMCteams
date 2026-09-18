@@ -1,0 +1,36 @@
+{
+  "at": "2026-09-18T20:44:25.883Z",
+  "connecte": false,
+  "largeur": 390,
+  "pages": [
+    {
+      "url": "https://kd-mc.com/",
+      "dossier": "voir/out/racine",
+      "ok": true,
+      "session": null,
+      "captures": [
+        "01-arrivee-ecran.jpg",
+        "01-arrivee-page.jpg",
+        "02-iphone-ecran.jpg",
+        "02-iphone-page.jpg"
+      ],
+      "version": null,
+      "titre": "KDMC APEX — Mon univers",
+      "texte": "KDMC\nAPEX\nCréer mon compte KDMC\nPremière connexion. Un seul compte pour tout ton univers.\n J'accepte les conditions.\nCréer mon compte\nKDMC APEX — Kevin DESARZENS · Monaco\nkd-mc.com\nPWA · session unique signée · CSP stricte\nv1.0.32",
+      "jsErr": [],
+      "reqKo": [],
+      "http": [],
+      "console": [
+        "[error] The Content Security Policy directive 'frame-ancestors' is ignored when delivered via a <meta> element.",
+        "[error] Refused to load the script 'https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495' because it violates the followin"
+      ],
+      "vue": null,
+      "user": null,
+      "vue_iphone": {
+        "demandee": false,
+        "affichee": null,
+        "texte": "KDMC\nAPEX\nCréer mon compte KDMC\nPremière connexion. Un seul compte pour tout ton univers.\n J'accepte les conditions.\nCréer mon compte\nKDMC APEX — Kevin DESARZENS · Monaco\nkd-mc.com\nPWA · session unique signée · CSP stricte\nv1.0.32"
+      }
+    }
+  ]
+}
