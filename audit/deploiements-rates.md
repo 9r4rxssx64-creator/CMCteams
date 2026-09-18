@@ -7,6 +7,27 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 18/09/2026 01:06 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `68373cdc` · **Run** : `35293454319`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35293454319
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3903 — merge auto refusé. Cause exacte ci-dessous.
+[claude/verify-cmcteams-light-data-rzlvau c9095e82e] diag: pourquoi l'auto-merge de claude/verify-cmcteams-light-data-rzlvau est refusé [skip ci]
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 17/09/2026 19:09 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `07c8d023` · **Run** : `35261990263`
@@ -427,25 +448,4 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 ^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 15/09/2026 22:57 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `0a59c9f5` · **Run** : `35032874548`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35032874548
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3806 — merge auto refusé. Cause exacte ci-dessous.
-[claude/video-review-wqnqdw 9e72353cb] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
-##[error]Process completed with exit code 1.
 ```
