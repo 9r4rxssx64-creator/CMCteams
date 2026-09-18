@@ -62,6 +62,11 @@
     return [
       { l: 'Chiffre d\'affaires', v: v ? euro(v.ca) : '—', s: v ? (v.n + ' vente' + (v.n > 1 ? 's' : '') + (v.tronque ? ' (tronqué)' : '')) : 'caisse injoignable', cls: v && v.n ? 'ok' : '' },
       { l: 'À valider (file)', v: live ? String(live.file.n) : '—', s: live ? (live.file.n ? 'Revolut / virement / PayPal non vu' : 'rien en attente') : '', cls: live && live.file.n ? 'warn' : '' },
+      /* Paniers ouverts : avec le PayPal perso de Kevin (pas de capture auto),
+         c'est LA tuile qui dit qui a voulu acheter, même sans jamais revenir. */
+      { l: 'Paniers en attente', v: live && live.intentions ? String(live.intentions.n) : '—',
+        s: live && live.intentions ? (live.intentions.n ? euro(live.intentions.ca_potentiel) + ' possible · ' + live.intentions.dit_paye + ' disent avoir payé' : 'aucun panier ouvert') : '',
+        cls: live && live.intentions && live.intentions.dit_paye ? 'warn' : '' },
       { l: 'Club — abonnés actifs', v: live && live.club ? String(live.club.actifs) : '—', s: live && live.club ? (live.club.expirent14j + ' expirent sous 14 j') : (live ? 'base non lue' : ''), cls: '' },
       { l: 'Produits en vente', v: String((data.produits || []).filter(function (p) { return !p.gele; }).length), s: (data.produits || []).filter(function (p) { return p.gele; }).length + ' gelé(s) par Kevin', cls: '' },
       { l: 'Vidéos programmées', v: prog + '/' + (data.videos || []).length, s: '4 réseaux · 18→25.09', cls: prog ? 'ok' : '' },
@@ -109,6 +114,29 @@
       return '<li data-demande="' + esc(d.id) + '"><div class="g"><b>' + esc(d.produit || '(montant sans produit)') + ' · ' + esc(d.email || '—') + '</b><span>' + esc(d.methode || '?') + ' · ' + esc(d.etat || '') + ' · ' + esc(dt(d.ts_iso)) + (d.reference ? ' · réf ' + esc(d.reference) : '') + (d.montant ? ' · ' + esc(d.montant + ' ' + (d.devise || '')) : '') + '</span></div>'
         + (d.produit ? '<button class="btn p" data-valider="' + esc(d.id) + '">Livrer</button>' : '') + '<button class="btn d" data-refuser="' + esc(d.id) + '">Refuser</button></li>';
     }).join('') + '</ul>';
+    return h + '</div>';
+  }
+
+  /* ── Paniers (PayPal perso) ───────────────────────────────────────────
+     Kevin encaisse sur son PayPal personnel : personne ne peut capturer le
+     paiement à sa place. Ce bloc est donc le SEUL endroit où il voit qui a
+     ouvert un panier, pour quoi, pour combien — et qui dit avoir payé. */
+  function sectionPaniers(live) {
+    if (!live || !live.intentions) return '';
+    var it = live.intentions;
+    var h = '<div class="kdmc-card tile"><h3>🛒 Paniers ouverts <span class="chip ' + (it.dit_paye ? 'warn' : '') + '">' + it.n + '</span></h3>';
+    if (!it.n) h += '<div class="meta">Aucun panier ouvert. Un panier est créé dès que quelqu\'un touche « Payer » : e-mail, produit, montant et consentement sont gardés même s\'il ne revient jamais.</div>';
+    else {
+      h += '<ul class="list">' + it.liste.map(function (c) {
+        var paye = c.etat === 'dit_paye';
+        return '<li><div class="g"><b>' + esc(c.ref) + ' · ' + esc(c.produit) + ' · ' + esc(c.email || '—') + '</b><span>'
+          + esc(euro(c.montant) + ' · ' + (paye ? 'dit avoir payé' : 'en attente') + ' · il y a ' + c.heures + ' h · ' + dt(c.ts_iso))
+          + '</span></div>' + (paye ? '<span class="chip warn">à livrer</span>' : '')
+          + '<button class="btn p" data-livrer="' + esc(c.ref) + '">Livrer</button>'
+          + '<button class="btn d" data-abandon="' + esc(c.ref) + '">Abandonné</button></li>';
+      }).join('') + '</ul>';
+      h += '<div class="meta">' + euro(it.ca_potentiel) + ' possible. Ceux marqués « dit avoir payé » sont aussi dans la file à valider : un clic sur « Livrer » envoie le code.</div>';
+    }
     return h + '</div>';
   }
 
@@ -195,6 +223,7 @@
     return '<div class="kpis">' + k.map(tuileKpi).join('') + '</div>'
       + (erreurLive ? '<div class="note err">Caisse (kdmc-vente) injoignable : ' + esc(erreurLive) + '. Les tuiles « construit » restent justes ; les chiffres live sont à relire.</div>' : '')
       + '<h2 class="cat">💶 Ventes <button class="refresh" id="rf" type="button">↻ Relire la caisse</button></h2>' + sectionVentes(live)
+      + sectionPaniers(live)
       + sectionFile(live)
       + '<h2 class="cat">🧰 Produits</h2>' + sectionProduits(data, live)
       + '<h2 class="cat">▶️ Commandes</h2>' + sectionCommandes(data, live)
@@ -205,7 +234,7 @@
       + '<h2 class="cat">⚙️ Caisse</h2>' + sectionConfig(live);
   }
 
-  var API = { esc: esc, euro: euro, etatRun: etatRun, etatLivraison: etatLivraison, etatContenu: etatContenu, kpis: kpis, moisBarres: moisBarres, rendu: rendu, sectionLiens: sectionLiens, CAISSE: CAISSE };
+  var API = { esc: esc, euro: euro, etatRun: etatRun, etatLivraison: etatLivraison, etatContenu: etatContenu, kpis: kpis, moisBarres: moisBarres, rendu: rendu, sectionPaniers: sectionPaniers, sectionLiens: sectionLiens, CAISSE: CAISSE };
   global.kdmcCommerce = API;
   if (typeof module === 'object' && module && module.exports) module.exports = API;
 
@@ -238,6 +267,24 @@
         fetch(CAISSE + '/admin/valider', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, bearer()), body: JSON.stringify(refuser ? { demande: id, refuser: true } : { demande: id }) })
           .then(function (r) { return r.json(); })
           .then(function (j) { toast(j.ok ? (refuser ? 'Demande refusée.' : 'Livré : code ' + j.code + (j.email_envoye ? ' (e-mail envoyé)' : ' (e-mail non envoyé — à transmettre)')) : 'Échec : ' + (j.detail || j.error)); recharge(); })
+          .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; });
+      });
+    });
+    /* Kevin voit le paiement dans SON PayPal : un doigt, et l'accès part. Le
+       worker refuse de livrer deux fois le même panier — il rend le même code. */
+    app.querySelectorAll('[data-livrer],[data-abandon]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var abandon = b.hasAttribute('data-abandon'), ref = b.getAttribute(abandon ? 'data-abandon' : 'data-livrer');
+        if (!confirm(abandon ? 'Retirer le panier ' + ref + ' ? Rien ne sera livré.' : 'Tu as bien reçu le paiement de ' + ref + ' sur PayPal ? L\'accès part par e-mail.')) return;
+        b.disabled = true;
+        fetch(CAISSE + '/admin/livrer-panier', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, bearer()), body: JSON.stringify(abandon ? { ref: ref, abandonner: true } : { ref: ref }) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            toast(j.ok
+              ? (abandon ? 'Panier retiré.' : (j.deja_delivre ? 'Déjà livré : même code ' + j.code : 'Livré : code ' + j.code + (j.email_envoye ? ' (e-mail envoyé)' : ' (e-mail non envoyé — à transmettre à ' + j.email + ')')))
+              : 'Échec : ' + (j.detail || j.error));
+            recharge();
+          })
           .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; });
       });
     });

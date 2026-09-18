@@ -9666,3 +9666,34 @@ et que son auteur est archivé, traitez-la quand même, elle ne reviendra pas.
 **Gardes** : `test:pipeline-sessions` **9 OK / 0 FAIL** (un rouge était de moi : ma branche
 manquait à `SESSIONS-ET-BRANCHES.md` → ajoutée) · `test:messages-suivis` toujours rouge sur les
 31 demandes ciblées, **c'est son rôle**.
+
+## 2026-09-18 — PayPal perso : plus aucun acheteur perdu (Kevin « utilise mon PayPal comme ça. perso »)
+
+Kevin garde son **PayPal personnel** : pas d'application PayPal, donc pas de clés, donc pas de
+capture automatique. Le lien `paypal.me` n'est plus un repli théorique — **c'est le chemin réel**.
+Son trou, mesuré : on ouvrait un onglet et on ne savait plus rien (ni qui, ni quoi, ni où le
+joindre) ; Kevin voyait un montant sans nom, l'acheteur n'avait rien à citer.
+
+**Ce qui a été livré**
+- `POST /caisse/intention` (worker `kdmc-vente`) — enregistre le panier **avant** d'ouvrir PayPal :
+  produit, montant pris dans NOTRE catalogue, e-mail, consentement horodaté. **Aucune clé requise.**
+- La page rend une **référence** (`K` + 8 caractères) à recopier dans le message PayPal, la mémorise
+  (`kdmc_kit_ref`), ouvre PayPal, et laisse sous la main le bouton **« J'ai payé »**.
+- `POST /reclamer` accepte cette référence : produit, e-mail et consentement voyagent avec la
+  demande → Kevin livre en un clic, en connaissance de cause. Référence inventée = refusée (404).
+- `/admin/valider` **ferme** le panier correspondant (sinon il resterait « en attente » après livraison).
+- Tableau de bord Commerce : tuile **🛒 Paniers ouverts** + KPI « Paniers en attente » (CA possible,
+  combien disent avoir payé, âge en heures).
+- **Honnêteté** : CGV et pages de vente ne promettent plus l'accès instantané → « dès que le paiement
+  est constaté, au plus tard sous 24 h ouvrées ».
+
+- `POST /admin/livrer-panier` + boutons **Livrer / Abandonné** dans la tuile : Kevin voit le paiement
+  dans SON PayPal, un doigt, l'accès part par e-mail. Réservé à l'admin (`requireAdmin` AVANT de lire
+  le corps), et un panier déjà livré rend le **même** code — personne ne reçoit deux accès.
+
+**Gardes** (prouvées discriminantes par sabotage) : `tests/caisse-complete.test.mjs` (14 contrôles —
+panier livré compté comme ouvert → 1 échec ; montant non contrôlé `NaNEUR` → 1 échec ; référence non
+mémorisée → 1 échec ; garde admin retirée → 1 échec ; double livraison possible → 1 échec) et `tests/commerce-tableau.test.mjs` (12 — tuile non montée → 1 échec ;
+`esc()` retiré → 1 échec). Preuve **live** ajoutée à `deploy-kdmc-vente.yml` : refus sans e-mail /
+produit inventé / sans consentement, panier complet → `paypal.me/kdmc/17EUR` + référence, référence
+inventée refusée, « j'ai payé » relié à la file.

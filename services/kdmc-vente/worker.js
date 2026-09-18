@@ -303,6 +303,59 @@ export function nouvelleRef() {
   return 'K' + Array.from(t, (x) => A[x % A.length]).join('');
 }
 
+/* ── PAYPAL PERSO — l'INTENTION (Kevin 2026-09-18 « Pour l'instant utilise mon
+   PayPal comme ça. perso ») ──────────────────────────────────────────────────
+   Kevin garde son PayPal personnel : pas d'application PayPal, donc pas de
+   clés, donc pas de capture automatique. Le lien paypal.me EST le chemin réel,
+   et il avait un trou : on ouvrait un onglet et on ne savait plus RIEN — ni qui
+   voulait acheter, ni quoi, ni où le joindre. Quelqu'un qui payait puis fermait
+   l'onglet était invisible des deux côtés : Kevin voyait un montant sans nom,
+   l'acheteur n'avait rien à citer.
+   L'intention bouche ce trou SANS aucune clé : on range la commande (produit,
+   montant, e-mail, consentement horodaté) AVANT d'ouvrir PayPal, et on rend une
+   référence courte que l'acheteur recopie dans le message PayPal. Kevin la
+   retrouve dans son tableau de bord même si l'acheteur ne revient jamais.
+   Le montant vient de NOTRE catalogue, jamais du navigateur. */
+export const PAYPAL_ME = 'https://paypal.me/kdmc';
+
+export function lienPaypalMe(produit) {
+  /* paypal.me n'accepte que le montant : la référence, c'est l'acheteur qui
+     l'écrit dans le message. On ne peut pas la mettre dans l'URL. */
+  const m = Number(produit.prix);
+  if (!isFinite(m) || m <= 0) return PAYPAL_ME;
+  return PAYPAL_ME + '/' + String(m).replace(',', '.') + (produit.devise === 'EUR' ? 'EUR' : String(produit.devise || ''));
+}
+
+/* Ce que Kevin voit dans son tableau de bord : les paniers ouverts. Une
+   intention LIVRÉE n'en est plus une — elle est déjà dans les ventes. Fonction
+   PURE : elle se teste en l'exécutant, pas en relisant le fichier. */
+export function resumeIntentions(cmds, maintenant) {
+  const now = Number(maintenant) || Date.now();
+  const ouvertes = (cmds || []).filter((c) => c && c.etat && c.etat !== 'livre');
+  ouvertes.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  return {
+    n: ouvertes.length,
+    dit_paye: ouvertes.filter((c) => c.etat === 'dit_paye').length,
+    ca_potentiel: Math.round(ouvertes.reduce((t, c) => t + (Number(c.montant) || 0), 0) * 100) / 100,
+    liste: ouvertes.slice(0, 50).map((c) => ({
+      ref: c.ref, produit: c.produit, email: c.email, montant: c.montant, devise: c.devise,
+      etat: c.etat, moyen: c.moyen || 'paypal', ts_iso: c.ts_iso,
+      heures: Math.round((now - (c.ts || now)) / 36e5),
+    })),
+  };
+}
+
+async function lireIntentions(env) {
+  const { noms } = await listeToutes(env.VENTES, 'cmd:', 200);
+  const cmds = [];
+  for (const nom of noms) {
+    const v = await env.VENTES.get(nom);
+    if (!v) continue;
+    try { cmds.push(JSON.parse(v)); } catch (_) { /* ligne illisible : ignorée, jamais un tableau cassé */ }
+  }
+  return resumeIntentions(cmds);
+}
+
 async function ppCreeCommande(env, { produitId, produit, ref, email }) {
   const token = await ppToken(env);
   const r = await fetch(PP_BASE + '/v2/checkout/orders', {
@@ -635,6 +688,8 @@ export default {
         email_code: Boolean(env.EMAILJS_PRIVATE_KEY),
         ok: true, service: 'kdmc-vente',
         caisse: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),   // vraie caisse (Orders v2) : commande + capture + livraison immédiate
+        encaissement: (env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET) ? 'paypal-api' : 'paypal-perso',  // perso = lien paypal.me + panier enregistré + validation par Kevin
+        paypal_me: PAYPAL_ME,
         paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET),
         paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID),
         produits: Object.keys(PRODUITS),
@@ -714,6 +769,31 @@ export default {
       return json({ ok: true, ref, approbation: cmd.approbation }, 200, origin);
     }
 
+    /* --- CAISSE : l'intention (PayPal perso, sans clé) -------------------- */
+    /* Appelée AVANT d'ouvrir paypal.me. Aucune clé requise : c'est le chemin
+       réel tant que Kevin reste sur son PayPal personnel. */
+    if (p === '/caisse/intention' && req.method === 'POST') {
+      let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'int_body' }, 400, origin); }
+      const produitId = String((b && b.produit) || '');
+      const produit = PRODUITS[produitId];
+      if (!produit) return json({ ok: false, error: 'produit_inconnu', detail: produitId, step: 'int_produit' }, 400, origin);
+      const email = nettoieEmail((b && b.email) || '');
+      if (!emailPlausible(email)) return json({ ok: false, error: 'email', detail: 'e-mail requis pour recevoir l\'accès', step: 'int_email' }, 400, origin);
+      if (!(b && b.consentement === true)) return json({ ok: false, error: 'consentement', detail: 'consentement à la livraison immédiate requis', step: 'int_consentement' }, 400, origin);
+      const ref = nouvelleRef();
+      await env.VENTES.put('cmd:' + ref, JSON.stringify({
+        ref, produit: produitId, email, montant: produit.prix, devise: produit.devise,
+        etat: 'intention', moyen: 'paypal-perso',
+        consentement: { donne: true, texte: CONSENTEMENT, ts_iso: new Date().toISOString(), ip: req.headers.get('CF-Connecting-IP') || null },
+        ts: Date.now(), ts_iso: new Date().toISOString(),
+      }), { expirationTtl: TTL_CMD });
+      return json({
+        ok: true, ref, lien: lienPaypalMe(produit),
+        montant: produit.prix, devise: produit.devise, produit: produitId,
+        consigne: 'Écris ' + ref + ' dans le message PayPal : c\'est ce qui relie ton paiement à ton accès.',
+      }, 200, origin);
+    }
+
     /* --- CAISSE : l'acheteur revient de PayPal → on capture et on livre ---- */
     if (p === '/caisse/capture' && req.method === 'POST') {
       let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'cap_body' }, 400, origin); }
@@ -752,19 +832,36 @@ export default {
       try { b = await req.json(); }
       catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'reclam_body' }, 400, origin); }
 
-      const produitId = String(b.produit || '');
+      /* Le débit passe AVANT toute lecture : une référence valide rend le code
+         d'accès à celui qui la présente (c'est voulu — l'acheteur qui a perdu son
+         code). Sans débit ici, on pourrait essayer des références en rafale. */
+      const ip = req.headers.get('CF-Connecting-IP') || 'inconnue';
+      if (await tropDeTentatives(env, ip)) {
+        return json({ ok: false, error: 'trop_de_tentatives', detail: 'trop d\'essais dans l\'heure, réessaie plus tard', step: 'reclam_debit' }, 429, origin);
+      }
+
+      /* Référence d'intention (PayPal perso) : elle porte déjà le produit,
+         l'e-mail et le consentement horodaté. L'acheteur n'a qu'à la recopier —
+         c'est le fil qui relie son paiement à son accès. */
+      const refInt = String(b.ref || '').trim().toUpperCase();
+      let intention = null;
+      if (refInt) {
+        const bi = await env.VENTES.get('cmd:' + refInt);
+        if (bi) { try { intention = JSON.parse(bi); } catch (_) { intention = null; } }
+      }
+      if (refInt && !intention) return json({ ok: false, error: 'reference_inconnue', detail: 'référence ' + refInt, step: 'reclam_ref' }, 404, origin);
+      if (intention && intention.etat === 'livre' && intention.code) {
+        return json({ ok: true, verifie: true, deja_delivre: true, code: intention.code, livre: PRODUITS[intention.produit] && PRODUITS[intention.produit].livre }, 200, origin);
+      }
+
+      const produitId = String(b.produit || (intention && intention.produit) || '');
       const produit = PRODUITS[produitId];
       if (!produit) return json({ ok: false, error: 'produit', detail: 'produit inconnu: ' + produitId, step: 'reclam_produit' }, 404, origin);
 
       const methode = String(b.methode || 'paypal').toLowerCase();
-      const email = nettoieEmail(b.email);
+      const email = nettoieEmail(b.email || (intention && intention.email) || '');
       if (!emailPlausible(email)) {
         return json({ ok: false, error: 'email', detail: 'adresse e-mail incomplète', step: 'reclam_email' }, 400, origin);
-      }
-
-      const ip = req.headers.get('CF-Connecting-IP') || 'inconnue';
-      if (await tropDeTentatives(env, ip)) {
-        return json({ ok: false, error: 'trop_de_tentatives', detail: 'trop d\'essais dans l\'heure, réessaie plus tard', step: 'reclam_debit' }, 429, origin);
       }
 
       /* Chemin automatique : seulement PayPal, seulement si configuré. */
@@ -805,11 +902,22 @@ export default {
       const id = crypto.randomUUID();
       await env.VENTES.put('demande:' + id, JSON.stringify({
         id, produit: produitId, email, methode, etat: 'en_attente',
-        reference: String(b.reference || '').slice(0, 80),
-        detail: methode === 'paypal' ? 'vérification PayPal non configurée' : 'méthode sans vérification automatique',
+        reference: refInt || String(b.reference || '').slice(0, 80),
+        /* Le consentement voyage avec la demande : Kevin livre à la main, il
+           doit voir ce que l'acheteur a accepté, mot pour mot et daté. */
+        montant: intention ? intention.montant : null,
+        devise: intention ? intention.devise : null,
+        consentement: intention ? intention.consentement : null,
+        detail: intention
+          ? 'panier ouvert le ' + intention.ts_iso + ' — paiement annoncé par l\'acheteur'
+          : (methode === 'paypal' ? 'vérification PayPal non configurée' : 'méthode sans vérification automatique'),
         ts: Date.now(), ts_iso: new Date().toISOString(),
       }), { expirationTtl: TTL_DEMANDE });
-      return json({ ok: true, verifie: false, en_attente: true, demande: id, detail: 'demande enregistrée — Kevin valide et tu reçois ton accès', step: 'reclam_manuel' }, 200, origin);
+      if (intention) {
+        intention.etat = 'dit_paye'; intention.demande = id; intention.dit_paye_iso = new Date().toISOString();
+        await env.VENTES.put('cmd:' + refInt, JSON.stringify(intention), { expirationTtl: TTL_CMD });
+      }
+      return json({ ok: true, verifie: false, en_attente: true, demande: id, ref: refInt || null, detail: 'demande enregistrée — Kevin valide et tu reçois ton accès', step: 'reclam_manuel' }, 200, origin);
     }
 
     /* --- Accès : le client présente son code ------------------------------ */
@@ -893,19 +1001,66 @@ export default {
       const produitId = String(b.produit || d.produit || '');
       const dd = await delivre(env, { produitId, email: d.email, source: 'admin:' + g.name, txId: null });
       if (!dd.ok) return json(dd, dd.status || 500, origin);
+      /* Le panier correspondant se ferme : sinon il resterait « en attente »
+         dans le tableau de bord alors que Kevin vient de livrer. */
+      if (d.reference) {
+        const bi = await env.VENTES.get('cmd:' + d.reference);
+        if (bi) {
+          try {
+            const c = JSON.parse(bi);
+            c.etat = 'livre'; c.code = dd.code; c.livre_iso = new Date().toISOString(); c.livre_par = 'admin:' + g.name;
+            await env.VENTES.put('cmd:' + d.reference, JSON.stringify(c), { expirationTtl: TTL_CODE });
+          } catch (_) { /* panier illisible : la livraison reste valable */ }
+        }
+      }
       await env.VENTES.delete('demande:' + id);
       return json({ ok: true, code: dd.code, livre: dd.livre, produit: produitId, email_envoye: !!dd.email_envoye }, 200, origin);
+    }
+
+    /* --- Admin : livrer un panier en un doigt (PayPal perso) -------------- */
+    /* Kevin voit le paiement dans SON PayPal. Ici il retrouve le panier (qui, quoi,
+       combien, consentement daté) et envoie l'accès sans rien retaper. C'est le
+       maillon qui manquait tant qu'il n'y a pas de capture automatique. */
+    if (p === '/admin/livrer-panier' && req.method === 'POST') {
+      const g = await requireAdmin(req);
+      if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
+      let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'lp_body' }, 400, origin); }
+      const ref = String((b && b.ref) || '').trim().toUpperCase();
+      const brut = ref ? await env.VENTES.get('cmd:' + ref) : null;
+      if (!brut) return json({ ok: false, error: 'panier_inconnu', detail: 'référence ' + ref, step: 'lp_ref' }, 404, origin);
+      let c; try { c = JSON.parse(brut); } catch (_) { c = null; }
+      if (!c || !PRODUITS[c.produit]) return json({ ok: false, error: 'illisible', detail: 'panier illisible', step: 'lp_parse' }, 500, origin);
+      /* Déjà livré : on rend le MÊME code. Personne ne reçoit deux accès pour un
+         paiement, et Kevin ne peut pas livrer deux fois par erreur. */
+      if (c.etat === 'livre' && c.code) return json({ ok: true, deja_delivre: true, code: c.code, livre: PRODUITS[c.produit].livre }, 200, origin);
+      if (b && b.abandonner) {
+        await env.VENTES.delete('cmd:' + ref);
+        return json({ ok: true, abandonne: true }, 200, origin);
+      }
+      const d = await delivre(env, { produitId: c.produit, email: c.email, source: 'panier:' + g.name, txId: null });
+      if (!d.ok) return json(d, d.status || 500, origin);
+      const recu = await ecritRecu(env, {
+        cmd: c, produit: PRODUITS[c.produit], code: d.code,
+        cap: { statut: 'COMPLETED', montant: c.montant, devise: c.devise, txId: String((b && b.transaction) || '').slice(0, 60) || null, email: c.email },
+      });
+      c.etat = 'livre'; c.code = d.code; c.recu = recu; c.livre_iso = new Date().toISOString(); c.livre_par = 'admin:' + g.name;
+      await env.VENTES.put('cmd:' + ref, JSON.stringify(c), { expirationTtl: TTL_CODE });
+      return json({ ok: true, code: d.code, livre: PRODUITS[c.produit].livre, email: c.email, email_envoye: !!d.email_envoye, recu }, 200, origin);
     }
 
     /* --- Admin : le tableau de bord Commerce en UN appel ------------------ */
     if (p === '/admin/tableau') {
       const g = await requireAdmin(req);
       if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
-      const [ventes, demandes, base, livraisons, runs] = await Promise.all([lireVentes(env), lireFile(env), lireBase(env), sondeLivraisons(), lireRuns(env)]);
+      const [ventes, demandes, base, livraisons, runs, intentions] = await Promise.all([lireVentes(env), lireFile(env), lireBase(env), sondeLivraisons(), lireRuns(env), lireIntentions(env)]);
       return json({
         ok: true, quand: new Date().toISOString(), admin: g.name,
         produits: Object.entries(PRODUITS).map(([id, v]) => ({ id, nom: v.nom, prix: v.prix, devise: v.devise, livre: v.livre, contenu: v.contenu || [], ttlJours: v.ttlJours || 730, livre_http: livraisons[id] })),
         ventes, file: { n: demandes.length, demandes: demandes.slice(0, 50) },
+        /* Paniers ouverts : qui a voulu acheter, quoi, et depuis combien de
+           temps — même s'il n'est jamais revenu. C'est ce que le lien paypal.me
+           seul ne permettait pas de savoir. */
+        intentions,
         club: base.club, contenu: base.contenu, base_detail: base.detail,
         config: { paypal_webhook: Boolean(env.PAYPAL_WEBHOOK_ID), paypal_recherche: Boolean(env.PAYPAL_CLIENT_ID && env.PAYPAL_SECRET), email_code: Boolean(env.EMAILJS_PRIVATE_KEY), contenu_prive: !!(env.CONTENU && typeof env.CONTENU.prepare === 'function'), commandes: Boolean(env.GITHUB_DISPATCH_TOKEN) },
         workflows: Object.entries(WORKFLOWS).map(([id, w]) => ({ id, nom: w.nom, champs: w.champs, url: 'https://github.com/' + DEPOT + '/actions/workflows/' + id, run: runs[id] || null })),
