@@ -53,6 +53,16 @@ test('PARITÉ : chaque produit livré sur kit.kd-mc.com est dans le menu, au bon
      rangé côté serveur, et c'est le script qui le révèle après /health. */
   assert.match(INDEX, /<p data-moyen-virement hidden>/, 'le bouton virement est visible avant même de savoir si l\'IBAN existe');
   assert.match(JS, /h\.moyens && h\.moyens\.indexOf\('virement'\) >= 0/, 'rien ne révèle le virement quand il est ouvert');
+  /* Sans JavaScript, les boutons sont inertes : il faut un chemin de secours. */
+  const ns = [...INDEX.matchAll(/<noscript>([\s\S]*?)<\/noscript>/g)].map((m) => m[1]);
+  assert.equal(ns.length, 2, 'un <noscript> par palier (kit + club) attendu');
+  /* index.html ne porte QUE les deux paliers ; les niches ont leur propre page
+     (contrôlées par tests/produits-fabrique.test.mjs). */
+  for (const id of ['kit-ia', 'club-ia']) {
+    const prix = VENTE.PRODUITS[id].prix;
+    assert.ok(ns.some((t) => t.includes('paypal.me/kdmc/' + prix + 'EUR') && t.includes('revolut.me/kdmc/' + prix + 'eur')),
+      id + ' : sans JavaScript, aucun moyen de payer ' + prix + ' €');
+  }
   assert.ok(INDEX.includes('"price":"' + PRODUIT.prix + '"'), 'le prix des données structurées a divergé');
   assert.ok(VENTE.PRODUITS['club-ia'].contenu.includes('kit-ia'), 'le Club doit inclure le kit (c\'est ce que la page promet)');
   assert.equal(VENTE.PRODUITS['club-ia'].ttlJours, 365, 'la page promet un accès 1 an');
