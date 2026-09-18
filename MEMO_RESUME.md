@@ -9687,9 +9687,13 @@ joindre) ; Kevin voyait un montant sans nom, l'acheteur n'avait rien à citer.
 - **Honnêteté** : CGV et pages de vente ne promettent plus l'accès instantané → « dès que le paiement
   est constaté, au plus tard sous 24 h ouvrées ».
 
-**Gardes** (prouvées discriminantes par sabotage) : `tests/caisse-complete.test.mjs` (13 contrôles —
+- `POST /admin/livrer-panier` + boutons **Livrer / Abandonné** dans la tuile : Kevin voit le paiement
+  dans SON PayPal, un doigt, l'accès part par e-mail. Réservé à l'admin (`requireAdmin` AVANT de lire
+  le corps), et un panier déjà livré rend le **même** code — personne ne reçoit deux accès.
+
+**Gardes** (prouvées discriminantes par sabotage) : `tests/caisse-complete.test.mjs` (14 contrôles —
 panier livré compté comme ouvert → 1 échec ; montant non contrôlé `NaNEUR` → 1 échec ; référence non
-mémorisée → 1 échec) et `tests/commerce-tableau.test.mjs` (12 — tuile non montée → 1 échec ;
+mémorisée → 1 échec ; garde admin retirée → 1 échec ; double livraison possible → 1 échec) et `tests/commerce-tableau.test.mjs` (12 — tuile non montée → 1 échec ;
 `esc()` retiré → 1 échec). Preuve **live** ajoutée à `deploy-kdmc-vente.yml` : refus sans e-mail /
 produit inventé / sans consentement, panier complet → `paypal.me/kdmc/17EUR` + référence, référence
 inventée refusée, « j'ai payé » relié à la file.

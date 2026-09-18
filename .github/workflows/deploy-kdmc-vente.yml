@@ -195,3 +195,10 @@ jobs:
           grep -q '"en_attente":true' /tmp/i6.json || { echo "ÉCHEC : l'acheteur qui dit avoir payé n'arrive pas chez Kevin"; exit 1; }
           echo "PAYPAL PERSO OK : panier enregistré avant PayPal, référence rendue, réclamation reliée. Aucun acheteur ne se perd."
 
+          echo "— livrer un panier exige d'être admin (sinon on se sert soi-même) —"
+          curl -sS -o /tmp/i7.json -w '%{http_code}\n' -X POST "$URL/admin/livrer-panier" \
+            -H 'content-type: application/json' -d "{\"ref\":\"$(cat /tmp/ref.txt)\"}" | tee /tmp/i7.code
+          grep -qE '^(401|403)$' /tmp/i7.code || { echo "DANGER : un inconnu peut se livrer un acces payant"; cat /tmp/i7.json; exit 1; }
+          echo "OK — sans preuve d'admin, aucun acces ne part."
+
+

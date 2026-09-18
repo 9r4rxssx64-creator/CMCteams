@@ -199,3 +199,19 @@ test('la page enregistre le panier puis ouvre PayPal, et la référence survit �
     assert.match(h, /id="refPanier"/, f + '.html : pas de champ pour la référence de panier');
   }
 });
+
+test('Kevin livre un panier en un doigt, et jamais deux fois', () => {
+  /* Avec le PayPal perso, personne ne capture à sa place : sans ce bouton, il
+     devrait retaper l'e-mail et le produit à la main pour chaque vente. */
+  assert.match(worker, /p === '\/admin\/livrer-panier' && req\.method === 'POST'/, 'route de livraison manuelle absente');
+  const bloc = worker.slice(worker.indexOf("p === '/admin/livrer-panier'"), worker.indexOf("p === '/admin/tableau'"));
+  assert.ok(/const g = await requireAdmin\(req\)/.test(bloc), 'DANGER : n\'importe qui pourrait se livrer un accès');
+  assert.ok(bloc.indexOf('requireAdmin') < bloc.indexOf('req.json'), 'le contrôle admin doit passer AVANT de lire le corps');
+  assert.ok(/c\.etat === 'livre' && c\.code/.test(bloc), 'un panier déjà livré doit rendre le MÊME code, pas un deuxième accès');
+  assert.ok(/panier_inconnu/.test(bloc), 'une référence inventée doit être refusée');
+  assert.ok(/abandonner/.test(bloc), 'pas de moyen de retirer un panier mort');
+  /* Et le bouton existe vraiment dans le tableau de bord (erreur #28). */
+  const dash = lit('kdmc-home/admin/commerce.js');
+  assert.match(dash, /data-livrer/, 'aucun bouton Livrer dans la tuile Paniers');
+  assert.match(dash, /\/admin\/livrer-panier/, 'le bouton n\'appelle pas la route');
+});

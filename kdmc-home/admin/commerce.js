@@ -131,7 +131,9 @@
         var paye = c.etat === 'dit_paye';
         return '<li><div class="g"><b>' + esc(c.ref) + ' · ' + esc(c.produit) + ' · ' + esc(c.email || '—') + '</b><span>'
           + esc(euro(c.montant) + ' · ' + (paye ? 'dit avoir payé' : 'en attente') + ' · il y a ' + c.heures + ' h · ' + dt(c.ts_iso))
-          + '</span></div>' + (paye ? '<span class="chip warn">à livrer</span>' : '') + '</li>';
+          + '</span></div>' + (paye ? '<span class="chip warn">à livrer</span>' : '')
+          + '<button class="btn p" data-livrer="' + esc(c.ref) + '">Livrer</button>'
+          + '<button class="btn d" data-abandon="' + esc(c.ref) + '">Abandonné</button></li>';
       }).join('') + '</ul>';
       h += '<div class="meta">' + euro(it.ca_potentiel) + ' possible. Ceux marqués « dit avoir payé » sont aussi dans la file à valider : un clic sur « Livrer » envoie le code.</div>';
     }
@@ -265,6 +267,24 @@
         fetch(CAISSE + '/admin/valider', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, bearer()), body: JSON.stringify(refuser ? { demande: id, refuser: true } : { demande: id }) })
           .then(function (r) { return r.json(); })
           .then(function (j) { toast(j.ok ? (refuser ? 'Demande refusée.' : 'Livré : code ' + j.code + (j.email_envoye ? ' (e-mail envoyé)' : ' (e-mail non envoyé — à transmettre)')) : 'Échec : ' + (j.detail || j.error)); recharge(); })
+          .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; });
+      });
+    });
+    /* Kevin voit le paiement dans SON PayPal : un doigt, et l'accès part. Le
+       worker refuse de livrer deux fois le même panier — il rend le même code. */
+    app.querySelectorAll('[data-livrer],[data-abandon]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var abandon = b.hasAttribute('data-abandon'), ref = b.getAttribute(abandon ? 'data-abandon' : 'data-livrer');
+        if (!confirm(abandon ? 'Retirer le panier ' + ref + ' ? Rien ne sera livré.' : 'Tu as bien reçu le paiement de ' + ref + ' sur PayPal ? L\'accès part par e-mail.')) return;
+        b.disabled = true;
+        fetch(CAISSE + '/admin/livrer-panier', { method: 'POST', headers: Object.assign({ 'content-type': 'application/json' }, bearer()), body: JSON.stringify(abandon ? { ref: ref, abandonner: true } : { ref: ref }) })
+          .then(function (r) { return r.json(); })
+          .then(function (j) {
+            toast(j.ok
+              ? (abandon ? 'Panier retiré.' : (j.deja_delivre ? 'Déjà livré : même code ' + j.code : 'Livré : code ' + j.code + (j.email_envoye ? ' (e-mail envoyé)' : ' (e-mail non envoyé — à transmettre à ' + j.email + ')')))
+              : 'Échec : ' + (j.detail || j.error));
+            recharge();
+          })
           .catch(function (e) { toast('Réseau : ' + e.message); b.disabled = false; });
       });
     });

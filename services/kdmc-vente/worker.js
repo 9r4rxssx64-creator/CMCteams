@@ -1014,6 +1014,37 @@ export default {
       return json({ ok: true, code: dd.code, livre: dd.livre, produit: produitId, email_envoye: !!dd.email_envoye }, 200, origin);
     }
 
+    /* --- Admin : livrer un panier en un doigt (PayPal perso) -------------- */
+    /* Kevin voit le paiement dans SON PayPal. Ici il retrouve le panier (qui, quoi,
+       combien, consentement daté) et envoie l'accès sans rien retaper. C'est le
+       maillon qui manquait tant qu'il n'y a pas de capture automatique. */
+    if (p === '/admin/livrer-panier' && req.method === 'POST') {
+      const g = await requireAdmin(req);
+      if (!g.ok) return json({ ok: false, error: 'forbidden', detail: g.detail, step: g.step }, g.status, origin);
+      let b; try { b = await req.json(); } catch (e) { return json({ ok: false, error: 'json', detail: String(e.message || e), step: 'lp_body' }, 400, origin); }
+      const ref = String((b && b.ref) || '').trim().toUpperCase();
+      const brut = ref ? await env.VENTES.get('cmd:' + ref) : null;
+      if (!brut) return json({ ok: false, error: 'panier_inconnu', detail: 'référence ' + ref, step: 'lp_ref' }, 404, origin);
+      let c; try { c = JSON.parse(brut); } catch (_) { c = null; }
+      if (!c || !PRODUITS[c.produit]) return json({ ok: false, error: 'illisible', detail: 'panier illisible', step: 'lp_parse' }, 500, origin);
+      /* Déjà livré : on rend le MÊME code. Personne ne reçoit deux accès pour un
+         paiement, et Kevin ne peut pas livrer deux fois par erreur. */
+      if (c.etat === 'livre' && c.code) return json({ ok: true, deja_delivre: true, code: c.code, livre: PRODUITS[c.produit].livre }, 200, origin);
+      if (b && b.abandonner) {
+        await env.VENTES.delete('cmd:' + ref);
+        return json({ ok: true, abandonne: true }, 200, origin);
+      }
+      const d = await delivre(env, { produitId: c.produit, email: c.email, source: 'panier:' + g.name, txId: null });
+      if (!d.ok) return json(d, d.status || 500, origin);
+      const recu = await ecritRecu(env, {
+        cmd: c, produit: PRODUITS[c.produit], code: d.code,
+        cap: { statut: 'COMPLETED', montant: c.montant, devise: c.devise, txId: String((b && b.transaction) || '').slice(0, 60) || null, email: c.email },
+      });
+      c.etat = 'livre'; c.code = d.code; c.recu = recu; c.livre_iso = new Date().toISOString(); c.livre_par = 'admin:' + g.name;
+      await env.VENTES.put('cmd:' + ref, JSON.stringify(c), { expirationTtl: TTL_CODE });
+      return json({ ok: true, code: d.code, livre: PRODUITS[c.produit].livre, email: c.email, email_envoye: !!d.email_envoye, recu }, 200, origin);
+    }
+
     /* --- Admin : le tableau de bord Commerce en UN appel ------------------ */
     if (p === '/admin/tableau') {
       const g = await requireAdmin(req);
