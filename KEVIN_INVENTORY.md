@@ -1,5 +1,17 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+### 🛒 Caisse et pages légales du Kit (18.09.2026)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `shops/kit-ia/merci.html` | La page où PayPal te ramène après le paiement : le code s'affiche tout de suite | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/merci.html) |
+| `shops/kit-ia/merci.js` | Ce qui capture le paiement et livre l'accès (avec un chemin de secours si ça rate) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/merci.js) |
+| `shops/kit-ia/cgv.html` | Conditions de vente écrites pour être lues (rétractation, remboursement, contact) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/cgv.html) |
+| `shops/kit-ia/mentions.html` | Mentions légales : qui vend, qui héberge, ce qu'on garde de tes clients | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/shops/kit-ia/mentions.html) |
+| `tests/caisse-complete.test.mjs` | La garde qui empêche les trous de la vente de revenir | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/caisse-complete.test.mjs) |
+| `tests/voix-styles.test.mjs` | La garde des styles de voix (la pub ne parle plus comme un prof) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/voix-styles.test.mjs) |
+
+
 ## 🔗 Facebook — aperçu des liens + posts-liens — 2026-09-17
 
 Sans image d'aperçu, un lien partagé est un rectangle gris. Les 6 pages du Kit en ont une maintenant.

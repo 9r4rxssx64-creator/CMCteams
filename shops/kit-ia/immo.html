@@ -57,9 +57,13 @@
     <p class="sur">Accès complet</p>
     <div class="prix"><span class="maintenant">67 €</span><span class="avant">149 €</span></div>
     <p>Prix de lancement. Accès pendant <strong>2 ans</strong>, mises à jour comprises, lecture sur téléphone et ordinateur. Chaque consigne se copie en un geste.</p>
-    <p><a class="btn btn-primaire" id="payer-paypal" href="https://paypal.me/kdmc/67EUR" rel="noopener" target="_blank">Payer 67 € avec PayPal</a></p>
+    <label for="mail-immo">Ton adresse e-mail (c'est là qu'arrive ton accès)</label>
+    <input id="mail-immo" type="email" inputmode="email" autocomplete="email" placeholder="toi@exemple.fr" data-caisse-email>
+    <label class="consent"><input type="checkbox" data-caisse-consentement><span>Je demande que mon accès soit ouvert tout de suite, et je reconnais qu'une fois ouvert je ne peux plus me rétracter.</span></label>
+    <p><button class="btn btn-primaire" id="payer-paypal" type="button" data-caisse data-produit="immo-ia" data-secours="https://paypal.me/kdmc/67EUR">Payer 67 € avec PayPal</button></p>
+    <p class="petit" data-caisse-avis hidden></p>
     <p><a class="btn btn-secondaire" id="payer-revolut" href="https://revolut.me/kdmc/67eur" rel="noopener" target="_blank">Payer 67 € avec Revolut</a></p>
-    <p class="petit">Après le paiement, récupère ton accès juste en dessous avec l'adresse e-mail utilisée pour payer. PayPal : vérification automatique. Revolut : vérification à la main, tu reçois ton code par e-mail.</p>
+    <p class="petit">Après le paiement, PayPal te ramène ici et ton code s'affiche tout de suite (il part aussi par e-mail). Si quelque chose coince, le formulaire juste en dessous te le renvoie avec la même adresse e-mail.</p>
   </div>
 
   <div class="carte" id="recuperer">
@@ -87,11 +91,12 @@
     <details><summary>Je ne suis pas à l'aise avec la technique.</summary><p>C'est fait pour toi : tu copies une consigne, tu remplaces les crochets par tes infos, tu colles dans l'appli. Zéro réglage, zéro code.</p></details>
     <details><summary>Comment je reçois le kit ?</summary><p>Tu reçois un code d'accès. Il ouvre le lecteur en ligne pendant 2 ans, sur tous tes appareils. Rien à installer.</p></details>
     <details><summary>Et si le paiement n'est pas trouvé tout de suite ?</summary><p>PayPal met parfois jusqu'à 3 heures à confirmer une transaction. Ta demande est enregistrée, ton accès arrive dès confirmation, tu n'as rien à refaire.</p></details>
-    <details><summary>Remboursement ?</summary><p>Le contenu numérique est livré immédiatement après paiement : en récupérant ton accès, tu acceptes que le droit de rétractation ne s'applique plus (règle européenne sur les contenus numériques, à vérifier sur service-public.fr). C'est pour ça que le module 1 est gratuit : tu juges avant de payer.</p></details>
+    <details><summary>Remboursement ?</summary><p>Avant de payer, tu coches une case : tu demandes que ton accès soit ouvert tout de suite, et tu reconnais qu'ensuite tu ne peux plus te rétracter. C'est la règle européenne sur les contenus numériques livrés immédiatement — et c'est pour ça que le module 1 est gratuit : tu juges avant de payer. Si ton code n'a jamais été utilisé, écris-nous : on rembourse. <a href="cgv.html">Conditions de vente</a>.</p></details>
   </div>
 
   <footer>
     <p>Vendu par KDMC, Monaco. Prix TTC. Un problème avec ton accès ? Réutilise le formulaire ci-dessus avec la même adresse e-mail : ton code est renvoyé, jamais facturé deux fois.</p>
+    <p class="petit"><a href="cgv.html">Conditions de vente</a> · <a href="mentions.html">Mentions légales</a> · Une question ? <a href="mailto:kevind@monaco.mc">kevind@monaco.mc</a></p>
     <p><a href="lire.html?produit=immo-ia">Lire le module 1 gratuit</a> · <a href="./">Kit IA de l'indépendant</a> · <a href="https://kd-mc.com/">kd-mc.com</a></p>
   </footer>
 </main>

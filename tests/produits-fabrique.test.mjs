@@ -5,7 +5,7 @@
    sur le catalogue, du contenu payant dans un fichier public. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import * as F from '../tools/produits/fabrique.mjs';
 import * as P from '../tools/produits/pages.mjs';
 import { __test as VENTE } from '../services/kdmc-vente/worker.js';
@@ -187,18 +187,30 @@ test('pages de vente : à jour sur le catalogue, CSP identique à la page mère,
     assert.equal(html.match(/Content-Security-Policy" content="([^"]+)"/)[1], csp, p.slug + ' : CSP divergente');
     assert.ok(html.includes('<body data-produit="' + p.id + '">'));
     assert.ok(html.includes('"price":"' + VENTE.PRODUITS[p.id].prix + '"'));
+    /* Le bouton principal est passé à la CAISSE (18.09) : un <button data-caisse> qui
+       crée la commande côté serveur, avec l'ancien lien paypal.me gardé en REPLI.
+       Ce qui compte n'a pas changé : le montant qui part vers PayPal est celui du
+       catalogue, dans les deux formes. */
     for (const b of ['payer-paypal', 'payer-revolut']) {
-      const l = html.match(new RegExp('id="' + b + '" href="([^"]+)"[^>]*>([^<]+)<'));
+      const l = html.match(new RegExp('id="' + b + '"[^>]*(?:href|data-secours)="([^"]+)"[^>]*>([^<]+)<'));
       assert.ok(l, p.slug + ' : ' + b + ' absent');
       assert.ok(l[2].includes(p.prix + ' €') && l[1].toLowerCase().includes(p.prix + 'eur'), p.slug + ' : ' + b + ' ne porte pas ' + p.prix + ' EUR');
     }
+    const caisse = html.match(/data-caisse data-produit="([a-z-]+)"/);
+    assert.ok(caisse, p.slug + ' : pas de bouton de caisse');
+    assert.equal(caisse[1], p.id, p.slug + ' : la caisse est branchée sur le mauvais produit');
+    assert.ok(/data-caisse-email/.test(html) && /data-caisse-consentement/.test(html), p.slug + ' : on peut payer sans e-mail ni consentement');
     assert.ok(html.includes('<option value="' + p.id + '">'), p.slug + ' : formulaire de récupération sans le produit');
     assert.ok(html.includes('lire.html?produit=' + p.id));
     assert.ok(!/<pre class="consigne">/.test(html) && !/[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}/.test(html));
     assert.ok(INDEX.includes('href="' + p.slug + '.html"'), 'la page mère doit mener à ' + p.slug + '.html');
     assert.ok(INDEX.includes('<option value="' + p.id + '">'), 'menu de récupération de la page mère sans ' + p.id);
   }
-  const orphelines = readdirSync(DIR).filter((f) => /^[a-z]+\.html$/.test(f) && !['index.html', 'lire.html'].includes(f) && !CAT.produits.some((p) => p.slug + '.html' === f));
+  /* Pages de SERVICE (ni produit, ni orphelines) : le retour après paiement et les
+     deux pages légales. Sans elles, une vente à distance n'est pas conforme. */
+  const SERVICE = ['index.html', 'lire.html', 'merci.html', 'cgv.html', 'mentions.html'];
+  for (const f of SERVICE) assert.ok(existsSync(new URL(f, DIR)), 'page de service manquante : ' + f);
+  const orphelines = readdirSync(DIR).filter((f) => /^[a-z]+\.html$/.test(f) && !SERVICE.includes(f) && !CAT.produits.some((p) => p.slug + '.html' === f));
   assert.deepEqual(orphelines, [], 'page produit sans fiche au catalogue');
 });
 

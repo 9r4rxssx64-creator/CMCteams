@@ -29,9 +29,13 @@ export const VOIX = 'nova';
    Une pub demande un autre jeu : proche du micro, complice, jamais commercial. */
 export const STYLE_VOIX = 'pub';
 export const POLICE = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf';
+/* Kevin 2026-09-18 « c'est juste un texte qui défile, ça pourrait être beaucoup
+   plus avancé dans le design » : un aplat + un texte figé, c'est ce qu'on voyait.
+   `fond2` et `halo` donnent un dégradé QUI BOUGE (filtre `gradients`), le texte
+   arrive en fondu et en montant, et un vignettage creuse l'image. */
 export const THEMES = {
-  sombre: { fond: '#0D0F14', texte: '#FFFFFF', accent: '#E8B830' },
-  clair: { fond: '#FFFFFF', texte: '#0D0F14', accent: '#B8860B' },
+  sombre: { fond: '#0D0F14', fond2: '#17203A', halo: '#3B2E12', texte: '#FFFFFF', accent: '#E8B830' },
+  clair: { fond: '#FFFFFF', fond2: '#EDF1FB', halo: '#FBF1D8', texte: '#0D0F14', accent: '#B8860B' },
 };
 export const PAUSE = 0.35;      // silence entre deux cartes
 export const CARTE_MIN = 2.2;   // une carte ne dure jamais moins (lisible)
@@ -101,22 +105,36 @@ export function planCartes(lignes, durees) {
 
 /* ── Commandes ffmpeg (pures : des tableaux d'arguments, testables) ──────── */
 const couleurFF = (hex) => '0x' + String(hex).replace('#', '');
-export function argsCarte({ carte, n, theme, marque, fichierTexte, audio, sortie, police = POLICE }) {
+export function argsCarte({ carte, n, theme, marque, fichierTexte, audio, sortie, police = POLICE, riche = true }) {
   const t = THEMES[theme] || THEMES.sombre;
   const lignes = enveloppe(carte.texte);
   const taille = taillePolice(lignes.length);
+  const d = carte.duree;
+  /* Le texte ARRIVE : il monte de 24 px et se révèle en 0,30 s. Une pub où rien
+     ne bouge pendant 4 secondes se fait balayer du pouce. */
+  const monte = `(h-text_h)/2-60+24*max(0\\,1-(t/0.30))`;
+  const revele = `min(1\\,t/0.30)`;
   const filtres = [
-    `drawtext=fontfile=${police}:textfile=${fichierTexte}:fontcolor=${couleurFF(t.texte)}:fontsize=${taille}:line_spacing=22:x=(w-text_w)/2:y=(h-text_h)/2-60`,
+    ...(riche ? ['noise=alls=5:allf=t+u', 'vignette=PI/4.5'] : []),
+    /* Le trait d'accent à gauche donne son identité à la carte (même signe que
+       les aperçus de liens) et occupe l'œil pendant qu'on lit. */
+    ...(riche ? [`drawbox=x=96:y=(ih/2)-160:w=10:h=320*${revele.replace(/\\/g, '')}:color=${couleurFF(t.accent)}:t=fill`] : []),
+    `drawtext=fontfile=${police}:textfile=${fichierTexte}:fontcolor=${couleurFF(t.texte)}:fontsize=${taille}:line_spacing=22:x=(w-text_w)/2:y=${riche ? monte : '(h-text_h)/2-60'}${riche ? ':alpha=' + revele : ''}`,
     `drawtext=fontfile=${police}:text='${marque}':fontcolor=${couleurFF(t.accent)}:fontsize=44:x=(w-text_w)/2:y=h-220`,
     `drawtext=fontfile=${police}:text='${carte.i + 1} / ${n}':fontcolor=${couleurFF(t.accent)}@0.7:fontsize=36:x=w-text_w-64:y=96`,
     /* drawbox : `w`/`h` = la BOÎTE, `iw`/`ih` = l'image (mesuré : `(w-192)` fait planter le filtre) */
     `drawbox=x=96:y=ih-140:w=(iw-192)*${(carte.i + 1) / n}:h=8:color=${couleurFF(t.accent)}:t=fill`,
-    `fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0, carte.duree - 0.25).toFixed(2)}:d=0.25`,
+    `fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0, d - 0.25).toFixed(2)}:d=0.25`,
     'format=yuv420p',
   ].join(',');
-  const args = ['-y', '-f', 'lavfi', '-i', `color=c=${couleurFF(t.fond)}:s=1080x1920:r=30:d=${carte.duree}`];
+  /* Fond : un dégradé LENT au lieu d'un aplat. `speed` très bas = respiration,
+     pas clignotement. Repli (riche=false) : l'aplat d'origine, jamais d'échec. */
+  const fond = riche
+    ? `gradients=s=1080x1920:c0=${t.fond}:c1=${t.fond2}:c2=${t.halo}:n=3:speed=0.008:x0=140:y0=200:x1=940:y1=1720:r=30:d=${d}`
+    : `color=c=${couleurFF(t.fond)}:s=1080x1920:r=30:d=${d}`;
+  const args = ['-y', '-f', 'lavfi', '-i', fond];
   if (audio) args.push('-i', audio); else args.push('-f', 'lavfi', '-i', 'anullsrc=r=24000:cl=mono');
-  args.push('-vf', filtres, '-t', String(carte.duree), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-r', '30',
+  args.push('-vf', filtres, '-t', String(d), '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20', '-r', '30',
     '-c:a', 'aac', '-b:a', '96k', '-ar', '48000', '-ac', '1', '-shortest', sortie);
   return args;
 }
@@ -164,6 +182,7 @@ export function selection(videos, choix) {
 
 export async function rendVideo(v, { marque, dossier, log }) {
   const dir = join(dossier, v.id); mkdirSync(dir, { recursive: true });
+  let riches = true;   // rendu riche obtenu pour TOUTES les cartes ?
   const durees = []; const audios = [];
   for (let i = 0; i < v.lignes.length; i++) {
     const buf = await voix(v.lignes[i], { log });
@@ -175,7 +194,15 @@ export async function rendVideo(v, { marque, dossier, log }) {
   for (const c of cartes) {
     const ft = join(dir, 'texte-' + c.i + '.txt'); writeFileSync(ft, enveloppe(c.texte).join('\n'));
     const out = join(dir, 'carte-' + c.i + '.mp4');
-    if (!ffmpeg(argsCarte({ carte: c, n: cartes.length, theme: v.theme, marque, fichierTexte: ft, audio: audios[c.i], sortie: out }), log)) return null;
+    /* Rendu RICHE d'abord (dégradé animé, grain, vignettage, texte qui monte).
+       Si le ffmpeg de la machine n'a pas un de ces filtres, on REFAIT en simple
+       plutôt que de rendre une vidéo en moins — et on le DIT dans le journal. */
+    const base = { carte: c, n: cartes.length, theme: v.theme, marque, fichierTexte: ft, audio: audios[c.i], sortie: out };
+    if (!ffmpeg(argsCarte(base), () => {})) {
+      log('  carte ' + (c.i + 1) + ' : rendu riche refusé par ffmpeg → repli sur le fond simple');
+      if (!ffmpeg(argsCarte({ ...base, riche: false }), log)) return null;
+      riches = false;
+    }
     morceaux.push(out);
   }
   const liste = join(dir, 'concat.txt'); writeFileSync(liste, fichierConcat(morceaux));
@@ -183,7 +210,7 @@ export async function rendVideo(v, { marque, dossier, log }) {
   if (!ffmpeg(argsConcat(liste, final), log)) return null;
   const duree = cartes.reduce((s, c) => s + c.duree, 0);
   const muettes = cartes.filter((c) => c.muet).length;
-  const fiche = { id: v.id, produit: v.produit, page: v.page, titre: v.lignes[0], legende: v.legende, hashtags: v.hashtags, duree: Math.round(duree * 10) / 10, voix: muettes ? (muettes === cartes.length ? 'muet' : 'partielle') : 'domaine', cartes: cartes.length, fichier: v.id + '.mp4', rendu: new Date().toISOString() };
+  const fiche = { id: v.id, produit: v.produit, page: v.page, titre: v.lignes[0], legende: v.legende, hashtags: v.hashtags, duree: Math.round(duree * 10) / 10, voix: muettes ? (muettes === cartes.length ? 'muet' : 'partielle') : 'domaine', jeu: STYLE_VOIX, image: riches ? 'animee' : 'simple', cartes: cartes.length, fichier: v.id + '.mp4', rendu: new Date().toISOString() };
   writeFileSync(join(dossier, v.id + '.json'), JSON.stringify(fiche, null, 2) + '\n');
   return fiche;
 }
@@ -204,7 +231,7 @@ export async function principal(env = process.env, log = console.log) {
     const f = await rendVideo(v, { marque: s.marque, dossier, log });
     if (!f) { log('  ÉCHEC du rendu ' + v.id); continue; }
     ok++; fiches.push(f);
-    log('  VIDÉO OK ' + f.id + ' ' + f.duree + ' s · voix=' + f.voix);
+    log('  VIDÉO OK ' + f.id + ' ' + f.duree + ' s · voix=' + f.voix + ' · image=' + f.image);
   }
   writeFileSync(join(dossier, 'index.json'), JSON.stringify({ rendu: new Date().toISOString(), videos: fiches }, null, 2) + '\n');
   log((ok === choisies.length ? 'PUB RENDUE ' : 'PUB INCOMPLÈTE ') + ok + '/' + choisies.length);
