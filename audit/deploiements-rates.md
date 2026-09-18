@@ -7,6 +7,29 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 18/09/2026 19:30 UTC
+
+- **Branche** : `claude/suivi-domaine-suite` · **Commit** : `4b29267d` · **Run** : `35385553650`
+- **Ce qui a lâché** : auto-merge › Create & merge PR into main
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35385553650
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
+^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
+^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
+^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
+^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
+^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
+^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
+^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
+##[warning]PR #3917 — merge auto refusé. Cause exacte ci-dessous.
+GraphQL: refusing to allow a GitHub App to create or update workflow `.github/workflows/publier-site-prive.yml` without `workflows` permission (mergePullRequest)
+[claude/suivi-domaine-suite 932f8cb2e] diag: pourquoi l'auto-merge de claude/suivi-domaine-suite est refusé [skip ci]
+error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCteams'
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 18/09/2026 14:36 UTC
 
 - **Branche** : `claude/video-review-wqnqdw` · **Commit** : `723a8f7b` · **Run** : `35356910724`
@@ -440,26 +463,5 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 --- /run sans clé doit être refusé (garde) ---
     "why": "error code: 1042\n"
 ##[error]push NON envoyé : HTTP 404 error code: 1042
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 16/09/2026 21:36 UTC
-
-- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `5ddd3cd0` · **Run** : `35152639948`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35152639948
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-##[warning]PR #3823 — merge auto refusé. Cause exacte ci-dessous.
-[claude/persona-personnage-javis-hqd55e 0e688f0dc] diag: pourquoi l'auto-merge de claude/persona-personnage-javis-hqd55e est refusé [skip ci]
 ##[error]Process completed with exit code 1.
 ```
