@@ -19,6 +19,17 @@
  * `tools/shared/planning-seed.js` (CMCteams) ET dans `tools/departs/boards-gen.js` (light),
  * et que les deux rangées d'une même colonne soient déclarées MIROIRS.
  *
+ * v9.905 (Kevin 2026-09-17 « il manque TOULET et DEGIOVANNI dans l'équipe 11. Vérifie tout
+ * pour tout le monde, équipes, horaires, lieux ») — CE TEST NE VÉRIFIAIT QUE LE REGROUPEMENT :
+ * « chaque bloc du PDF = une seule équipe ». Il ne vérifiait PAS le NUMÉRO. Les deux surfaces
+ * pouvaient donc se tromper PAREIL de numéro sans qu'aucune garde ne le voie (leçon #142).
+ * Le PDF n'imprime aucun numéro : l'ordre EST le numéro, et le PDF le donne DEUX FOIS —
+ *   (a) récapitulatif page 1 : 6 colonnes × 2 rangées → n = (rangée-1)×6 + colonne + 1 ;
+ *   (b) grilles pages 2+ : les blocs se lisent de haut en bas dans le MÊME ordre.
+ * On exige maintenant que le numéro de CHAQUE équipe soit celui du PDF selon (a), ET que la
+ * suite des blocs des grilles (b) soit exactement 1,2,3… par section — deux lectures
+ * indépendantes du même PDF qui doivent tomber d'accord avec les deux surfaces.
+ *
  * Lancement : npm run test:pdf-equipes   (option --detail pour lister tous les blocs)
  */
 import { createRequire } from 'module';
@@ -47,6 +58,12 @@ const HORAIRE = /^(\d{1,2}\/\d{1,2}[^A-Za-z0-9]*c?[^A-Za-z0-9]*|RH|R)$/;   // 20
 const NAMERE = /^[A-ZÉÈÀÂÎÔÛÇ][A-Z' \-]*[A-Z]( [A-Za-z]{1,3})?$/;
 const SECTION = /^(Roulettes|Chefs black Jack|Employés cartes)/i;
 export const nrm = x => String(x).toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+/** Le nom tel qu'il sert de clé : « SUBTIL C C » (initiale répétée par le PDF) == « SUBTIL C ». */
+export const nomCle = x => nrm(x).replace(/ ([A-Z]{1,3}) \1$/, ' $1');
+/** Préfixe d'identifiant d'équipe par section (l'app et la light partagent cette convention). */
+export const prefixeSection = sec => (/roulettes/i.test(sec) ? 'r' : /cartes/i.test(sec) ? 'c' : '');
+/** Le NUMÉRO que le PDF donne à un bloc du récapitulatif : 6 colonnes, 2 rangées. */
+export const numeroBloc = b => prefixeSection(b.section) + ((b.rangee - 1) * 6 + b.col + 1);
 
 /** Lit la page 1 : retourne [{section, rangee, col, count, code, membres:[{nom,from,to}]}]. */
 export async function blocsRecap(pdfRel) {
@@ -105,6 +122,59 @@ export async function blocsRecap(pdfRel) {
   return blocs;
 }
 
+/** Deuxième lecture INDÉPENDANTE du même PDF : l'ordre des blocs dans les GRILLES (pages 2+).
+ *  Retourne { section → [nom du 1er de chaque bloc, dans l'ordre de lecture] } — un « bloc »
+ *  s'arrête dès que la ligne suivante appartient, côté surface, à une autre équipe. On ne s'en
+ *  sert que pour l'ORDRE : si la surface numérote juste, la suite des équipes rencontrées dans
+ *  chaque section est exactement 1, 2, 3 … sans jamais revenir en arrière.
+ */
+export async function ordreGrilles(pdfRel) {
+  const data = new Uint8Array(readFileSync(resolve(ROOT, pdfRel)));
+  const doc = await pdfjs.getDocument({ data, useSystemFonts: true }).promise;
+  const out = [];                                    // [{section, nom}] dans l'ordre de lecture
+  let section = '';
+  for (let p = 2; p <= doc.numPages; p++) {
+    const items = (await (await doc.getPage(p)).getTextContent()).items
+      .filter(i => i.str && i.str.trim())
+      .map(i => ({ s: i.str.trim(), x: i.transform[4], y: i.transform[5] }));
+    if (!items.length) continue;
+    const ys = [...new Set(items.map(i => Math.round(i.y * 10) / 10))].sort((a, b) => b - a);
+    const ancres = [];
+    for (const y of ys) if (!ancres.length || Math.abs(ancres[ancres.length - 1] - y) > 3.5) ancres.push(y);
+    const lignes = {};
+    for (const i of items) { let b = ancres[0], bd = Infinity; for (const a of ancres) { const d = Math.abs(a - i.y); if (d < bd) { bd = d; b = a; } } (lignes[b] = lignes[b] || []).push(i); }
+    for (const k of Object.keys(lignes).map(Number).sort((a, b) => b - a)) {
+      const r = lignes[k].sort((a, b) => a.x - b.x);
+      const titre = r.map(i => i.s).join(' ').match(SECTION);
+      if (titre) section = titre[1].replace(/\/.*$/, '').trim();
+      if (/am[ée]nagement/i.test(r.map(i => i.s).join(' '))) section = 'amenagement';
+      // une ligne de grille commence par « <poste> NOM I » dans la marge de gauche
+      const nom = r.find(i => i.x < 140 && NAMERE.test(i.s) && /\s/.test(i.s));
+      if (nom && section && section !== 'amenagement') out.push({ section, nom: nomCle(nom.s) });
+    }
+  }
+  return out;
+}
+
+/** L'ordre des grilles doit redonner 1, 2, 3 … par section, avec les identifiants de la surface. */
+function verifierOrdreGrilles(lignes, surf) {
+  const pb = [], vus = {}, rang = {};
+  let precedent = null;
+  for (const l of lignes) {
+    const t = surf.equipeDe[l.nom];
+    if (!t) continue;                                  // absent des blocs d'équipe (congé/maladie)
+    if (t === precedent) continue;
+    precedent = t;
+    const pfx = prefixeSection(l.section);
+    if (vus[t]) { pb.push(`ORDRE ${l.section} : l'équipe « ${t} » réapparaît après d'autres (bloc coupé en deux ?) — ${l.nom}`); continue; }
+    vus[t] = 1;
+    rang[l.section] = (rang[l.section] || 0) + 1;
+    const attendu = pfx + rang[l.section];
+    if (t !== attendu) pb.push(`ORDRE ${l.section} : le ${rang[l.section]}ᵉ bloc des grilles (1er : ${l.nom}) devrait être « ${attendu} », la surface l'appelle « ${t} »`);
+  }
+  return pb;
+}
+
 // ── Les deux surfaces ─────────────────────────────────────────────────────────────────
 global.window = {};
 await import('file://' + resolve(ROOT, 'tools/shared/planning-seed.js'));
@@ -137,7 +207,7 @@ function verifier(blocs, surf, label) {
   const equipes = blocs.filter(b => b.count > 0 && b.membres.length && !/am[ée]nagement/i.test(b.section));
   for (const b of equipes) {
     if (b.membres.length + b.sousBlocs.length !== b.count) pb.push(`PARSEUR ${b.section} col${b.col} r${b.rangee} (${b.code}) : ${b.membres.length} lu(s) pour ${b.count} annoncé(s) — ${b.membres.map(m => m.nom).join(', ')}`);
-    const noms = b.membres.map(m => nrm(m.nom).replace(/ ([A-Z]{1,3}) \1$/, ' $1'));
+    const noms = b.membres.map(m => nomCle(m.nom));
     const vus = noms.map(n => surf.equipeDe[n] || '(aucune)');
     const cnt = {}; vus.forEach(v => cnt[v] = (cnt[v] || 0) + 1);
     const maj = Object.keys(cnt).sort((a, c) => cnt[c] - cnt[a])[0];
@@ -145,6 +215,10 @@ function verifier(blocs, surf, label) {
     // intrus : membres de l'équipe majoritaire côté surface qui ne sont pas dans le bloc PDF
     if (maj !== '(aucune)') for (const m of surf.membres[maj] || []) if (!noms.includes(m)) pb.push(`${b.section} col${b.col} r${b.rangee} (${b.code}) : « ${maj} » contient ${m} qui n'est PAS dans ce bloc du PDF`);
     b.equipeSurface = maj;
+    // NUMÉRO (v9.905) : le PDF ne l'imprime pas, c'est la POSITION du bloc qui le donne.
+    // Sans ce contrôle, les deux surfaces peuvent numéroter faux À L'IDENTIQUE (leçon #142).
+    const attendu = numeroBloc(b);
+    if (maj !== '(aucune)' && maj !== attendu) pb.push(`NUMÉRO ${b.section} col${b.col} r${b.rangee} (${b.code}) : ce bloc est le n°${attendu} du PDF, la surface l'appelle « ${maj} » — ${noms.slice(0, 3).join(', ')}…`);
   }
   // miroirs : rangée 1 ↔ rangée 2 d'une même colonne, même section
   for (const b of equipes.filter(x => x.rangee === 1)) {
@@ -164,10 +238,11 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
     const equipes = blocs.filter(b => b.count > 0 && b.membres.length && !/am[ée]nagement/i.test(b.section));
     console.log(`${M.label} — ${equipes.length} blocs d'équipe, ${equipes.reduce((s, b) => s + b.membres.length, 0)} affectations lues`);
     if (DETAIL) for (const b of equipes) console.log(`   [${b.section} col${b.col} r${b.rangee} ${b.code} ×${b.count}] ${b.membres.map(m => m.nom + (m.from !== 1 || (m.to !== 30 && m.to !== 31) ? ` (${m.from}-${m.to})` : '')).join(', ')}`);
+    const lignesGrilles = await ordreGrilles(M.pdf);
     for (const [nom, surf] of [['CMCteams', surfaceApp(M.key)], ['light   ', surfaceLight(M.board)]]) {
       if (!surf) { console.log(`   ${nom} : ❌ mois absent`); FAIL++; continue; }
-      const pb = verifier(blocs, surf, nom);
-      console.log(`   ${nom} : ${pb.length ? '❌ ' + pb.length + ' problème(s)' : '✅ chaque bloc du PDF = une équipe, miroirs conformes'}`);
+      const pb = verifier(blocs, surf, nom).concat(verifierOrdreGrilles(lignesGrilles, surf));
+      console.log(`   ${nom} : ${pb.length ? '❌ ' + pb.length + ' problème(s)' : '✅ bloc = équipe, NUMÉROS conformes (récap + ordre des grilles), miroirs conformes'}`);
       pb.forEach(p => console.log('      ' + p));
       if (pb.length) FAIL++;
     }

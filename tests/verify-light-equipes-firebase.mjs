@@ -35,6 +35,9 @@ const MS = SEED.months[KEY];
 const APP_VER = (fs.readFileSync(join(ROOT, 'index.html'), 'utf8').match(/var\s+APP_VER\s*=\s*"(v[0-9.]+)"/) || [])[1];
 const genBoards = {}; Object.entries(G.boards).forEach(([k, b]) => { if (k.startsWith(PREF) && b.kind !== 'abs') genBoards[k] = b.people.map((p) => p.name).sort(); });
 const genTeamOf = {}; Object.entries(genBoards).forEach(([k, names]) => names.forEach((n) => { genTeamOf[n] = k; }));
+// v9.905 — la page light nomme ses tableaux « 2026-09-3 » ; l'app persiste l'identifiant
+// COURT « 3 » dans teamHistory (le mois est la CLÉ). Même équipe, deux conventions.
+const court = (x) => String(x == null ? '' : x).replace(/^\d{4}-\d{2}-/, '');
 
 // ── Firebase PÉRIMÉ : chaque employé reçoit l'équipe d'un AUTRE (rotation), 0 familyHistory ───────
 const teamIds = [...new Set(Object.values(MS.team))];
@@ -112,9 +115,9 @@ console.log('\n2. App CMCteams (Kevin admin) nourrie par ce Firebase périmé �
   ok(!!put, 'l\'app ÉCRIT cmc_e dans Firebase (≤ 20 s après le boot) pour réparer les équipes', put ? put.m + ' ' + put.body.length + ' employés' : 'aucune écriture');
   if (put) {
     const byName = {}; put.body.forEach((e) => { byName[e.name] = e; });
-    let bad = 0, checked = 0; Object.keys(genTeamOf).forEach((n) => { const e = byName[n]; if (!e) return; checked++; if (((e.teamHistory || {})[KEY] || '') !== genTeamOf[n]) bad++; });
+    let bad = 0, checked = 0; Object.keys(genTeamOf).forEach((n) => { const e = byName[n]; if (!e) return; checked++; if (court((e.teamHistory || {})[KEY] || '') !== court(genTeamOf[n])) bad++; });
     ok(bad === 0 && checked >= 200, `le cmc_e écrit porte l'équipe du PDF pour chaque personne (${checked} vérifiées)`, bad + ' faux');
-    ok(byName['DESARZENS K'] && byName['DESARZENS K'].teamHistory[KEY] === genTeamOf['DESARZENS K'] && byName['DESARZENS K'].familyHistory[KEY] === 'bj', 'Kevin persisté en ' + genTeamOf['DESARZENS K'] + ' / bj');
+    ok(byName['DESARZENS K'] && court(byName['DESARZENS K'].teamHistory[KEY]) === court(genTeamOf['DESARZENS K']) && byName['DESARZENS K'].familyHistory[KEY] === 'bj', 'Kevin persisté en ' + court(genTeamOf['DESARZENS K']) + ' / bj (identifiant court)');
     const cells = put.body.some((e) => e.codes || e.ov); ok(!cells, 'aucune cellule de planning dans cmc_e (reproduction fidèle : les codes ne bougent pas)');
   }
   await page.waitForTimeout(Math.max(1000, t0 + 14000 - Date.now()));   // 14 s après le boot : les 4 écritures historiques du boot sont passées
@@ -122,7 +125,7 @@ console.log('\n2. App CMCteams (Kevin admin) nourrie par ce Firebase périmé �
   const last = all[all.length - 1];
   ok(all.length <= 8, 'pas de rafale d\'écritures cmc_e (ancien code : 4 au boot, ici 1 de plus par mois corrigé)', all.length + ' au total · à ' + all.map((p) => ((p.t - t0) / 1000).toFixed(1) + ' s').join(', ') + ' · SSE (re)connexions : ' + sseCount);
   ok(last && Date.now() - last.t >= 4000, 'les écritures s\'arrêtent (rien depuis ≥ 4 s : pas de boucle SSE→écriture)', last ? Math.round((Date.now() - last.t) / 1000) + ' s depuis la dernière' : '—');
-  if (last) { const kv = (last.body || []).find((e) => e.name === 'DESARZENS K'); ok(kv && kv.teamHistory[KEY] === genTeamOf['DESARZENS K'], 'la DERNIÈRE écriture est la bonne (Firebase finit juste)'); }
+  if (last) { const kv = (last.body || []).find((e) => e.name === 'DESARZENS K'); ok(kv && court(kv.teamHistory[KEY]) === court(genTeamOf['DESARZENS K']), 'la DERNIÈRE écriture est la bonne (Firebase finit juste)'); }
   ok(errs.length === 0, '0 erreur JS', errs.slice(0, 2).join(' | '));
   await ctx.close();
 }

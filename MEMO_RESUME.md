@@ -1,5 +1,17 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-18 (00h) — « Il manque TOULET et DEGIOVANNI dans l'équipe 11 » : Kevin avait raison (v9.905 / light v1.45)
+- **Les DONNÉES étaient justes.** Le PDF n'imprime aucun numéro d'équipe : c'est l'ORDRE, et il le donne deux fois (récap p.1 : 6 colonnes × 2 rangées ; grilles p.2+ : blocs de haut en bas). Les deux lectures concordent, et les deux surfaces aussi. En septembre, TOULET F et DEGIOVANNI R sont dans le bloc n°9 = **CMC Éq.9**, avec SCHWIETZER, SIRIO, MORTER, EL MISSOURI, VOUKASSOVITCH, CAMILLERI. Cellules : **30 814/30 814 identiques au PDF** sur 4 mois, des deux côtés.
+- **Ce que Kevin VOYAIT** venait de `emp.team` (DEF_EMP) : un découpage FIGÉ par tranches de matricules (U00236→U00245 = « c11 »). MORTER/CAMILLERI y sont « c11 », TOULET/DEGIOVANNI « c12 » → « il manque TOULET et DEGIOVANNI ». **Mesuré : 36/36 équipes fausses** dans la vue Équipes (sept. 2026).
+- **Fix v9.905** : helpers `empTeamNow` / `empTeamIs` (équipe DU MOIS, jamais de repli sur `emp.team`) appliqués à ~90 lectures — vues Équipes, Absences, Stats, Mots de passe, Retardataires, Pit, Retraités, En ligne, Mon profil, **badge d'équipe de la barre du haut**, **numéro de départ de Mon planning** (`CHEFS_T[emp.team]` = chefs d'une autre équipe) et **tous les outils de l'IA**. + le sync des boards écrit un identifiant COURT (« c11 » au lieu de « 2026-09-c11 ») → couleurs, miroirs, ordre de départ et libellés retrouvent l'équipe.
+- **3 gardes, toutes prouvées discriminantes par sabotage, câblées dans `test:ci`** :
+  - `test:pdf-equipes` — existait mais **n'était câblée nulle part** et ne vérifiait que le regroupement ; elle exige maintenant le **NUMÉRO** (récap ET ordre des grilles) : 144 blocs, 4 mois, 2 surfaces.
+  - `test:equipes-affichees` — vrai navigateur : effectifs = PDF sur 4 mois (**997 personnes**) + accesseur qui compte les lectures de `emp.team` pendant le rendu (0 tolérée hors persistance/rôle).
+  - `test:lieux-parite` — le lieu se déduit du code (`*` = Café de Paris) : 69 codes comparés app ⇄ light, 35 113 cellules, 1 571 au Café de Paris. Divergence trouvée et corrigée : « CDP » (congé de départ) partait au Café de Paris côté light (piège dormant, aucun CDP dans les mois importés).
+- **Preuve que l'unification d'identifiants n'a rien déplacé** : `test:departs-compare` → **18 753 cellules, 0 écart de numéro** app ⇄ light, 0 écart de miroir, Kevin ✅ sur les 4 mois. Le test lisait les équipes par la clé du board (« 2026-07-1 ») : il lit désormais l'identifiant court, comme la production, et compare des identifiants normalisés des deux côtés (sinon 144 faux écarts de miroir).
+- Leçon **#265**. Seed + boards régénérés (parser v9.905).
+
+
 ## 2026-09-18 01:40 — Facebook : les aperçus sont EN LIGNE et le 1ᵉʳ post-lien est programmé (mesuré)
 
 **Ce qui restait à prouver** ce matin : les 6 images d'aperçu existaient dans le dépôt, mais

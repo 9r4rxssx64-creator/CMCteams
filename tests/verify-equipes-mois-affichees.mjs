@@ -94,7 +94,7 @@ await page.waitForTimeout(1800);
 const model = await page.evaluate(([KEY, Y, M]) => A.employees.filter((e) => e && !/^P\d/.test(e.id)).map((e) => ({ n: e.name, tm: teamForMonth(e, Y, M, { strict: true }), fm: familyForMonth(e, Y, M), live: !!(A.overrides[KEY] && A.overrides[KEY][e.id]) })), [KEY, Y, M]);
 const byName = {}; model.forEach((x) => { byName[x.n] = byName[x.n] || x; });
 let teamOk = 0, famOk = 0; const teamBad = [], famBad = [];
-WORK.forEach((n) => { const x = byName[n]; const t = seedTeamByName[n]; if (x && x.tm === PREF + t) teamOk++; else teamBad.push(n + ' attendu ' + t + ' obtenu ' + (x && x.tm)); if (x && x.fm === boardFam[t]) famOk++; else famBad.push(n + ' attendu ' + boardFam[t] + ' obtenu ' + (x && x.fm)); });
+WORK.forEach((n) => { const x = byName[n]; const t = seedTeamByName[n]; if (x && x.tm === t) teamOk++; else teamBad.push(n + ' attendu ' + t + ' obtenu ' + (x && x.tm)); if (x && x.fm === boardFam[t]) famOk++; else famBad.push(n + ' attendu ' + boardFam[t] + ' obtenu ' + (x && x.fm)); });
 console.log('\nA. Modèle (septembre live, appareil de Kevin)');
 ok(teamOk === WORK.length, `équipe du mois = board pour ${teamOk}/${WORK.length} personnes en équipe de travail` + (teamBad.length ? ' — ' + teamBad.slice(0, 5).join(' | ') : ''));
 ok(famOk === WORK.length, `famille du mois = famille de l'équipe pour ${famOk}/${WORK.length}` + (famBad.length ? ' — ' + famBad.slice(0, 5).join(' | ') : ''));
@@ -127,8 +127,11 @@ ok(JSON.stringify(mir) === JSON.stringify(teamMembers(MIRROR_TEAM)), `« Équipe
 const badCard = [], badSection = [];
 cards.forEach((c) => {
   const t = seedTeamByName[c.name]; if (!t || !boardFam[t]) return;
-  const label = (G.boards[PREF + t] || {}).label || '';
-  if (c.team !== label) badCard.push(c.name + ' carte=« ' + c.team + ' » attendu « ' + label + ' »');
+  // v9.905 — l'app n'écrit plus le mois DANS le nom de l'équipe (il est déjà affiché
+  // au-dessus) ; la rotation « (16/22) », elle, reste. On compare donc sans le préfixe.
+  const sansMois = (x) => String(x == null ? '' : x).replace(/^.*—\s*/, '');
+  const label = sansMois((G.boards[PREF + t] || {}).label || '');
+  if (sansMois(c.team) !== label) badCard.push(c.name + ' carte=« ' + c.team + ' » attendu « ' + label + ' »');
   const famCard = FAM_OF_LABEL[c.famLabel];
   const famSec = c.section === 'MON ÉQUIPE' || c.section === 'ÉQUIPE MIROIR' ? boardFam[t] : FAM_OF_SECTION[c.section];
   if (famCard !== boardFam[t] || famSec !== boardFam[t]) badSection.push(c.name + ' section=' + c.section + ' famille carte=' + c.famLabel + ' attendu ' + boardFam[t]);
@@ -145,7 +148,7 @@ let fam = null; const depBad = new Set(); let depTeams = new Set();
 dep.split('\n').forEach((l) => {
   const h = l.trim().replace(/^[^A-ZÉ]+/, '').toUpperCase().replace(/\s+\d+$/, '');
   if (FAM_OF_SECTION[h]) { fam = FAM_OF_SECTION[h]; return; }
-  const mm = l.match(/— (BJ|Roul\.|CMC) Éq\.(\d+)/);
+  const mm = l.match(/(?:— )?(BJ|Roul\.|CMC) Éq\.(\d+)/);
   if (mm && fam) { const f2 = mm[1] === 'BJ' ? 'bj' : mm[1] === 'CMC' ? 'cmc' : 'roulettes'; depTeams.add(mm[1] + mm[2]); if (f2 !== fam) depBad.add(l.trim() + ' → dossier ' + fam); }
 });
 console.log('\nC. Vue Départs (dossiers famille ouverts) — ' + depTeams.size + ' équipes');
@@ -160,7 +163,7 @@ plan.split('\n').forEach((l) => {
   if (/^AUTRES ÉQUIPES$/i.test(t.replace(/^[^A-ZÉ]+/, ''))) { inAutres = true; return; }
   const h = t.replace(/^[^A-ZÉ]+/, '').toUpperCase().replace(/\s+[·\d].*$/, '').trim();
   if (inAutres && FAM_OF_SECTION[h]) { fam = FAM_OF_SECTION[h]; return; }
-  const mm = t.match(/— (BJ|Roul\.|CMC) Éq\.(\d+)/);
+  const mm = t.match(/(?:— )?(BJ|Roul\.|CMC) Éq\.(\d+)/);
   if (mm && inAutres && fam) { const f2 = mm[1] === 'BJ' ? 'bj' : mm[1] === 'CMC' ? 'cmc' : 'roulettes'; planTeams.add(mm[1] + mm[2]); if (f2 !== fam) planBad.add(t + ' → famille ' + fam); }
 });
 const chips = {}; (plan.match(/(Amér\.|Europ\.|Ouvert|Bac\.)\n(\d+)/g) || []).forEach((c) => { const [a, b] = c.split('\n'); chips[a] = +b; });

@@ -94,12 +94,16 @@ for (const M of MONTHS) {
     const ids = G && G.boards ? Object.keys(G.boards).filter(id => id.indexOf(pre) === 0 && G.boards[id].people && G.boards[id].people.length && G.boards[id].kind !== 'abs') : [];
     ids.forEach(id => {
       const cells = {};
-      const chefs = (CHEFS_T[id] || []);
+      // v9.905 — l'app range les équipes du mois sous l'IDENTIFIANT COURT (« c11 »), le même
+      // espace de noms que DEF_TEAMS (couleurs, miroirs, libellés) ; le mois est porté par la
+      // clé de teamHistory. La clé du board (« 2026-09-c11 ») reste la clé de COMPARAISON.
+      const tid = String(id).replace(/^\d{4}-\d{2}-/, '');
+      const chefs = (CHEFS_T[tid] || CHEFS_T[id] || []);
       const days = (typeof getDays === 'function') ? getDays(y, m) : 31;
-      chefs.forEach(nm => { for (let d = 1; d <= days; d++) { let v = null; try { v = calcDepPos(nm, id, d); } catch (_) {} if (v != null) cells[nm + '@' + d] = v; } });
+      chefs.forEach(nm => { for (let d = 1; d <= days; d++) { let v = null; try { v = calcDepPos(nm, tid, d); } catch (_) {} if (v != null) cells[nm + '@' + d] = v; } });
       r.boards[id] = cells;
-      try { r.labels[id] = (typeof gt === 'function' && gt(id)) ? gt(id).name : id; } catch (_) { r.labels[id] = id; }
-      try { const mir = _cmcMirrorTeam(id, y, m); const mid = mir && typeof mir === 'object' ? mir.id : mir; if (mid) r.mirror[id] = mid; } catch (_) {}
+      try { r.labels[id] = (typeof gt === 'function' && gt(tid)) ? gt(tid).name : id; } catch (_) { r.labels[id] = id; }
+      try { const mir = _cmcMirrorTeam(tid, y, m); const mid = mir && typeof mir === 'object' ? mir.id : mir; if (mid) r.mirror[id] = mid; } catch (_) {}
     });
     // Kevin : équipe + miroir résolus comme dans vDeparts
     try {
@@ -141,28 +145,36 @@ if (mism.length) mism.slice(0, 20).forEach(x => console.log('   ❌ ' + x));
 if (missingApp.length) console.log(`Boards light sans équivalent app: ${missingApp.length} → ${missingApp.slice(0, 8).join(', ')}`);
 if (missingLight.length) console.log(`Boards app sans équivalent light: ${missingLight.length} → ${missingLight.slice(0, 8).join(', ')}`);
 
+// v9.905 — la page light nomme les équipes par la clé du board (« 2026-07-7 »), l'app par
+// l'identifiant court (« 7 ») : c'est LA MÊME équipe, seule la convention de nom diffère.
+// On compare donc des identifiants NORMALISÉS (sans le préfixe de mois) des deux côtés —
+// sinon 144 faux écarts qui masqueraient un vrai miroir inversé.
+const court = x => String(x == null ? '' : x).replace(/^\d{4}-\d{2}-/, '') || null;
+let mirKevinKo = 0;
+
 // mirror label check (Kevin)
 console.log('\n-- Kevin (U11804) équipe + miroir --');
 for (const pre of Object.keys(kevinInfo)) {
   const k = kevinInfo[pre];
   if (!k) { console.log(`  ${pre}: (introuvable)`); continue; }
-  const lightMir = light.mirror[k.team] || null;
-  const lightMirLabel = lightMir && light.labels[lightMir] ? light.labels[lightMir] : lightMir;
-  const ok = (k.mirror || null) === (lightMir || null);
+  const lightMir = court(light.mirror[pre + court(k.team)]);
+  const lightMirLabel = (lightMir && light.labels[pre + lightMir]) ? light.labels[pre + lightMir] : lightMir;
+  const ok = (court(k.mirror) || null) === (lightMir || null);
   console.log(`  ${pre}: équipe ${k.teamLabel} [${k.team}] · miroir app=${k.mirrorLabel || '∅'} [${k.mirror || '∅'}] · miroir light=${lightMirLabel || '∅'} [${lightMir || '∅'}]  ${ok ? '✅' : '❌ MISMATCH'}`);
+  if (!ok) mirKevinKo++;
 }
 
 // mirror map full diff
 let mirDiff = [];
 new Set([...Object.keys(light.mirror), ...Object.keys(appMirror)]).forEach(id => {
-  if ((light.mirror[id] || null) !== (appMirror[id] || null)) mirDiff.push(`${id}: light=${light.mirror[id] || '∅'} app=${appMirror[id] || '∅'}`);
+  if (court(light.mirror[id]) !== court(appMirror[id])) mirDiff.push(`${id}: light=${light.mirror[id] || '∅'} app=${appMirror[id] || '∅'}`);
 });
 console.log(`\nÉcarts de MIROIR (map complète): ${mirDiff.length}`);
 mirDiff.slice(0, 20).forEach(x => console.log('   ❌ ' + x));
 
 console.log('\nerreurs JS light:', lerr.length ? lerr.slice(0, 3) : '(aucune)');
 console.log('erreurs JS app  :', aerr.length ? aerr.slice(0, 3) : '(aucune)');
-const clean = mism.length === 0 && mirDiff.length === 0 && missingApp.length === 0 && missingLight.length === 0 && lerr.length === 0 && aerr.length === 0;
+const clean = mism.length === 0 && mirDiff.length === 0 && mirKevinKo === 0 && missingApp.length === 0 && missingLight.length === 0 && lerr.length === 0 && aerr.length === 0;
 console.log('\n' + (clean ? '✅ APP == LIGHT partout (numéros + miroirs), 0 écart, 0 erreur JS.' : '❌ DES ÉCARTS SUBSISTENT — à corriger.'));
 await browser.close();
 server.close();

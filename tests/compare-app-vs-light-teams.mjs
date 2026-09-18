@@ -66,14 +66,17 @@ for (const M of MONTHS) {
     return { grp, conges, kevinTeam: e && e.teamHistory ? e.teamHistory[key] : null };
   }, M);
   const boardTeams = Object.keys(G.boards).filter(id => id.indexOf(M.pre) === 0 && G.boards[id].kind !== 'abs');
+  // v9.905 — l'app range l'équipe du mois sous l'identifiant COURT (« c11 ») ; le mois est
+  // porté par la clé de teamHistory. La page light nomme ses boards « 2026-09-c11 ».
+  const court = (id) => String(id).replace(/^\d{4}-\d{2}-/, '');
   const fails = [];
   boardTeams.forEach(id => {
     const want = (G.boards[id].people || []).map(x => x.name).sort();
-    const got = (res.grp[id] || []).slice().sort();
+    const got = (res.grp[court(id)] || res.grp[id] || []).slice().sort();
     if (JSON.stringify(want) !== JSON.stringify(got)) fails.push(`${id}: board=${want.length} app=${got.length}`);
   });
   const congesWant = G.boards[M.pre + 'conges'] ? G.boards[M.pre + 'conges'].people.length : 0;
-  const kevinBoard = G.boards[res.kevinTeam];
+  const kevinBoard = G.boards[res.kevinTeam] || G.boards[M.pre + court(res.kevinTeam || '')];
   const kevinOK = kevinBoard && kevinBoard.kind !== 'abs';
   console.log(`\n  ${M.pre} : ${boardTeams.length} équipes · écarts d'appartenance: ${fails.length}${fails.length ? ' → ' + fails.slice(0, 6).join(' | ') : ''}`);
   console.log(`    Congés app=${res.conges} board=${congesWant} ${res.conges === congesWant ? '✅' : '⚠️'}`);
