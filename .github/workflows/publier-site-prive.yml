@@ -168,6 +168,47 @@ jobs:
           fi
           exit $st
 
+      # ── L'ADRESSE STABLE, celle que le routeur utilisera vraiment ──────────
+      # Kevin 2026-09-18, avant de basculer le domaine : la sonde ci-dessus teste
+      # l'adresse À USAGE UNIQUE du déploiement (« e4d3f45a.kdmc-site-bj5.pages.dev »),
+      # qui change à CHAQUE publication. Le routeur, lui, doit pointer sur l'adresse
+      # STABLE du projet. Elle n'est PAS devinable : le récapitulatif annonçait
+      # « kdmc-site.pages.dev » alors que Cloudflare a créé « kdmc-site-bj5 » (le nom
+      # simple était pris). Basculer sur une adresse supposée, c'est éteindre les
+      # 31 adresses du domaine. On la DÉDUIT de l'adresse publiée (on retire le
+      # préfixe du déploiement) et on la SONDE — sans ça, on bascule à l'aveugle.
+      - name: Vérifier l'adresse STABLE (celle qu'attend le routeur)
+        id: stable
+        shell: bash -eo pipefail {0}
+        run: |
+          U='${{ steps.publier.outputs.url }}'
+          HOTE=$(echo "$U" | sed -E 's#^https://##')
+          STABLE="https://$(echo "$HOTE" | cut -d. -f2-)"
+          echo "adresse à usage unique : $U"
+          echo "adresse stable déduite : $STABLE"
+          code=000
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$STABLE/" || echo 000)
+            echo "tentative $i : $STABLE → HTTP $code"
+            [ "$code" = "200" ] && break
+            sleep 8
+          done
+          if [ "$code" != "200" ]; then
+            echo "::error::l'adresse STABLE $STABLE ne répond pas (HTTP $code) — NE PAS basculer le routeur dessus"
+            exit 1
+          fi
+          set +e
+          node tools/audit/sonde-site-publie.mjs "$STABLE" --racine 2>&1 | tee sonde-stable.log
+          st=${PIPESTATUS[0]}
+          set -e
+          if [ "$st" != "0" ]; then
+            echo "::error::l'adresse stable $STABLE ne sert pas toutes les adresses — bascule interdite"
+            head -25 sonde-stable.log | while IFS= read -r l; do echo "::error::$l"; done
+            exit $st
+          fi
+          echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+          echo "::notice::À mettre dans le routeur : UPSTREAM_BASE=$STABLE et UPSTREAM_PREFIX=\"\""
+
       - name: Récapitulatif
         if: always()
         shell: bash -eo pipefail {0}
@@ -183,7 +224,7 @@ jobs:
             echo ""
             if [ "${GITHUB_REF_NAME}" = "main" ]; then
               echo "C'est la **production**. Pour que kd-mc.com la serve, le routeur doit avoir"
-              echo "\`UPSTREAM_BASE = https://kdmc-site.pages.dev\` et \`UPSTREAM_PREFIX = \"\"\`."
+              echo "\`UPSTREAM_BASE = ${{ steps.stable.outputs.stable }}\` et \`UPSTREAM_PREFIX = \"\"\` (adresse MESURÉE, pas devinée)."
             else
               echo "C'est un **aperçu** : kd-mc.com n'y touche pas."
             fi
