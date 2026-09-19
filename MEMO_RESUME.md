@@ -1,5 +1,28 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (19h10) — Balayage : 3 gardes aveugles, 1 fausse accusation
+
+Après en avoir trouvé deux, j'ai passé en revue **toutes** les vérifications qui ouvrent la page
+Départs. Résultat :
+
+| Garde | Ce qu'elle faisait | Après correction |
+|---|---|---|
+| Intégrité des départs | 0 personne, 0 contrôle… et un ✅ | **30 598 contrôles, 0 anomalie** |
+| Rotation (« chaque cycle glisse de +1 ») | 0 glissement contrôlé… et un ✅ | **15 308 contrôles, 0 anomalie** |
+| En-têtes de la page Départs | — (elle mesurait bien) | 157 tableaux, 0 anomalie |
+| « Chacun voit son équipe » | accusait **une** personne à tort | **36 personnes, 0 anomalie** |
+
+**La fausse accusation** (FABRE SOCCAL Y) : la garde photographiait la barre du haut, puis
+affichait Départs — ce qui **renomme** les équipes avec le libellé du PDF (« BJ Éq.1 » devient
+« BJ Éq.1 (20/5) ») — et comparait seulement à la fin. Elle confrontait donc une photo prise
+AVANT à un nom modifié APRÈS. À partir de la 2ᵉ personne le renommage avait déjà eu lieu, tout
+concordait : **une seule victime, toujours la première de la liste**. Rien à corriger dans l'app,
+la barre affichait bien son équipe.
+
+Les deux gardes aveugles ont maintenant un **plancher** : sous un certain nombre de contrôles,
+elles échouent en disant « je n'ai pas pu mesurer » au lieu de conclure.
+
+
 ## 2026-09-19 (18h40) — Vérification totale des départs : elle ne vérifiait plus rien depuis hier
 
 **Trouvé en faisant la vérification complète que tu m'as demandée.** Le contrôle qui garantit que

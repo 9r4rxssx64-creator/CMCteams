@@ -46,6 +46,11 @@ const page = await ctx.newPage();
 const jsErrors = [];
 page.on('pageerror', e => jsErrors.push(String(e)));
 await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
+/* MODE ADMIN OBLIGATOIRE (corrigé le 19.09, même cécité que verify-departs-integrity) :
+   depuis light v1.48, la page refuse d'afficher un mois passé à qui n'est pas admin.
+   Cette garde visite TOUS les mois embarqués : sans se déclarer admin, elle recevait
+   des tableaux VIDES, contrôlait **0 glissement** et concluait quand même ✅. */
+await page.evaluate(() => document.body.classList.add('admin'));
 
 // Liste des boards de TRAVAIL (kind != abs) réellement chargés par la page.
 const boards = await page.evaluate(() => Object.keys(window.BOARDS)
@@ -133,6 +138,14 @@ console.log('== VÉRIFICATION RÉELLE — page light des départs (vrai navigate
 const ver = await page.evaluate(() => (typeof APP_VER !== 'undefined' ? APP_VER : '?'));
 console.log(`  Version page chargée : ${ver}`);
 console.log(`  Équipes de travail vérifiées : ${totalTeams} · glissements +1 contrôlés : ${totalChecks}`);
+/* PLANCHER DE MESURE (leçon #300) : « rien trouvé » ne vaut pas « tout est bon ».
+   Repère mesuré le 19.09, tous mois confondus : 144 équipes, 8 000+ glissements. */
+if (totalChecks < 2000) {
+  console.log(`❌ MESURE IMPOSSIBLE : seulement ${totalChecks} glissement(s) contrôlé(s) — attendu au moins 2000.`);
+  console.log('   La page n\'a pas rendu les tableaux (mois refusé faute de mode admin ? structure changée ?).');
+  console.log('   Je n\'affirme RIEN sur la rotation tant que je n\'ai pas vraiment mesuré.');
+  await browser.close(); server.close(); process.exit(1);
+}
 console.log(`  Erreurs JS pendant le rendu : ${jsErrors.length ? jsErrors.join(' | ') : 'aucune'}`);
 
 if (kevinDump) {

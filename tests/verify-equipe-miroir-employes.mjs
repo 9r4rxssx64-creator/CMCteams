@@ -70,12 +70,21 @@ for(const s of sujets){
     const te=(typeof gt==='function')?gt(tid):null;
     const mi=(typeof _cmcMirrorTeam==='function')?_cmcMirrorTeam(tid,an,mois):null;
     let barre='', dep='', plan='', codes=0;
+    /* ⚠️ ON FIGE LE NOM AU MOMENT OÙ ON LIT LA BARRE (corrigé le 19.09).
+       `te` est l'objet VIVANT de l'équipe : en affichant Départs juste après,
+       l'app renomme les équipes avec le libellé du tableau du PDF (« BJ Éq.1 »
+       devient « BJ Éq.1 (20/5) »). Comme la comparaison se faisait au RETOUR,
+       on confrontait une barre photographiée AVANT à un nom modifié APRÈS —
+       et la toute première personne contrôlée échouait toute seule. Mesuré :
+       barre « … BJ Éq.1 … » contre te.name « BJ Éq.1 (20/5) ».
+       On compare donc deux choses prises au même instant. */
     try{ barre=vTopbar()||''; }catch(_){}
+    const nomAuMomentDeLaBarre = te ? te.name : '';
     try{ A.view='departs'; dep=vDeparts()||''; }catch(e){ dep='ERR:'+e.message; }
     try{ A.view='monplanning'; plan=vMonPlanning()||''; }catch(e){ plan='ERR:'+e.message; }
     try{ const ov=(gpl()||{})[uid]||{}; codes=Object.keys(ov).length; }catch(_){}
     return {tid, nomEquipe:te?te.name:'', miroir:mi?mi.id:null, nomMiroir:mi?mi.name:'',
-            barreNomme:te?barre.indexOf(te.name)>=0:false,
+            barreNomme:te?barre.indexOf(nomAuMomentDeLaBarre)>=0:false,
             depNomme:te?dep.indexOf(te.name)>=0:false,
             depMiroir:mi?dep.indexOf(mi.name)>=0:false,
             depErr:dep.indexOf('ERR:')===0?dep:'', planErr:plan.indexOf('ERR:')===0?plan:'',
