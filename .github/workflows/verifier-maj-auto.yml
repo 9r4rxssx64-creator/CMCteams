@@ -26,6 +26,13 @@ concurrency:
 
 on:
   workflow_dispatch: {}
+  # Une branche de travail qui touche la sonde la fait tourner : sans ça, on ne
+  # peut pas la lancer du tout tant qu'elle n'est pas sur la branche principale.
+  push:
+    branches: ['claude/**']
+    paths:
+      - 'tools/audit/sonde-maj-auto.mjs'
+      - '.github/workflows/verifier-maj-auto.yml'
   workflow_run:
     workflows: ["KDMC — Publie le site sur Cloudflare Pages (pour que le dépôt puisse être PRIVÉ)"]
     types: [completed]
