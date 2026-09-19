@@ -1,0 +1,18 @@
+{
+  "_note": "Empreintes des PDF, des générateurs et des fichiers livrés aux employés. Régénéré par : node tools/shared/_gen-seed.mjs && node tools/departs/_gen-boards.mjs && node tools/shared/_empreintes-donnees.mjs --ecrire",
+  "_date": "2026-09-19",
+  "pdf": {
+    "tests/fixtures/juillet-2026-v2.pdf": "dbab17b41cd33566",
+    "tests/fixtures/aout-2026-v2.pdf": "67fadff0f260196f",
+    "tests/fixtures/septembre-2026-v2.pdf": "195606e86684a2d3",
+    "tests/fixtures/octobre-2026.pdf": "48e4facf77b5f0e8"
+  },
+  "generateurs": {
+    "tools/shared/_gen-seed.mjs": "3e8b08f0cb23bf95",
+    "tools/departs/_gen-boards.mjs": "66dc689a5cba2f01"
+  },
+  "livres": {
+    "tools/shared/planning-seed.js": "f9aa7f3c856b7879",
+    "tools/departs/boards-gen.js": "3f0e0f5d96f47639"
+  }
+}

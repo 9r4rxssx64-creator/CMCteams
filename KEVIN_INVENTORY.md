@@ -2745,3 +2745,11 @@ officiels les retirent eux-mêmes avant publication.
 | `tools/audit/sonde-ressources-app.mjs` | Vérifie que l'app reçoit VRAIMENT son planning (pas juste que la page s'affiche) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/sonde-ressources-app.mjs) |
 | `services/kdmc-router/prepare-secours.mjs` | Ne publie plus le code serveur des boutiques ni l'outil de déchiffrement de la messagerie | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
 | `tests/verify-paquet-pages.mjs` | Réparé : il détecte enfin un vrai fichier manquant, et n'accuse plus au hasard | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-paquet-pages.mjs) |
+
+## 📋 Planning à jour pour les employés (2026-09-19, v9.910)
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| `tests/verify-equipes-mois-suivant.mjs` | Exige que chaque personne ait son équipe pour le mois affiché **et le mois suivant** | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-equipes-mois-suivant.mjs) |
+| `tests/verify-donnees-a-jour.mjs` | Rouge si le planning livré ne vient plus des PDF (régénération oubliée) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-donnees-a-jour.mjs) |
+| `tools/shared/_empreintes-donnees.mjs` | Note l'empreinte des PDF, des générateurs et des fichiers livrés | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/shared/_empreintes-donnees.mjs) |

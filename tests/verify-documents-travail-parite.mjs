@@ -126,9 +126,20 @@ if (!secoursPresent) {
   /* Un commentaire ne protège rien : on retire les blocs de commentaires avant
      de lire (même piège que la règle A ci-dessus, tombée dedans le 5.09). */
   secoursActif = secours.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  /* Une entrée peut restreindre ce qu'elle copie : « { chemin: 'tools',
+     fichiers: ['codes-decoder.html'] } » ne recopie QUE ce fichier, pas le
+     dossier. Lire seulement `chemin` faisait croire au garde que tout `tools/`
+     partait en ligne — un faux rouge sur `tools/gitlab`, qui n'y est pas
+     (vérifié dans le paquet réel). On modélise donc l'entrée telle que le
+     fabricant la traite vraiment. */
   const listeDe = (nom) => {
     const m = secoursActif.match(new RegExp('const ' + nom + ' = \\[([\\s\\S]*?)\\n\\];'));
-    return m ? [...m[1].matchAll(/chemin:\s*'([^']+)'/g)].map((x) => x[1]) : [];
+    if (!m) return [];
+    return [...m[1].matchAll(/\{[^{}]*chemin:\s*'([^']+)'[^{}]*\}/g)].map((e) => {
+      const fich = [...e[0].matchAll(/fichiers:\s*\[([^\]]*)\]/g)]
+        .flatMap((f) => [...f[1].matchAll(/'([^']+)'/g)].map((x) => x[1]));
+      return { chemin: e[1], fichiers: fich.length ? fich : null };
+    });
   };
   recopies = [...listeDe('APPS'), ...listeDe('MEDIAS'), ...listeDe('PARTAGES')];
   travail = new Set([...(secoursActif.match(/const TRAVAIL = new Set\(\[([^\]]*)\]/) || [, ''])[1]
@@ -137,7 +148,16 @@ if (!secoursPresent) {
 /* Un document de travail n'est un problème que s'il peut être EMBARQUÉ, c'est-
    à-dire s'il vit sous un dossier recopié. Sinon il n'arrive jamais dans le
    paquet et l'exiger serait du bruit. */
-const embarquable = (nom) => recopies.some((c) => nom === c || nom.startsWith(c + '/'));
+const embarquable = (nom) => recopies.some((e) => {
+  const c = typeof e === 'string' ? e : e.chemin;
+  const seulement = typeof e === 'string' ? null : e.fichiers;
+  if (nom === c) return true;
+  if (!nom.startsWith(c + '/')) return false;
+  /* Entrée restreinte : seul ce qui est nommé part en ligne. */
+  if (!seulement) return true;
+  const reste = nom.slice(c.length + 1);
+  return seulement.some((f) => reste === f || reste.startsWith(f + '/'));
+});
 
 /* ── B. Ce que GitHub retire EN PLUS : exclu du miroir, et sondé par l'audit ─ */
 const exclus = new Set([...publierActif.matchAll(/--exclude=(?:'([^']*)'|([^\s\\]+))/g)]
