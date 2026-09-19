@@ -7,6 +7,32 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:52 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `f470c432` · **Run** : `35413919081`
+- **Ce qui a lâché** : deploy › D'où viennent vraiment les pages ? (bloquant)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35413919081
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::error::le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de $ATTENDU. Bascule NON effective."^[[0m
+##[error]le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de https://kdmc-site-bj5.pages.dev. Bascule NON effective.
+##[error]Process completed with exit code 1.
+```
+
+## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:49 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `554ff1c1` · **Run** : `35413750989`
+- **Ce qui a lâché** : deploy › D'où viennent vraiment les pages ? (bloquant)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35413750989
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::error::le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de $ATTENDU. Bascule NON effective."^[[0m
+##[error]le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de https://kdmc-site-bj5.pages.dev. Bascule NON effective.
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 18/09/2026 21:00 UTC
 
 - **Branche** : `claude/suivi-domaine-suite` · **Commit** : `c17fd06b` · **Run** : `35393318295`
@@ -435,39 +461,4 @@ pull request create failed: GraphQL: Something went wrong while executing your q
     "why": "error code: 1042\n"
 ##[error]push NON envoyé : HTTP 404 error code: 1042
 ##[error]Process completed with exit code 1.
-```
-
-## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 23:23 UTC
-
-- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `41023d67` · **Run** : `35161992763`
-- **Ce qui a lâché** : deploy › Smoke test réel (leçon
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35161992763
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
-^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
-^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
-^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
-^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
-^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
-^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
-^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
---- /run sans clé doit être refusé (garde) ---
-    "why": "error code: 1042\n"
-##[error]push NON envoyé : HTTP 404 error code: 1042
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 16/09/2026 22:25 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `0aa098d3` · **Run** : `35157474307`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35157474307
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
 ```
