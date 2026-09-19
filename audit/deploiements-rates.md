@@ -7,6 +7,18 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 14:24 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `f0a8d662` · **Run** : `35448582758`
+- **Ce qui a lâché** : deploy › Le domaine sert-il vraiment les 31 adresses ? (bloquant)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35448582758
+- **Ce que la machine a dit** :
+
+```
+=== 32 servies / 0 en échec ===
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ KDMC — Publie le site sur Cloudflare Pages (pour que le dépôt puisse être PRIVÉ) — 19/09/2026 14:24 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `f0a8d662` · **Run** : `35448582768`
@@ -440,17 +452,4 @@ error: failed to push some refs to 'https://github.com/9r4rxssx64-creator/CMCtea
 ^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
 pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and claude/video-review-wqnqdw, Head ref must be a branch (createPullRequest)
 ##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 17/09/2026 10:17 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `7aa4e5b5` · **Run** : `35208999638`
-- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35208999638
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
-##[error]Process completed with exit code 128.
 ```
