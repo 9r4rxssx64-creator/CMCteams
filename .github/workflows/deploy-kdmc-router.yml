@@ -333,13 +333,35 @@ jobs:
             echo "  (aucune bascule configurée dans le wrangler.toml — GitHub Pages reste la source, rien à prouver ici)"
             exit 0
           fi
-          if [ "$CODE" = "200" ]; then
-            echo "::error::le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de $ATTENDU. Bascule NON effective."
+          # Trois cas, et un seul est une bascule ratée :
+          #  · domaine 200 / hébergeur 404 → le routeur n'a PAS basculé (il sert autre chose)
+          #  · domaine 200 / hébergeur 200 → le routeur a bien basculé, mais l'HÉBERGEUR
+          #    publie plus que les applications (c'est la sonde de fuite qui tranche)
+          #  · domaine 404                → basculé et propre
+          if [ "$CODE" = "200" ] && [ "$CODE2" != "200" ]; then
+            echo "::error::le domaine sert package.json alors que $ATTENDU ne le sert pas → le routeur n'a PAS basculé"
             exit 1
           fi
-          echo "  ✅ les pages viennent du paquet trié ($ATTENDU) — les fichiers de fabrication ne sont plus servis par le domaine"
+          if [ "$CODE" = "200" ]; then
+            echo "::warning::le domaine ET l'hébergeur servent package.json : la bascule est effective, mais l'hébergeur publie plus que les applications (voir la sonde de fuite ci-dessous)"
+          else
+            echo "  ✅ les pages viennent du paquet trié ($ATTENDU) — les fichiers de fabrication ne sont plus servis par le domaine"
+          fi
 
-      - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
+      # ── L'HÉBERGEUR PUBLIE-T-IL PLUS QUE LES APPLICATIONS ? (bloquant) ────
+      # Mesuré le 18.09 : l'hébergeur servait package.json, que le paquet trié
+      # ne contient pas. « Privé » sur GitHub ne rend pas privé ce qu'un AUTRE
+      # hébergeur publie déjà — il faut donc le vérifier LÀ-BAS aussi.
+      - name: L'hébergeur ne sert-il que les applications ? (bloquant)
+        shell: bash -eo pipefail {0}
+        run: |
+          node tools/audit/sonde-fuite-hebergeur.mjs "https://cmcteams.kd-mc.com"
+          ATTENDU=$(grep -oE 'UPSTREAM_BASE *= *"[^"]+"' services/kdmc-router/wrangler.toml | sed 's/.*"\(.*\)"/\1/' || true)
+          if [ -n "$ATTENDU" ]; then
+            node tools/audit/sonde-fuite-hebergeur.mjs "$ATTENDU"
+          fi
+
+
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
         # peut dépasser 1 min). La preuve du CODE = tests unitaires (sso/admin) + harnais
         # Chromium. On ne rougit donc PAS un déploiement réussi pour un délai de propagation.
