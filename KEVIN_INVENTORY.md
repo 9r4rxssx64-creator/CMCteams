@@ -1,5 +1,13 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+### 🔄 Mise à jour automatique : savoir si tout le monde l'a vraiment (19.09.2026)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/audit/sonde-maj-auto.mjs` | Ouvre les 8 adresses de l'app et de la page Départs, lit la version servie et le CONTENU de `version.txt` : dit qui peut se mettre à jour et qui ne le peut pas | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/sonde-maj-auto.mjs) |
+| `.github/workflows/verifier-maj-auto.yml` | Lance cette vérification à la demande et après chaque publication du site | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/verifier-maj-auto.yml) |
+| `tests/verify-publication-apres-fusion.mjs` | La garde qui empêche le site de ne plus se publier tout seul après une fusion | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-publication-apres-fusion.mjs) |
+
 ### 🛒 Caisse et pages légales du Kit (18.09.2026)
 
 | Fichier | À quoi ça sert | Ouvrir |

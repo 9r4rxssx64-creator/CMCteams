@@ -146,7 +146,17 @@ for (const c of CHEMINS) {
     if (r.ok) {
       const t = await r.text();
       taille = t.length;
+      /* Deux formes du MÊME piège, et la 2e m'a coûté 4 déploiements rouges
+         le 19.09 : (a) l'hébergeur renvoie EXACTEMENT la page d'accueil ;
+         (b) il renvoie une AUTRE page HTML (Cloudflare Pages, sans 404.html,
+         sert l'index du projet pour toute adresse inconnue — et ce n'est pas
+         l'accueil du sous-domaine qu'on a mesuré). Dans les deux cas le
+         fichier demandé n'existe pas. On demandait un .pdf, un .json, un .md :
+         recevoir un document HTML ne peut pas être ce fichier-là. */
+      const estHtml = /<(!doctype|html)\b/i.test(t.slice(0, 400));
+      const demandeFichier = /\.(pdf|json|md|js|mjs|cjs|yml|yaml|txt|csv|map)$/i.test(c.u || c.p);
       if (accueil && t === accueil) { statut = 404; taille = 0; trouves = ['(page d\'accueil renvoyée — le fichier n\'existe pas)']; }
+      else if (estHtml && demandeFichier) { statut = 404; taille = 0; trouves = ['(page HTML renvoyée à la place du fichier — repli de l\'hébergeur, le fichier n\'existe pas)']; }
       else {
       for (const m of MARQUEURS) {
         const n = (t.match(m.re) || []).length;

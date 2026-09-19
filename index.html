@@ -5939,7 +5939,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.908";
+var APP_VER="v9.909";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -49707,12 +49707,34 @@ try{var _cmcPreView=localStorage.getItem('cmc_pre_reload_view');var _cmcPreTs=+l
     // annonce une version mais sert encore l'ancienne page (cache amont pendant une publication),
     // on tente au plus 3 rechargements vers la M\u00caME version cible par 10 min, puis on laisse la main
     // au badge (MAJ manuelle) au lieu de faire sauter l'app toutes les 2 s.
+    // v9.909 (Kevin 2026-09-19 \u00ab V\u00e9rifie les MAJ auto pour tout le monde. Certains sont
+    // encore en 1.39 \u00bb) \u2014 QUAND LA MISE \u00c0 JOUR N'ARRIVE PAS \u00c0 SE FAIRE, \u00c7A DOIT SE VOIR.
+    // Avant : un console.warn que personne ne lit, et l'employ\u00e9 restait sur une vieille
+    // version SANS LE SAVOIR. Parit\u00e9 exacte avec la page D\u00e9parts (light v1.49).
+    function _cmcBanniereMaj(neuve){
+      if(document.getElementById("cmcmajban"))return;
+      var d=document.createElement("div"); d.id="cmcmajban"; d.setAttribute("role","alert");
+      d.style.cssText="position:fixed;left:0;right:0;top:0;z-index:2147483646;background:var(--cmc-gold);"
+        +"color:var(--cmc-bg-dark);padding:calc(8px + env(safe-area-inset-top)) 12px 10px;display:flex;gap:10px;"
+        +"align-items:center;justify-content:center;flex-wrap:wrap;font-size:15px;font-weight:700;"
+        +"box-shadow:0 2px 12px rgba(0,0,0,.45)";
+      var t=document.createElement("span"); t.textContent="Nouvelle version "+neuve+" disponible";
+      var b=document.createElement("button"); b.textContent="Mettre \u00e0 jour";
+      b.style.cssText="min-height:44px;min-width:132px;border:0;border-radius:10px;background:var(--cmc-bg-dark);"
+        +"color:var(--cmc-gold-bright);font-size:15px;font-weight:700;padding:0 16px";
+      b.onclick=function(){
+        try{localStorage.removeItem("cmc_upd_tries");}catch(_){}
+        try{ if(typeof axForceRefresh==="function"){axForceRefresh();return;} }catch(_){}
+        location.replace(location.pathname+"?_force_upd_"+Date.now());
+      };
+      d.appendChild(t); d.appendChild(b); document.body.appendChild(d);
+    }
     function _cmcUpdAllowed(target){
       try{
         var t=JSON.parse(localStorage.getItem("cmc_upd_tries")||"null")||{};
         var now=Date.now();
         if(t.v===target&&now-(t.ts||0)<600000){
-          if((t.n||0)>=3){console.warn("[v9.902 force-update] "+target+" annonc\u00e9e mais page servie toujours "+APP_VER+" apr\u00e8s 3 essais \u2014 MAJ auto suspendue 10 min (badge = MAJ manuelle)");return false;}
+          if((t.n||0)>=3){console.warn("[v9.902 force-update] "+target+" annonc\u00e9e mais page servie toujours "+APP_VER+" apr\u00e8s 3 essais \u2014 MAJ auto suspendue 10 min (badge = MAJ manuelle)");try{_cmcBanniereMaj(target);}catch(_){}return false;}
           t.n=(t.n||0)+1;
         }else{t={v:target,n:1,ts:now};}
         t.ts=t.ts||now;

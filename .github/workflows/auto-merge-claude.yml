@@ -305,6 +305,25 @@ jobs:
             && echo "✅ Déploiement Pages déclenché automatiquement" \
             || echo "::warning::dispatch deploy.yml échoué — Pages sera déployé au prochain push main"
 
+      - name: Publication du SITE auto (Cloudflare Pages — l'hébergeur RÉEL depuis le 19.09)
+        # MESURÉ le 19.09.2026, en cherchant pourquoi certains restent sur une
+        # vieille version : sur 125 exécutions de publier-site-prive.yml, la
+        # SEULE sur main était un lancement À LA MAIN. Toutes les autres venaient
+        # de branches de travail (des aperçus, que personne ne voit).
+        # Cause : exactement le même piège que pour Pages, documenté juste au-dessus
+        # — un merge fait par GITHUB_TOKEN ne déclenche AUCUN workflow « on: push ».
+        # L'étape Pages avait été ajoutée ; celle-ci avait été oubliée. Or depuis la
+        # bascule, c'est Cloudflare Pages qui sert kd-mc.com : sans ce dispatch, le
+        # site ne se met plus JAMAIS à jour tout seul, et tout le monde reste sur
+        # l'ancienne version sans un seul message d'erreur.
+        if: steps.mergepr.outputs.merged == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run publier-site-prive.yml --ref main \
+            && echo "✅ Publication du site (Cloudflare Pages) déclenchée automatiquement" \
+            || echo "::warning::dispatch publier-site-prive.yml échoué — le site resterait sur l'ancienne version"
+
       - name: Déploiements WORKERS auto selon les chemins modifiés
         # Même piège que Pages : un merge par GITHUB_TOKEN ne déclenche PAS les deploy-*.yml
         # (on:push paths). Les workers Cloudflare restaient donc sur l'ancien code après un

@@ -86,7 +86,16 @@ console.log('\n0. Ce que le code promet');
 ok(SW_CACHE === APP_VER, 'sw.js CACHE = APP_VER (même version, sinon le SW sert l\'ancienne app)', `${SW_CACHE} vs ${APP_VER}`);
 ok(LIGHT_VER === SRC.ver, 'light : APP_VER = version.txt', `${LIGHT_VER} vs ${SRC.ver}`);
 ok((SRC.light.match(/id="ver"[^>]*>(v[0-9.]+)</) || [])[1] === LIGHT_VER, 'light : badge statique = APP_VER (verif-live-rapport le compare)');
-const iife = SRC.app.slice(SRC.app.indexOf('function _cmcBootForceUpdateCheck'), SRC.app.indexOf('function _cmcBootForceUpdateCheck') + 4000);
+/* Fenêtre de lecture du bloc « mise à jour forcée » de l'app.
+   ⚠️ 19.09.2026 : elle faisait 4000 caractères. En ajoutant le bandeau visible
+   (~1200 caractères) dans ce même bloc, la ligne « sondage toutes les 60 s »
+   est sortie de la fenêtre → ROUGE sur un code parfaitement correct. Une garde
+   qui dépend d'un nombre d'octets casse au premier ajout. Fenêtre élargie, et
+   le repère de fin dit clairement où s'arrête le bloc. */
+const _deb = SRC.app.indexOf('function _cmcBootForceUpdateCheck');
+const _fin = SRC.app.indexOf('})();', _deb + 10);   // fin réelle du bloc (la parenthèse fermante de l'IIFE)
+if (_fin <= _deb) { console.error('❌ bloc « mise à jour forcée » introuvable — je ne conclus rien'); process.exit(2); }
+const iife = SRC.app.slice(_deb, _fin + 5);
 ok(/index\.html\?_v="\+Date\.now\(\)"?[^;]*\n?[^;]*cache:"reload"/.test(iife) || /fetch\(url,\{cache:"reload"\}\)/.test(iife), 'CMCteams : la sonde utilise cache:"reload" (règle MAJ AUTO : no-store seul passe encore par le SW)');
 ok(/setInterval\(function\(\)\{[\s\S]{0,400}?\},60000\)/.test(iife), 'CMCteams : sondage toutes les 60 s (règle), pas 90 s');
 ok(/\?_force_upd_"\+Date\.now\(\)/.test(iife) || /forceRefresh\(\)/.test(iife), 'CMCteams : rechargement sur ?_force_upd_ (URL que sw.js laisse passer)');
@@ -215,6 +224,18 @@ console.log('\n8. Light — version.txt dit v1.97 mais la page servie reste ' + 
   await page.waitForTimeout(25000);
   const n = reloadsOf(page, t0) - 1;
   ok(n >= 1 && n <= 3, 'en 25 s : entre 1 et 3 rechargements, puis la page se stabilise', n + ' rechargement(s)');
+  /* v1.49 (Kevin 2026-09-19 « certains sont encore en 1.39 ») : se stabiliser ne
+     suffit pas. Si la mise à jour n'arrive pas à se faire, l'employé doit le VOIR
+     — avant, la page se taisait (un console.warn que personne ne lit) et il
+     restait sur une vieille version sans le savoir. */
+  const ban = await page.evaluate(() => {
+    const d = document.getElementById('majban');
+    if (!d) return null;
+    const b = d.querySelector('button');
+    return { txt: (d.textContent || '').slice(0, 60), h: b ? Math.round(b.getBoundingClientRect().height) : 0 };
+  });
+  ok(!!ban, 'un bandeau visible annonce la nouvelle version', ban ? ban.txt : 'AUCUN bandeau — blocage silencieux');
+  ok(!!ban && ban.h >= 44, 'son bouton fait au moins 44 px (doigt)', ban ? ban.h + ' px' : '—');
   state.lightStale = null; state.lightVer = LIGHT_VER;
   await ctx.close();
 }
