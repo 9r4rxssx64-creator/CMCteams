@@ -100,6 +100,10 @@ const COUVERTS_PAR_PARENT = ['kdmc-home/worldmonitor', 'kdmc-home/osint', 'kdmc-
    Le test verify-paquet-pages.mjs vérifie désormais qu'aucun fichier ne manque. */
 const PARTAGES = [
   { chemin: 'tools/shared', quoi: 'briques communes — 83 pages en dépendent' },
+  /* Un seul fichier posé à la racine de tools/ : Apex y renvoie (« décodeur de
+     codes »). Il était servi par github.io ; sans lui ici, le lien meurt le jour
+     où le dépôt passe en privé. On copie CE fichier, pas tout le dossier. */
+  { chemin: 'tools', fichiers: ['codes-decoder.html'], quoi: 'décodeur de codes (lien Apex)' },
   { chemin: 'shops/_shared', quoi: 'briques communes des boutiques — 10 pages' },
 ];
 /* Lourds en photos : on peut les remettre dans un second temps. */
@@ -142,7 +146,18 @@ const IGNORER = new Set(['node_modules', '.git', 'coverage', '.DS_Store', 'tests
    RE-décide rien, on aligne la troisième surface sur les deux autres.
    ⚠️ `arbre/research/actesimg/` reste, lui : l'app arbre s'en sert vraiment
    (19 références dans arbre/index.html) — même exception que les deux autres. */
-const TRAVAIL = new Set(['arbre/research/actes.json', 'coffre-fort/memo', 'CLAUDE_HANDOFF.json']);
+const TRAVAIL = new Set([
+  'arbre/research/actes.json', 'coffre-fort/memo', 'CLAUDE_HANDOFF.json',
+  /* CODE SERVEUR ET SCRIPTS DE FABRICATION — mesuré le 19.09.2026 : le paquet
+     publiait le code de DEUX workers Cloudflare de La Détente (avec leurs
+     `wrangler.toml`, qui nomment les liaisons et les secrets attendus), sept
+     scripts de fabrication de catalogue, et deux outils de la messagerie dont
+     un de DÉCHIFFREMENT de sauvegarde. Vérifié avant de retirer : AUCUNE page
+     ne les charge (0 référence dans les .html). Même raison que `workers` et
+     `_*.mjs` plus bas — un site n'a pas à servir ses propres coulisses. */
+  'shops/la-detente/worker', 'shops/la-detente/worker-order', 'shops/la-detente/scripts',
+  'messaging-app/tools',
+]);
 function filtre(src) {
   const base = src.split('/').pop();
   const rel = src.startsWith(RACINE + '/') ? src.slice(RACINE.length + 1) : '';

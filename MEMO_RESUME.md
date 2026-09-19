@@ -9891,3 +9891,36 @@ automatique qui écrase l'écrit à la main → 1 échec.
 collision n'existe aujourd'hui (`avis-01` vs `devis-01`), donc relire le catalogue réel ne prouvait
 rien. J'ai sorti la règle en fonction **pure** (`fusionne`) et je la teste avec une collision
 **forcée**. Une garde qui ne peut pas échouer ne garde rien.
+
+## 2026-09-19 (14h50) — Le dépôt peut passer en privé : 13 dépendances GitHub retirées du site publié
+
+**Mesuré d'abord, pas supposé.** Le domaine était déjà basculé (32 adresses servies, chacune sa
+propre app, 0 fuite sur 11 chemins interdits). Mais « le domaine marche » ne veut pas dire « le
+dépôt peut fermer » : le jour où il passe en privé, `github.io` s'éteint **et** `raw.githubusercontent`
+devient 404.
+
+**13 fichiers PUBLIÉS en dépendaient encore** — corrigés vers le domaine :
+- le plan de site des boutiques (12 adresses : Google était envoyé vers des 404),
+- l'image d'aperçu de La Détente (sans elle, un partage Facebook affiche un rectangle gris),
+- les deux `robots.txt`, deux fichiers du portail KDMC,
+- **5 bundles d'Apex** (sources corrigées + reconstruction) ; les liens vers `_PROJECTS_KDMC/*`
+  ont été **vidés** et non redirigés : mesuré, ces dossiers n'ont aucun `index.html` — le lien
+  était déjà mort avant.
+
+**Trouvaille adjacente, plus grave** : le paquet publiait aussi du **code serveur** —
+`shops/la-detente/worker/` et `worker-order/` avec leurs `wrangler.toml` (qui nomment les liaisons
+et les secrets attendus), 7 scripts de fabrication, et un outil de **déchiffrement de sauvegarde**
+de la messagerie. Vérifié avant retrait : aucune page ne les charge. Exclus du paquet.
+
+**Trois gardes, toutes prouvées par sabotage :**
+- `npm run test:sans-github` (dans `test:ci`) — fabrique le vrai paquet et refuse toute adresse GitHub.
+- `tools/audit/sonde-ressources-app.mjs` (bloquante dans le déploiement du routeur) — ouvre les
+  fichiers que l'app charge VRAIMENT (planning, départs, convention, liste des apps) et exige du
+  vrai JavaScript : un repli d'hébergeur renverrait la page d'accueil avec un code 200, et le
+  planning serait vide sans un seul message d'erreur.
+- `test:paquet-pages` **réparé deux fois** : il variait de 65 à 3 « fichiers manquants » sur des
+  fichiers présents (il comptait les abandons de chargement), **et** il ne détectait en réalité
+  aucun vrai fichier manquant (un 404 n'est pas un échec réseau pour un navigateur). Il mord
+  maintenant : retirer un fichier du paquet le fait échouer, le remettre le fait repasser.
+
+**En ligne au moment du contrôle** : app v9.909, page Départs v1.49, sur les 4 adresses — 0 en défaut.

@@ -86,7 +86,7 @@ const HOUSE_ADS: ReadonlyArray<Omit<AdSlot, 'shown_count' | 'click_count' | 'ts_
     title: '🚀 Découvre Apex AI complet',
     description: 'Studios créatifs, voix premium, modules pro (médical, juridique, finance), orchestrateur multi-projets',
     cta_label: 'Essayer Apex AI',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/',
+    cta_url: 'https://apex-ai.kd-mc.com/',
   },
   {
     id: 'apex_ai_pro_features',
@@ -95,7 +95,7 @@ const HOUSE_ADS: ReadonlyArray<Omit<AdSlot, 'shown_count' | 'click_count' | 'ts_
     title: '✨ Apex AI Pro vs Chat Standalone',
     description: 'Mémoire illimitée, 42 outils IA, 25 capabilities, vision IA, marketplace agents',
     cta_label: 'Voir les plans',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#pricing',
+    cta_url: 'https://apex-ai.kd-mc.com/#pricing',
   },
 ];
 

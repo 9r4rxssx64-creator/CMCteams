@@ -29,4 +29,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://9r4rxssx64-creator.github.io/CMCteams/sitemap.xml
+Sitemap: https://cmcteams.kd-mc.com/sitemap.xml
