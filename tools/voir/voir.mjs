@@ -61,6 +61,11 @@ for (const url of urls) {
   const jsErr = [], reqKo = [], http = [], console_ = [];
   page.on('pageerror', (e) => jsErr.push(String(e).slice(0, 200)));
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') console_.push('[' + m.type() + '] ' + m.text().slice(0, 160)); });
+  /* Les passes de démarrage (seed, équipes, boards, remplacement) s'annoncent en
+     « info » : sans elles on voit le RÉSULTAT sans savoir ce qui a tourné. Mesuré
+     le 19.09 : octobre restait à 0 équipe en production alors que le correctif
+     marchait en local — impossible de trancher sans ce journal. */
+  page.on('console', (m) => { const t = m.text(); if (/^\[v9\.\d+ /.test(t)) console_.push('[boot] ' + t.slice(0, 160)); });
   page.on('requestfailed', (r) => { if (projet(r.url()) && !/ERR_ABORTED/.test(r.failure()?.errorText || '')) reqKo.push(r.method() + ' ' + r.url().slice(0, 120) + ' [' + (r.failure()?.errorText || '') + ']'); });
   page.on('response', (r) => { const s = r.status(); if (projet(r.url()) && (s === 404 || s >= 500)) http.push('HTTP ' + s + ' ' + r.url().slice(0, 120)); });
   const P = { url, dossier, ok: true, session: null, captures: [], version: null, titre: null, texte: '', jsErr, reqKo, http, console: console_ };
@@ -140,6 +145,7 @@ for (const P of rapport.pages) {
   md.push('<details><summary>Texte visible (début)</summary>', '', '```', P.texte.slice(0, 2500), '```', '', '</details>', '');
   for (const k of Object.keys(P).filter((x) => x.startsWith('vue_'))) md.push('- ' + k + ' : demandée ' + JSON.stringify(P[k].demandee) + ' · affichée ' + P[k].affichee, '');
   if (P.releve) md.push('- relevé des équipes (equipes.json) : ' + P.releve, '');
+  if (P.console && P.console.length) md.push('', '<details><summary>Journal de démarrage (ce qui a tourné)</summary>', '', '```', P.console.slice(0, 40).join('\n'), '```', '', '</details>', '');
 }
 writeFileSync(join(SORTIE, 'RAPPORT.md'), md.join('\n'));
 writeFileSync(join(SORTIE, 'rapport.json'), JSON.stringify(rapport, null, 2));
