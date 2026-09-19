@@ -188,6 +188,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # La réponse part AUSSI dans le récapitulatif du run : un journal se lit
+          # mal à distance, un récapitulatif se lit d'un coup d'œil.
+          exec > >(tee -a "$GITHUB_STEP_SUMMARY") 2>&1
+          echo "### Ce que publie vraiment le projet Pages"
           API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/kdmc-site"
           curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API" \
             | node -e "

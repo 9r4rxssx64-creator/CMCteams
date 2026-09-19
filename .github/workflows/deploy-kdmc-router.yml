@@ -304,49 +304,36 @@ jobs:
           sleep 20
           node tools/audit/sonde-site-publie.mjs "https://kd-mc.com"
 
-      # ── D'OÙ VIENNENT VRAIMENT LES PAGES ? (bloquant, preuve POSITIVE) ────
-      # « 31 adresses répondent 200 » ne dit PAS d'où elles viennent : GitHub
-      # Pages et Cloudflare Pages servent le même site. Il faut une différence
-      # OBSERVABLE. Elle existe : GitHub Pages publie le dépôt presque entier
-      # (package.json compris) ; le paquet Cloudflare ne contient QUE les
-      # applications. Donc `package.json` servi = on est encore chez GitHub.
-      # C'est aussi un contrôle de confidentialité : le domaine n'a pas à servir
-      # les fichiers de fabrication du dépôt.
-      - name: D'où viennent vraiment les pages ? (bloquant)
+      # ── D'OÙ VIENNENT VRAIMENT LES PAGES ? (preuve par repère) ───────────
+      # « 31 adresses répondent 200 » ne dit PAS d'où elles viennent.
+      # PREMIÈRE TENTATIVE, RATÉE (18.09) : comparer un fichier présent chez un
+      # hébergeur et absent chez l'autre (package.json). Cloudflare Pages, sans
+      # 404.html, répond à TOUTE adresse inconnue par la page d'accueil AVEC un
+      # code 200 → le contrôle criait « bascule ratée » alors que tout allait
+      # bien. Un code HTTP ne suffit jamais : il faut regarder le CONTENU.
+      # MÉTHODE RETENUE : le paquet pose un repère (__paquet.txt) que l'ancien
+      # hébergeur n'a jamais eu. Si l'hébergeur le sert et que le domaine le
+      # sert aussi, le domaine relaie bien cet hébergeur — sans ambiguïté.
+      - name: D'où viennent vraiment les pages ? (preuve par repère)
         shell: bash -eo pipefail {0}
         run: |
-          echo "== SIGNATURE DE L'AMONT (GitHub Pages laisse sa trace dans les en-têtes) =="
-          curl -sI --max-time 20 "https://cmcteams.kd-mc.com/" | tr 'A-Z' 'a-z' | grep -E 'server|x-github|x-kdmc|cf-cache|age' || true
           ATTENDU=$(grep -oE 'UPSTREAM_BASE *= *"[^"]+"' services/kdmc-router/wrangler.toml | sed 's/.*"\(.*\)"/\1/' || true)
-          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://cmcteams.kd-mc.com/package.json" || echo 000)
-          echo "  cmcteams.kd-mc.com/package.json → HTTP $CODE"
-          # Où est la vérité : chez l'hébergeur, ou dans le routeur ? On demande
-          # le même fichier DIRECTEMENT à l'hébergeur visé. S'il répond 200 lui
-          # aussi, alors ce n'est pas le routeur qui n'a pas basculé : c'est
-          # l'hébergeur qui publie plus que le paquet trié.
-          if [ -n "$ATTENDU" ]; then
-            CODE2=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$ATTENDU/package.json" || echo 000)
-            TAILLE=$(curl -s --max-time 20 -o /dev/null -w '%{size_download}' "$ATTENDU/" || echo 0)
-            echo "  $ATTENDU/package.json → HTTP $CODE2   (racine : $TAILLE octets)"
-          fi
           if [ -z "$ATTENDU" ]; then
-            echo "  (aucune bascule configurée dans le wrangler.toml — GitHub Pages reste la source, rien à prouver ici)"
+            echo "  (aucune bascule configurée — rien à prouver ici)"
             exit 0
           fi
-          # Trois cas, et un seul est une bascule ratée :
-          #  · domaine 200 / hébergeur 404 → le routeur n'a PAS basculé (il sert autre chose)
-          #  · domaine 200 / hébergeur 200 → le routeur a bien basculé, mais l'HÉBERGEUR
-          #    publie plus que les applications (c'est la sonde de fuite qui tranche)
-          #  · domaine 404                → basculé et propre
-          if [ "$CODE" = "200" ] && [ "$CODE2" != "200" ]; then
-            echo "::error::le domaine sert package.json alors que $ATTENDU ne le sert pas → le routeur n'a PAS basculé"
+          REPERE=paquet-applications-kdmc
+          HOTE=$(curl -s --max-time 20 "$ATTENDU/__paquet.txt" || true)
+          DOM=$(curl -s --max-time 20 "https://cmcteams.kd-mc.com/__paquet.txt" || true)
+          if ! printf '%s' "$HOTE" | grep -q "$REPERE"; then
+            echo "::warning::l'hébergeur $ATTENDU ne porte pas encore le repère du paquet — la publication n'a pas été refaite depuis son ajout. JE NE CONCLUS RIEN sur la provenance."
+            exit 0
+          fi
+          if ! printf '%s' "$DOM" | grep -q "$REPERE"; then
+            echo "::error::l'hébergeur porte le repère du paquet, mais le domaine ne le sert PAS → kd-mc.com ne relaie pas $ATTENDU. Bascule non effective."
             exit 1
           fi
-          if [ "$CODE" = "200" ]; then
-            echo "::warning::le domaine ET l'hébergeur servent package.json : la bascule est effective, mais l'hébergeur publie plus que les applications (voir la sonde de fuite ci-dessous)"
-          else
-            echo "  ✅ les pages viennent du paquet trié ($ATTENDU) — les fichiers de fabrication ne sont plus servis par le domaine"
-          fi
+          echo "  ✅ prouvé : kd-mc.com sert le paquet trié publié sur $ATTENDU (repère présent des deux côtés)"
 
       # ── L'HÉBERGEUR PUBLIE-T-IL PLUS QUE LES APPLICATIONS ? (bloquant) ────
       # Mesuré le 18.09 : l'hébergeur servait package.json, que le paquet trié
@@ -361,7 +348,7 @@ jobs:
             node tools/audit/sonde-fuite-hebergeur.mjs "$ATTENDU"
           fi
 
-
+      - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
         # peut dépasser 1 min). La preuve du CODE = tests unitaires (sso/admin) + harnais
         # Chromium. On ne rougit donc PAS un déploiement réussi pour un délai de propagation.

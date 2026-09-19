@@ -21,7 +21,7 @@
      node services/kdmc-router/prepare-secours.mjs --leger    # apps seules (rapide)
    ========================================================================== */
 
-import { cpSync, existsSync, mkdirSync, rmSync, statSync, readdirSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, rmSync, statSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -251,4 +251,20 @@ if (POUR_PAGES) {
 } else {
   console.log('\n✅ Prêt. Pour remettre kd-mc.com en ligne :');
   console.log('     cd services/kdmc-router && npx wrangler login && npx wrangler deploy\n');
+}
+
+/* ── REPÈRE DU PAQUET ───────────────────────────────────────────────────────
+   Pourquoi ce fichier minuscule : le 18.09.2026, pour savoir si le domaine
+   servait encore l'ancien hébergeur, j'ai comparé un fichier présent chez l'un
+   et absent chez l'autre (package.json). Mauvaise idée : Cloudflare Pages, en
+   l'absence de 404.html, répond à TOUTE adresse inconnue par la page d'accueil
+   AVEC un code 200. Le contrôle criait « fuite » et « bascule ratée » alors que
+   tout allait bien. Un repère explicite ne ment pas : il n'existe que dans ce
+   paquet, et son CONTENU se vérifie (une page d'accueil ne ressemble pas à ça).
+   Il ne révèle rien : ni chemin interne, ni version, ni nom de fichier. */
+if (POUR_PAGES) {
+  writeFileSync(join(SORTIE, '__paquet.txt'),
+    'paquet-applications-kdmc\n'
+    + 'Ce fichier prouve que le site servi est le paquet trie (applications seules).\n');
+  console.log('   repère du paquet : __paquet.txt');
 }
