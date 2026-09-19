@@ -174,7 +174,12 @@ jobs:
           # de crier, sinon un simple délai de propagation ferait un faux rouge.
           for essai in 1 2 3; do
             echo "── contrôle $essai/3 ──"
-            if node tools/audit/exposition-publique.mjs --site https://kd-mc.com; then
+            # On sonde LE SITE QU'ON VIENT DE PUBLIER (GitHub Pages), pas le
+            # domaine : depuis le 19.09, kd-mc.com est servi par Cloudflare
+            # Pages, donc mesurer le domaine ici revenait à noter le travail
+            # de quelqu'un d'autre — et à échouer pour une raison sans rapport.
+            # Le domaine, lui, est contrôlé par la sonde de fuite du routeur.
+            if node tools/audit/exposition-publique.mjs --site https://9r4rxssx64-creator.github.io; then
               echo "✅ rien à retirer : le site ne publie aucun document de travail."
               exit 0
             fi

@@ -1,5 +1,20 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (14h) — « Certains sont encore en 1.39 » : le site ne se publiait plus tout seul (v9.909 / light v1.49)
+
+**Ce que Kevin a demandé** : « Vérifie les MAJ auto pour tout le monde. Certains sont encore en 1.39. Pourquoi ? »
+
+**Ce qui est mesuré, aujourd'hui, en vrai** : les **8 adresses** qui servent l'app ou la page Départs répondent toutes la **même version**, et leur `version.txt` correspond → **0 adresse en défaut sur 8**. Le serveur n'est donc pas en cause maintenant.
+
+**La vraie cause, mécanique** : sur **125 exécutions** du workflow qui publie le site, **une seule** a tourné sur la branche principale — et c'était **moi, à la main, hier soir**. Toutes les autres venaient de branches de travail : des aperçus que personne ne voit. Raison : une fusion faite par le robot ne déclenche **aucun** workflow automatique (protection de GitHub). Le robot relançait déjà la publication de l'ancien hébergeur pour cette raison précise — mais **pas** celle du nouveau, ajouté plus tard. Depuis la bascule d'hier, plus rien n'aurait été publié. **Corrigé + garde** (`test:publication-fusion`, prouvée par sabotage).
+
+**Et pour que ça ne redevienne jamais invisible** :
+- une **sonde** ouvre les 8 adresses et lit le **contenu** de `version.txt` (pas le code HTTP : l'hébergeur répond « 200 » avec la page d'accueil pour une adresse inconnue, leçon #285) ;
+- **un bandeau visible** apparaît désormais sur les DEUX surfaces quand la mise à jour n'arrive pas à se faire : avant, la page se taisait (un message dans la console que personne ne lit) et l'employé restait sur une vieille version **sans le savoir**. Bouton de 44 px, un seul geste. Prouvé en vrai navigateur, sabotage → 2 échecs.
+
+**Deux fausses alertes que je me suis faites et que j'ai corrigées** : comparer la version de l'app (v9.9x) au numéro de la page Départs (v1.4x) — deux numérotations différentes ; et une garde qui lisait **4 000 octets** de code : mon ajout de 1 200 caractères a poussé une ligne hors de la fenêtre → rouge sur du code correct (leçon #288).
+
+
 ## 2026-09-19 (02h15) — Trois déploiements « en échec » sans un seul journal : le fichier était refusé au démarrage
 
 En insérant une étape, j'ai effacé la ligne de titre de l'étape suivante : les deux ont fusionné et le fichier portait deux fois la même clé. GitHub refuse alors le workflow **avant de démarrer** — « en échec », **0 job, 0 journal**, aucun message visible. Je l'ai obtenu en déclenchant à la main par l'interface de programmation.

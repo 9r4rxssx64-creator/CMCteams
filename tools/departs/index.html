@@ -188,13 +188,13 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
   </div>
 </div>
 
-<div class="badge" id="ver" onclick="forceRefresh()">v1.48</div>
+<div class="badge" id="ver" onclick="forceRefresh()">v1.49</div>
 <div class="toast" id="toast"></div>
 
 <script src="boards-gen.js"></script>
 <script>
 "use strict";
-var APP_VER="v1.48";
+var APP_VER="v1.49";
 // v1.37 — le code admin n'est PLUS embarqué dans la page (ni en clair, ni en empreinte :
 // l'empreinte sha256 d'un code à 6 chiffres se casse en une seconde, donc la publier
 // revenait à publier le code — et cette page est dans un dépôt PUBLIC). La vérification se
@@ -923,6 +923,36 @@ document.getElementById("ver").textContent=APP_VER;
 // On sonde un marqueur léger (version.txt) au boot + toutes les 60 s + au retour premier plan ;
 // si la version distante diffère de APP_VER → force-refresh auto (unregister SW + clear caches +
 // reload cache-busté). Throttle 15 s. Le badge reste cliquable pour un force manuel (repli).
+// v1.49 (Kevin 2026-09-19 « Vérifie les MAJ auto pour tout le monde. Certains sont encore en 1.39 »)
+// QUAND LA MISE À JOUR N'ARRIVE PAS À SE FAIRE, ÇA DOIT SE VOIR.
+// Avant : après 3 essais ratés, la page se taisait (un simple console.warn que
+// personne ne lit) et l'employé restait sur une vieille version SANS LE SAVOIR —
+// exactement ce que Kevin a constaté. Maintenant : un bandeau en haut, impossible
+// à rater, avec UN bouton de 44 px qui recharge pour de bon.
+function _depBanniereMaj(neuve){
+  try{
+    if(document.getElementById("majban"))return;
+    var d=document.createElement("div"); d.id="majban";
+    d.setAttribute("role","alert");
+    d.style.cssText="position:fixed;left:0;right:0;top:0;z-index:99999;background:var(--gold);"
+      +"color:var(--bg);padding:calc(8px + env(safe-area-inset-top)) 12px 10px;display:flex;gap:10px;align-items:center;"
+      +"justify-content:center;flex-wrap:wrap;font-size:15px;font-weight:700;box-shadow:0 2px 12px rgba(0,0,0,.45)";
+    var t=document.createElement("span");
+    t.textContent="Nouvelle version "+neuve+" disponible";
+    var b=document.createElement("button");
+    b.textContent="Mettre à jour";
+    b.style.cssText="min-height:44px;min-width:132px;border:0;border-radius:10px;background:var(--bg);color:var(--gold2);"
+      +"font-size:15px;font-weight:700;padding:0 16px";
+    b.onclick=function(){
+      /* on repart de zéro : compteur d'essais effacé, adresse propre, cache contourné */
+      try{localStorage.removeItem("cmc_dep_upd_tries");}catch(_){}
+      try{ if(typeof forceRefresh==="function"){forceRefresh();return;} }catch(_){}
+      location.replace(location.pathname+"?_force_upd_"+Date.now());
+    };
+    d.appendChild(t); d.appendChild(b);
+    document.body.appendChild(d);
+  }catch(_){}
+}
 (function(){
   function _chkUpd(){
     try{
@@ -935,7 +965,7 @@ document.getElementById("ver").textContent=APP_VER;
         // une version mais la page servie reste l'ancienne (cache amont pendant une publication) → au plus
         // 3 rechargements vers la MÊME cible par 10 min, puis le badge (MAJ manuelle) — la page ne saute pas.
         try{ var tr=JSON.parse(localStorage.getItem("cmc_dep_upd_tries")||"null")||{}; var now=Date.now();
-          if(tr.v===t&&now-(tr.ts||0)<600000){ if((tr.n||0)>=3){console.warn("[v1.43 MAJ] "+t+" annoncée mais page servie toujours "+APP_VER+" après 3 essais — MAJ auto suspendue 10 min");return;} tr.n=(tr.n||0)+1; }
+          if(tr.v===t&&now-(tr.ts||0)<600000){ if((tr.n||0)>=3){console.warn("[v1.43 MAJ] "+t+" annoncée mais page servie toujours "+APP_VER+" après 3 essais — MAJ auto suspendue 10 min");_depBanniereMaj(t);return;} tr.n=(tr.n||0)+1; }
           else{ tr={v:t,n:1,ts:now}; }
           localStorage.setItem("cmc_dep_upd_tries",JSON.stringify(tr)); }catch(_){}
         try{if(typeof toast==="function")toast("🔄 Mise à jour "+t+" en cours…");}catch(_){}
