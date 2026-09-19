@@ -69,6 +69,16 @@ const APPS = [
   /* shops.kd-mc.com = le PORTAIL (shops/index.html + pages légales), pas tout le dossier :
      chaque boutique a sa propre entrée (dashboard, sourcing, chez-lolo, la-detente). */
   { chemin: 'shops', quoi: 'portail boutiques', fichiers: ['index.html', 'legal'] },
+  /* 18.09.2026 — MESURÉ en préparant le passage du dépôt en privé : le portail
+     boutiques (publié, ci-dessus) renvoie vers ces quatre vitrines, et la page
+     admin renvoie vers le studio de La Détente. Aucune n'était dans le paquet :
+     le jour où GitHub s'éteint (ou où le dépôt devient privé), ces liens
+     tombent en 404 SANS erreur nulle part. On publie donc ce qui est LIÉ depuis
+     une page publiée — c'est la règle, et elle se vérifie (test:liens-paquet). */
+  { chemin: 'shops/tech-hub', quoi: 'boutique Tech Hub (liée par le portail)' },
+  { chemin: 'shops/ecocraft', quoi: 'boutique EcoCraft (liée par le portail)' },
+  { chemin: 'shops/digital-vault', quoi: 'boutique Digital Vault (liée par le portail)' },
+  { chemin: 'shops/pawsome', quoi: 'boutique Pawsome (liée par le portail)' },
 ];
 /* Routes servies par un dossier PARENT déjà copié ci-dessus (cpSync est récursif) :
    les « belles adresses » de kdmc-home. Listées pour la parité avec ROUTES. */
@@ -93,6 +103,10 @@ const MEDIAS = [
      GitHub éteint = ces trois adresses restaient en 404, sans secours.
      19 Mo, 136 fichiers : c'est un livre illustré → il va avec les médias. */
   { chemin: 'tools/cuisine', quoi: 'cuisine / cocina / cujina' },
+  /* Le studio de La Détente (shops/la-detente/studio.html) est lié depuis la
+     page admin publiée. Le dossier porte aussi des documents de travail (.md) :
+     ils sont retirés par le filtre commun, comme partout ailleurs. */
+  { chemin: 'shops/la-detente', quoi: 'la-detente (studio + vitrine, liés par l\'admin)' },
 ];
 /* PORTAILS — un dossier dont SEULE la page d'accueil est servie. Ses vitrines
    vivent dans des sous-dossiers déjà recopiés plus haut (chez-lolo, dashboard,

@@ -178,6 +178,32 @@ jobs:
       # simple était pris). Basculer sur une adresse supposée, c'est éteindre les
       # 31 adresses du domaine. On la DÉDUIT de l'adresse publiée (on retire le
       # préfixe du déploiement) et on la SONDE — sans ça, on bascule à l'aveugle.
+      # ── QUE PUBLIE VRAIMENT CE PROJET PAGES ? ─────────────────────────────
+      # Mesuré le 18.09 : l'adresse stable servait package.json, que notre paquet
+      # ne contient PAS. Donc quelque chose d'autre publie dans ce projet. On le
+      # demande à Cloudflare plutôt que de le deviner.
+      - name: Que publie vraiment le projet Pages ? (diagnostic)
+        shell: bash -eo pipefail {0}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/pages/projects/kdmc-site"
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API" \
+            | node -e "
+              let t='';process.stdin.on('data',d=>t+=d).on('end',()=>{
+                let j;try{j=JSON.parse(t)}catch(e){console.log('réponse illisible');process.exit(0)}
+                if(!j.success){console.log('Cloudflare a refusé :',JSON.stringify(j.errors||[]).slice(0,200));process.exit(0)}
+                const r=j.result||{};
+                console.log('  projet            :', r.name);
+                console.log('  sous-domaine      :', r.subdomain);
+                console.log('  branche de prod   :', r.production_branch);
+                console.log('  source (git)      :', r.source ? (r.source.type+' → '+JSON.stringify(r.source.config&&r.source.config.repo_name)) : 'AUCUNE (envoi direct uniquement)');
+                const d=r.latest_deployment||{};
+                console.log('  dernier déploiement:', d.id, '| env', d.environment, '| branche', d.deployment_trigger&&d.deployment_trigger.metadata&&d.deployment_trigger.metadata.branch);
+                console.log('  déclenché par     :', d.deployment_trigger&&d.deployment_trigger.type);
+              });"
+
       - name: Vérifier l'adresse STABLE (celle qu'attend le routeur)
         id: stable
         shell: bash -eo pipefail {0}
