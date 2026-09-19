@@ -5759,6 +5759,38 @@ function _cmcSeedMarkApplied(key,S,info,row){
     setTimeout(function(){ try{if(typeof toast==="function")toast("✅ "+msg,"ok",9000);}catch(_){} },1500);
   }catch(e){ try{console.warn("[v9.898 seed mark]",e&&e.message);}catch(_){} }
 }
+// v9.910 (Kevin 2026-09-19 « des personnes s'en servent pour le travail ») —
+// MESURÉ sur le vrai domaine, connecté : OCTOBRE affichait 281 plannings mais
+// **0 équipe**. Cause racine, reproduite en local : quand les cellules live sont
+// DÉJÀ identiques au seed (cas normal dès que le mois a été posé une fois), l'app
+// marquait le mois « traité » et n'appliquait QUE la famille, l'école et le miroir.
+// Les ÉQUIPES du seed (m.team) n'étaient posées que dans la branche « remplacement ».
+// Pour le mois AFFICHÉ ça ne se voyait pas : la détection d'équipes tourne au boot
+// sur ce mois-là. Pour le mois SUIVANT — celui que les employés consultent pour
+// s'organiser — rien ne tourne : personne n'avait d'équipe.
+// On pose donc l'équipe du seed quand elle MANQUE, jamais par-dessus une valeur
+// existante (un import récent ou une correction à la main restent prioritaires).
+function _cmcSeedPoseEquipes(key,m,byId,mid){
+  var poses=0;
+  try{
+    if(!m)return 0;
+    if(m.team) Object.keys(m.team).forEach(function(id){
+      var e=byId[mid(id)]; if(!e||/^P\d/.test(e.id))return;
+      if(!e.teamHistory)e.teamHistory={};
+      if(e.teamHistory[key])return;                 // déjà posée → on ne touche pas
+      e.teamHistory[key]=m.team[id]; poses++;
+    });
+    // L'ÉQUIPE MIROIR a exactement le même trou (trouvé par la garde du mois
+    // suivant) : sans elle, « ma section » n'affiche pas l'équipe complémentaire.
+    // Posée seulement si absente — une valeur déjà là reste intacte.
+    if(m.mirror&&Object.keys(m.mirror).length&&!localStorage.getItem("cmc_team_mirror_"+key)){
+      try{localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror));}catch(_){}
+    }
+    if(poses){ try{ls("cmc_e",A.employees);}catch(_){}
+      try{console.info("[v9.910 seed] "+poses+" équipe(s) posées pour "+key+" (elles manquaient)");}catch(_){} }
+  }catch(_){ }
+  return poses;
+}
 function _cmcApplyPlanningSeed(){
   try{
     if(window.__CMC_NO_SEED)return 0;
@@ -5787,6 +5819,7 @@ function _cmcApplyPlanningSeed(){
           if(m.fam){ Object.keys(m.fam).forEach(function(id){ var e=byId[midL(id)]; if(e&&!/^P\d/.test(e.id)){ if(!e.familyHistory)e.familyHistory={}; if(!e.familyHistory[key])e.familyHistory[key]=m.fam[id]; } }); }
           if(m.ecole&&m.ecole.length){ m.ecole.forEach(function(id){ var e=byId[midL(id)]; if(e){ if(!e.ecoleRoulette)e.ecoleRoulette={}; e.ecoleRoulette[key]=1; if(!e.familyHistory)e.familyHistory={}; e.familyHistory[key]="roulettes"; } }); }
           if(m.mirror&&Object.keys(m.mirror).length&&!localStorage.getItem("cmc_team_mirror_"+key)){ localStorage.setItem("cmc_team_mirror_"+key,JSON.stringify(m.mirror)); }
+          _cmcSeedPoseEquipes(key,m,byId,midL);
         }catch(_){}
         return;
       }
@@ -5797,7 +5830,7 @@ function _cmcApplyPlanningSeed(){
       var mid=function(id){return idMap[id]||id;};
       var row={}; Object.keys(m.ov).forEach(function(id){ var t=mid(id); row[t]=row[t]||{}; Object.keys(m.ov[id]).forEach(function(d){ row[t][d]=m.ov[id][d]; }); });
       if(replaceInfo){
-        if(replaceInfo.identical(row)){ _cmcSeedMarkApplied(key,S,replaceInfo,null); return; }
+        if(replaceInfo.identical(row)){ _cmcSeedPoseEquipes(key,m,byId,mid); _cmcSeedMarkApplied(key,S,replaceInfo,null); return; }
         var ym=key.split("-"), iyR=parseInt(ym[0],10), imR=parseInt(ym[1],10);
         var arch=null; try{arch=_cmcSaveVersionedHistory(iyR,imR,{system:true});}catch(_){}
         // Édits manuels de Kevin (cmc_manual_overrides_<key>) : priorité humaine, ré-appliqués.
@@ -5939,7 +5972,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.909";
+var APP_VER="v9.910";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{

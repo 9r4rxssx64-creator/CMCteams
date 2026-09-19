@@ -9924,3 +9924,31 @@ de la messagerie. Vérifié avant retrait : aucune page ne les charge. Exclus du
   maintenant : retirer un fichier du paquet le fait échouer, le remettre le fait repasser.
 
 **En ligne au moment du contrôle** : app v9.909, page Départs v1.49, sur les 4 adresses — 0 en défaut.
+
+## 2026-09-19 (16h) — PRIORITÉ TRAVAIL : octobre n'avait AUCUNE équipe en ligne (v9.910)
+
+Kevin : « Fais CMCteams et light à jour en priorité, des personnes s'en servent pour le travail. »
+
+**Mesuré sur le vrai domaine, connecté** (pas en local) :
+- septembre : 290 plannings · **247** équipes
+- **octobre : 281 plannings · 0 ÉQUIPE**
+
+Un croupier qui ouvrait octobre ne voyait ni son équipe ni son équipe miroir — alors que les
+cellules étaient justes. C'est le mois qu'on consulte pour s'organiser.
+
+**Cause racine** (reproduite en local, pas devinée) : l'app ne pose les équipes du planning
+vérifié que lorsqu'elle REMPLACE des cellules. Dès qu'un mois a été posé une fois, les cellules
+sont déjà justes → elle marque le mois « traité » et ne pose **ni équipe ni miroir**. Sur le mois
+affiché, la détection du démarrage rattrapait en partie (247/290) ; sur le mois suivant, rien.
+
+**Correctif v9.910** : l'équipe et le miroir vérifiés sont posés **quand ils manquent**, jamais
+par-dessus une valeur existante. Mesuré : octobre **0 → 281/281**, septembre **282 → 285/285**.
+
+**Garde** `npm run test:equipes-mois-suivant` (dans `test:ci`) : vrai navigateur, exige que chaque
+personne ait son équipe **pour le mois affiché ET le mois suivant**. Prouvée par sabotage.
+Aucun test ne regardait le mois suivant — c'est ce trou-là qui a laissé passer le bug.
+
+**Deuxième trou fermé** : `test:donnees-a-jour` — rien ne vérifiait que les fichiers livrés
+correspondent encore aux PDF (le garde de parité compare les générateurs entre eux, pas ce qui
+est servi). Empreintes des PDF + générateurs + fichiers livrés ; rouge si une régénération a été
+oubliée, si un fichier a été édité à la main, ou si un seul des deux côtés a été régénéré.
