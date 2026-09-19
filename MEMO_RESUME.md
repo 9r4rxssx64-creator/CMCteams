@@ -1,5 +1,23 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-18 (21h) — Le domaine ne dépend plus de GitHub : kd-mc.com est servi par Cloudflare Pages (le dépôt peut passer en privé)
+
+**Ce que Kevin a demandé** : « passe tout en privé, que personne ne puisse voir mon code » — et il a confirmé la bascule d'hébergement (« Go »).
+
+**Le blocage, vérifié et pas supposé** : GitHub Pages depuis un dépôt PRIVÉ est **payant**. Passer le dépôt en privé aujourd'hui aurait **éteint kd-mc.com**. Il fallait donc déménager le site d'abord.
+
+- **Le site est publié sur Cloudflare Pages** (workflow `publier-site-prive.yml`, déjà en place, déclenché à chaque push sur `main`). Ce qui part là-bas n'est **pas le dépôt** : c'est un paquet trié — les applications et rien d'autre.
+- **Le routeur va maintenant y chercher les pages** : `UPSTREAM_BASE` + `UPSTREAM_PREFIX = ""` dans `services/kdmc-router/wrangler.toml`. **Zéro ligne de code changée** — c'était prévu (garde `test:bascule`, 46/0).
+- **L'adresse n'a pas été devinée, elle a été MESURÉE** : le récapitulatif du workflow annonçait `kdmc-site.pages.dev`, le vrai alias est **`kdmc-site-bj5.pages.dev`**. Une nouvelle étape la déduit de la publication, la **sonde vraiment** (les 31 adresses) et **refuse la bascule** si elle ne sert pas tout → **31 servies / 0 en échec**.
+- **Deux bugs trouvés en préparant la bascule** :
+  - la **bouée de secours** (la copie des pages embarquée dans le routeur, qui sert quand l'hébergeur tombe) serait devenue **muette sans un mot** : elle est rangée avec l'ancien préfixe `/CMCteams/…`. **Corrigée** (elle essaie les deux rangements), garde `test:router-secours` étendue — **sabotage → 2 échecs**, remise → **59/0** ;
+  - le contrôle d'après-déploiement du routeur **n'échouait jamais** : la bascule pouvait casser le domaine avec un run tout vert. Ajout d'une étape **bloquante** qui ouvre réellement les 31 adresses sur kd-mc.com.
+  - au passage : `javis/**` manquait aux déclencheurs de publication → l'app Javis serait restée figée sans erreur. Ajouté.
+- **Pour revenir en arrière** : retirer les deux lignes du `wrangler.toml` → le routeur reprend GitHub Pages tout seul.
+
+**Ce qui reste pour Kevin** : un clic sur GitHub pour passer le dépôt en privé (je le donnerai une fois la bascule vérifiée en ligne). **Honnêteté** : les plannings et les PDF restent dans **l'historique** du dépôt public — un commit ne peut pas les « dépublier », seul le passage en privé ferme ça.
+
+
 ## 2026-09-18 (17h) — v9.908 / light v1.48 : ancienneté saisie par chacun, messages qui trouvent enfin leur réponse, mois passés vraiment effacés, noms plus exposés
 
 **Six demandes de Kevin d'un coup. Trois bugs réels trouvés en les vérifiant.**

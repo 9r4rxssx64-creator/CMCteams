@@ -276,6 +276,20 @@ jobs:
             *) echo "  ::warning:: v=antonin ne renvoie pas d'audio (=$CTA) — vérifier AX_REPLICATE_KEY et OPEN_AI_API_KEY.";;
           esac
 
+      # ── LE DOMAINE SERT-IL VRAIMENT TOUT ? (bloquant) ─────────────────────
+      # Le « Health check » au-dessus est best-effort : il n'échoue JAMAIS. Le
+      # 18.09.2026, en basculant la source des pages de GitHub Pages vers
+      # Cloudflare Pages, on a mesuré qu'une erreur de source aurait éteint les
+      # 31 adresses SANS qu'un seul contrôle vire au rouge. Cette étape-ci ouvre
+      # réellement chaque adresse du domaine et FAIT ÉCHOUER le déploiement si
+      # une seule ne répond pas — c'est le filet du jour de la bascule.
+      - name: Le domaine sert-il vraiment les 31 adresses ? (bloquant)
+        shell: bash -eo pipefail {0}
+        run: |
+          # Laisser le temps au worker de se propager au bord Cloudflare.
+          sleep 20
+          node tools/audit/sonde-site-publie.mjs "https://kd-mc.com"
+
       - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
         # peut dépasser 1 min). La preuve du CODE = tests unitaires (sso/admin) + harnais
