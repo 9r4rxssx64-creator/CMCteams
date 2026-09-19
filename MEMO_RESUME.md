@@ -1,5 +1,31 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (17h30) — J'ai cassé quelque chose, un contrôle l'a attrapé, c'est réparé (v9.914)
+
+**Ce qui s'est passé, sans enrobage** : ma correction de ce matin (celle qui remet les équipes
+d'octobre) enregistrait la liste des employés avec une commande qui **envoie aussi au cloud**.
+Résultat mesuré : l'app publiait la liste **une demi-seconde après le démarrage**, c'est-à-dire
+**avant** d'avoir réparé les équipes — donc elle envoyait à tout le monde les équipes **périmées**
+d'un autre téléphone. **247 équipes fausses sur 247 vérifiées**, et 9 envois au lieu de 6.
+La bonne valeur finissait par arriver, mais entre les deux le cloud était faux.
+
+**Ce qui l'a attrapé** : le contrôle `test:light-firebase`, qui nourrit l'app avec un cloud
+périmé — exactement ta situation. Mes contrôles ciblés (équipes, mois passés) étaient **tous
+verts** : ils vérifiaient que les équipes sont là, pas **ce qui part au cloud**.
+
+**Réparé (v9.914)** : le planning vérifié enregistre **sur le téléphone seulement**
+(comme l'effacement des mois passés). Il n'a jamais eu le droit de publier — son propre journal
+le dit depuis juillet : « affichage, sans écrasement ni push ». La réparation du cloud reste le
+travail de la fonction qui s'en occupait déjà.
+
+**Mesure après correction** : 247 vérifiées, **0 fausse** · **1 seul envoi** au cloud (contre 6
+avant ma correction de ce matin, et 9 avec le bug). Donc non seulement c'est réparé, mais l'app
+bavarde **six fois moins** avec le cloud qu'avant.
+
+**Ce que j'en retiens** : une correction qui « pose une donnée » doit toujours dire **où** elle
+la pose. J'avais réutilisé la commande d'enregistrement habituelle sans regarder qu'elle publie.
+
+
 ## 2026-09-19 (16h45) — v9.912 confirmée EN LIGNE, et les mois passés revenaient par la porte de derrière (v9.913)
 
 **1. Octobre : c'est réglé, et vérifié pour de vrai.** Je me suis connecté sur le vrai site
