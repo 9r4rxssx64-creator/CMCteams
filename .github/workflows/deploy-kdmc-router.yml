@@ -290,6 +290,30 @@ jobs:
           sleep 20
           node tools/audit/sonde-site-publie.mjs "https://kd-mc.com"
 
+      # ── D'OÙ VIENNENT VRAIMENT LES PAGES ? (bloquant, preuve POSITIVE) ────
+      # « 31 adresses répondent 200 » ne dit PAS d'où elles viennent : GitHub
+      # Pages et Cloudflare Pages servent le même site. Il faut une différence
+      # OBSERVABLE. Elle existe : GitHub Pages publie le dépôt presque entier
+      # (package.json compris) ; le paquet Cloudflare ne contient QUE les
+      # applications. Donc `package.json` servi = on est encore chez GitHub.
+      # C'est aussi un contrôle de confidentialité : le domaine n'a pas à servir
+      # les fichiers de fabrication du dépôt.
+      - name: D'où viennent vraiment les pages ? (bloquant)
+        shell: bash -eo pipefail {0}
+        run: |
+          ATTENDU=$(grep -oE 'UPSTREAM_BASE *= *"[^"]+"' services/kdmc-router/wrangler.toml | sed 's/.*"\(.*\)"/\1/' || true)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://cmcteams.kd-mc.com/package.json" || echo 000)
+          echo "  cmcteams.kd-mc.com/package.json → HTTP $CODE"
+          if [ -z "$ATTENDU" ]; then
+            echo "  (aucune bascule configurée dans le wrangler.toml — GitHub Pages reste la source, rien à prouver ici)"
+            exit 0
+          fi
+          if [ "$CODE" = "200" ]; then
+            echo "::error::le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de $ATTENDU. Bascule NON effective."
+            exit 1
+          fi
+          echo "  ✅ les pages viennent du paquet trié ($ATTENDU) — les fichiers de fabrication ne sont plus servis par le domaine"
+
       - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
         # peut dépasser 1 min). La preuve du CODE = tests unitaires (sso/admin) + harnais
