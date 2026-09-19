@@ -71,7 +71,13 @@ const emp = await page.evaluate(()=>{
   A.year  = n.getMonth()===0 ? n.getFullYear()-1 : n.getFullYear();
   dc();
   const apresClamp=A.year+'-'+A.month;
-  const res={ avant, apresFleche, apresClamp, inerte, nbFleches:fleches.length, attendu:n.getFullYear()+'-'+n.getMonth() };
+  // L'AUTRE SENS : masquer le passe ne doit PAS enfermer l'employe sur le mois
+  // courant. Son planning du mois suivant, deja importe, doit rester atteignable.
+  A.year=n.getFullYear(); A.month=n.getMonth(); dc();
+  nextM();
+  const apresAvance=A.year+'-'+A.month;
+  const nbSuivant=(A.overrides&&A.overrides[apresAvance])?Object.keys(A.overrides[apresAvance]).length:0;
+  const res={ avant, apresFleche, apresClamp, inerte, nbFleches:fleches.length, attendu:n.getFullYear()+'-'+n.getMonth(), apresAvance, nbSuivant };
   A.user=A.__save; delete A.__save;
   try{ if(typeof _viewAs!=='undefined') _viewAs=window.__va; }catch(_){}
   return res;
@@ -82,6 +88,12 @@ emp.inerte ? ok('employé : la flèche est visiblement inerte (pas un bouton mor
            : ko(`employé : la flèche reste active à l’écran (bouton mort) — ${emp.nbFleches} flèche(s) vue(s)`);
 emp.apresClamp === emp.attendu ? ok('employé posé sur un mois passé → ramené au mois en cours')
                                : ko(`employé resté sur un mois passé (${emp.apresClamp}, attendu ${emp.attendu})`);
+// Symétrie : le mois SUIVANT (déjà importé) doit rester atteignable — sinon on a
+// « nettoyé » le passé en privant tout le monde du planning à venir.
+if (!emp.nbSuivant && emp.apresAvance === emp.avant) console.log('  ·  (aucun mois suivant importé — rien à atteindre)');
+else emp.apresAvance !== emp.avant && emp.nbSuivant > 0
+  ? ok(`employé : la flèche « › » atteint bien le mois suivant (${emp.apresAvance}, ${emp.nbSuivant} personnes)`)
+  : ko(`employé enfermé sur le mois courant : « › » donne ${emp.apresAvance} avec ${emp.nbSuivant} personne(s) — il perd son planning à venir`);
 await page.close();
 
 // ───────────────────────── Page Départs (light) ─────────────────────────
@@ -97,13 +109,25 @@ const dep = await p2.evaluate(()=>{
   document.body.classList.add('admin'); try{fillMoSel();}catch(_){}
   const avecAdmin=lire();
   document.body.classList.remove('admin'); try{fillMoSel();}catch(_){}
-  return { sansAdmin, avecAdmin, passesSansAdmin:sansAdmin.filter(passe), passesAvecAdmin:avecAdmin.filter(passe) };
+  // L'AUTRE MOITIE DE LA REGLE : « le mois courant ET les mois futurs importes ».
+  // Ne verifier que « aucun mois passe » laisserait passer un filtre trop large qui
+  // emporterait aussi octobre — la liste serait propre et l'employe n'aurait plus
+  // son planning a venir (lecon #142 : une garde qui ne regarde qu'un sens).
+  const attendus=(window.DEP_GEN_MONTHS||[])
+    .filter(m=>(m.year*12+m.monthIdx)>=cur)
+    .map(m=>m.year+'-'+m.monthIdx);
+  const manquants=attendus.filter(v=>sansAdmin.indexOf(v)<0);
+  return { sansAdmin, avecAdmin, passesSansAdmin:sansAdmin.filter(passe), passesAvecAdmin:avecAdmin.filter(passe), attendus, manquants };
 });
 if (!dep.avecAdmin.length) ko('page Départs : aucune liste de mois (test impossible)');
 else {
   dep.passesSansAdmin.length === 0
     ? ok(`page Départs : ${dep.sansAdmin.length} mois proposé(s) hors admin, aucun passé`)
     : ko(`page Départs : ${dep.passesSansAdmin.length} mois passé(s) encore proposés hors admin (${dep.passesSansAdmin.join(', ')})`);
+  if (!dep.attendus.length) console.log('  ·  (aucun mois courant/futur généré — rien à exiger)');
+  else dep.manquants.length === 0
+    ? ok(`page Départs : les ${dep.attendus.length} mois à venir/en cours restent proposés à l’employé (${dep.attendus.join(', ')})`)
+    : ko(`page Départs : ${dep.manquants.length} mois NON passé(s) retiré(s) à l’employé (${dep.manquants.join(', ')}) — il perd son planning à venir`);
   if (dep.passesAvecAdmin.length) ok(`page Départs : l’admin retrouve l’historique (${dep.passesAvecAdmin.length} mois passé(s))`);
   else console.log('  ·  (aucun mois passé dans les données générées — rien à retrouver côté admin)');
 }
