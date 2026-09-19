@@ -1,5 +1,31 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (19h40) — Mes gardes ne tournaient nulle part. Maintenant si.
+
+**Mesuré, pas supposé** : toutes les vérifications du planning (équipes, horaires, lieux,
+ordres de départ, mois passés) sont rattachées à une commande, `test:ci`, qui n'est lancée par
+**aucun** contrôle automatique de GitHub. Elle n'existe que côté GitLab — et la mise à niveau de
+GitLab a tourné pour la dernière fois **le 17 septembre, à la main**.
+
+Autrement dit : tout ce que j'ai écrit et prouvé aujourd'hui **ne s'exécutait nulle part**. C'était
+de la documentation, pas une protection.
+
+**Le pire** : le même constat avait déjà été fait le 16 septembre pour les animations de Bee… et
+corrigé **uniquement pour Bee**. Boucher le trou pour une famille laisse toutes les autres dehors.
+
+**Corrigé** : un contrôle automatique dédié au planning, qui se déclenche dès que tu touches à
+l'app, aux données ou à la page Départs. Il enchaîne 10 vérifications — d'abord les rapides,
+puis le vrai navigateur :
+
+le planning vient-il des PDF · les deux surfaces ont les mêmes mois · les lieux · les numéros de
+départ (0 doublon, dans la séquence, jamais un jour non travaillé) · la rotation +1 · app = page
+Départs · chacun voit son équipe · les équipes du mois suivant · les mois passés · et le cas du
+cloud périmé (ta vraie situation).
+
+**Pas de minuterie** : il ne tourne que sur un vrai changement, ou quand je le lance. Ton compte
+avait été suspendu en août pour excès d'exécutions — je ne recrée pas ce problème.
+
+
 ## 2026-09-19 (19h10) — Balayage : 3 gardes aveugles, 1 fausse accusation
 
 Après en avoir trouvé deux, j'ai passé en revue **toutes** les vérifications qui ouvrent la page
