@@ -125,8 +125,32 @@ for (const url of urls) {
         out.teams = (A.teams || []).map((t) => ({ id: t.id, name: t.name, family: t.family || null, board: !!t._board }));
         return out;
       }).catch((e) => ({ erreur: String(e && e.message || e).slice(0, 200) }));
+      /* DIAGNOSTIC (Kevin 2026-09-19) : en production, le journal disait « 281
+         équipes posées pour octobre » et la mesure juste après donnait 0 —
+         impossible à reproduire en local. On relance donc la pose ICI, sur
+         l'appareil réel, et on re-mesure : si ça répare, le correctif est bon
+         et c'est le MOMENT où il tourne qui est en cause ; si ça ne répare
+         pas, c'est autre chose qui efface. Lecture seule côté écran : on ne
+         touche pas aux horaires, on ne pose que des équipes manquantes. */
+      releve.relance = await page.evaluate(() => {
+        const out = { dispo: {}, avant: {}, apres: {} };
+        try {
+          out.dispo = {
+            poseEquipes: typeof _cmcSeedPoseEquipes === 'function',
+            completeApresFirebase: typeof _cmcSeedCompleteApresFirebase === 'function',
+            appliquerSeed: typeof _cmcApplyPlanningSeed === 'function',
+          };
+          const cles = Object.keys((window.CMC_PLANNING_SEED || {}).months || {});
+          const compte = () => { const o = {}; for (const key of cles) { const [y, m] = key.split('-').map(Number); o[key] = A.employees.filter((e) => e && (e.teamHistory || {})[key]).length; } return o; };
+          out.avant = compte();
+          if (typeof _cmcApplyPlanningSeed === 'function') _cmcApplyPlanningSeed();
+          out.apres = compte();
+        } catch (e) { out.erreur = String(e && e.message || e).slice(0, 160); }
+        return out;
+      }).catch((e) => ({ erreur: String(e && e.message || e).slice(0, 160) }));
       writeFileSync(join(dossier, 'equipes.json'), JSON.stringify(releve));
       P.releve = Object.keys(releve.mois || {}).map((k) => k + ' : ' + (releve.mois[k].emps || []).length + ' employés, ' + (releve.mois[k].emps || []).filter((e) => e.tm).length + ' avec équipe, ' + (releve.mois[k].emps || []).filter((e) => e.cells > 0).length + ' avec cellules, recap ' + releve.mois[k].recap + ', parser import ' + ((releve.mois[k].ref || {}).parserVersion || '∅')).join(' · ') || releve.erreur || '';
+      P.relance = releve.relance;
       P.captures.push('equipes.json');
     }
   } catch (e) { P.ok = false; P.erreur = String(e && e.message || e).slice(0, 300); echecs++; }
@@ -145,6 +169,7 @@ for (const P of rapport.pages) {
   md.push('<details><summary>Texte visible (début)</summary>', '', '```', P.texte.slice(0, 2500), '```', '', '</details>', '');
   for (const k of Object.keys(P).filter((x) => x.startsWith('vue_'))) md.push('- ' + k + ' : demandée ' + JSON.stringify(P[k].demandee) + ' · affichée ' + P[k].affichee, '');
   if (P.releve) md.push('- relevé des équipes (equipes.json) : ' + P.releve, '');
+  if (P.relance) md.push('- diagnostic relance : avant ' + JSON.stringify(P.relance.avant) + ' -> apres ' + JSON.stringify(P.relance.apres) + (P.relance.erreur ? ' (' + P.relance.erreur + ')' : ''), '');
   if (P.console && P.console.length) md.push('', '<details><summary>Journal de démarrage (ce qui a tourné)</summary>', '', '```', P.console.slice(0, 40).join('\n'), '```', '', '</details>', '');
 }
 writeFileSync(join(SORTIE, 'RAPPORT.md'), md.join('\n'));
