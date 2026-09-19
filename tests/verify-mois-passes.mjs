@@ -167,6 +167,86 @@ banque.futurAtteignable ? ok(`mois futur toujours accessible à tout le monde ($
                         : ko(`le mois futur ${banque.futur} est refusé alors qu'il doit rester accessible`);
 await p3.close();
 
+// ── v9.913 : UN MOIS PASSÉ NE REVIENT PAS PAR LA PORTE DE DERRIÈRE (Kevin 2026-09-19).
+//    MESURÉ EN PRODUCTION, connecté en tant qu'employé : son appareil gardait les équipes de
+//    juillet et d'août. L'effacement faisait bien son travail, puis le planning vérifié —
+//    qui parcourt TOUS ses mois — les reposait aussitôt. Deux mécanismes qui se battaient.
+//    Ici on rejoue exactement ça : on efface, on relance le planning vérifié (au démarrage
+//    PUIS à l'arrivée du cloud), et on exige que rien ne revienne chez l'employé — tout en
+//    exigeant que ça revienne bien chez l'admin (sinon la garde ne prouverait rien).
+console.log('\n5. Le planning vérifié ne fait pas revenir les mois passés');
+const p4 = await ctx.newPage(); p4.on('pageerror', e=>errs.push('retour: '+e));
+await p4.addInitScript(()=>{const S={cmc_dver:'30',cmc_v706_total_wiped:'1',cmc_fam_restored_v116:'1',cmc_v805_famreset:'1',cmc_uid:'U11804',cmc_lastact:String(Date.now()),cmc_seen_v10_678:'1',cmc_cookies_consent:'1'};for(const k in S)localStorage.setItem(k,S[k]);});
+await p4.goto(BASE+'/index.html',{waitUntil:'domcontentloaded'});
+await p4.waitForFunction(()=>window.A&&Array.isArray(A.employees)&&A.employees.length>100,{timeout:40000});
+await p4.waitForTimeout(2000);
+
+const prep = await p4.evaluate(() => {
+  const N = new Date();
+  const pm = (N.getMonth()===0) ? (N.getFullYear()-1)+'-11' : N.getFullYear()+'-'+(N.getMonth()-1);
+  const emp = A.employees.find(e => e.id !== 'U11804');
+  // On POSE un mois passé dans le planning vérifié : la garde reste vraie l'an prochain,
+  // quand les mois réellement embarqués auront changé (pas de test qui s'endort).
+  window.CMC_PLANNING_SEED.months[pm] = {
+    emps: [{ id: emp.id, name: emp.name, family: emp.family || 'bj' }],
+    ov:   { [emp.id]: { 1: 'RH', 2: '20/5' } },
+    team: { [emp.id]: '9' },
+    fam:  { [emp.id]: 'bj' },
+    mirror: { '9': '7' }
+  };
+  const net = () => { delete A.overrides[pm]; if (emp.teamHistory) delete emp.teamHistory[pm]; localStorage.removeItem('cmc_team_mirror_' + pm); };
+  window.__net = net; window.__pm = pm; window.__empId = emp.id;
+  net();
+  // EMPLOYÉ : démarrage
+  A.user = emp; try{ if(typeof _viewAs!=='undefined') _viewAs = null; }catch(_){}
+  _cmcApplyPlanningSeed();
+  const lire = () => ({
+    planning: !!A.overrides[pm],
+    equipe:   !!(emp.teamHistory && emp.teamHistory[pm]),
+    cleMois:  localStorage.getItem('cmc_team_mirror_' + pm) !== null
+  });
+  const auDemarrage = lire();
+  // EMPLOYÉ : arrivée du cloud (c'est ce chemin-là qui reposait les équipes en production)
+  _cmcSeedCompleteApresFirebase();
+  return { pm, auDemarrage };
+});
+await p4.waitForTimeout(1200);
+const suite = await p4.evaluate(() => {
+  const pm = window.__pm, emp = A.employees.find(e => e.id === window.__empId);
+  const lire = () => ({
+    planning: !!A.overrides[pm],
+    equipe:   !!(emp.teamHistory && emp.teamHistory[pm]),
+    cleMois:  localStorage.getItem('cmc_team_mirror_' + pm) !== null
+  });
+  const apresCloud = lire();
+  // ADMIN : le même planning vérifié DOIT reposer le mois passé (sinon la garde ne prouve rien)
+  window.__net();
+  A.user = A.employees.find(e => e.id === 'U11804');
+  _cmcApplyPlanningSeed();
+  const admin = lire();
+  // « VOIR COMME » : c'est l'appareil de Kevin, son historique ne doit pas partir
+  window.__net();
+  A.user = emp; try{ if(typeof _viewAs!=='undefined') _viewAs = { id:'U11804', name:'DESARZENS K' }; }catch(_){}
+  _cmcApplyPlanningSeed();
+  const voirComme = lire();
+  try{ if(typeof _viewAs!=='undefined') _viewAs = null; }catch(_){}
+  return { apresCloud, admin, voirComme };
+});
+const mp = prep.pm;
+(!prep.auDemarrage.planning && !prep.auDemarrage.equipe && !prep.auDemarrage.cleMois)
+  ? ok(`employé, au démarrage : le mois passé ${mp} n'est pas reposé (ni planning, ni équipe, ni clé)`)
+  : ko(`employé, au démarrage : ${mp} est revenu (planning=${prep.auDemarrage.planning}, équipe=${prep.auDemarrage.equipe}, clé=${prep.auDemarrage.cleMois})`);
+(!suite.apresCloud.planning && !suite.apresCloud.equipe && !suite.apresCloud.cleMois)
+  ? ok(`employé, à l'arrivée du cloud : ${mp} ne revient toujours pas (le cas mesuré en production)`)
+  : ko(`employé : ${mp} est revenu après le cloud (planning=${suite.apresCloud.planning}, équipe=${suite.apresCloud.equipe}, clé=${suite.apresCloud.cleMois})`);
+(suite.admin.planning && suite.admin.equipe)
+  ? ok(`admin : le même planning vérifié lui repose bien ${mp} (la garde sait faire la différence)`)
+  : ko(`admin : ${mp} ne lui est PAS reposé — il perd son historique`);
+(suite.voirComme.planning && suite.voirComme.equipe)
+  ? ok('« voir comme un employé » : l\'appareil de Kevin garde son historique')
+  : ko('« voir comme » : l\'historique de Kevin a disparu de son propre appareil');
+await p4.close();
+
 console.log(`\n=== ${OK} OK / ${FAIL} FAIL ===`);
 await nav.close(); server.close();
 process.exit(FAIL || errs.length ? 1 : 0);

@@ -47,9 +47,19 @@ export const PIECES = {
   ],
 };
 
+/* Le seed porte la version de l'app qui l'a produit (`"parser":"v9.xxx"`), et cette
+   version doit suivre APP_VER — c'est une autre garde qui l'exige (test:seed-remplace).
+   Résultat : une simple montée de version fait changer le fichier sans qu'aucune DONNÉE
+   de planning n'ait bougé, et ce contrôle-ci criait « modifié à la main ».
+   On empreinte donc ce qui compte : le planning lui-même, l'estampille mise de côté.
+   (Leçon #295 : un faux rouge se corrige en rapprochant la garde de la réalité.) */
+const SANS_ESTAMPILLE = /"parser":"v[0-9.]*"/g;
+
 export function empreinte(chemin) {
   if (!existsSync(chemin)) return null;
-  return createHash('sha256').update(readFileSync(chemin)).digest('hex').slice(0, 16);
+  let contenu = readFileSync(chemin);
+  if (/\.js$/.test(chemin)) contenu = Buffer.from(contenu.toString('utf8').replace(SANS_ESTAMPILLE, '"parser":"-"'), 'utf8');
+  return createHash('sha256').update(contenu).digest('hex').slice(0, 16);
 }
 
 export function etatActuel() {
