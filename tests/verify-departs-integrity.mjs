@@ -44,6 +44,14 @@ const page = await ctx.newPage();
 const jsErrors = [];
 page.on('pageerror', e => jsErrors.push(String(e)));
 await page.goto(`http://127.0.0.1:${PORT}/index.html`, { waitUntil: 'load' });
+/* MODE ADMIN OBLIGATOIRE (corrigé le 19.09, cette garde ne mesurait PLUS RIEN) :
+   depuis light v1.48, la page refuse d'afficher un mois déjà passé à qui n'est pas
+   admin — c'est voulu (Kevin : « enlève les mois passés pour tous sauf l'admin »).
+   Cette garde, elle, visite TOUS les mois embarqués : sans se déclarer admin, elle
+   recevait un tableau VIDE pour juillet et août, comptait 0 personne, 0 contrôle…
+   et concluait ✅. Mesuré : 0 ligne sans admin, 7 lignes avec, sur le même tableau.
+   Une vérification doit voir ce qu'elle vérifie. */
+await page.evaluate(() => document.body.classList.add('admin'));
 
 const boards = await page.evaluate(() => Object.keys(window.BOARDS)
   .filter(id => window.BOARDS[id].kind !== 'abs')
@@ -97,6 +105,20 @@ for (const bd of boards) {
 
 console.log('== INTÉGRITÉ DÉPARTS — page light réelle (v' + (await page.evaluate(() => (typeof APP_VER !== 'undefined' ? APP_VER : '?'))) + ') ==');
 console.log(`  Équipes: ${teams} · personnes actives: ${people} · jours-équipe: ${dayChecks} · contrôles horaires: ${horaireChecks}`);
+/* PLANCHER DE MESURE : « je n'ai rien trouvé » ne vaut PAS « tout est bon ».
+   Le 19.09 cette garde affichait 0 personne / 0 contrôle et sortait ✅ — elle
+   gardait donc les départs de personne. Si le nombre de contrôles s'effondre,
+   c'est que la page ne rend plus ce qu'on croit : on échoue, et on le DIT.
+   Repère mesuré le même jour, tous mois confondus : 144 équipes, 502 personnes,
+   15 000+ contrôles horaires. Le plancher est volontairement bas (la moitié du
+   plus petit mois) pour ne pas rougir au premier changement de données. */
+const PLANCHER = { personnes: 200, horaires: 4000 };
+if (people < PLANCHER.personnes || horaireChecks < PLANCHER.horaires) {
+  console.log(`❌ MESURE IMPOSSIBLE : ${people} personne(s) et ${horaireChecks} contrôle(s) — attendu au moins ${PLANCHER.personnes} et ${PLANCHER.horaires}.`);
+  console.log('   La page n\'a pas rendu les tableaux (mois refusé faute de mode admin ? structure changée ?).');
+  console.log('   Je n\'affirme RIEN sur les départs tant que je n\'ai pas vraiment mesuré.');
+  await browser.close(); server.close(); process.exit(1);
+}
 console.log(`  Erreurs JS: ${jsErrors.length ? jsErrors.join(' | ') : 'aucune'}`);
 if (fails.length) {
   console.log('❌ VIOLATIONS (' + fails.length + ') :');

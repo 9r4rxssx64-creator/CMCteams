@@ -1,5 +1,39 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (18h40) — Vérification totale des départs : elle ne vérifiait plus rien depuis hier
+
+**Trouvé en faisant la vérification complète que tu m'as demandée.** Le contrôle qui garantit que
+l'ordre des départs est respecté « pour chaque personne de chaque équipe » affichait :
+**0 personne, 0 contrôle… et un ✅**. Il ne gardait plus rien, en silence.
+
+**Pourquoi** : depuis hier, la page Départs refuse d'afficher un mois passé à qui n'est pas admin —
+c'est ce que tu as demandé, et c'est bien. Mais le contrôle, lui, passe sur **tous** les mois et ne
+s'était jamais présenté comme admin : pour juillet et août il recevait un tableau **vide**.
+Mesuré : 0 ligne sans admin, 7 lignes avec, sur le même tableau.
+
+**Corrigé, deux choses** : le contrôle se présente comme admin (une vérification doit voir ce
+qu'elle vérifie) · et surtout il a maintenant un **plancher** : en dessous de 200 personnes ou
+4 000 contrôles, il **échoue** en disant « je n'ai pas pu mesurer », au lieu de conclure.
+
+**Ce que ça donne une fois qu'il mesure vraiment** :
+**144 équipes · 995 personnes · 3 122 jours d'équipe · 30 598 contrôles d'horaires · 0 anomalie.**
+
+### La vérification complète que tu voulais, en chiffres
+
+| Ce qui est vérifié | Mesure | Résultat |
+|---|---|---|
+| **Départs** (chaque personne, chaque équipe, 4 mois) | 30 598 contrôles d'horaires | **0 anomalie** |
+| **Départs : app = page Départs** | 18 753 cellules comparées | **0 écart** |
+| **Lieux** (CMC / Café de Paris) | 69 codes · 35 113 cellules · 1 571 au Café de Paris | **identique des deux côtés** |
+| **Équipes affichées** | les 4 mois, effectifs = PDF | **0 écart** |
+| **Équipes = PDF** (récapitulatif page 1 + ordre des grilles) | les deux surfaces | **conformes** |
+| **Appartenance aux équipes** | app ⇄ page Départs | **0 écart** |
+
+**C'est la deuxième fois aujourd'hui** que je trouve une alarme qui confond « je n'ai pas pu
+mesurer » avec un résultat. J'en ai fait une règle écrite (#300) : un compteur à zéro est un échec,
+jamais un succès.
+
+
 ## 2026-09-19 (18h10) — Un rouge qui criait « fuite » alors qu'il n'avait rien pu mesurer
 
 **Trouvé en cherchant autre chose** : la publication de secours vers l'ancienne adresse GitHub
