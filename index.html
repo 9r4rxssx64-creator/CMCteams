@@ -5854,6 +5854,15 @@ function _cmcApplyPlanningSeed(){
         if(m.team){ Object.keys(m.team).forEach(function(id){ var e=byId[mid(id)]; if(e){ if(!e.teamHistory)e.teamHistory={}; e.teamHistory[key]=m.team[id]; } }); }
         _cmcSeedMarkApplied(key,S,replaceInfo,row);
       }
+      // v9.911 — MESURÉ le 19.09 sur un appareil SANS données locales (le cas le
+      // plus courant : un employé qui ouvre l'app, ou une session avant l'arrivée
+      // de Firebase) : juillet, août et OCTOBRE affichaient 0 ÉQUIPE. Les équipes
+      // du planning vérifié n'étaient posées que dans la branche « remplacement » ;
+      // ici, on posait les cellules, la famille, l'école et le miroir — jamais
+      // l'équipe. Seul le MOIS AFFICHÉ était rattrapé par la détection du
+      // démarrage, d'où « ça a l'air de marcher » en ouvrant l'app.
+      // On complète donc ce qui MANQUE, pour tous les mois du planning vérifié.
+      _cmcSeedPoseEquipes(key,m,byId,mid);
       applied++;
     });
     if(applied){ try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){} try{if(typeof _rebuildIndexes==="function")_rebuildIndexes();}catch(_){} console.info("[v9.824 seed] "+applied+" mois intégrés (affichage, sans écrasement ni push)"); }
@@ -5972,7 +5981,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.910";
+var APP_VER="v9.911";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
