@@ -1,5 +1,22 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (17h55) — VÉRIFIÉ EN LIGNE, en tant qu'employé : c'est fait (v9.914 servie)
+
+Relevé sur le vrai site, connecté **en tant qu'employé** (aucun privilège), pas en tant que Kevin :
+
+| Ce qui est mesuré | Résultat |
+|---|---|
+| Version servie | **v9.914** (l'app) · **v1.49** (page Départs) |
+| Mois passés encore sur son appareil | **0** — juillet : 0 équipe, 0 planning · août : 0 équipe, 0 planning |
+| Équipes septembre / octobre | **285** / **281** |
+| Le planning vérifié relancé change-t-il quelque chose ? | **non** — avant = après sur les 4 mois |
+| Erreurs, requêtes en échec, 404/5xx | **0** partout, sur les deux surfaces |
+
+Le « avant = après » est le point important : les mois passés **restent** à zéro même quand le
+planning vérifié repasse, et septembre/octobre **tiennent** sans qu'on relance rien à la main.
+C'est exactement ce que la correction devait produire, mesuré là où ça compte — chez l'employé.
+
+
 ## 2026-09-19 (17h30) — J'ai cassé quelque chose, un contrôle l'a attrapé, c'est réparé (v9.914)
 
 **Ce qui s'est passé, sans enrobage** : ma correction de ce matin (celle qui remet les équipes
