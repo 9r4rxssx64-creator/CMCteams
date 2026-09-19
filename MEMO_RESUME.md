@@ -1,5 +1,20 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (14h30) — « Pourquoi l'app a plusieurs adresses ? » : elle n'en a qu'UNE, trois autres étaient cassées
+
+**Correction d'abord** : hier je t'ai écrit que l'app avait 7 adresses. **C'était faux.** CMCteams n'a qu'une seule adresse : `cmcteams.kd-mc.com`. J'avais pris le symptôme pour la configuration.
+
+**Ce qui se passait vraiment** : `rotaplan`, `kit` et `croupier` sont **trois boutiques à toi**, avec chacune son adresse et sa page dans le dépôt. Mais **aucune n'était dans le paquet publié**. L'hébergeur, ne trouvant pas leur page, répond par la page d'accueil du projet — c'est-à-dire **CMCteams** — avec un code « tout va bien ». Trois adresses servaient donc l'app à la place de leur boutique, sans la moindre erreur.
+
+**Pourquoi rien ne l'a vu** :
+- la sonde vérifiait que l'adresse **répond**, jamais qu'elle répond **la bonne chose** ;
+- le test du paquet parcourait une **liste recopiée à la main de 24 adresses** alors que le routeur en a **32** — et les trois cassées étaient justement dans les 8 oubliées. C'est exactement l'interdit déjà écrit dans le fabricant : « la liste se LIT dans ROUTES, jamais recopiée ».
+
+**Corrigé** : les trois boutiques entrent dans le paquet (**32 adresses sur 32** ont leur propre page) · le test du paquet **lit ROUTES** · la sonde compare les pages **entre adresses** et échoue si deux adresses de dossiers différents rendent la même chose — la signature exacte du repli.
+
+**Les seuls doublons qui restent sont voulus** : `kd-mc.com`/`www`, `departs`/`cmcteams-light` (ton alias du 1er juillet), `cuisine`/`cocina`/`cujina` (les trois noms du livre).
+
+
 ## 2026-09-19 (14h) — « Certains sont encore en 1.39 » : le site ne se publiait plus tout seul (v9.909 / light v1.49)
 
 **Ce que Kevin a demandé** : « Vérifie les MAJ auto pour tout le monde. Certains sont encore en 1.39. Pourquoi ? »

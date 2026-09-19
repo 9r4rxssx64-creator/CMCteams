@@ -41,34 +41,31 @@ if (!existsSync(RACINE)) {
     { stdio: 'inherit' });
 }
 
-/* Les applications, telles que le routeur les sert (table ROUTES, préfixe retiré). */
-const APPS = [
-  { sous: 'kd-mc.com', chemin: '/kdmc-home/index.html' },
-  { sous: 'cmcteams', chemin: '/index.html' },
-  { sous: 'apex-ai', chemin: '/apex-ai-v13/index.html' },
-  { sous: 'apex-chat', chemin: '/messaging-app/index.html' },
-  { sous: 'coffre', chemin: '/coffre-fort/index.html' },
-  { sous: 'departs', chemin: '/tools/departs/index.html' },
-  { sous: 'studio', chemin: '/tools/crea-studio/index.html' },
-  { sous: 'bot', chemin: '/tools/crypto-bot-dashboard/index.html' },
-  { sous: 'beatbot', chemin: '/tools/poolrobot/index.html' },
-  { sous: 'autorisations', chemin: '/tools/approvals/index.html' },
-  { sous: 'lingua', chemin: '/lingua/index.html' },
-  { sous: 'dashboard', chemin: '/shops/dashboard/index.html' },
-  { sous: 'sourcing', chemin: '/shops/sourcing/index.html' },
-  /* Ajoutés le 10/09/2026 : six sous-domaines de la table ROUTES n'étaient
-     ouverts par AUCUN test — deux manquaient carrément du paquet (cuisine,
-     portail boutiques), quatre y étaient sans que rien ne le prouve. */
-  { sous: 'shops', chemin: '/shops/index.html' },
-  { sous: 'worldmonitor', chemin: '/kdmc-home/worldmonitor/index.html' },
-  { sous: 'osint', chemin: '/kdmc-home/osint/index.html' },
-  { sous: 'ia', chemin: '/kdmc-home/ia/index.html' },
-  { sous: 'outils', chemin: '/kdmc-home/outils/index.html' },
-  { sous: 'cuisine', chemin: '/tools/cuisine/index.html' },
-  { sous: 'arbre', chemin: '/arbre/index.html' },
-  { sous: 'chez-lolo', chemin: '/shops/chez-lolo/index.html' },
-  { sous: 'la-detente', chemin: '/la-detente/index.html' },
-];
+/* Les applications, LUES DANS LA TABLE ROUTES du routeur — jamais recopiées.
+   ⚠️ 19.09.2026, Kevin : « pourquoi l'app a plusieurs adresses ? » Cette liste
+   était une COPIE À LA MAIN de 24 entrées, alors que ROUTES en compte 32. Les
+   8 manquantes n'étaient ouvertes par aucun test — et trois d'entre elles
+   (rotaplan, kit, croupier) n'avaient AUCUNE page dans le paquet : l'hébergeur
+   répondait par /index.html, donc par CMCteams, avec un code 200. Trois
+   adresses servaient l'app à la place de leur boutique, sans un seul rouge.
+   Une liste recopiée dérive toujours : on lit la source. */
+const _src = await readFile('services/kdmc-router/worker.js', 'utf8');
+const _bloc = _src.slice(_src.indexOf('const ROUTES'), _src.indexOf('// Proxy MÊME ORIGINE'));
+const _routes = [...(_bloc.matchAll(/'([a-z0-9.-]+\.kd-mc\.com|kd-mc\.com)'\s*:\s*'\/CMCteams\/?([^']*)'/g))]
+  .map((m) => ({ sous: m[1].replace(/\.kd-mc\.com$/, ''), chemin: '/' + (m[2] ? m[2] + '/' : '') + 'index.html' }));
+if (_routes.length < 25) {
+  console.error(`❌ MESURE IMPOSSIBLE : ${_routes.length} adresses lues dans ROUTES, c'est trop peu — le format a dû changer.`);
+  process.exit(2);
+}
+/* Plusieurs adresses servent le MÊME dossier (cuisine/cocina/cujina,
+   departs/cmcteams-light, kd-mc.com/www). On n'ouvre chaque page qu'une fois,
+   mais on garde tous les noms pour que le rapport les cite. */
+const _parChemin = new Map();
+for (const r of _routes) {
+  if (!_parChemin.has(r.chemin)) _parChemin.set(r.chemin, []);
+  _parChemin.get(r.chemin).push(r.sous);
+}
+const APPS = [..._parChemin].map(([chemin, sous]) => ({ chemin, sous: sous.join(' / ') }));
 
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',

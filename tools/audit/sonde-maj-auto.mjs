@@ -26,23 +26,33 @@
 const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : null; };
 const ATTENDU = { app: arg('--attendu-app'), light: arg('--attendu-light') };
 
-/* Chaque adresse et ce qu'elle sert. Les adresses viennent de la table ROUTES
-   du routeur (voir sonde-site-publie.mjs) ; ici on ne garde que celles qui
-   servent l'app CMCteams ou la page Départs — les seules qui ont une version. */
-const CIBLES = [
-  { hote: 'departs.kd-mc.com', quoi: 'page Départs', type: 'light' },
-  { hote: 'cmcteams-light.kd-mc.com', quoi: 'page Départs (autre nom)', type: 'light' },
-  { hote: 'cmcteams.kd-mc.com', quoi: 'app CMCteams', type: 'app' },
-  { hote: 'rotaplan.kd-mc.com', quoi: 'app CMCteams (autre nom)', type: 'app' },
-  { hote: 'kit.kd-mc.com', quoi: 'app CMCteams (autre nom)', type: 'app' },
-  { hote: 'croupier.kd-mc.com', quoi: 'app CMCteams (autre nom)', type: 'app' },
-  { hote: 'dossiers.kd-mc.com', quoi: 'app CMCteams (autre nom)', type: 'app' },
-];
+/* Les adresses sont LUES DANS LA TABLE ROUTES du routeur — jamais recopiées.
+   ⚠️ 19.09.2026 : au 1er jet j'avais recopié la liste à la main et rangé
+   rotaplan, kit, croupier et dossiers dans « app CMCteams (autre nom) ».
+   C'ÉTAIT FAUX : ce sont leurs PROPRES applications. Elles servaient CMCteams
+   seulement parce que leur page manquait au paquet publié, et que l'hébergeur
+   répond alors par l'accueil avec un code 200. J'ai pris le symptôme pour la
+   configuration. On lit donc la source : seules les adresses qui pointent
+   VRAIMENT sur la racine sont « l'app », et celles qui pointent sur
+   tools/departs sont « la page Départs ». */
+import { readFileSync } from 'node:fs';
+const _src = readFileSync('services/kdmc-router/worker.js', 'utf8');
+const _bloc = _src.slice(_src.indexOf('const ROUTES'), _src.indexOf('// Proxy MÊME ORIGINE'));
+const _routes = [...(_bloc.matchAll(/'([a-z0-9.-]+\.kd-mc\.com|kd-mc\.com)'\s*:\s*'\/CMCteams\/?([^']*)'/g))]
+  .map((m) => ({ hote: m[1], dossier: m[2] }));
+if (_routes.length < 25) {
+  console.error(`❌ MESURE IMPOSSIBLE : ${_routes.length} adresses lues dans ROUTES — le format a dû changer.`);
+  process.exit(2);
+}
+const CIBLES = _routes
+  .filter((r) => r.dossier === '' || r.dossier === 'tools/departs')
+  .map((r) => (r.dossier === ''
+    ? { hote: r.hote, quoi: 'app CMCteams', type: 'app' }
+    : { hote: r.hote, quoi: 'page Départs', type: 'light' }));
 /* La page Départs vit aussi DANS l'app : c'est le chemin qu'ouvre le bouton
    « Départs » de CMCteams. Il a sa propre version.txt, à vérifier aussi. */
-const SOUS = [
-  { hote: 'cmcteams.kd-mc.com', chemin: '/tools/departs/', quoi: 'page Départs (depuis l\'app)', type: 'light' },
-];
+const SOUS = _routes.filter((r) => r.dossier === '').map((r) => (
+  { hote: r.hote, chemin: '/tools/departs/', quoi: 'page Départs (depuis l\'app)', type: 'light' }));
 
 const TEMPS = 25000;
 const lire = async (url) => {
