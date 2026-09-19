@@ -202,18 +202,34 @@ jobs:
           set -uo pipefail
           # Pages met quelques secondes à propager : on laisse 3 chances avant
           # de crier, sinon un simple délai de propagation ferait un faux rouge.
+          # ⚠️ L'ADRESSE EXACTE COMPTE (corrigé le 19.09, après 14 rouges d'affilée) :
+          # ce dépôt est publié en « project pages », donc le site vit sous
+          # /CMCteams/ — la RACINE 9r4rxssx64-creator.github.io/ est la page
+          # d'utilisateur, qui n'existe pas et répond 404. La sonde refusait donc
+          # de mesurer (sortie 2, « MESURE IMPOSSIBLE »), et cette étape traduisait
+          # ça par « le site publie encore des documents de travail » : un message
+          # FAUX, qui annonçait une fuite là où il n'y avait qu'une adresse ratée.
+          # On sonde LE SITE QU'ON VIENT DE PUBLIER (GitHub Pages), pas le domaine :
+          # depuis le 19.09, kd-mc.com est servi par Cloudflare Pages, donc mesurer
+          # le domaine ici revenait à noter le travail de quelqu'un d'autre. Le
+          # domaine, lui, est contrôlé par la sonde de fuite du routeur.
+          code=0
           for essai in 1 2 3; do
             echo "── contrôle $essai/3 ──"
-            # On sonde LE SITE QU'ON VIENT DE PUBLIER (GitHub Pages), pas le
-            # domaine : depuis le 19.09, kd-mc.com est servi par Cloudflare
-            # Pages, donc mesurer le domaine ici revenait à noter le travail
-            # de quelqu'un d'autre — et à échouer pour une raison sans rapport.
-            # Le domaine, lui, est contrôlé par la sonde de fuite du routeur.
-            if node tools/audit/exposition-publique.mjs --site https://9r4rxssx64-creator.github.io; then
+            node tools/audit/exposition-publique.mjs --site https://9r4rxssx64-creator.github.io/CMCteams
+            code=$?
+            if [ "$code" = "0" ]; then
               echo "✅ rien à retirer : le site ne publie aucun document de travail."
               exit 0
             fi
             [ "$essai" -lt 3 ] && { echo "propagation en cours ? nouvel essai dans 25 s"; sleep 25; }
           done
-          echo "::error::Le site publie encore des documents de travail (détail ci-dessus)."
+          # Deux échecs très différents, deux messages différents : confondre
+          # « je n'ai pas pu mesurer » avec « j'ai trouvé une fuite » fait perdre
+          # confiance dans la garde — et on finit par ignorer ses rouges.
+          if [ "$code" = "2" ]; then
+            echo "::error::MESURE IMPOSSIBLE : le site publié n'a pas répondu, donc je n'affirme RIEN sur ce qu'il expose (ce n'est pas une fuite constatée — vérifier l'adresse sondée et l'état de GitHub Pages)."
+          else
+            echo "::error::Le site publie encore des documents de travail (détail ci-dessus)."
+          fi
           exit 1

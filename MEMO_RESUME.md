@@ -1,5 +1,25 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (18h10) — Un rouge qui criait « fuite » alors qu'il n'avait rien pu mesurer
+
+**Trouvé en cherchant autre chose** : la publication de secours vers l'ancienne adresse GitHub
+échouait **14 fois d'affilée** depuis ce matin, avec le message « le site publie encore des
+documents de travail ». C'est ce message qui remplissait ton journal des déploiements ratés.
+
+**La vérité** : il n'y avait **aucune fuite**. La sonde interrogeait
+`9r4rxssx64-creator.github.io/` — la **racine**, qui n'existe pas et répond « page introuvable ».
+Ton site, lui, vit sous `/CMCteams/`. La sonde disait donc honnêtement « je n'ai pas pu mesurer »
+(et elle a raison de le dire), mais l'étape traduisait ça par « fuite ». C'est moi qui avais mis
+la mauvaise adresse ce matin en déménageant l'hébergement.
+
+**Corrigé** : la bonne adresse · et surtout **deux messages différents** pour deux situations
+différentes — « je n'ai pas pu mesurer » n'est plus dit comme « j'ai trouvé une fuite ». Une garde
+qui crie au loup finit par être ignorée, et c'est là qu'on rate la vraie fuite.
+
+**À savoir** : cette publication-là est l'**ancienne** adresse (une roue de secours). Ton vrai site,
+`kd-mc.com`, est publié par ailleurs et il a bien reçu la v9.914 — mesuré.
+
+
 ## 2026-09-19 (17h55) — VÉRIFIÉ EN LIGNE, en tant qu'employé : c'est fait (v9.914 servie)
 
 Relevé sur le vrai site, connecté **en tant qu'employé** (aucun privilège), pas en tant que Kevin :
