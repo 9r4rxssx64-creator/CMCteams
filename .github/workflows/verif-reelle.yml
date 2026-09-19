@@ -73,7 +73,13 @@ jobs:
         # (run 31129784556 : 2 surfaces en échec, job vert). Un contrôle qui ment est pire
         # que pas de contrôle — cf. règle PREUVE > DÉCLARATION.
         shell: bash -euo pipefail {0}
-        run: node tools/smoke/audit-live.mjs "${{ inputs.base || 'https://kd-mc.com' }}" 2>&1 | tee /tmp/verif.log
+        # `stdbuf -oL` : sans lui, la sortie de Node vers un TUYAU (`| tee`) est mise en
+        # mémoire tampon par blocs et n'apparaît dans le journal QU'À LA FIN. Mesuré le
+        # 19/09 : après « Mode CONNECTÉ », plus une seule ligne pendant dix minutes — j'ai
+        # cru le travail bloqué et je l'ai arrêté, alors qu'il avançait (27 captures
+        # déposées). Un silence n'est pas une panne, mais on ne peut pas le savoir sans
+        # voir défiler les lignes : on force donc l'écriture ligne par ligne.
+        run: stdbuf -oL -eL node tools/smoke/audit-live.mjs "${{ inputs.base || 'https://kd-mc.com' }}" 2>&1 | tee /tmp/verif.log
 
       - name: Captures d'écran + rapport (même en cas d'échec)
         if: always()

@@ -1,5 +1,26 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (18h30) — CORRECTION : je me suis trompé, la vérification n'était pas bloquée
+
+Je t'ai écrit tout à l'heure qu'un contrôle était « bloqué 45 minutes ». **C'est faux, et je le
+corrige.** En lisant le journal après coup : le travail **avançait** — il avait déjà déposé
+**27 captures d'écran**. Ce qui manquait, c'était le **bruit** : après la ligne « Mode CONNECTÉ »,
+plus rien ne s'affichait.
+
+**Pourquoi** : quand ce programme écrit dans un tuyau (pour garder une copie du journal), le
+système met sa sortie **en mémoire tampon** et ne l'affiche **qu'à la fin**. Dix minutes de
+silence total, alors que tout allait bien. J'ai pris le silence pour une panne et j'ai arrêté le
+travail — donc j'ai perdu le verdict sur Lingua pour rien.
+
+**Corrigé** : la sortie s'écrit maintenant **ligne par ligne**, en direct. On verra défiler chaque
+page vérifiée.
+
+**Ce qui reste vrai malgré mon erreur** : les 110 contrôles sans limite de temps, eux, sont un
+vrai risque (six heures par défaut, et ton compte a été suspendu en août pour excès
+d'exécutions). La limite et le cliquet restent justifiés — c'est seulement la phrase « bloqué
+45 minutes » qui était fausse.
+
+
 ## 2026-09-19 (18h10) — Un contrôle bloqué 45 minutes : personne ne les borne dans le temps
 
 En lançant la vérification du domaine, je l'ai vue rester **45 minutes sur une seule étape**.
