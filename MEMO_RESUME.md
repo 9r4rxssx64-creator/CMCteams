@@ -1326,6 +1326,28 @@ JetBrains Mono réellement rendues (`document.fonts.check`), données structuré
 (3 sabotages → 3 échecs distincts, restauration → vert).
 
 ---
+## 18 septembre 2026 — le mail d'échec Vercel : une parade existait, un seul workflow l'avait
+
+Tu m'envoies « **Preview deployment failed for kdmc-agent-monaco** ». J'ai lu la cause exacte
+dans le journal de build de Vercel (pas deviné) :
+
+> `The specified Root Directory "tools/agent" does not exist.`
+
+- **Ce qui se passait** : Vercel déploie **toute** branche poussée. Les branches de captures
+  d'écran (`claude/voir-…`) sont volontairement **orphelines** — elles ne contiennent que les
+  images. Vercel cherchait son dossier `tools/agent`, ne le trouvait pas, échouait… et
+  **t'envoyait un mail**. Exactement ce que ta règle anti-spam interdit.
+- **Le `[skip ci]` ne servait à rien** : c'est une consigne pour GitHub, pas pour Vercel.
+- **Ce qui m'a le plus appris** : la parade **existait depuis des semaines**, écrite en clair
+  dans le workflow de sauvegarde de la base Apex Chat. Deux workflows créent des branches
+  orphelines ; **un seul était protégé**, et c'est l'autre qui a fini par t'écrire. Une parade
+  recopiée protège son fichier, pas la règle.
+- **Corrigé** : les deux passent maintenant par **le même** petit script, et un garde refuse
+  qu'un futur workflow à branche orpheline naisse sans lui.
+- **Preuve, sans rien relancer** : ce fichier vit sur la branche des sauvegardes depuis
+  **34 dépôts sans un seul mail** — pendant que les branches de captures, qui ne l'avaient pas,
+  en produisaient. 5 sabotages, tous rouges (dont un qui passait au vert parce que mon contrôle
+  lisait le mot dans son propre commentaire — corrigé). Leçon **#268**.
 
 ## 15 septembre 2026 (suite) — chaque app distincte, toutes liées : qui a le droit d'aller où
 
@@ -9750,3 +9772,76 @@ refusés à qui n'est pas admin.
 
 **Ce qui reste à Kevin** : poser son IBAN une fois dans Commerce → 🏦 Virement (3 champs, 1 bouton).
 Rien d'autre.
+
+## 2026-09-18 — Archive Epstein : les sources officielles, rangées (dossiers.kd-mc.com)
+
+Kevin voulait « tous les documents Epstein + toutes les photos publiques ET PRIVÉES » + 3-4 vidéos
+virales/jour monétisées sur YouTube/TikTok/Instagram/Facebook. **Trois faits vérifiés ont changé la
+décision**, et Kevin a choisi **l'archive seule, sans vidéos sur ce sujet** :
+
+1. **YouTube ne paiera pas.** Règles publicitaires : *« Content which focuses on child abuse… will
+   remain ineligible for full monetization. »* L'affaire EST du trafic de mineures → « limited ads »
+   au mieux, quelle que soit la qualité.
+2. **4 vidéos/jour au même gabarit = démonétisation.** Politique « inauthentic content » du
+   15.07.2025 : contenu **produit en masse / au modèle** inéligible. Risque : la chaîne entière
+   sortie du programme partenaire, pas seulement une vidéo.
+3. **Les « photos privées » n'existent pas en public.** Le DOJ et la commission Oversight publient
+   en retirant **l'identité des victimes ET le matériel d'abus sur mineurs**. Ce qui circule
+   ailleurs sous ce nom est faux ou illégal à détenir. **Refus assumé, non négociable.**
+   + Risque business réel : ~65 000 pages où des centaines de noms apparaissent ; être cité ≠ être
+   coupable ; Kevin serait l'éditeur, depuis Monaco.
+
+**Livré** : `dossiers.kd-mc.com` — 7 collections officielles (Oversight DOJ 33 295 p., succession
++20 000 p., bibliothèque Epstein du DOJ, assignations bancaires, dossiers judiciaires CourtListener),
+recherche instantanée, **aucun document hébergé** : chaque fiche renvoie à l'original.
+Adresse déclarée aux **5 endroits** (`ROUTES`, `APPS`, `custom_domain`, `apps.json` ×2, bouée de
+secours) — la garde `test:router-secours` a d'ailleurs attrapé le 5ᵉ que j'allais oublier.
+
+**Gardes** : `npm run test:dossiers` (8 contrôles, câblé dans `test:ci`) — sources officielles en
+HTTPS uniquement (un domaine qui IMITE une institution est refusé), **aucune balise `<img>`**,
+CSP sans images externes, `rel="noopener nofollow"` sur chaque lien sortant, total de pages
+**mesuré** et jamais arrondi, iPhone 44px/16px, page utile sans JavaScript.
+Prouvées par sabotage : source non officielle → 2 échecs · domaine imitateur → 2 échecs · une image
+servie → 1 échec · `nofollow` retiré → 1 échec.
+**Preuve réseau** : `.github/workflows/dossiers-liens.yml` (bouton) pingue chaque source depuis le
+runner — 401/403 = anti-robot, **pas** un lien mort, la distinction est codée.
+
+## 2026-09-18 — La machine à vidéos pointée sur la niche qui paie (233 vidéos)
+
+Kevin est revenu sur son choix : **le premier** — la même machine, sur la niche la plus rentable,
+à moi de la choisir. Choisie sur des **chiffres**, pas au feeling :
+
+| | RPM réel |
+|---|---|
+| Tutoriels logiciel pro / IA au travail / marketing | **15 à 45 $** |
+| Éducation & science | 10,22 $ (médiane) |
+| **Médiane toutes niches** | **~2,30 $** |
+| Jeu vidéo, divertissement | 1 à 8 $ |
+
+**Mais l'argument qui tranche n'est pas le RPM** : Kevin a **déjà le produit** (kits 17 à 67 €).
+Une vue qui achète rapporte **le jour même** ; une vue qui regarde une pub rapporte après
+**1 000 abonnés et 4 000 heures vues** — des mois. La vidéo sert donc d'abord son tunnel de vente,
+la pub YouTube n'est qu'un bonus qui arrivera plus tard.
+
+**Livré** : `tools/pub/metiers-videos.mjs` — **47 métiers × 5 tâches réelles = 235 scripts**,
+dont **233 acceptés**. Les 2 refusés le sont proprement et c'est dit :
+· `agent-immobilier/devis` : phrase du catalogue incoupable sans casser le français ;
+· `toiletteur/relance` : **faux positif assumé** — la porte de vérité interdit « revenu » (promesse
+de gain) et la phrase dit « le chien n'est pas *revenu* ». J'ai préféré **perdre 1 vidéo sur 235
+plutôt qu'affaiblir la garde qui protège des promesses de gain**.
+
+Chaque script passe `valideScript()`, la **même** porte que ceux écrits à la main. Catalogue
+complet de la machine : **249 vidéos** (16 + 233), branché via `fusionne()` — l'écrit à la main
+gagne toujours sur l'automatique en cas de collision d'identifiant.
+
+**La garde qui protège la chaîne** (`test:metiers-videos`, 8 contrôles, dans `test:ci`) : YouTube
+démonétise depuis le 15.07.2025 le contenu « produit en masse, fait au modèle ». Le contrôle de
+**VARIÉTÉ** exige ≥ 95 % de situations distinctes et 0 légende dupliquée — c'est ce qui sépare
+233 vidéos vivantes d'un gabarit dont on change trois mots.
+Prouvée par sabotage : situations uniformisées → 1 échec · coupe en plein mot → 1 échec ·
+automatique qui écrase l'écrit à la main → 1 échec.
+
+**Leçon du jour** : mon premier sabotage de la collision d'identifiants a été **inerte** — aucune
+collision n'existe aujourd'hui (`avis-01` vs `devis-01`), donc relire le catalogue réel ne prouvait
+rien. J'ai sorti la règle en fonction **pure** (`fusionne`) et je la teste avec une collision
+**forcée**. Une garde qui ne peut pas échouer ne garde rien.

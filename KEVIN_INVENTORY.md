@@ -314,6 +314,16 @@ Tu m'envoies un lien de vidéo, je te dis ce qu'elle raconte vraiment (transcrip
 | `tests/verify-cuisine-lecture.mjs` | **Nouveau.** Vraie page + moteur vocal simulé : 128 recettes lues, chaque étape couverte, arrêt/quitter/erreur/muet/sans moteur vérifiés. `npm run test:cuisine-lecture` (dans `test:ci`). Prouvé discriminant (141 problèmes sur l'ancien code). | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-cuisine-lecture.mjs) |
 | `package.json` | Modifié : script `test:cuisine-lecture` câblé dans `test:ci`. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/package.json) |
 
+### 18 septembre 2026 — plus de mail d'échec Vercel sur les branches de captures
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `tools/vercel/museler-branche-orpheline.sh` | **Nouveau.** Empêche Vercel de déployer — et donc de rater — une branche qui ne contient que des captures d'écran. C'est ce qui t'envoyait « Preview deployment failed ». Partagé par les deux workflows concernés, pour qu'aucun ne l'oublie. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tools/vercel/museler-branche-orpheline.sh) |
+| `.github/workflows/voir-comme-kevin.yml` | Modifié : c'est lui qui t'écrivait. Il appelle désormais la parade. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/voir-comme-kevin.yml) |
+| `.github/workflows/apex-chat-d1-backup.yml` | Modifié : il avait la parade recopiée chez lui ; il utilise maintenant la commune. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/.github/workflows/apex-chat-d1-backup.yml) |
+| `tests/verify-branches-robot.mjs` | Modifié : refuse qu'un workflow crée une branche de ce type sans la parade. 5 sabotages le font rougir. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/tests/verify-branches-robot.mjs) |
+| `LESSONS.md` #268 | Une parade recopiée ne protège que son fichier — on la met en commun dès le 2e appelant. | [voir](https://github.com/9r4rxssx64-creator/CMCteams/blob/main/LESSONS.md) |
+
 ### 15 septembre 2026 (suite) — qui a le droit d'aller dans quelle application
 
 | Fichier | À quoi ça sert | Ouvrir |
@@ -2688,3 +2698,33 @@ journal à ma place et **dépose la cause exacte dans le dépôt**. Zéro clic p
 **Commandes ajoutées** : `npm run bilan` · `npm run bilan:court` ·
 `node tools/pipeline/pipeline.mjs suivi --id <mNNN> --action "…"` (posait problème : elle
 n'existait pas, d'où 61 messages en retard).
+
+## 🗂️ Archive Epstein — dossiers.kd-mc.com (2026-09-18)
+
+Index des **sources officielles** de l'affaire Epstein. **Aucun document n'est hébergé** : chaque
+fiche renvoie vers l'institution qui l'a publiée (commission Oversight, ministère de la Justice
+américain, greffes via CourtListener). Ni photo de victime, ni « photo privée » — les éditeurs
+officiels les retirent eux-mêmes avant publication.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/dossiers/sources.json` | Le catalogue : 7 collections officielles, titre, institution, nombre de pages, lien d'origine | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/dossiers/sources.json) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/dossiers/sources.json) |
+| `tools/dossiers/page.mjs` | Fabrique la page depuis le catalogue (`node tools/dossiers/page.mjs`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/dossiers/page.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/dossiers/page.mjs) |
+| `dossiers/index.html` | La page publiée (générée — ne pas éditer à la main) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/dossiers/index.html) | — |
+| `dossiers/dossiers.css` · `dossiers.js` | Style iPhone + recherche instantanée (générés) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/tree/main/dossiers) | — |
+| `tests/dossiers.test.mjs` | La garde : sources officielles seulement, aucune image, liens en `nofollow`, total mesuré | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/dossiers.test.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/dossiers.test.mjs) |
+| `.github/workflows/dossiers-liens.yml` | Pingue chaque source depuis la CI (l'agent n'a pas le réseau) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/dossiers-liens.yml) | [▶️ Lancer](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/dossiers-liens.yml) |
+
+**La page en ligne :** [dossiers.kd-mc.com](https://dossiers.kd-mc.com/)
+
+## 🎬 Machine à vidéos — niche « IA au travail » (2026-09-18)
+
+233 vidéos prêtes, une par situation réelle de métier, chacune renvoyant vers la page de ce métier.
+
+| Fichier | À quoi ça sert | Voir | Modifier |
+|---|---|---|---|
+| `tools/pub/metiers-videos.mjs` | Fabrique les scripts depuis les 47 métiers (`npm run pub:metiers`) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/metiers-videos.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tools/pub/metiers-videos.mjs) |
+| `tools/pub/metiers.json` | Les 233 scripts (généré — ne pas éditer à la main) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/pub/metiers.json) | — |
+| `tests/metiers-videos.test.mjs` | La garde : porte de vérité + **variété** (anti-démonétisation) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/metiers-videos.test.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/metiers-videos.test.mjs) |
+
+**▶️ Lancer un lot :** [Pub — vidéos et posts-liens](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) — champ `videos` : `devis-01,devis-02,relance-01…`

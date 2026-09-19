@@ -61,6 +61,7 @@ const ROUTES = {
   'tor.kd-mc.com': '/CMCteams/tools/tor', // « Tor en clair » — comprendre le web .onion, y aller en sécurité, catalogue de services légitimes (Kevin 2026-09-15)
   'rotaplan.kd-mc.com': '/CMCteams/shops/rotaplan',
   'kit.kd-mc.com': '/CMCteams/shops/kit-ia', // Kit IA de l'indépendant — produit numérique neuf (Kevin 2026-09-16)
+  'dossiers.kd-mc.com': '/CMCteams/dossiers', // Archive Epstein : INDEX des sources officielles, aucun document hébergé (Kevin 2026-09-18)
   'croupier.kd-mc.com': '/CMCteams/shops/croupier', // Devenir croupier — guide de métier (Kevin 2026-09-15) // Rotaplan — planning des équipes en rotation, offre B2B (Kevin 2026-09-15)
   'shops.kd-mc.com': '/CMCteams/shops',  // « A Cüjina de Mùnegu » — adresse au nom monégasque correct/sourcé (Kevin 2026-08-13)
 };
@@ -123,6 +124,7 @@ const APPS = {
   'outils.kd-mc.com': 'outils',
   'shops.kd-mc.com': 'shops',
   'kit.kd-mc.com': 'kit',
+  'dossiers.kd-mc.com': 'dossiers',
   'rotaplan.kd-mc.com': 'rotaplan', 'croupier.kd-mc.com': 'croupier', /* manquaient depuis le 15.09 : garde périmètre rouge (mesuré 16.09) */
   'tor.kd-mc.com': 'tor',
   'rotaplan.kd-mc.com': 'rotaplan',

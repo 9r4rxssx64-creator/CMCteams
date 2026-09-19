@@ -120,11 +120,21 @@ const SURFACES = [
   ...JSON.parse(readFileSync(new URL('../produits/catalogue.json', import.meta.url), 'utf8')).produits.map((p) => ({
     url: 'https://kit.' + ROOT + '/' + p.slug + '.html', name: 'Kit IA — niche « ' + p.court + ' » (' + p.prix + ' €)', selKey: 'h1', deep: async (page) => {
       const mini = (await page.textContent('.prix-mini').catch(() => '') || '').trim();
-      const paypal = await page.getAttribute('#payer-paypal', 'href').catch(() => '');
+      /* Depuis le 18.09 le bouton de paiement est un <button> (il crée d'abord le
+         panier côté serveur) : la cible de paiement vit dans data-secours, plus
+         dans href. On lit LA RÈGLE (« une cible de paiement porte le bon montant »),
+         pas UNE forme — sinon le contrôle rougit à chaque changement de balise
+         alors que la page est juste. */
+      const paypal = (await page.getAttribute('#payer-paypal', 'href').catch(() => null))
+        || (await page.getAttribute('#payer-paypal', 'data-secours').catch(() => null)) || '';
+      /* Et sans JavaScript, l'acheteur doit QUAND MÊME pouvoir payer : un <button>
+         inerte le laisserait devant une page morte. */
+      const sansJs = await page.$eval('noscript', (n) => n.textContent || '').catch(() => '');
       const opt = await page.$eval('#produit option', (o) => o.value).catch(() => '');
       const lire = await page.$$eval('a[href^="lire.html?produit="]', (els) => els.length).catch(() => 0);
       if (mini !== p.prix + ' €') return { ok: false, note: 'prix affiché « ' + mini + ' » ≠ ' + p.prix + ' € (la caisse vérifie ce montant)' };
       if (!String(paypal).toLowerCase().includes(p.prix + 'eur')) return { ok: false, note: 'lien PayPal sans le montant ' + p.prix + ' EUR : ' + paypal };
+      if (!sansJs.toLowerCase().includes(p.prix + 'eur')) return { ok: false, note: 'sans JavaScript, aucun moyen de payer (noscript sans lien au montant ' + p.prix + ' EUR)' };
       if (opt !== p.id) return { ok: false, note: 'formulaire de récupération sur « ' + opt + ' » au lieu de ' + p.id };
       if (!lire) return { ok: false, note: 'aucun lien vers lire.html?produit=' + p.id };
       return { ok: true, note: p.prix + ' € affiché = PayPal = caisse, récupération sur ' + p.id + ', ' + lire + ' lien(s) lecteur' };

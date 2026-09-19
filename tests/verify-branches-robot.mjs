@@ -69,6 +69,49 @@ for (const f of fichiers) {
 }
 chk(publies > 0 && relus > 0, `${publies} workflow(s) publient via l'action, ${relus} déposent une branche de relecture (le garde a quelque chose à garder)`);
 
+/* ── Une branche ORPHELINE ne doit pas faire échouer Vercel (Kevin 18.09.2026) ──
+ *
+ * Vercel déploie TOUTE branche poussée. Le projet `kdmc-agent-monaco` a pour
+ * dossier racine `tools/agent` ; une branche orpheline ne le contient pas, donc
+ * le build meurt sur « The specified Root Directory "tools/agent" does not
+ * exist » (lu dans le vrai journal de build) et un mail d'échec part chez Kevin.
+ * Règle anti-spam : un robot ne remplit pas sa boîte.
+ *
+ * La parade existait depuis des semaines dans apex-chat-d1-backup.yml, recopiée
+ * en clair… et voir-comme-kevin.yml ne l'avait jamais reçue. C'est exactement le
+ * genre d'oubli qu'un garde doit rendre impossible : toute branche orpheline
+ * passe désormais par le MÊME script, et on le vérifie ici.
+ */
+const MUSELIERE = 'tools/vercel/museler-branche-orpheline.sh';
+chk(existsSync(MUSELIERE), `${MUSELIERE} existe (la parade Vercel est partagée, pas recopiée)`);
+if (existsSync(MUSELIERE)) {
+  /* On lit le CODE SEUL. La 1re version de ce contrôle cherchait le mot dans tout
+     le fichier : l'en-tête explicatif le contenait, donc mettre `true` dans le
+     code passait au VERT. Une règle citée dans un commentaire ne protège rien —
+     le sabotage l'a montré avant qu'on y croie. */
+  const m = codeSeul(readFileSync(MUSELIERE, 'utf8'));
+  chk(/deploymentEnabled"?\s*:\s*false/.test(m), `${MUSELIERE} coupe bien les déploiements (deploymentEnabled: false, dans le CODE)`);
+  chk(/tools\/agent\/vercel\.json/.test(m), `${MUSELIERE} écrit dans le dossier racine du projet Vercel (sinon Vercel ne lit rien)`);
+  /* Le schéma Vercel REFUSE les clés inconnues, et un vercel.json refusé est un
+     vercel.json IGNORÉ — donc aucune protection (vécu le 6.09). */
+  const json = (m.match(/'(\{.*"git".*\})'/) || [, ''])[1];
+  let cles = [];
+  try { cles = Object.keys(JSON.parse(json)); } catch { cles = ['(illisible : ' + json.slice(0, 40) + ')']; }
+  chk(cles.length > 0 && cles.every((k) => ['git', 'ignoreCommand', '$schema', 'version'].includes(k)),
+    `${MUSELIERE} n'écrit que des clés connues de Vercel (${cles.join(', ')}) — une clé inconnue fait rejeter TOUT le fichier`);
+}
+let orphelins = 0;
+for (const f of readdirSync(WF).filter((x) => x.endsWith('.yml'))) {
+  const s = readFileSync(join(WF, f), 'utf8');
+  if (!/git checkout --orphan/.test(codeSeul(s))) continue;
+  orphelins += 1;
+  chk(new RegExp(MUSELIERE.replace(/[/.]/g, '\\$&')).test(s),
+    `${f} : crée une branche orpheline ET appelle ${MUSELIERE} (sinon Vercel échoue → mail à Kevin)`);
+  chk(!/printf[^\n]*deploymentEnabled/.test(s),
+    `${f} : n'écrit plus la parade Vercel à la main (une copie qui diverge ne protège qu'elle-même)`);
+}
+chk(orphelins > 0, `${orphelins} workflow(s) à branche orpheline contrôlés (le garde a quelque chose à garder)`);
+
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));
 console.log(`=== ${R.ok.length} OK / ${R.ko.length} FAIL ===`);
