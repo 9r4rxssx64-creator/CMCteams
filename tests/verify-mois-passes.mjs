@@ -107,6 +107,23 @@ else {
   if (dep.passesAvecAdmin.length) ok(`page Départs : l’admin retrouve l’historique (${dep.passesAvecAdmin.length} mois passé(s))`);
   else console.log('  ·  (aucun mois passé dans les données générées — rien à retrouver côté admin)');
 }
+// Même exigence que dans l'app : arriver sur un mois passé (mémoire de l'appareil, lien
+// partagé) doit ramener au mois en cours. Sans ça, la liste est propre mais la page
+// affiche quand même le planning d'un mois révolu.
+const depClamp = await p2.evaluate(() => {
+  const n = new Date(), cur = n.getFullYear()*12 + n.getMonth();
+  const passe = (window.DEP_GEN_MONTHS || []).filter(m => (m.year*12+m.monthIdx) < cur);
+  if (!passe.length) return { saute: true };
+  document.body.classList.remove('admin');
+  window.CURMO = passe[0].year + '-' + passe[0].monthIdx;
+  try { fillMoSel(); } catch(_) {}
+  const [y, mi] = String(window.CURMO).split('-').map(Number);
+  return { pose: passe[0].year + '-' + passe[0].monthIdx, apres: window.CURMO, encorePasse: (y*12+mi) < cur };
+});
+if (depClamp.saute) console.log('  ·  (aucun mois passé généré — rien à ramener)');
+else depClamp.encorePasse
+  ? ko(`page Départs : posée sur ${depClamp.pose}, elle y reste (mois passé affiché à un employé)`)
+  : ok(`page Départs : posée sur un mois passé (${depClamp.pose}) → ramenée sur ${depClamp.apres}`);
 await p2.close();
 
 console.log(`\nErreurs JS : ${errs.length}`);
