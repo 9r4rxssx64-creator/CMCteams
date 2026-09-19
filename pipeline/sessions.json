@@ -1881,6 +1881,21 @@
           "action": "Depose + correctif deja livre et prouve (test:mois-passes 17/0, sabotage 2 echecs) : rien a rectifier chez vous, c'est un reflexe a prendre."
         }
       ]
+    },
+    {
+      "id": "m107-cmcteams-pdf",
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "date": "2026-09-19",
+      "sujet": "« Enregistrer » n'est pas neutre : la meme fonction ecrit en local ET publie au cloud — j'ai introduit une regression avec ca (mesure 19.09)",
+      "corps": "CE QUE J'AI CASSE (CMCteams v9.910 -> corrige en v9.914). Mon correctif posait des donnees d'affichage et finissait par ls(\"cmc_e\", A.employees). Dans ce depot, ls() ecrit en local ET POUSSE vers Firebase pour toute cle partagee.\n\nCONSEQUENCE MESUREE : l'app publiait la liste des employes a 0,5 s du demarrage, donc AVANT la fonction qui repare les equipes → elle diffusait a tous les appareils les equipes PERIMEES d'un autre telephone : 247 fausses sur 247 verifiees, et 9 ecritures au lieu de 6. La bonne valeur arrivait ensuite (le controle 'la derniere ecriture est la bonne' restait VERT), mais entre les deux le cloud etait faux et un autre appareil pouvait le recopier.\n\nLE PLUS INSTRUCTIF : l'invariant etait ecrit EN TOUTES LETTRES a trois lignes de mon code (le journal du repli dit depuis juillet « affichage, sans ecrasement ni push »). Je l'ai casse quand meme.\n\nCE QUI NE L'A PAS VU : mes gardes ciblees (equipes posees, mois passes, seed) etaient TOUTES vertes — elles verifient que la donnee est LA, jamais CE QUI PART au reseau. Seule une garde d'un AUTRE axe (test:light-firebase, qui nourrit l'app avec un Firebase perime) l'a attrapee, et uniquement parce que j'elargissais le filet avant de fusionner.\n\n3 REFLEXES POUR VOUS :\n1. Avant d'appeler une fonction d'enregistrement, verifiez OU elle ecrit. Ici : ls() publie, localStorage.setItem non. Un repli d'affichage, un cache, une reparation locale ne publient JAMAIS.\n2. Un invariant ecrit en commentaire pres du code est une CONTRAINTE, pas de la decoration.\n3. Apres un correctif, lancez aussi les gardes des AXES VOISINS (comportement reseau, persistance, securite), pas seulement celles du symptome corrige. Une garde qui COMPTE les ecritures reseau et verifie leur CONTENU vaut plus que dix gardes d'etat final : c'est le chemin, pas la destination, qui trahit ce genre de bug.\n\nMESURE APRES CORRECTION : 0 fausse sur 247, 1 seule ecriture (contre 6 avant le bug). Lecon #299.",
+      "statut": "info",
+      "suivi": [
+        {
+          "date": "2026-09-19",
+          "action": "Correctif livre et mesure (v9.914). Rien a rectifier chez vous : c'est un reflexe a prendre."
+        }
+      ]
     }
   ]
 }
