@@ -48,7 +48,7 @@ export const CLE_RELAIS = 'ax_github_proxy_url';
  *
  * Vide = aucun relais = lecture publique, comme aujourd'hui.
  */
-export const RELAIS_PAR_DEFAUT = '';
+export const RELAIS_PAR_DEFAUT = 'https://apex-depot-relais.9r4rxssx64.workers.dev';
 
 function estAdresseValable(v: string): boolean {
   /* Uniquement https, et rien d'autre : une adresse bancale enverrait les
