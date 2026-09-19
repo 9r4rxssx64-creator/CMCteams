@@ -34,7 +34,15 @@ export const masque = (s) =>
  *  - Admin      : `kdmc_access_pinhash` (services/kdmc-access/page.js ~63 : KEY)
  *  - Arbre      : `arbre_trust` (règle « reconnu auto après 1re connexion »)
  */
-export function marquesPour(host, { pinHash } = {}) {
+/* Kevin 2026-09-19 (« enleve les mois passes pour tous sauf l'admin ») : il faut
+   pouvoir regarder le domaine COMME UN EMPLOYE, pas seulement comme l'admin.
+   Une regle « sauf l'admin » ne se verifie qu'en se mettant du cote de ceux a qui
+   elle s'applique. `comme:'employe'` pose une identite ordinaire : rien d'admin,
+   aucun code, aucun privilege — exactement ce que voit quelqu'un de l'equipe. */
+export const EMPLOYE_TEMOIN = { uid: 'U00001', prenom: 'Sandro', nom: 'ESPAGNOL', affiche: 'ESPAGNOL S' };
+
+export function marquesPour(host, { pinHash, comme } = {}) {
+  const employe = comme === 'employe';
   const h = String(host || '').toLowerCase();
   const now = Date.now();
   if (/^(cmcteams-light|departs)\./.test(h)) {
@@ -43,11 +51,16 @@ export function marquesPour(host, { pinHash } = {}) {
        ouvre l'équipe de Kevin. VU le 10.09 (run 34517319384) : sans ces marques la page restait
        sur l'écran d'identification — on « voyait » un écran de login, pas Kevin. */
     return {
-      local: {
+      local: employe ? {
+        cmc_dep_identity: JSON.stringify({ prenom: EMPLOYE_TEMOIN.prenom, nom: EMPLOYE_TEMOIN.nom, cgu: true, ts: now }),
+        cmc_dep_me: EMPLOYE_TEMOIN.affiche,
+      } : {
         cmc_dep_identity: JSON.stringify({ prenom: 'Kevin', nom: 'DESARZENS', cgu: true, ts: now }),
         cmc_dep_me: 'DESARZENS K',
       },
-      note: 'session Départs/light (identité Kevin DESARZENS, équipe DESARZENS K)',
+      note: employe
+        ? 'session Départs/light EN TANT QU\'EMPLOYÉ (' + EMPLOYE_TEMOIN.affiche + ', aucun privilège)'
+        : 'session Départs/light (identité Kevin DESARZENS, équipe DESARZENS K)',
     };
   }
   if (/^cmcteams\./.test(h)) {
@@ -59,12 +72,14 @@ export function marquesPour(host, { pinHash } = {}) {
     const today = new Date().toISOString().slice(0, 10); // même calcul que l'app (index.html ~23935)
     return {
       local: {
-        cmc_uid: ADMIN.uid, cmc_lastact: String(now),
+        cmc_uid: employe ? EMPLOYE_TEMOIN.uid : ADMIN.uid, cmc_lastact: String(now),
         cmc_seen_v10_678: '1',
         cmc_cookies_consent: JSON.stringify({ ts: now, ver: 'session-kevin' }),
         ['cmc_apex_pub_seen_' + today]: '1',
       },
-      note: 'session CMCteams (admin U11804, écrans de bienvenue déjà vus)',
+      note: employe
+        ? 'session CMCteams EN TANT QU\'EMPLOYÉ (' + EMPLOYE_TEMOIN.uid + ', aucun privilège admin)'
+        : 'session CMCteams (admin U11804, écrans de bienvenue déjà vus)',
     };
   }
   if (/^apex-ai\./.test(h)) {

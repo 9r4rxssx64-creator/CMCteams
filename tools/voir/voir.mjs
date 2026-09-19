@@ -35,6 +35,9 @@ const args = process.argv.slice(2);
 const urls = (args.find((a) => !a.startsWith('--')) || 'https://cmcteams.kd-mc.com/').split(',').map((s) => s.trim()).filter(Boolean);
 const opt = (name, def) => { const i = args.indexOf('--' + name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : def; };
 const CONNECTE = args.includes('--connecte');
+/* « comme qui ? » — une règle « sauf l'admin » ne se vérifie qu'en se mettant du
+   côté de ceux à qui elle s'applique. Par défaut : Kevin (admin). */
+const COMME = (args.find((a) => a.startsWith('--comme=')) || '').split('=')[1] || 'kevin';
 const VUES = opt('vues', '').split(',').map((s) => s.trim()).filter(Boolean);
 const LARGEUR = parseInt(opt('largeur', '390'), 10) || 390;
 const SORTIE = opt('sortie', 'voir/out');
@@ -45,11 +48,11 @@ const slug = (u) => { const x = new URL(u); return (x.hostname.replace('.' + DOM
 const projet = (u) => { try { const h = new URL(u).hostname; return h === DOMAINE || h.endsWith('.' + DOMAINE) || /github\.io|firebasedatabase\.app|workers\.dev/.test(h); } catch { return false; } };
 
 mkdirSync(SORTIE, { recursive: true });
-console.log('VOIR COMME KEVIN — ' + urls.length + ' page(s) · largeur ' + LARGEUR + ' · ' + (CONNECTE ? 'CONNECTÉ (code admin ' + masque(PIN_HASH) + ')' : 'anonyme'));
+console.log('VOIR COMME ' + (COMME === 'employe' ? 'UN EMPLOYÉ' : 'KEVIN') + ' — ' + urls.length + ' page(s) · largeur ' + LARGEUR + ' · ' + (CONNECTE ? 'CONNECTÉ (code admin ' + masque(PIN_HASH) + ')' : 'anonyme'));
 
 const browser = await chromium.launch();
 const iphone = devices['iPhone 13'];
-const rapport = { at: new Date().toISOString(), connecte: CONNECTE, largeur: LARGEUR, pages: [] };
+const rapport = { at: new Date().toISOString(), comme: COMME, connecte: CONNECTE, largeur: LARGEUR, pages: [] };
 let echecs = 0;
 
 for (const url of urls) {
@@ -70,7 +73,7 @@ for (const url of urls) {
   page.on('response', (r) => { const s = r.status(); if (projet(r.url()) && (s === 404 || s >= 500)) http.push('HTTP ' + s + ' ' + r.url().slice(0, 120)); });
   const P = { url, dossier, ok: true, session: null, captures: [], version: null, titre: null, texte: '', jsErr, reqKo, http, console: console_ };
   try {
-    if (CONNECTE) { const m = await connecte(page, url, { pinHash: PIN_HASH }); P.session = m.note; }
+    if (CONNECTE) { const m = await connecte(page, url, { pinHash: PIN_HASH, comme: COMME }); P.session = m.note; }
     await page.goto(url, { waitUntil: 'load', timeout: 60000 });
     await page.waitForTimeout(5000);
     const lire = async (nom) => {
@@ -162,7 +165,7 @@ for (const url of urls) {
 await browser.close();
 
 /* Rapport lisible (Markdown) + brut (JSON), sans aucun secret. */
-const md = ['# Voir comme Kevin — ' + rapport.at, '', 'Connecté : **' + (CONNECTE ? 'oui (session nommée U11804 ; les zones « admin prouvé » Face ID restent masquées)' : 'non') + '** · largeur ' + LARGEUR + ' px', ''];
+const md = ['# Voir comme ' + (COMME === 'employe' ? 'un employé' : 'Kevin') + ' — ' + rapport.at, '', 'Connecté : **' + (CONNECTE ? 'oui (session nommée U11804 ; les zones « admin prouvé » Face ID restent masquées)' : 'non') + '** · largeur ' + LARGEUR + ' px', ''];
 for (const P of rapport.pages) {
   md.push('## ' + (P.ok ? '✅' : '❌') + ' ' + P.url, '', '- version servie : `' + (P.version || 'introuvable') + '` · titre : ' + (P.titre || '?') + ' · vue : ' + (P.vue || '?') + ' · utilisateur : ' + (P.user || '(anonyme)'), '- session : ' + (P.session || 'aucune'), '- erreurs JS : ' + P.jsErr.length + (P.jsErr.length ? '\n  - ' + P.jsErr.join('\n  - ') : ''), '- requêtes projet en échec : ' + P.reqKo.length + (P.reqKo.length ? '\n  - ' + P.reqKo.join('\n  - ') : ''), '- 404/5xx projet : ' + P.http.length + (P.http.length ? '\n  - ' + P.http.join('\n  - ') : ''), '- captures : ' + P.captures.map((c) => '`' + join(slug(P.url), c) + '`').join(', '), '');
   if (P.erreur) md.push('- **échec** : ' + P.erreur, '');

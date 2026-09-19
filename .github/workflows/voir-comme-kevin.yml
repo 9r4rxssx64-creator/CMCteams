@@ -28,6 +28,9 @@ on:
       largeur:
         description: "Largeur d'écran (390 = iPhone, 375 = iPhone SE, 1200 = ordinateur)"
         default: "390"
+      comme:
+        description: "Regarder comme qui ? kevin (admin) ou employe (aucun privilège)"
+        default: "kevin"
 
 permissions:
   contents: write
@@ -60,7 +63,7 @@ jobs:
           set +e
           FLAGS=""
           if [ "${{ inputs.connecte }}" = "true" ]; then FLAGS="--connecte"; fi
-          node tools/voir/voir.mjs "${{ inputs.urls }}" $FLAGS --vues "${{ inputs.vues }}" --largeur "${{ inputs.largeur }}" --sortie "voir/out" 2>&1 | tee /tmp/voir.log
+          node tools/voir/voir.mjs "${{ inputs.urls }}" $FLAGS --vues "${{ inputs.vues }}" --largeur "${{ inputs.largeur }}" --comme="${{ inputs.comme }}" --sortie "voir/out" 2>&1 | tee /tmp/voir.log
           echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
 
       - name: Déposer captures + rapport sur une branche de relecture
