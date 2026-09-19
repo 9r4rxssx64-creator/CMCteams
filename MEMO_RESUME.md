@@ -9952,3 +9952,21 @@ Aucun test ne regardait le mois suivant — c'est ce trou-là qui a laissé pass
 correspondent encore aux PDF (le garde de parité compare les générateurs entre eux, pas ce qui
 est servi). Empreintes des PDF + générateurs + fichiers livrés ; rouge si une régénération a été
 oubliée, si un fichier a été édité à la main, ou si un seul des deux côtés a été régénéré.
+
+## 2026-09-19 (17h) — Le meme bug avait DEUX trous (v9.911)
+
+Apres v9.910, j'ai publie et **verifie en ligne** : octobre etait **toujours a 0 equipe**.
+Le correctif marchait en local, pas en production.
+
+**Pourquoi** : ma garde simulait un appareil AVEC des donnees locales. Une session fraiche
+n'en a pas (Firebase arrive apres) — et sur ce chemin-la, le plus courant, les equipes
+n'etaient posees **nulle part**. Mesure : juillet 0/290, aout 0/288, octobre 0/281 ;
+seul septembre (mois affiche) avait 282/285 grace au rattrapage du demarrage.
+
+**Corrige en v9.911** : 290/290, 288/288, 285/285, 281/281.
+
+**Garde etendue** : tous les mois du planning verifie, sur DEUX etats d'appareil.
+Sabotage : 4 echecs dont trois mois a 0.
+
+**Ce que j'en retiens** : une garde ne prouve que l'etat qu'elle simule, et c'est le retour
+en production — pas le vert local — qui a montre que le bug vivait encore.
