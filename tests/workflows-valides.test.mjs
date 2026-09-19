@@ -166,6 +166,27 @@ for (const f of fichiers) {
   else ok++;
 }
 
+/* ── BORNE DE TEMPS : un job sans `timeout-minutes` peut tourner SIX HEURES ──
+   C'est le défaut de GitHub. Le compte de Kevin a été suspendu le 15/08/2026 pour
+   VOLUME d'exécutions : un job qui se bloque la nuit brûle six heures de quota pour
+   rien. Mesuré le 19/09 : un run de « Vérif RÉELLE » est resté 45 min sur une seule
+   étape, sans borne.
+   CLIQUET, jamais de faux rouge : la dette existante est figée dans un socle ; on
+   échoue UNIQUEMENT si le nombre de workflows sans borne AUGMENTE. Le nouveau est
+   bloqué, l'ancien n'allume pas un rouge permanent (même schéma que le ratchet des
+   améliorations). Pour faire baisser le socle : ajouter des bornes, puis re-figer. */
+const SOCLE = JSON.parse(readFileSync(join(DOSSIER, '..', '..', 'tests', 'workflows-timeout-baseline.json'), 'utf8'));
+const sansBorne = fichiers.filter((f) => !readFileSync(join(DOSSIER, f), 'utf8').includes('timeout-minutes'));
+if (sansBorne.length > SOCLE.sansTimeout) {
+  const nouveaux = sansBorne.slice(0, 8).join(', ');
+  pb.push(`${sansBorne.length} workflow(s) sans « timeout-minutes » — le socle en tolère ${SOCLE.sansTimeout}. `
+        + `Un job sans borne tourne jusqu'à 6 h et brûle le quota (suspension du 15/08). `
+        + `Ajoute « timeout-minutes: N » au job. Sans borne : ${nouveaux}`);
+} else {
+  ok++;
+  if (sansBorne.length < SOCLE.sansTimeout) console.log(`  ℹ️  ${SOCLE.sansTimeout - sansBorne.length} workflow(s) bornés depuis le socle — pense à re-figer tests/workflows-timeout-baseline.json`);
+}
+
 console.log(`\n  Les ${fichiers.length} workflows démarrent (clés uniques, on:, jobs:, scalaires cités)\n`);
 if (pb.length) {
   for (const p of pb) console.log(`  ❌ ${p}`);

@@ -1,5 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+### 🛡 Les gardes du planning s'exécutent enfin (19.09.2026)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `.github/workflows/gardes-planning.yml` | Lance les 10 vérifications du planning dès qu'on touche à l'app, aux données ou à la page Départs. Sans minuterie | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/.github/workflows/gardes-planning.yml) |
+| `tests/verify-departs-integrity.mjs` | Départs : 0 doublon, numéros dans la séquence, jamais sur un jour non travaillé (30 598 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-departs-integrity.mjs) |
+| `tests/verify-real-departs-render.mjs` | La rotation glisse de +1 à chaque cycle (15 308 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-real-departs-render.mjs) |
+| `tests/verify-equipe-miroir-employes.mjs` | On se connecte comme 36 personnes : chacun voit son équipe et son équipe miroir | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-equipe-miroir-employes.mjs) |
+
+
 ### 🗓 Les mois passés n'existent plus chez l'employé — même quand le planning vérifié repasse (19.09.2026)
 
 | Fichier | À quoi ça sert | Ouvrir |
