@@ -4282,6 +4282,7 @@ function fbApplyData(k,v){
   // v9.908 — le cloud vient de renvoyer des mois passés à un employé : on les retire aussitôt,
   // sinon la synchro défait l'effacement quelques secondes après la connexion.
   if(k==="cmc_ov"||k==="cmc_ov_meta"||k==="cmc_e"){ try{ setTimeout(cmcEffaceMoisPassesEmploye,0); }catch(_){} }
+  if(k==="cmc_e"||k==="cmc_ov"){ try{ _cmcSeedCompleteApresFirebase(); }catch(_){} }
   // Mettre à jour l'état A directement (sans passer par ls pour éviter la boucle)
   // v9.580 — Invalider _gplCache quand cmc_ov change via Firebase SSE
   // (sinon vues affichent ancien planning même après nouvel import sur autre device)
@@ -5791,6 +5792,46 @@ function _cmcSeedPoseEquipes(key,m,byId,mid){
   }catch(_){ }
   return poses;
 }
+// v9.912 (Kevin 2026-09-19, MESURÉ EN PRODUCTION) — Firebase renvoie les employés
+// tels qu'un AUTRE appareil les a enregistrés. Quand ce renvoi arrive APRÈS le
+// démarrage, il remplace la liste des employés et EFFACE les équipes que le
+// planning vérifié venait de poser. Mesuré sur le vrai domaine : le journal
+// disait « 281 équipes posées pour octobre », et la mesure juste après donnait
+// 0 — septembre retombait de 285 à 247 (la valeur stockée par l'autre appareil).
+// On re-complète donc ce qui MANQUE après chaque arrivée de Firebase.
+// Sans risque de boucle : on ne pose que l'absent, et quand rien ne manque il
+// n'y a aucune écriture — donc rien ne repart vers Firebase.
+var _cmcSeedCompleteT=null;
+function _cmcSeedCompleteApresFirebase(){
+  try{
+    if(_cmcSeedCompleteT)clearTimeout(_cmcSeedCompleteT);
+    _cmcSeedCompleteT=setTimeout(function(){
+      _cmcSeedCompleteT=null;
+      try{
+        var S=window.CMC_PLANNING_SEED; if(!S||!S.months||window.__CMC_NO_SEED)return;
+        var byId={},byName={};
+        A.employees.forEach(function(e){ if(e&&e.id){ byId[e.id]=e; if(e.name&&!byName[e.name])byName[e.name]=e; } });
+        var total=0;
+        Object.keys(S.months).forEach(function(key){
+          var m=S.months[key]; if(!m)return;
+          var idMap={};
+          (m.emps||[]).forEach(function(se){
+            if(!se||!se.id)return;
+            if(byId[se.id]){idMap[se.id]=se.id;return;}
+            var ex=se.name&&byName[se.name]; if(ex&&!/^P\d/.test(ex.id))idMap[se.id]=ex.id;
+          });
+          total+=_cmcSeedPoseEquipes(key,m,byId,function(id){return idMap[id]||id;});
+        });
+        if(total){
+          try{if(typeof gplInvalidate==="function")gplInvalidate();}catch(_){}
+          try{if(typeof _rebuildIndexes==="function")_rebuildIndexes();}catch(_){}
+          try{if(typeof dcDebounced==="function")dcDebounced();}catch(_){}
+          try{console.info("[v9.912 seed] "+total+" équipe(s) re-posées après l'arrivée de Firebase");}catch(_){}
+        }
+      }catch(_){}
+    },600);
+  }catch(_){}
+}
 function _cmcApplyPlanningSeed(){
   try{
     if(window.__CMC_NO_SEED)return 0;
@@ -5981,7 +6022,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.911";
+var APP_VER="v9.912";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{

@@ -12,7 +12,7 @@
     "tools/departs/_gen-boards.mjs": "66dc689a5cba2f01"
   },
   "livres": {
-    "tools/shared/planning-seed.js": "a310749d25fed121",
+    "tools/shared/planning-seed.js": "e61fd2732525605c",
     "tools/departs/boards-gen.js": "3f0e0f5d96f47639"
   }
 }
