@@ -91,6 +91,8 @@ jobs:
           echo "Deploy kdmc-router…"
           wrangler deploy 2>&1 | tee deploy.log
           echo "----"
+          echo "== VARIABLES RÉELLEMENT APPLIQUÉES (ce que le worker voit) =="
+          grep -iA8 'vars' deploy.log || echo "  (wrangler n'a pas listé de Vars — à vérifier)"
           echo "Si une route custom_domain échoue avec un message de permission,"
           echo "le token CLOUDFLARE_API_TOKEN doit inclure Zone:DNS:Edit +"
           echo "Workers Routes:Edit sur la zone kd-mc.com."
@@ -301,6 +303,8 @@ jobs:
       - name: D'où viennent vraiment les pages ? (bloquant)
         shell: bash -eo pipefail {0}
         run: |
+          echo "== SIGNATURE DE L'AMONT (GitHub Pages laisse sa trace dans les en-têtes) =="
+          curl -sI --max-time 20 "https://cmcteams.kd-mc.com/" | tr 'A-Z' 'a-z' | grep -E 'server|x-github|x-kdmc|cf-cache|age' || true
           ATTENDU=$(grep -oE 'UPSTREAM_BASE *= *"[^"]+"' services/kdmc-router/wrangler.toml | sed 's/.*"\(.*\)"/\1/' || true)
           CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://cmcteams.kd-mc.com/package.json" || echo 000)
           echo "  cmcteams.kd-mc.com/package.json → HTTP $CODE"
