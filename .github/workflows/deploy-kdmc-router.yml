@@ -93,6 +93,18 @@ jobs:
           echo "----"
           echo "== VARIABLES RÉELLEMENT APPLIQUÉES (ce que le worker voit) =="
           grep -iA8 'vars' deploy.log || echo "  (wrangler n'a pas listé de Vars — à vérifier)"
+          # GARDE : si le wrangler.toml demande une bascule d'hébergeur, wrangler DOIT
+          # avoir appliqué la variable. Sinon le domaine continue de servir l'ancienne
+          # source et personne ne le voit (mesuré le 18.09 : package.json encore servi).
+          if grep -q 'UPSTREAM_BASE' wrangler.toml; then
+            if ! grep -qi 'UPSTREAM_BASE' deploy.log; then
+              echo "::error::wrangler n'a PAS appliqué UPSTREAM_BASE — les variables du wrangler.toml ne sont pas parties, la bascule ne peut pas prendre"
+              echo "--- début du journal de déploiement ---"
+              sed -n '1,70p' deploy.log
+              exit 1
+            fi
+            echo "  ✅ variable de bascule appliquée : $(grep -i 'UPSTREAM_BASE' deploy.log | head -1 | sed 's/^ *//')"
+          fi
           echo "Si une route custom_domain échoue avec un message de permission,"
           echo "le token CLOUDFLARE_API_TOKEN doit inclure Zone:DNS:Edit +"
           echo "Workers Routes:Edit sur la zone kd-mc.com."
