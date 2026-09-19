@@ -7,6 +7,19 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ Auto-merge Claude branches into main — 19/09/2026 02:15 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `95d153ca` · **Run** : `35414890314`
+- **Ce qui a lâché** : auto-merge › Rattraper main avant la PR (journaux fusionnés en union, jamais bloqués)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35414890314
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
+##[error]Process completed with exit code 128.
+```
+
 ## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:57 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `2c79008a` · **Run** : `35414149149`
@@ -419,27 +432,5 @@ pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be 
 ^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
 ^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
 pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and claude/persona-personnage-javis-hqd55e, Head ref must be a branch (createPullRequest)
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Auto-merge Claude branches into main — 16/09/2026 23:29 UTC
-
-- **Branche** : `claude/video-review-wqnqdw` · **Commit** : `450057f5` · **Run** : `35161631297`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35161631297
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-pull request create failed: GraphQL: Something went wrong while executing your query on 2026-09-16T23:23:00Z. Please include `6441:2FBA38:385CF0:B99254:6AAB24D3` when reporting this issue.
-##[warning]PR #3832 — merge auto refusé. Cause exacte ci-dessous.
-[claude/video-review-wqnqdw 570e74dbb] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
 ##[error]Process completed with exit code 1.
 ```
