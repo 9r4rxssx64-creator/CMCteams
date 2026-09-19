@@ -7,6 +7,19 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:55 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `b9d29fa9` · **Run** : `35414037774`
+- **Ce qui a lâché** : deploy › D'où viennent vraiment les pages ? (bloquant)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35414037774
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::error::le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de $ATTENDU. Bascule NON effective."^[[0m
+##[error]le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de https://kdmc-site-bj5.pages.dev. Bascule NON effective.
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:52 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `f470c432` · **Run** : `35413919081`
@@ -438,27 +451,5 @@ pull request create failed: GraphQL: Something went wrong while executing your q
   "error": "trop tôt : 1 passage / 5 min"
 ##[error]/run invalide : {
   "error": "trop tôt : 1 passage / 5 min"
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 23:25 UTC
-
-- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `5590ce8f` · **Run** : `35162092047`
-- **Ce qui a lâché** : deploy › Smoke test réel (leçon
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35162092047
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
-^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
-^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
-^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
-^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
-^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
-^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
-^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
---- /run sans clé doit être refusé (garde) ---
-    "why": "error code: 1042\n"
-##[error]push NON envoyé : HTTP 404 error code: 1042
 ##[error]Process completed with exit code 1.
 ```
