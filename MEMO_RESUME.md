@@ -9970,3 +9970,22 @@ Sabotage : 4 echecs dont trois mois a 0.
 
 **Ce que j'en retiens** : une garde ne prouve que l'etat qu'elle simule, et c'est le retour
 en production — pas le vert local — qui a montre que le bug vivait encore.
+
+## 2026-09-19 (18h) — Octobre : le code etait bon, c'est le MOMENT qui etait faux (v9.912)
+
+Deux correctifs verts en local, et la production toujours a 0 equipe pour octobre.
+
+**Ce qui a debloque** : faire parler l'app en production.
+- Son journal de demarrage disait « 281 equipes posees pour octobre » — le code tournait.
+- Un diagnostic qui relance la pose sur l'appareil reel : avant {juil 0, aout 0, sept 247,
+  oct 0} -> apres {290, 288, 285, 281}. Reparation complete.
+
+Donc ni le code ni les donnees : **l'ordonnancement**. Firebase renvoie les employes tels
+qu'un autre appareil les a enregistres (septembre 247, octobre rien) et remplace la liste
+APRES le demarrage.
+
+**v9.912** : re-completer ce qui manque apres chaque arrivee de Firebase. On ne pose que
+l'absent — aucun ecrasement, aucune ecriture quand rien ne manque.
+
+**Limite honnete** : l'effacement ne se reproduit PAS en local. La preuve du correctif sera
+la mesure en production, pas un test local.
