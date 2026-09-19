@@ -151,6 +151,28 @@ for (const url of urls) {
         } catch (e) { out.erreur = String(e && e.message || e).slice(0, 160); }
         return out;
       }).catch((e) => ({ erreur: String(e && e.message || e).slice(0, 160) }));
+      /* MOIS PASSÉS (Kevin 2026-09-19 « enlève les mois passés pour tous sauf l'admin ») :
+         une règle « sauf l'admin » ne se vérifie que du côté de ceux à qui elle s'applique.
+         On relève donc ce qui RESTE de chaque mois révolu sur CET appareil : équipes,
+         plannings, clés de mois. Chez un employé, tout doit être à zéro ; chez Kevin, non.
+         C'est ce relevé qui a montré que juillet et août survivaient (le planning vérifié
+         les reposait après l'effacement). */
+      releve.moisPasses = await page.evaluate(() => {
+        const N = new Date(), cur = N.getFullYear() * 12 + N.getMonth();
+        const estPasse = (k) => { const [y, m] = String(k).split('-').map(Number); return !isNaN(y) && !isNaN(m) && (y * 12 + m) < cur; };
+        const out = { admin: !!(A.user && A.user.id === 'U11804'), moisAffiche: A.year + '-' + A.month, restes: {} };
+        const cles = new Set([...Object.keys(A.overrides || {}), ...Object.keys((window.CMC_PLANNING_SEED || {}).months || {})].filter(estPasse));
+        for (const k of cles) {
+          out.restes[k] = {
+            equipes: A.employees.filter((e) => e && (e.teamHistory || {})[k]).length,
+            plannings: Object.keys((A.overrides || {})[k] || {}).length,
+            cleMois: localStorage.getItem('cmc_team_mirror_' + k) !== null,
+          };
+        }
+        out.total = Object.values(out.restes).reduce((n, r) => n + r.equipes + r.plannings + (r.cleMois ? 1 : 0), 0);
+        return out;
+      }).catch((e) => ({ erreur: String(e && e.message || e).slice(0, 160) }));
+      P.moisPasses = releve.moisPasses;
       writeFileSync(join(dossier, 'equipes.json'), JSON.stringify(releve));
       P.releve = Object.keys(releve.mois || {}).map((k) => k + ' : ' + (releve.mois[k].emps || []).length + ' employés, ' + (releve.mois[k].emps || []).filter((e) => e.tm).length + ' avec équipe, ' + (releve.mois[k].emps || []).filter((e) => e.cells > 0).length + ' avec cellules, recap ' + releve.mois[k].recap + ', parser import ' + ((releve.mois[k].ref || {}).parserVersion || '∅')).join(' · ') || releve.erreur || '';
       P.relance = releve.relance;
@@ -172,6 +194,10 @@ for (const P of rapport.pages) {
   md.push('<details><summary>Texte visible (début)</summary>', '', '```', P.texte.slice(0, 2500), '```', '', '</details>', '');
   for (const k of Object.keys(P).filter((x) => x.startsWith('vue_'))) md.push('- ' + k + ' : demandée ' + JSON.stringify(P[k].demandee) + ' · affichée ' + P[k].affichee, '');
   if (P.releve) md.push('- relevé des équipes (equipes.json) : ' + P.releve, '');
+  if (P.moisPasses && P.moisPasses.restes) {
+    const r = P.moisPasses, det = Object.keys(r.restes).map((k) => k + ' : ' + r.restes[k].equipes + ' équipes, ' + r.restes[k].plannings + ' plannings' + (r.restes[k].cleMois ? ', clé de mois' : '')).join(' · ');
+    md.push('- mois passés encore sur cet appareil (' + (r.admin ? 'ADMIN : normal qu\'il les garde' : 'employé : tout doit être à 0') + ') : **' + r.total + '** reste(s)' + (det ? ' — ' + det : ' (aucun mois passé connu)'), '');
+  }
   if (P.relance) md.push('- diagnostic relance : avant ' + JSON.stringify(P.relance.avant) + ' -> apres ' + JSON.stringify(P.relance.apres) + (P.relance.erreur ? ' (' + P.relance.erreur + ')' : ''), '');
   if (P.console && P.console.length) md.push('', '<details><summary>Journal de démarrage (ce qui a tourné)</summary>', '', '```', P.console.slice(0, 40).join('\n'), '```', '', '</details>', '');
 }

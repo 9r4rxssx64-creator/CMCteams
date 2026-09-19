@@ -5771,10 +5771,30 @@ function _cmcSeedMarkApplied(key,S,info,row){
 // s'organiser — rien ne tourne : personne n'avait d'équipe.
 // On pose donc l'équipe du seed quand elle MANQUE, jamais par-dessus une valeur
 // existante (un import récent ou une correction à la main restent prioritaires).
+// v9.913 (Kevin 2026-09-19 « Enlève les mois passés en affichage pour tous sauf l'admin »)
+// MESURÉ EN PRODUCTION, connecté en tant qu'employé : son appareil gardait encore les
+// équipes de JUILLET et AOÛT — des mois passés. La cause : cmcEffaceMoisPassesEmploye()
+// les effaçait bien, puis le planning vérifié, qui parcourt TOUS ses mois, les reposait
+// aussitôt. Deux mécanismes qui se battaient, l'effacement perdait à tous les coups.
+// Le planning vérifié saute donc les mois passés dès qu'un employé est reconnu.
+// Personne d'autre n'est concerné : pas encore connecté, Kevin, ou Kevin en « voir
+// comme » → on garde tout (on ne retire JAMAIS son historique à l'admin).
+function _cmcSeedMoisPasseEmploye(key){
+  try{
+    if(!A.user)return false;                                 // pas encore connu : on garde tout
+    if(A.user.id===AID)return false;                         // Kevin garde son historique
+    if(typeof _viewAs!=="undefined"&&_viewAs)return false;    // « voir comme » : c'est Kevin
+    var p=String(key).split("-"), y=parseInt(p[0],10), m=parseInt(p[1],10);
+    if(isNaN(y)||isNaN(m))return false;
+    var n=new Date();
+    return (y*12+m) < (n.getFullYear()*12+n.getMonth());
+  }catch(_){ return false; }
+}
 function _cmcSeedPoseEquipes(key,m,byId,mid){
   var poses=0;
   try{
     if(!m)return 0;
+    if(_cmcSeedMoisPasseEmploye(key))return 0;   // mois passé + employé : rien ne revient
     if(m.team) Object.keys(m.team).forEach(function(id){
       var e=byId[mid(id)]; if(!e||/^P\d/.test(e.id))return;
       if(!e.teamHistory)e.teamHistory={};
@@ -5814,6 +5834,7 @@ function _cmcSeedCompleteApresFirebase(){
         var total=0;
         Object.keys(S.months).forEach(function(key){
           var m=S.months[key]; if(!m)return;
+          if(_cmcSeedMoisPasseEmploye(key))return;   // v9.913 — un mois passé ne revient pas chez l'employé
           var idMap={};
           (m.emps||[]).forEach(function(se){
             if(!se||!se.id)return;
@@ -5839,6 +5860,7 @@ function _cmcApplyPlanningSeed(){
     var applied=0;
     Object.keys(S.months).forEach(function(key){
       var m=S.months[key]; if(!m||!m.ov)return;
+      if(_cmcSeedMoisPasseEmploye(key))return;   // v9.913 — chez l'employé, un mois passé n'est pas reposé
       var cur=A.overrides[key]||{};
       var hasLive=Object.keys(cur).some(function(id){return cur[id]&&Object.keys(cur[id]).length>0;});
       // v9.898 (Kevin 2026-09-10 « l'app a déjà septembre mais trop d'erreurs ») — un mois LIVE
@@ -6022,7 +6044,7 @@ function _cmcSyncChefsTFromBoards(y,m){
 // Version des données. Incrémenter à chaque changement de DEF_EMP
 // pour forcer la re-synchronisation depuis le code vers localStorage.
 var DATA_VER=30;
-var APP_VER="v9.912";
+var APP_VER="v9.913";
 // --- i18n minimal v9.534 → v9.543 — 60 strings critiques FR/EN/IT + safe-catch CMC + toast i18n migration ---
 var I18N_CRITICAL={
 fr:{
@@ -16130,6 +16152,10 @@ function agentEmit(eventName,payload){
    remettrait les mois passés cinq secondes plus tard). */
 function cmcEffaceMoisPassesEmploye(){
   if(!A.user||A.user.id===AID)return 0;   // Kevin garde son historique
+  /* v9.913 — « voir comme » : l'app prend l'identité d'un employé, mais l'appareil reste
+     celui de Kevin. Sans cette ligne, regarder ce que voit un employé EFFAÇAIT l'historique
+     de Kevin sur son propre téléphone. C'est la même règle que cmcHistoriqueAutorise(). */
+  try{ if(typeof _viewAs!=="undefined"&&_viewAs)return 0; }catch(_){}
   try{
     // v9.716 Kevin "il a encore la mémoire d'avril dans Départs" :
     // Avant, _curMo se basait sur A.month (mois AFFICHÉ). Si Kevin navigue sur

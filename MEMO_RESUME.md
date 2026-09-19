@@ -1,5 +1,36 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (16h45) — v9.912 confirmée EN LIGNE, et les mois passés revenaient par la porte de derrière (v9.913)
+
+**1. Octobre : c'est réglé, et vérifié pour de vrai.** Je me suis connecté sur le vrai site
+**en tant qu'employé** (pas en tant que toi) : octobre affiche **281 équipes**, septembre 285,
+août 288, juillet 290 — et le diagnostic dit **avant = après**, c'est-à-dire **sans que rien
+n'ait été relancé à la main**. C'est exactement la condition que je m'étais fixée avant de dire
+que c'était réglé. Trois corrections auront été nécessaires (v9.910, v9.911, v9.912) : les deux
+premières étaient justes mais incomplètes.
+
+**2. Ce que cette visite a révélé (ta demande du jour).** Sur l'appareil de cet employé, les
+équipes de **juillet et août** — des mois passés — étaient **encore là**. L'effacement faisait
+bien son travail à la connexion… puis le planning vérifié, qui parcourt **tous** ses mois, les
+**reposait aussitôt**. Deux mécanismes qui se battaient, et l'effacement perdait à tous les coups.
+
+**Corrigé (v9.913)** : dès qu'un employé est reconnu, le planning vérifié **saute les mois
+passés** — ni planning, ni équipe, ni clé de travail. Personne d'autre n'est touché : toi, tu
+gardes tout.
+
+**3. Un trou trouvé au passage et bouché** : quand tu utilisais **« voir comme un employé »**,
+l'app prenait l'identité de l'employé mais restait **sur ton téléphone** — et effaçait **ton**
+historique. Regarder ce que voit quelqu'un ne doit rien te coûter. C'est réparé.
+
+**Ce qui est prouvé** (garde `test:mois-passes`, vrai navigateur, **17 contrôles, 0 échec**) :
+l'employé ne remonte pas dans le passé · un mois passé posé de force le ramène au mois en cours ·
+la page Départs ne lui propose aucun mois passé · le mois passé **ne revient pas** après le
+démarrage **ni à l'arrivée du cloud** · **toi tu le retrouves** · « voir comme » ne t'efface rien.
+**Prouvée discriminante par sabotage** : garde retirée → le mois passé revient (2 échecs).
+
+**Côté page Départs** : rien à changer, sa liste de mois filtrait déjà correctement (mesuré).
+
+
 ## 2026-09-19 (14h30) — « Pourquoi l'app a plusieurs adresses ? » : elle n'en a qu'UNE, trois autres étaient cassées
 
 **Correction d'abord** : hier je t'ai écrit que l'app avait 7 adresses. **C'était faux.** CMCteams n'a qu'une seule adresse : `cmcteams.kd-mc.com`. J'avais pris le symptôme pour la configuration.

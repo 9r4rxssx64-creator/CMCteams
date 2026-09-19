@@ -1,5 +1,15 @@
 # 📁 KEVIN_INVENTORY.md — Tous tes codes, fichiers, liens (auto-mis à jour)
 
+### 🗓 Les mois passés n'existent plus chez l'employé — même quand le planning vérifié repasse (19.09.2026)
+
+| Fichier | À quoi ça sert | Ouvrir |
+|---|---|---|
+| `index.html` → `_cmcSeedMoisPasseEmploye()` | Le planning vérifié saute les mois passés dès qu'un employé est reconnu : ni planning, ni équipe, ni clé de travail. Toi (et « voir comme ») gardez tout | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `index.html` → `cmcEffaceMoisPassesEmploye()` | Efface les mois passés **sur l'appareil de l'employé seulement** — ne remonte jamais au cloud, et ne s'applique plus quand c'est toi en « voir comme » | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/index.html) |
+| `tests/verify-mois-passes.mjs` | La garde : efface PUIS relance le planning vérifié (démarrage **et** arrivée du cloud) et exige que rien ne revienne chez l'employé — tout en exigeant que toi tu le retrouves (17 contrôles) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-mois-passes.mjs) |
+| `tools/voir/voir.mjs` + `tools/smoke/session-kevin.mjs` | Regarder le vrai site **en tant qu'employé** (`--comme=employe`) : c'est comme ça que le trou a été trouvé | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/voir/voir.mjs) |
+
+
 ### 🔄 Mise à jour automatique : savoir si tout le monde l'a vraiment (19.09.2026)
 
 | Fichier | À quoi ça sert | Ouvrir |
