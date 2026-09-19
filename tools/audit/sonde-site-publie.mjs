@@ -77,6 +77,9 @@ async function sonder(r) {
     const doctype = /^\s*<!doctype/i.test(texte);
     return {
       ...r, url, http: rep.status, octets: texte.length, html, assez, doctype,
+      /* Empreinte du contenu : sert à repérer deux adresses qui servent la
+         MÊME page alors qu'elles ne devraient pas (cf. contrôle plus bas). */
+      tete: texte.slice(0, 2000),
       ok: rep.status === 200 && html && assez, ms: Date.now() - t0,
     };
   } catch (e) {
@@ -109,6 +112,33 @@ if (sansDoctype.length) {
   console.log(`\nℹ️  ${sansDoctype.length} page(s) sans <!doctype html> — elles s'affichent, mais en « mode bizarre » :`);
   console.log(`   ${sansDoctype.join(', ')}  (à corriger quand l'occasion se présente, ce n'est pas bloquant)`);
 }
+/* ── CHAQUE ADRESSE SERT-ELLE SA PROPRE APPLICATION ? ─────────────────────
+   Kevin 2026-09-19 : « pourquoi l'app a plusieurs adresses ? »
+   MESURÉ : rotaplan, kit et croupier n'avaient aucune page dans le paquet
+   publié. L'hébergeur, ne trouvant rien, répond par /index.html — donc par
+   CMCteams — AVEC UN CODE 200. Trois adresses servaient l'app à la place de
+   leur boutique, et ce contrôle-ci disait « 32 servies / 0 en échec » : il
+   vérifiait que ça répond, pas que ça répond LA BONNE CHOSE.
+   Deux adresses qui pointent sur le MÊME dossier (cuisine/cocina/cujina,
+   departs/cmcteams-light, kd-mc.com/www) ont le droit d'être identiques. */
+const memeDossier = (a, b) => (a.dossier || '') === (b.dossier || '');
+const jumeaux = [];
+for (let i = 0; i < res.length; i++) {
+  for (let j = i + 1; j < res.length; j++) {
+    const a = res[i], b = res[j];
+    if (!a.ok || !b.ok || memeDossier(a, b)) continue;
+    if (a.octets === b.octets && a.tete === b.tete) jumeaux.push([a, b]);
+  }
+}
+if (jumeaux.length) {
+  console.log(`\n❌ ${jumeaux.length} paire(s) d'adresses servent la MÊME page alors qu'elles`);
+  console.log('   ont chacune leur propre application. C\'est le repli de l\'hébergeur :');
+  console.log('   la page demandée n\'existe pas là-bas, il renvoie l\'accueil avec un code 200.');
+  for (const [a, b] of jumeaux) console.log(`   · ${a.hote} (${a.dossier || 'racine'}) == ${b.hote} (${b.dossier || 'racine'})`);
+  console.log('\n   À corriger dans services/kdmc-router/prepare-secours.mjs : chaque adresse');
+  console.log('   de la table ROUTES doit avoir son dossier dans le paquet publié.');
+}
+
 if (ko.length) {
   console.log('\nCe qui ne répond pas — à régler AVANT de couper l\'ancien hébergeur :');
   for (const r of ko) console.log(`  · ${r.hote} → ${r.url}  (HTTP ${r.http}${r.erreur ? ', ' + r.erreur : ''})`);
@@ -117,6 +147,10 @@ if (ko.length) {
 /* Un réseau coupé donnerait « tout en échec » : on le DIT au lieu de conclure
    à une panne du site (leçon du 5.09 : sans cette distinction, un pare-feu se
    lit comme une panne — et l'inverse rassure à tort). */
+if (jumeaux.length && ko.length !== res.length) {
+  console.log('\n=== ADRESSES QUI SERVENT LA MAUVAISE APPLICATION : ' + jumeaux.length + ' ===');
+  process.exit(1);
+}
 if (ko.length === res.length) {
   console.log('\n⚠️  TOUTES les adresses échouent — c\'est plus probablement le réseau d\'ici');
   console.log('   que le site. Relance depuis un runner CI (réseau ouvert) avant de conclure.');

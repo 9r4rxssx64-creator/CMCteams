@@ -79,6 +79,15 @@ const APPS = [
   { chemin: 'shops/ecocraft', quoi: 'boutique EcoCraft (liée par le portail)' },
   { chemin: 'shops/digital-vault', quoi: 'boutique Digital Vault (liée par le portail)' },
   { chemin: 'shops/pawsome', quoi: 'boutique Pawsome (liée par le portail)' },
+  /* 19.09.2026 — Kevin : « pourquoi l'app a plusieurs adresses ? »
+     MESURÉ : rotaplan, kit et croupier sont dans la table ROUTES (chacune a son
+     sous-domaine) mais n'étaient dans AUCUNE liste de ce fabricant. L'hébergeur
+     ne trouvant pas leur page, il répondait par /index.html — c'est-à-dire
+     CMCteams — avec un code 200. Trois adresses servaient donc l'app à la place
+     de leur propre boutique, sans la moindre erreur. */
+  { chemin: 'shops/rotaplan', quoi: 'rotaplan.kd-mc.com' },
+  { chemin: 'shops/kit-ia', quoi: 'kit.kd-mc.com' },
+  { chemin: 'shops/croupier', quoi: 'croupier.kd-mc.com' },
 ];
 /* Routes servies par un dossier PARENT déjà copié ci-dessus (cpSync est récursif) :
    les « belles adresses » de kdmc-home. Listées pour la parité avec ROUTES. */
