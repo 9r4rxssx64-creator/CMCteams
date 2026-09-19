@@ -43,6 +43,12 @@ concurrency:
 jobs:
   verif:
     runs-on: ubuntu-latest
+    # BORNE DE TEMPS (ajoutée le 19/09, après un run bloqué 45 min sur une seule étape) :
+    # sans elle, GitHub laisse un job tourner 6 HEURES. Le compte de Kevin a été suspendu
+    # le 15/08/2026 pour VOLUME d'exécutions — un job qui se bloque la nuit brûle six
+    # heures de quota pour rien. 45 min suffisent largement : le tour complet des 27
+    # surfaces prend ~10 min quand tout va bien.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 

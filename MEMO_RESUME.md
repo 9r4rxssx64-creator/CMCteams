@@ -1,5 +1,24 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (18h10) — Un contrôle bloqué 45 minutes : personne ne les borne dans le temps
+
+En lançant la vérification du domaine, je l'ai vue rester **45 minutes sur une seule étape**.
+En regardant pourquoi, j'ai trouvé plus gros : **110 de tes 158 contrôles automatiques n'ont
+aucune limite de temps**. Par défaut, GitHub laisse un travail tourner **six heures**.
+
+C'est exactement ce qui a fait suspendre ton compte le 15 août : le **volume** d'exécutions. Un
+contrôle qui se bloque la nuit brûle six heures de quota pour rien, sans que personne le voie.
+
+**Corrigé** : le contrôle qui bloquait est maintenant borné à 45 minutes (le tour complet prend
+~10 min quand tout va bien). Et j'ai ajouté un **cliquet** : le nombre de contrôles sans limite
+est figé à 110 — tout **nouveau** contrôle sans limite fait échouer la vérification, sans allumer
+un rouge permanent sur les anciens. Sabotage vérifié : une limite retirée → 111, échec immédiat.
+
+**Honnête** : je n'ai pas borné les 110 autres. Les toucher tous en une fois, c'est 110 fichiers
+modifiés d'un coup sur des automatisations que je n'ai pas écrites — trop risqué ce soir. Le
+cliquet empêche que ça empire, et la dette peut descendre au fur et à mesure.
+
+
 ## 2026-09-19 (19h40) — Mes gardes ne tournaient nulle part. Maintenant si.
 
 **Mesuré, pas supposé** : toutes les vérifications du planning (équipes, horaires, lieux,
