@@ -62,7 +62,7 @@ const CROSS_PROMO_ADS: readonly CrossPromoAd[] = [
     target_project: 'kdmc',
     title: '🏢 Découvre les boutiques KDMC',
     cta_label: 'Visiter KDMC',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/',
+    cta_url: '',
     position: 'sidebar',
   },
   {
@@ -71,7 +71,7 @@ const CROSS_PROMO_ADS: readonly CrossPromoAd[] = [
     target_project: 'ekdmc',
     title: '🛒 Marketplace e-KDMC',
     cta_label: 'Boutique en ligne',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/',
+    cta_url: '',
     position: 'inline',
   },
   {
@@ -80,7 +80,7 @@ const CROSS_PROMO_ADS: readonly CrossPromoAd[] = [
     target_project: 'telecommande',
     title: '📱 Télécommande KDMC',
     cta_label: 'Contrôler',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/',
+    cta_url: 'https://apex-chat.kd-mc.com/',
     position: 'sidebar',
   },
   {
@@ -89,7 +89,7 @@ const CROSS_PROMO_ADS: readonly CrossPromoAd[] = [
     target_project: 'crackpass',
     title: '🔐 CrackPass — Générateur passwords',
     cta_label: 'Outil sécurité',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/tools/codes-decoder.html',
+    cta_url: 'https://cmcteams.kd-mc.com/tools/codes-decoder.html',
     position: 'inline',
   },
   {
@@ -98,7 +98,7 @@ const CROSS_PROMO_ADS: readonly CrossPromoAd[] = [
     target_project: 'apex',
     title: '🤖 Apex AI — Assistant intelligent',
     cta_label: 'Découvrir Apex',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/',
+    cta_url: 'https://apex-ai.kd-mc.com/',
     position: 'modal',
   },
   {
@@ -107,7 +107,7 @@ const CROSS_PROMO_ADS: readonly CrossPromoAd[] = [
     target_project: 'apex',
     title: '✨ Apex AI Pro pour ton business',
     cta_label: 'Plan Pro 29€/mois',
-    cta_url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#pricing',
+    cta_url: 'https://apex-ai.kd-mc.com/#pricing',
     position: 'sidebar',
   },
 ];

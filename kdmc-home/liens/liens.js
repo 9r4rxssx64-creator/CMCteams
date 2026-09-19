@@ -7,7 +7,8 @@
   'use strict';
 
   var GH = 'https://github.com/9r4rxssx64-creator/cmcteams';
-  var PAGES = 'https://9r4rxssx64-creator.github.io/CMCteams';
+  /* Adresse du domaine : le dépôt GitHub passe en privé, github.io s'éteint. */
+  var PAGES = 'https://shops.kd-mc.com';
   var CF = 'https://dash.cloudflare.com/?to=/:account';
   var WK = function (name) { return 'https://' + name + '.9r4rxssx64.workers.dev'; };
   var FB = 'https://console.firebase.google.com/project';
@@ -29,7 +30,7 @@
     {
       title: '🛍️ Boutiques & back-office', sub: 'Vitrines, studios & administration',
       items: [
-        { ic: '🏬', nm: 'Portail boutiques', ds: 'Toutes les boutiques', url: PAGES + '/shops/' },
+        { ic: '🏬', nm: 'Portail boutiques', ds: 'Toutes les boutiques', url: PAGES + '/' },
         { ic: '📊', nm: 'Dashboard boutiques', ds: 'Commandes · produits · stats · finances', url: 'https://dashboard.kd-mc.com/' },
         { ic: '📦', nm: 'Sourcing fournisseurs', ds: 'Catalogues — choisir quoi vendre', url: 'https://sourcing.kd-mc.com/' },
         { ic: '🎨', nm: 'Chez Lolo', ds: 'Boutique & studio de création', links: [
@@ -41,10 +42,10 @@
           { l: 'Studio', u: 'https://la-detente.kd-mc.com/studio.html' }
         ] },
         { ic: '🚧', nm: 'Boutiques en construction', ds: 'Aperçu des prochaines boutiques', links: [
-          { l: 'Tech Hub', u: PAGES + '/shops/tech-hub/' },
-          { l: 'EcoCraft', u: PAGES + '/shops/ecocraft/' },
-          { l: 'Digital Vault', u: PAGES + '/shops/digital-vault/' },
-          { l: 'Pawsome', u: PAGES + '/shops/pawsome/' }
+          { l: 'Tech Hub', u: PAGES + '/tech-hub/' },
+          { l: 'EcoCraft', u: PAGES + '/ecocraft/' },
+          { l: 'Digital Vault', u: PAGES + '/digital-vault/' },
+          { l: 'Pawsome', u: PAGES + '/pawsome/' }
         ] }
       ]
     },

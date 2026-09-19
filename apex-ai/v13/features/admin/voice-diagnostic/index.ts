@@ -278,7 +278,7 @@ export async function render(rootEl: HTMLElement): Promise<void> {
         <h3 class="ax-gs-310">🔧 Solutions rapides</h3>
         <ul style="margin:0;padding-left:18px;font-size:13px;line-height:1.6;color:rgba(255,255,255,0.78)">
           <li><strong>Permission refusée</strong> : iOS Réglages → Safari → Microphone → Autoriser, puis recharge.</li>
-          <li><strong>SpeechRecognition KO en PWA</strong> : ouvre <a href="https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/" style="color:#6a8aff">Apex dans Safari classique</a> (URL directe, pas l'icône). Limitation Apple iOS PWA.</li>
+          <li><strong>SpeechRecognition KO en PWA</strong> : ouvre <a href="https://apex-ai.kd-mc.com/" style="color:#6a8aff">Apex dans Safari classique</a> (URL directe, pas l'icône). Limitation Apple iOS PWA.</li>
           <li><strong>Aucune voix synthèse</strong> : appuie sur 🔄 (recharge) — iOS charge les voix de façon asynchrone.</li>
           <li><strong>Wake word arrière-plan iOS</strong> : impossible nativement (suspendu par OS). Workaround : Web Push Notification → tap → app foreground → auto-listen.</li>
           <li><strong>Tout reset</strong> : icône 🔄 force-update bouton rouge en haut (apparaît si nouvelle version dispo).</li>

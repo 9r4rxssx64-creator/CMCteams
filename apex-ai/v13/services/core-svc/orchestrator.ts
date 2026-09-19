@@ -30,7 +30,7 @@ export const PROJECTS: readonly KevinProject[] = [
   {
     id: 'apex',
     name: 'APEX AI v13',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/',
+    url: 'https://apex-ai.kd-mc.com/',
     firebasePath: 'apex',
     toolsAvailable: [
       'audit_self', 'memory_recall', 'memory_add', 'lesson_record',
@@ -40,39 +40,39 @@ export const PROJECTS: readonly KevinProject[] = [
   {
     id: 'cmcteams',
     name: 'CMCteams (Casino Monaco)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/',
+    url: 'https://cmcteams.kd-mc.com/',
     firebasePath: 'cmcteams',
     toolsAvailable: ['cmc_read', 'cmc_write_motd', 'cmc_get_admin_profile'],
   },
   {
     id: 'telecommande',
     name: 'Télécommande KDMC',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/messaging-app/',
+    url: 'https://apex-chat.kd-mc.com/',
     toolsAvailable: ['telecommande_send', 'telecommande_status'],
   },
   {
     id: 'crackpass',
     name: 'CrackPass (générateur passwords)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/tools/codes-decoder.html',
+    url: 'https://cmcteams.kd-mc.com/tools/codes-decoder.html',
     toolsAvailable: ['crackpass_check', 'crackpass_generate'],
   },
   {
     id: 'kdmc',
     name: 'KDMC (hub central)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/',
+    url: '',
     toolsAvailable: ['kdmc_stats'],
   },
   {
     id: 'ekdmc',
     name: 'e-KDMC (marketplace)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/e-KDMC/',
+    url: '',
     firebasePath: 'ekdmc',
     toolsAvailable: ['ekdmc_stats', 'ekdmc_orders'],
   },
   {
     id: 'iakdmc',
     name: 'IA-KDMC (référence archive)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/IA-KDMC/',
+    url: '',
     toolsAvailable: ['iakdmc_lookup'],
   },
   /* Extensions v13.0.1 (Kevin demande "tous mes projets intégrés") */
@@ -80,7 +80,7 @@ export const PROJECTS: readonly KevinProject[] = [
   {
     id: 'apex_chat_embedded',
     name: 'Apex Chat (embedded admin/family)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#chat',
+    url: 'https://apex-ai.kd-mc.com/#chat',
     firebasePath: 'apex/chat',
     toolsAvailable: ['chat_read', 'chat_export'],
   },
@@ -95,13 +95,13 @@ export const PROJECTS: readonly KevinProject[] = [
   {
     id: 'social_video',
     name: 'Social Video Pipeline',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/_PROJECTS_KDMC/social-video/',
+    url: '',
     toolsAvailable: ['video_studio', 'social_publish'],
   },
   {
     id: 'eapex',
     name: 'e-APEX (commerce admin)',
-    url: 'https://9r4rxssx64-creator.github.io/CMCteams/apex-ai-v13/#admin',
+    url: 'https://apex-ai.kd-mc.com/#admin',
     firebasePath: 'eapex',
     toolsAvailable: ['eapex_stats', 'eapex_subscriptions'],
   },

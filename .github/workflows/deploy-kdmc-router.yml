@@ -314,6 +314,15 @@ jobs:
       # MÉTHODE RETENUE : le paquet pose un repère (__paquet.txt) que l'ancien
       # hébergeur n'a jamais eu. Si l'hébergeur le sert et que le domaine le
       # sert aussi, le domaine relaie bien cet hébergeur — sans ambiguïté.
+      # Une page qui s'affiche ne prouve PAS que le planning est chargé : les
+      # données vivent dans trois fichiers à part, en adresse absolue
+      # « /CMCteams/… », que le routeur réécrit au passage. Si ce retrait casse,
+      # l'hébergeur renvoie la page d'accueil AVEC un code 200 (leçon #285) et
+      # l'app s'affiche vide sans un seul message d'erreur. On ouvre donc les
+      # fichiers eux-mêmes et on exige du vrai JavaScript.
+      - name: L'app reçoit-elle vraiment ses plannings ? (bloquant)
+        run: node tools/audit/sonde-ressources-app.mjs
+
       - name: D'où viennent vraiment les pages ? (preuve par repère)
         shell: bash -eo pipefail {0}
         run: |

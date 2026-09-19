@@ -34,7 +34,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # ── Le jour où Kevin ferme le dépôt, GitHub Pages s'éteint (Pages depuis un
+  #    dépôt privé est payant). Sans ce contrôle, CE workflow partirait en
+  #    erreur à CHAQUE publication — et enverrait un mail à chaque fois, pour
+  #    une panne qui n'en est pas une : le site vit sur Cloudflare Pages depuis
+  #    le 19.09 (preuve par repère dans deploy-kdmc-router.yml).
+  #    On regarde donc l'état du dépôt AVANT, et on s'arrête proprement.
+  verif:
+    runs-on: ubuntu-latest
+    outputs:
+      prive: ${{ steps.etat.outputs.prive }}
+    steps:
+      - name: Le dépôt est-il devenu privé ?
+        id: etat
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          rep=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                     -H "Accept: application/vnd.github+json" \
+                     "https://api.github.com/repos/${{ github.repository }}" || true)
+          if printf '%s' "$rep" | grep -qE '"private"[[:space:]]*:[[:space:]]*true'; then
+            echo "prive=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dépôt PRIVÉ — GitHub Pages est éteint, c'est normal. Le site est servi par Cloudflare Pages ; rien à faire."
+          else
+            echo "prive=false" >> "$GITHUB_OUTPUT"
+            echo "Dépôt public : publication GitHub Pages comme d'habitude."
+          fi
+
   deploy:
+    needs: verif
+    if: needs.verif.outputs.prive != 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url || steps.deployment2.outputs.page_url || steps.deployment3.outputs.page_url }}

@@ -2736,3 +2736,12 @@ officiels les retirent eux-mêmes avant publication.
 | `tests/metiers-videos.test.mjs` | La garde : porte de vérité + **variété** (anti-démonétisation) | [Voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/metiers-videos.test.mjs) | [Modifier](https://github.com/9r4rxssx64-creator/cmcteams/edit/main/tests/metiers-videos.test.mjs) |
 
 **▶️ Lancer un lot :** [Pub — vidéos et posts-liens](https://github.com/9r4rxssx64-creator/cmcteams/actions/workflows/pub-videos.yml) — champ `videos` : `devis-01,devis-02,relance-01…`
+
+## 🔒 Passage du dépôt en privé (2026-09-19)
+
+| Fichier | À quoi ça sert | Lien |
+|---|---|---|
+| `tests/verify-aucune-dependance-github.mjs` | Refuse que le site publié dépende encore de GitHub (sinon 404 le jour où le dépôt ferme) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-aucune-dependance-github.mjs) |
+| `tools/audit/sonde-ressources-app.mjs` | Vérifie que l'app reçoit VRAIMENT son planning (pas juste que la page s'affiche) | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tools/audit/sonde-ressources-app.mjs) |
+| `services/kdmc-router/prepare-secours.mjs` | Ne publie plus le code serveur des boutiques ni l'outil de déchiffrement de la messagerie | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/services/kdmc-router/prepare-secours.mjs) |
+| `tests/verify-paquet-pages.mjs` | Réparé : il détecte enfin un vrai fichier manquant, et n'accuse plus au hasard | [voir](https://github.com/9r4rxssx64-creator/cmcteams/blob/main/tests/verify-paquet-pages.mjs) |

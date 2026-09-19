@@ -75,6 +75,8 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 
 /* Serveur statique minimal — le comportement de Cloudflare Pages : un fichier,
    sinon l'index.html du dossier, sinon 404. */
+/* Dossier de l'app en cours de test (mis à jour avant chaque navigation). */
+let DOSSIER_COURANT = '';
 const serveur = createServer(async (req, res) => {
   try {
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -86,6 +88,16 @@ const serveur = createServer(async (req, res) => {
     if (p.startsWith('/CMCteams/')) p = p.slice('/CMCteams'.length);
     let f = join(RACINE, p);
     if (existsSync(f) && statSync(f).isDirectory()) f = join(f, 'index.html');
+    /* En production, CHAQUE adresse a son dossier : kd-mc.com sert
+       /CMCteams/kdmc-home, donc « /apps.json » demandé par la page d'accueil
+       arrive dans /kdmc-home/apps.json. Ici on sert tout le paquet à plat :
+       sans cette ligne, le test crie « fichier manquant » sur un fichier bien
+       présent, simplement rangé dans le dossier de son app (mesuré le 19.09
+       sur /apps.json). On imite donc AUSSI la mise en dossier par adresse. */
+    if (!existsSync(f) && DOSSIER_COURANT) {
+      const f2 = join(RACINE, DOSSIER_COURANT, p);
+      if (existsSync(f2)) f = f2;
+    }
     if (!existsSync(f)) { res.writeHead(404); return res.end('introuvable'); }
     const buf = await readFile(f);
     res.writeHead(200, { 'content-type': TYPES[extname(f).toLowerCase()] || 'application/octet-stream' });
@@ -114,16 +126,45 @@ for (const app of APPS) {
   const erreursJs = [];
   const reseauBloque = [];
   page.on('pageerror', (e) => erreursJs.push(String(e.message).slice(0, 120)));
+  /* ⚠️ C'EST ICI qu'on attrape un fichier vraiment absent. « requestfailed »
+     ne se déclenche PAS sur un 404 : pour Playwright, un 404 est une réponse
+     reçue, donc un succès réseau. La garde a donc longtemps CRU vérifier la
+     complétude du paquet sans jamais la vérifier (elle ne voyait que des
+     abandons). On écoute désormais les réponses et on refuse les 404 servis
+     par NOTRE serveur — c'est-à-dire par le paquet lui-même. */
+  page.on('response', (rep) => {
+    const u = rep.url();
+    if (!u.startsWith(BASE) || rep.status() !== 404) return;
+    const chemin = u.replace(BASE, '');
+    /* Les adresses en /__xxx/ ne sont PAS des fichiers : c'est le routeur qui
+       y répond en production (identité, admin, arbre, voix…). Un serveur de
+       fichiers ne peut pas les servir — les compter comme « manquantes »
+       serait accuser le paquet d'un travail qui n'est pas le sien. */
+    if (/^\/(CMCteams\/)?__/.test(chemin)) return;
+    erreursJs.push('fichier manquant : ' + chemin);
+  });
   page.on('requestfailed', (r) => {
     const u = r.url();
     /* Un appel vers l'extérieur qui échoue ICI = mon réseau bloqué, pas le
        paquet. On le compte à part au lieu de crier au bug. */
-    if (u.startsWith(BASE)) erreursJs.push('fichier manquant : ' + u.replace(BASE, ''));
-    else reseauBloque.push(u.split('/')[2] || u);
+    if (!u.startsWith(BASE)) { reseauBloque.push(u.split('/')[2] || u); return; }
+    /* ⚠️ « requestfailed » ne veut PAS dire « fichier absent ». Il se déclenche
+       aussi quand la page se ferme pendant qu'un morceau se charge encore
+       (net::ERR_ABORTED). MESURÉ le 19.09 sur trois passages d'affilée : 65,
+       puis 3, puis 5 « fichiers manquants » — sur des fichiers RÉELLEMENT
+       PRÉSENTS sur le disque. Une garde qui accuse au hasard finit par être
+       ignorée : on ne compte donc que ce qui manque VRAIMENT. */
+    const raison = (r.failure() && r.failure().errorText) || '';
+    let chemin = u.replace(BASE, '').split('?')[0];
+    if (chemin.startsWith('/CMCteams/')) chemin = chemin.slice('/CMCteams'.length);
+    const surLeDisque = existsSync(join(RACINE, decodeURIComponent(chemin)));
+    if (surLeDisque || /ERR_ABORTED/.test(raison)) return;   // faux positif
+    erreursJs.push('fichier manquant : ' + u.replace(BASE, ''));
   });
 
   let etat = { ...app, texte: 0, erreursJs, reseauBloque, http: 0 };
   try {
+    DOSSIER_COURANT = app.chemin.replace(/\/index\.html$/, '').replace(/^\//, '');
     const rep = await page.goto(BASE + app.chemin, { waitUntil: 'domcontentloaded', timeout: 25000 });
     etat.http = rep ? rep.status() : 0;
     await page.waitForTimeout(1800);   /* laisser l'app se monter */
