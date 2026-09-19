@@ -53,6 +53,7 @@ jobs:
       - name: Chaque adresse sert-elle la même version, et peut-elle se mettre à jour ?
         shell: bash -eo pipefail {0}
         run: |
-          ATTENDU=$(tr -d ' \n' < tools/departs/version.txt)
-          echo "version attendue (source du dépôt) : $ATTENDU"
-          node tools/audit/sonde-maj-auto.mjs --attendu "$ATTENDU"
+          LIGHT=$(tr -d ' \n' < tools/departs/version.txt)
+          APP=$(grep -oE 'var APP_VER *= *"v[0-9.]+"' index.html | head -1 | grep -oE 'v[0-9.]+')
+          echo "versions attendues (source du dépôt) : app $APP · page Départs $LIGHT"
+          node tools/audit/sonde-maj-auto.mjs --attendu-app "$APP" --attendu-light "$LIGHT"

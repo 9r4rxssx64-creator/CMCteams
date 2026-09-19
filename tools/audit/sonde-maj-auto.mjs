@@ -18,11 +18,13 @@
  * réellement servie, lit `version.txt`, et refuse de dire que tout va bien si
  * l'un des deux ne correspond pas.
  *
- * Usage : node tools/audit/sonde-maj-auto.mjs [--attendu v1.48]
+ * Usage : node tools/audit/sonde-maj-auto.mjs [--attendu-app v9.908] [--attendu-light v1.48]
  * ========================================================================== */
 
-const iAtt = process.argv.indexOf('--attendu');
-const ATTENDU = iAtt >= 0 ? process.argv[iAtt + 1] : null;
+/* Deux numéros DIFFÉRENTS : l'app CMCteams (v9.x) et la page Départs (v1.x).
+   Les comparer l'un à l'autre n'a aucun sens — erreur commise au 1er jet. */
+const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : null; };
+const ATTENDU = { app: arg('--attendu-app'), light: arg('--attendu-light') };
 
 /* Chaque adresse et ce qu'elle sert. Les adresses viennent de la table ROUTES
    du routeur (voir sonde-site-publie.mjs) ; ici on ne garde que celles qui
@@ -83,7 +85,7 @@ for (const r of res) {
   if (!r.ver) { verdict = `❌ version illisible (HTTP ${r.http}${r.err ? ' ' + r.err : ''})`; pb.push(r); }
   else if (r.type === 'light' && !r.txt) { verdict = `❌ version.txt ne rend PAS un numéro → MAJ auto MORTE (reçu : « ${r.brut.replace(/\s+/g, ' ').slice(0, 24)}… »)`; pb.push(r); }
   else if (r.type === 'light' && r.txt !== r.ver) { verdict = `❌ la page dit ${r.ver}, version.txt dit ${r.txt} → boucle ou blocage`; pb.push(r); }
-  else if (ATTENDU && r.ver !== ATTENDU) { verdict = `❌ sert ${r.ver} au lieu de ${ATTENDU} (déploiement en retard)`; pb.push(r); }
+  else if (ATTENDU[r.type] && r.ver !== ATTENDU[r.type]) { verdict = `❌ sert ${r.ver} au lieu de ${ATTENDU[r.type]} (déploiement en retard)`; pb.push(r); }
   console.log(`${(r.hote + (r.chemin || '')).padEnd(32)} ${String(r.ver || '—').padEnd(11)} ${String(r.txt || (r.type === 'app' ? '(sans objet)' : '—')).padEnd(13)} ${verdict}`);
 }
 
