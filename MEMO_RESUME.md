@@ -20,6 +20,13 @@ j'ai volontairement cassé le filtre pour qu'il ne garde que le mois courant →
 (« 1 mois NON passé retiré à l'employé — il perd son planning à venir ») ; remis d'aplomb →
 **19 contrôles, 0 échec**.
 
+**Le même trou existait dans l'app, en miroir** : je vérifiais que la flèche « ‹ » ne
+remonte plus dans le passé, mais **rien** ne vérifiait que la flèche « › » emmène encore
+tes collègues sur **octobre**. Mesuré : un employé part de septembre, appuie sur « › » et
+arrive bien sur **octobre 2026 avec 281 personnes**. J'ai figé ça aussi — sabotage
+(« › » bloquée pour un employé) → **échec immédiat** ; remis d'aplomb → **20 contrôles,
+0 échec**.
+
 **Neuf signalements laissés sans suite depuis 9 jours ont été traités.** Aucune autre session
 n'est joignable et ce contrôle-là bloque la chaîne de tests de **tout le monde** — alors au lieu
 d'attendre, j'ai **re-mesuré moi-même** chaque affirmation, et je signe ce que j'ai vu :

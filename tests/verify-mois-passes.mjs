@@ -71,7 +71,13 @@ const emp = await page.evaluate(()=>{
   A.year  = n.getMonth()===0 ? n.getFullYear()-1 : n.getFullYear();
   dc();
   const apresClamp=A.year+'-'+A.month;
-  const res={ avant, apresFleche, apresClamp, inerte, nbFleches:fleches.length, attendu:n.getFullYear()+'-'+n.getMonth() };
+  // L'AUTRE SENS : masquer le passe ne doit PAS enfermer l'employe sur le mois
+  // courant. Son planning du mois suivant, deja importe, doit rester atteignable.
+  A.year=n.getFullYear(); A.month=n.getMonth(); dc();
+  nextM();
+  const apresAvance=A.year+'-'+A.month;
+  const nbSuivant=(A.overrides&&A.overrides[apresAvance])?Object.keys(A.overrides[apresAvance]).length:0;
+  const res={ avant, apresFleche, apresClamp, inerte, nbFleches:fleches.length, attendu:n.getFullYear()+'-'+n.getMonth(), apresAvance, nbSuivant };
   A.user=A.__save; delete A.__save;
   try{ if(typeof _viewAs!=='undefined') _viewAs=window.__va; }catch(_){}
   return res;
@@ -82,6 +88,12 @@ emp.inerte ? ok('employé : la flèche est visiblement inerte (pas un bouton mor
            : ko(`employé : la flèche reste active à l’écran (bouton mort) — ${emp.nbFleches} flèche(s) vue(s)`);
 emp.apresClamp === emp.attendu ? ok('employé posé sur un mois passé → ramené au mois en cours')
                                : ko(`employé resté sur un mois passé (${emp.apresClamp}, attendu ${emp.attendu})`);
+// Symétrie : le mois SUIVANT (déjà importé) doit rester atteignable — sinon on a
+// « nettoyé » le passé en privant tout le monde du planning à venir.
+if (!emp.nbSuivant && emp.apresAvance === emp.avant) console.log('  ·  (aucun mois suivant importé — rien à atteindre)');
+else emp.apresAvance !== emp.avant && emp.nbSuivant > 0
+  ? ok(`employé : la flèche « › » atteint bien le mois suivant (${emp.apresAvance}, ${emp.nbSuivant} personnes)`)
+  : ko(`employé enfermé sur le mois courant : « › » donne ${emp.apresAvance} avec ${emp.nbSuivant} personne(s) — il perd son planning à venir`);
 await page.close();
 
 // ───────────────────────── Page Départs (light) ─────────────────────────
