@@ -7,6 +7,19 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:57 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `2c79008a` · **Run** : `35414149149`
+- **Ce qui a lâché** : deploy › D'où viennent vraiment les pages ? (bloquant)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35414149149
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::error::le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de $ATTENDU. Bascule NON effective."^[[0m
+##[error]le domaine sert encore package.json → les pages viennent TOUJOURS du dépôt brut, pas de https://kdmc-site-bj5.pages.dev. Bascule NON effective.
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ KDMC — Déploie le routeur de domaine kd-mc.com (autonome) — 19/09/2026 01:55 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `b9d29fa9` · **Run** : `35414037774`
@@ -428,28 +441,5 @@ pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be 
 pull request create failed: GraphQL: Something went wrong while executing your query on 2026-09-16T23:23:00Z. Please include `6441:2FBA38:385CF0:B99254:6AAB24D3` when reporting this issue.
 ##[warning]PR #3832 — merge auto refusé. Cause exacte ci-dessous.
 [claude/video-review-wqnqdw 570e74dbb] diag: pourquoi l'auto-merge de claude/video-review-wqnqdw est refusé [skip ci]
-##[error]Process completed with exit code 1.
-```
-
-## ❌ Deploy KDMC Uptime (surveillance domaine) — 16/09/2026 23:26 UTC
-
-- **Branche** : `main` · **Commit** : `d16dbc3c` · **Run** : `35162108941`
-- **Ce qui a lâché** : deploy › Smoke test réel (leçon
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35162108941
-- **Ce que la machine a dit** :
-
-```
-^[[36;1mgrep -q '"ok": true' /tmp/h.json || { echo "::error::/health invalide : $(cat /tmp/h.json)"; exit 1; }^[[0m
-^[[36;1mecho "--- /run sans clé doit être refusé (garde) ---"^[[0m
-^[[36;1m[ "$CODE" = "401" ] || { echo "::error::POST /run sans clé a répondu $CODE au lieu de 401 — /run est PUBLIC"; exit 1; }^[[0m
-^[[36;1m[ "$CODE" = "405" ] || { echo "::error::GET /run a répondu $CODE au lieu de 405"; exit 1; }^[[0m
-^[[36;1mgrep -q '"results"' /tmp/run.json || { echo "::error::/run invalide : $(head -c 800 /tmp/run.json)"; exit 1; }^[[0m
-^[[36;1m  if(!hasToken){ console.log('::notice::push : pas de jeton → non testé (fail-open)'); process.exit(0); }^[[0m
-^[[36;1m  console.log('::error::push NON envoyé : HTTP ' + p.code + ' ' + (p.why||'')); process.exit(1);^[[0m
-^[[36;1mgrep -q '"ts"' /tmp/state.json || { echo "::error::/ ne rend pas l'état du passage qui vient d'avoir lieu — persistance cassée"; exit 1; }^[[0m
---- /run sans clé doit être refusé (garde) ---
-  "error": "trop tôt : 1 passage / 5 min"
-##[error]/run invalide : {
-  "error": "trop tôt : 1 passage / 5 min"
 ##[error]Process completed with exit code 1.
 ```
