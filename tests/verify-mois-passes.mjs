@@ -97,13 +97,25 @@ const dep = await p2.evaluate(()=>{
   document.body.classList.add('admin'); try{fillMoSel();}catch(_){}
   const avecAdmin=lire();
   document.body.classList.remove('admin'); try{fillMoSel();}catch(_){}
-  return { sansAdmin, avecAdmin, passesSansAdmin:sansAdmin.filter(passe), passesAvecAdmin:avecAdmin.filter(passe) };
+  // L'AUTRE MOITIE DE LA REGLE : « le mois courant ET les mois futurs importes ».
+  // Ne verifier que « aucun mois passe » laisserait passer un filtre trop large qui
+  // emporterait aussi octobre — la liste serait propre et l'employe n'aurait plus
+  // son planning a venir (lecon #142 : une garde qui ne regarde qu'un sens).
+  const attendus=(window.DEP_GEN_MONTHS||[])
+    .filter(m=>(m.year*12+m.monthIdx)>=cur)
+    .map(m=>m.year+'-'+m.monthIdx);
+  const manquants=attendus.filter(v=>sansAdmin.indexOf(v)<0);
+  return { sansAdmin, avecAdmin, passesSansAdmin:sansAdmin.filter(passe), passesAvecAdmin:avecAdmin.filter(passe), attendus, manquants };
 });
 if (!dep.avecAdmin.length) ko('page Départs : aucune liste de mois (test impossible)');
 else {
   dep.passesSansAdmin.length === 0
     ? ok(`page Départs : ${dep.sansAdmin.length} mois proposé(s) hors admin, aucun passé`)
     : ko(`page Départs : ${dep.passesSansAdmin.length} mois passé(s) encore proposés hors admin (${dep.passesSansAdmin.join(', ')})`);
+  if (!dep.attendus.length) console.log('  ·  (aucun mois courant/futur généré — rien à exiger)');
+  else dep.manquants.length === 0
+    ? ok(`page Départs : les ${dep.attendus.length} mois à venir/en cours restent proposés à l’employé (${dep.attendus.join(', ')})`)
+    : ko(`page Départs : ${dep.manquants.length} mois NON passé(s) retiré(s) à l’employé (${dep.manquants.join(', ')}) — il perd son planning à venir`);
   if (dep.passesAvecAdmin.length) ok(`page Départs : l’admin retrouve l’historique (${dep.passesAvecAdmin.length} mois passé(s))`);
   else console.log('  ·  (aucun mois passé dans les données générées — rien à retrouver côté admin)');
 }

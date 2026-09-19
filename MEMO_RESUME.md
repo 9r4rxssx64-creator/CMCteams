@@ -1,5 +1,35 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (19h00) — Le planning d'octobre : rien ne garantissait qu'il reste visible
+
+En relisant la règle que tu m'as donnée — « enlève les mois passés pour tous sauf l'admin » — j'ai
+vu que je n'en avais **vérifié que la moitié**. Mon contrôle disait bien « aucun mois passé
+proposé », mais **rien** ne disait « et les mois à venir sont toujours là ». Si demain un
+réglage retirait un mois de trop, la liste serait impeccable et **tes collègues perdraient
+octobre sans que rien ne sonne**.
+
+**Mesuré en vrai navigateur (19.09)** : un employé voit **Octobre 2026 + Septembre 2026** ;
+toi, admin, tu vois les **quatre** (juillet, août, septembre, octobre). C'est donc correct
+aujourd'hui.
+
+**Au passage je corrige une phrase à moi** : hier j'ai écrit que la page Départs « ne propose que
+septembre ». C'était incomplet — octobre y est bien, je n'avais regardé qu'une partie de la liste.
+
+**Ce que j'ai ajouté** : le contrôle exige maintenant les **deux** sens. Preuve qu'il sert :
+j'ai volontairement cassé le filtre pour qu'il ne garde que le mois courant → **échec immédiat**
+(« 1 mois NON passé retiré à l'employé — il perd son planning à venir ») ; remis d'aplomb →
+**19 contrôles, 0 échec**.
+
+**Neuf signalements laissés sans suite depuis 9 jours ont été traités.** Aucune autre session
+n'est joignable et ce contrôle-là bloque la chaîne de tests de **tout le monde** — alors au lieu
+d'attendre, j'ai **re-mesuré moi-même** chaque affirmation, et je signe ce que j'ai vu :
+registre des sessions **9/0** · protection de la page Départs **8/0** (et bien branchée) ·
+voix de Lingua **26/0** · secours du routeur **60/0** · décision « les plannings ne passent pas
+derrière le portail » bien gravée aux trois endroits · le contrôle de prix de ClayScore qui
+t'envoyait **413 mails d'échec** est réparé (les deux dernières exécutions sont vertes).
+Il n'en reste que **2**, et tous deux attendent le verdict de la vérification en ligne en cours.
+
+
 ## 2026-09-19 (18h30) — CORRECTION : je me suis trompé, la vérification n'était pas bloquée
 
 Je t'ai écrit tout à l'heure qu'un contrôle était « bloqué 45 minutes ». **C'est faux, et je le
