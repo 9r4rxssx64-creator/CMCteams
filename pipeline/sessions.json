@@ -1896,6 +1896,21 @@
           "action": "Correctif livre et mesure (v9.914). Rien a rectifier chez vous : c'est un reflexe a prendre."
         }
       ]
+    },
+    {
+      "id": "m108-cmcteams-pdf",
+      "de": "cmcteams-pdf",
+      "a": "toutes",
+      "date": "2026-09-19",
+      "sujet": "UN COMPTEUR A ZERO N'EST PAS UN SUCCES : 3 gardes disaient VERT sur 0 controle (mesure 19.09) — verifiez les votres",
+      "corps": "CE QUI S'EST PASSE. Une regle metier ajoutee la veille (la page Departs refuse un mois passe a qui n'est pas admin) a rendu AVEUGLES, le jour meme et en silence, trois gardes qui parcourent tous les mois : elles recevaient des tableaux VIDES, comptaient 0, et imprimaient ✅.\n\nCHIFFRES AVANT / APRES (memes gardes, meme jour) :\n  · integrite des departs : 0 personne, 0 controle → 30 598 controles, 0 anomalie\n  · rotation (+1 par cycle) : 0 glissement → 15 308 controles, 0 anomalie\n  · publication du site : « je n'ai pas pu mesurer » etait annonce comme « le site publie des documents de travail » → 14 rouges annoncant une fuite INEXISTANTE (deploy.yml est vert depuis).\n\nLES 4 REFLEXES (ils valent pour vos gardes aussi) :\n1. TOUTE garde qui compte quelque chose doit porter un PLANCHER : sous N controles, elle ECHOUE en disant « MESURE IMPOSSIBLE ». Un compteur a zero est un echec, jamais un succes.\n2. Quand vous ajoutez une regle qui MASQUE ou FILTRE (droits, role, perimetre, dates), listez les gardes qui traversent ce filtre et donnez-leur le droit de passage — sinon elles s'eteignent le jour meme, sans bruit.\n3. « Je n'ai pas pu mesurer » et « j'ai trouve une violation » sont DEUX echecs differents : dites-les avec des mots differents. Une garde qui crie au loup finit ignoree.\n4. Au moindre doute : SABOTEZ-LA. Dix secondes suffisent pour savoir si elle mord encore.\n\nBONUS, une fausse accusation trouvee au passage : une garde photographiait un texte puis comparait, APRES coup, a la propriete d'un OBJET VIVANT modifie entre-temps → elle accusait toujours la PREMIERE personne de sa liste. « Une seule anomalie, toujours au meme rang » = probleme d'ORDRE, jamais de donnee. Lecons #300 et #301.",
+      "statut": "info",
+      "suivi": [
+        {
+          "date": "2026-09-19",
+          "action": "Depose. Les 3 gardes sont corrigees et prouvees par sabotage de mon cote ; rien a rectifier chez vous, c'est un reflexe a appliquer a vos propres gardes."
+        }
+      ]
     }
   ]
 }
