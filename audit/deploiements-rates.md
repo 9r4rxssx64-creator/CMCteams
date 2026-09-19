@@ -7,6 +7,46 @@
 >
 > Rien ici quand tout va bien — c'est normal, et c'est bon signe.
 
+## ❌ KDMC — Publie le site sur Cloudflare Pages (pour que le dépôt puisse être PRIVÉ) — 19/09/2026 14:24 UTC
+
+- **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `f0a8d662` · **Run** : `35448582768`
+- **Ce qui a lâché** : publier › Vérifier l'adresse STABLE (celle qu'attend le routeur)
+- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35448582768
+- **Ce que la machine a dit** :
+
+```
+^[[36;1m  echo "::error::l'adresse STABLE $STABLE ne répond pas (HTTP $code) — NE PAS basculer le routeur dessus"^[[0m
+^[[36;1m  echo "::error::l'adresse stable $STABLE ne sert pas toutes les adresses — bascule interdite"^[[0m
+^[[36;1m  head -25 sonde-stable.log | while IFS= read -r l; do echo "::error::$l"; done^[[0m
+=== 32 servies / 0 en échec ===
+##[error]l'adresse stable https://kdmc-site-bj5.pages.dev ne sert pas toutes les adresses — bascule interdite
+##[error]Sonde de 32 adresses sur https://kdmc-site-bj5.pages.dev (servi à la racine)
+##[error]adresse                        HTTP   contenu
+##[error]────────────────────────────────────────────────
+##[error]✅ kd-mc.com                    200    23432 car.
+##[error]✅ www.kd-mc.com                200    23432 car.
+##[error]✅ cmcteams.kd-mc.com           200  3382632 car.
+##[error]✅ apex-ai.kd-mc.com            200    23571 car.
+##[error]✅ apex-chat.kd-mc.com          200   855110 car.
+##[error]✅ la-detente.kd-mc.com         200     5786 car.
+##[error]✅ chez-lolo.kd-mc.com          200   109823 car.
+##[error]✅ dashboard.kd-mc.com          200    41865 car.
+##[error]✅ sourcing.kd-mc.com           200    12559 car.
+##[error]✅ coffre.kd-mc.com             200    53666 car.
+##[error]✅ departs.kd-mc.com            200   174389 car.
+##[error]✅ cmcteams-light.kd-mc.com     200   174389 car.
+##[error]✅ bot.kd-mc.com                200    32155 car.
+##[error]✅ beatbot.kd-mc.com            200   156883 car.
+##[error]✅ autorisations.kd-mc.com      200    40283 car.
+##[error]✅ arbre.kd-mc.com              200   315106 car.
+##[error]✅ lingua.kd-mc.com             200    70275 car.
+##[error]✅ studio.kd-mc.com             200   419944 car.
+##[error]✅ cuisine.kd-mc.com            200   310280 car.
+##[error]✅ cocina.kd-mc.com             200   310280 car.
+##[error]✅ cujina.kd-mc.com             200   310280 car.
+##[error]Process completed with exit code 1.
+```
+
 ## ❌ Auto-merge Claude branches into main — 19/09/2026 02:15 UTC
 
 - **Branche** : `claude/verify-cmcteams-light-data-rzlvau` · **Commit** : `95d153ca` · **Run** : `35414890314`
@@ -413,24 +453,4 @@ pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be 
 ^[[36;1m    echo "::warning::main rattrapé localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ^[[36;1m      || echo "::warning::rattrapage fait localement mais push refusé (la session a poussé entre-temps ?) — la PR tentera quand même."^[[0m
 ##[error]Process completed with exit code 128.
-```
-
-## ❌ Auto-merge Claude branches into main — 16/09/2026 23:52 UTC
-
-- **Branche** : `claude/persona-personnage-javis-hqd55e` · **Commit** : `6fd533f3` · **Run** : `35163818774`
-- **Ce qui a lâché** : auto-merge › Create & merge PR into main
-- **Journal complet** : https://github.com/9r4rxssx64-creator/CMCteams/actions/runs/35163818774
-- **Ce que la machine a dit** :
-
-```
-^[[36;1m  echo "::notice::Branche $BRANCH introuvable sur origin — rien à merger."^[[0m
-^[[36;1m# AVANT sa vraie revue → merge trop tôt → CodeRabbit : « Review failed — PR^[[0m
-^[[36;1m# buffer pour les commentaires ligne par ligne. Cap ~6 min, fail-open (on merge^[[0m
-^[[36;1m# v2026-09-06 (leçon #214 « un échec invisible n'existe pas ») : les deux^[[0m
-^[[36;1m# tentatives étaient suivies de `2>/dev/null` — la VRAIE cause du refus^[[0m
-^[[36;1m  echo "::warning::PR #$PR — merge auto refusé. Cause exacte ci-dessous."^[[0m
-^[[36;1m    echo "Ce fichier existe parce que le merge automatique a été REFUSÉ."^[[0m
-^[[36;1m      commit -m "diag: pourquoi l'auto-merge de $BRANCH est refusé [skip ci]" || true^[[0m
-pull request create failed: GraphQL: Head sha can't be blank, Base sha can't be blank, No commits between main and claude/persona-personnage-javis-hqd55e, Head ref must be a branch (createPullRequest)
-##[error]Process completed with exit code 1.
 ```
