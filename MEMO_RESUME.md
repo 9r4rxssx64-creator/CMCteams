@@ -1,5 +1,15 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (02h) — Bascule kd-mc.com : ce qui est PROUVÉ, et les deux fausses alertes que je me suis faites
+
+- **Le projet d'hébergement est propre, mesuré en le demandant à Cloudflare** : `source (git) : AUCUNE (envoi direct uniquement)`, branche de production `main`. Il publie **notre paquet trié**, rien d'autre. **Il n'y a pas de fuite** — je l'avais écrit, c'était faux.
+- **Pourquoi je m'étais trompé** : Cloudflare Pages, sans `404.html`, répond à **toute** adresse inconnue par la **page d'accueil**, avec un code **200**. Mon contrôle lisait le code HTTP et pas le contenu. Corps mesuré : **3 426 236 octets = exactement `index.html`**. Leçon #285.
+- **Correctif** : le paquet pose maintenant un **repère** (`__paquet.txt`) dont on vérifie le **contenu**. S'il est chez l'hébergeur ET servi par le domaine → relais **prouvé**. S'il n'y est pas encore → le contrôle **refuse de conclure** au lieu de mentir.
+- **Sonde de fuite** (`tools/audit/sonde-fuite-hebergeur.mjs`) : 11 chemins qui ne doivent jamais sortir (plannings SBM, règles de travail, code serveur, journaux de session), corps vérifié, refus de conclure si rien n'est mesurable, **bloquante** sur le domaine et sur l'hébergeur.
+- **Paquet complété** : 4 boutiques liées par le portail (Tech Hub, EcoCraft, Digital Vault, Pawsome) + le Studio La Détente + `javis/**` dans les déclencheurs. Sans ça, ces liens mouraient le jour du passage en privé, sans erreur nulle part.
+- **Rouge qui n'est pas de moi** : `test:paquet-pages` échoue sur `main` aussi (2 FAIL, dont `/__sso/whoami` qu'un serveur de fichiers ne peut pas servir, et un nombre de morceaux Apex qui varie d'un essai à l'autre — 8 puis 56 : c'est un test instable, pas une régression).
+
+
 ## 2026-09-18 (21h) — Le domaine ne dépend plus de GitHub : kd-mc.com est servi par Cloudflare Pages (le dépôt peut passer en privé)
 
 **Ce que Kevin a demandé** : « passe tout en privé, que personne ne puisse voir mon code » — et il a confirmé la bascule d'hébergement (« Go »).
