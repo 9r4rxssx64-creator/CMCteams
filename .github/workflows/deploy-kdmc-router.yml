@@ -320,6 +320,15 @@ jobs:
           ATTENDU=$(grep -oE 'UPSTREAM_BASE *= *"[^"]+"' services/kdmc-router/wrangler.toml | sed 's/.*"\(.*\)"/\1/' || true)
           CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://cmcteams.kd-mc.com/package.json" || echo 000)
           echo "  cmcteams.kd-mc.com/package.json → HTTP $CODE"
+          # Où est la vérité : chez l'hébergeur, ou dans le routeur ? On demande
+          # le même fichier DIRECTEMENT à l'hébergeur visé. S'il répond 200 lui
+          # aussi, alors ce n'est pas le routeur qui n'a pas basculé : c'est
+          # l'hébergeur qui publie plus que le paquet trié.
+          if [ -n "$ATTENDU" ]; then
+            CODE2=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$ATTENDU/package.json" || echo 000)
+            TAILLE=$(curl -s --max-time 20 -o /dev/null -w '%{size_download}' "$ATTENDU/" || echo 0)
+            echo "  $ATTENDU/package.json → HTTP $CODE2   (racine : $TAILLE octets)"
+          fi
           if [ -z "$ATTENDU" ]; then
             echo "  (aucune bascule configurée dans le wrangler.toml — GitHub Pages reste la source, rien à prouver ici)"
             exit 0
