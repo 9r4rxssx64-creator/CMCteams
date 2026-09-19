@@ -348,7 +348,7 @@ jobs:
             node tools/audit/sonde-fuite-hebergeur.mjs "$ATTENDU"
           fi
 
-
+      - name: Smoke test SSO live (issue → token → whoami Bearer + gate admin)
         # Best-effort : confirme la PROPAGATION live (timing-dépendant au bord Cloudflare,
         # peut dépasser 1 min). La preuve du CODE = tests unitaires (sso/admin) + harnais
         # Chromium. On ne rougit donc PAS un déploiement réussi pour un délai de propagation.

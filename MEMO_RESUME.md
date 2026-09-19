@@ -1,5 +1,11 @@
 # MEMO_RESUME — état de session
 
+## 2026-09-19 (02h15) — Trois déploiements « en échec » sans un seul journal : le fichier était refusé au démarrage
+
+En insérant une étape, j'ai effacé la ligne de titre de l'étape suivante : les deux ont fusionné et le fichier portait deux fois la même clé. GitHub refuse alors le workflow **avant de démarrer** — « en échec », **0 job, 0 journal**, aucun message visible. Je l'ai obtenu en déclenchant à la main par l'interface de programmation.
+
+**La garde ne pouvait pas le voir** : elle vérifiait les clés en double *à la racine* du fichier, jamais *dans une étape*. Corrigée, **prouvée par sabotage** (1 échec quand je refais la faute, 780/0 quand c'est bon). Au passage j'ai retiré une règle trop zélée qui allumait **9 faux rouges** sur des workflows qui marchent.
+
 ## 2026-09-19 (02h) — Bascule kd-mc.com : ce qui est PROUVÉ, et les deux fausses alertes que je me suis faites
 
 - **Le projet d'hébergement est propre, mesuré en le demandant à Cloudflare** : `source (git) : AUCUNE (envoi direct uniquement)`, branche de production `main`. Il publie **notre paquet trié**, rien d'autre. **Il n'y a pas de fuite** — je l'avais écrit, c'était faux.

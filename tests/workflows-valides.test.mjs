@@ -84,6 +84,56 @@ function scalairesInvalides(texte) {
   return pbs;
 }
 
+/* Clés en double DANS UNE ÉTAPE (pas seulement à la racine).
+   MESURÉ le 19.09.2026 : en insérant une étape, la ligne « - name: » de
+   l'étape SUIVANTE a été effacée. Les deux étapes ont fusionné en une seule,
+   qui portait donc DEUX « run: ». GitHub refuse le fichier au démarrage
+   (« 'run' is already defined ») → run en échec, 0 job, 0 journal, et cette
+   garde-ci passait au vert parce qu'elle ne regardait que la racine.
+   On lit chaque étape et on refuse : une clé répétée, ou une étape qui ne
+   commence ni par « name » ni par « uses » (signe d'une fusion). */
+function etapesInvalides(texte) {
+  const out = [];
+  const lignes = texte.split('\n');
+  let dansBloc = null;   // indentation du scalaire | ou > en cours
+  let etape = null;      // { indent, premiere, cles:Map, ligne }
+  const fermer = () => {
+    if (!etape) return;
+    for (const [k, n] of etape.cles) {
+      if (n > 1) out.push(`étape ligne ${etape.ligne} : « ${k} » défini ${n} fois (GitHub refuse le fichier : 0 job, 0 journal)`);
+    }
+    /* On ne juge PAS par quoi l'étape commence : « - run: » est parfaitement
+       valide chez GitHub, et l'exiger produisait 9 faux rouges sur des
+       workflows qui marchent. La clé répétée, elle, est une vraie erreur. */
+    etape = null;
+  };
+  for (let i = 0; i < lignes.length; i++) {
+    const l = lignes[i];
+    const ind = l.length - l.trimStart().length;
+    if (dansBloc !== null) {
+      if (l.trim() === '' || ind > dansBloc) continue;
+      dansBloc = null;
+    }
+    if (l.trim() === '' || /^\s*#/.test(l)) continue;
+    const debut = l.match(/^(\s*)-\s+([A-Za-z_][\w-]*)\s*:/);
+    if (debut) {
+      fermer();
+      etape = { indent: debut[1].length + 2, premiere: debut[2], cles: new Map([[debut[2], 1]]), ligne: i + 1 };
+      if (/:\s*[|>]\s*$/.test(l)) dansBloc = etape.indent;
+      continue;
+    }
+    if (!etape) continue;
+    if (ind < etape.indent) { fermer(); continue; }
+    if (ind > etape.indent) continue;
+    const cle = l.match(/^\s*([A-Za-z_][\w-]*)\s*:/);
+    if (!cle) continue;
+    etape.cles.set(cle[1], (etape.cles.get(cle[1]) || 0) + 1);
+    if (/:\s*[|>]\s*$/.test(l)) dansBloc = etape.indent;
+  }
+  fermer();
+  return out;
+}
+
 const fichiers = readdirSync(DOSSIER).filter((f) => /\.ya?ml$/.test(f)).sort();
 if (!fichiers.length) { console.error('❌ aucun workflow trouvé'); process.exit(1); }
 
@@ -109,6 +159,10 @@ for (const f of fichiers) {
 
   const sc = scalairesInvalides(texte);
   if (sc.length) pb.push(`${f} — ${sc.join(' ; ')}`);
+  else ok++;
+
+  const et = etapesInvalides(texte);
+  if (et.length) pb.push(`${f} — ${et.slice(0, 3).join(' ; ')}`);
   else ok++;
 }
 
