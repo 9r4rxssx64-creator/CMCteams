@@ -44,6 +44,18 @@ const SITE = (arg('--site', 'https://kdmc-site.pages.dev')).replace(/\/$/, '');
  * leur correctif est architectural (servir la donnée derrière la connexion du
  * domaine), pas un `rm`. Les compter comme des échecs mettrait un rouge
  * PERMANENT que plus personne ne regarderait. */
+/* Le même chemin doit marcher sur les DEUX publications, qui ne rangent pas pareil :
+   le miroir Cloudflare sert l'app à la RACINE, GitHub Pages la sert sous /CMCteams/
+   (« project pages »). Certaines entrées portent donc déjà ce préfixe. Si le site
+   sondé le porte lui aussi, on ne le met pas deux fois — sinon on demande
+   /CMCteams/CMCteams/index.html, on récolte un 404, et le rapport annonce que
+   l'application n'est pas publiée alors qu'elle l'est. */
+const adresseDe = (chemin) => {
+  const prefixe = SITE.match(/\/[^/]+$/);
+  if (prefixe && chemin.startsWith(prefixe[0] + '/')) return SITE.slice(0, -prefixe[0].length) + chemin;
+  return SITE + chemin;
+};
+
 const CHEMINS = [
   /* — Le site lui-même. `u:` = adresse ABSOLUE, parce que le domaine range ses
        apps par SOUS-DOMAINE (arbre.kd-mc.com) alors que le miroir les met à la
@@ -141,7 +153,7 @@ if (!accueil) {
 for (const c of CHEMINS) {
   let statut = 0, taille = 0, trouves = [];
   try {
-    const r = await fetch(bust(c.u || (SITE + c.p)), { redirect: 'follow', ...SANS_CACHE });
+    const r = await fetch(bust(c.u || adresseDe(c.p)), { redirect: 'follow', ...SANS_CACHE });
     statut = r.status;
     if (r.ok) {
       const t = await r.text();
