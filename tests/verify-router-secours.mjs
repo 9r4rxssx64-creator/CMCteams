@@ -186,6 +186,27 @@ for (const [base, prefixe, cas] of [
     'I. ' + cas + ' → ni espace ni double barre dans l\'adresse');
 }
 
+/* J) APRÈS LA BASCULE D'HÉBERGEUR, LA BOUÉE DOIT ENCORE FLOTTER
+   ------------------------------------------------------------------
+   Le 18.09.2026, en préparant le passage du dépôt en privé (site servi par
+   Cloudflare Pages, donc à la RACINE), on a mesuré que la copie embarquée
+   serait devenue MUETTE : elle est rangée avec le préfixe /CMCteams/…, et le
+   routeur ne lui demandait plus que le chemin d'après bascule (/kdmc-home/…).
+   Personne ne l'aurait vu — sauf le jour d'une panne, c'est-à-dire trop tard.
+   Ces contrôles exigent que la bouée réponde AVEC et SANS préfixe. */
+for (const [cas, env] of [
+  ['sans bascule (comme avant)', { ASSETS }],
+  ['après bascule vers un hébergeur à la racine', { ASSETS, UPSTREAM_BASE: 'https://kdmc-site-bj5.pages.dev', UPSTREAM_PREFIX: '' }],
+]) {
+  amont({ code: 404 }); copieVue = [];
+  const rj = await appel('kd-mc.com', '/', env);
+  const tj = await rj.text();
+  chk(rj.status === 200 && /COPIE/.test(tj), 'J. ' + cas + ' → l\'accueil sort quand même de la copie');
+  amont({ code: 503 }); copieVue = [];
+  const rj2 = await appel('departs.kd-mc.com', '/', env);
+  chk(rj2.status === 200 && /DEPARTS/.test(await rj2.text()), 'J. ' + cas + ' → la page Départs aussi');
+}
+
 R.ok.forEach((m) => console.log('  OK ' + m));
 R.ko.forEach((m) => console.log('  FAIL ' + m));
 console.log(`=== ${R.ok.length} OK / ${R.ko.length} FAIL ===`);

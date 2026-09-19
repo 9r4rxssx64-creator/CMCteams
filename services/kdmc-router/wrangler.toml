@@ -93,6 +93,26 @@ database_id = "a10e750d-de49-47b5-b1d8-0e937eccbec8"
 [vars]
 KDMC_PUSH_URL = "https://apex-push-worker.9r4rxssx64.workers.dev"
 
+# ── OÙ LE ROUTEUR VA CHERCHER LES PAGES (bascule du 18.09.2026) ──────────────
+# Kevin 2026-09-15 : « passe tout en privé ». GitHub Pages depuis un dépôt PRIVÉ
+# est payant → le site est désormais publié sur Cloudflare Pages par le workflow
+# `publier-site-prive.yml`, et le routeur va le chercher LÀ.
+#
+# Ces deux valeurs ne sont PAS devinées : elles sont MESURÉES par l'étape
+# « Vérifier l'adresse STABLE » de ce workflow, qui sonde l'adresse avant de
+# l'annoncer (run 35385082990 : 31 adresses servies / 0 en échec, à la racine).
+# Deviner l'adresse d'un projet Pages (kdmc-site vs kdmc-site-bj5) aurait éteint
+# les 31 adresses du domaine d'un coup.
+#
+# UPSTREAM_PREFIX = "" parce que Cloudflare Pages sert à la RACINE, là où GitHub
+# Pages ajoutait /CMCteams (le nom du dépôt). Le routeur continue de RECONNAÎTRE
+# les liens internes en /CMCteams/… et les traduit (cf. PREFIX_SORTIE).
+#
+# Pour revenir en arrière : retirer ces deux lignes → le routeur reprend
+# automatiquement GitHub Pages (UPSTREAM_DEFAUT). Aucune ligne de code à changer.
+UPSTREAM_BASE = "https://kdmc-site-bj5.pages.dev"
+UPSTREAM_PREFIX = ""
+
 # Sentinelle « robot en surface » (PoolPilot) : cron RETIRÉ 2026-08-03.
 # CAUSE : le compte Cloudflare a atteint la limite Free de 5 cron triggers/compte
 # (API /schedules → code 10072). Ce cron faisait ÉCHOUER `wrangler deploy` (masqué par

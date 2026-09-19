@@ -407,6 +407,12 @@ export default {
     else upstreamPath = base + p;
     /* Bascule d'hébergeur : on retire le préfixe /CMCteams si la nouvelle
        source sert à la racine (Cloudflare Pages, par exemple). */
+    /* ⚠️ On GARDE le chemin d'AVANT la bascule : la bouée de secours (copie
+       embarquée, plus bas) est rangée avec le préfixe /CMCteams/… Sans cette
+       mémoire, basculer sur un hébergeur qui sert à la racine rendrait la
+       bouée MUETTE en silence (elle chercherait /tools/departs/index.html
+       dans un dossier qui range /CMCteams/tools/departs/index.html). */
+    const upstreamPathAvantBascule = upstreamPath;
     if (PREFIX_SORTIE !== PAGES_PREFIX_DEFAUT && upstreamPath.startsWith(PAGES_PREFIX_DEFAUT + '/')) {
       upstreamPath = PREFIX_SORTIE + upstreamPath.slice(PAGES_PREFIX_DEFAUT.length);
     }
@@ -435,15 +441,25 @@ export default {
        revient, le comportement est identique à avant, sans rien remettre. */
     if (env && env.ASSETS && (res.status === 404 || res.status === 403 || res.status >= 500)) {
       try {
-        const local = new Request(new URL(upstreamPath, url.origin).toString(), { method: 'GET', headers: request.headers });
-        let secours = await env.ASSETS.fetch(local);
-        /* Un dossier sans fichier exact → on tente son index.html (le
-           comportement de GitHub Pages, qu'on doit reproduire fidèlement). */
-        if (!secours.ok && !/\.[a-z0-9]{2,5}$/i.test(upstreamPath)) {
-          const avecIndex = upstreamPath.replace(/\/?$/, '/') + 'index.html';
-          secours = await env.ASSETS.fetch(new Request(new URL(avecIndex, url.origin).toString(), { method: 'GET', headers: request.headers }));
+        /* Deux rangements possibles pour la copie : celui de l'amont du jour
+           (après bascule) ET celui d'origine (/CMCteams/…). On essaie les
+           deux, dans cet ordre — la bouée doit marcher quel que soit
+           l'hébergeur choisi, sinon elle ne sert à rien le jour d'une panne. */
+        const candidats = [upstreamPath];
+        if (upstreamPathAvantBascule !== upstreamPath) candidats.push(upstreamPathAvantBascule);
+        let secours = null;
+        for (const cand of candidats) {
+          const local = new Request(new URL(cand, url.origin).toString(), { method: 'GET', headers: request.headers });
+          secours = await env.ASSETS.fetch(local);
+          /* Un dossier sans fichier exact → on tente son index.html (le
+             comportement de GitHub Pages, qu'on doit reproduire fidèlement). */
+          if (!secours.ok && !/\.[a-z0-9]{2,5}$/i.test(cand)) {
+            const avecIndex = cand.replace(/\/?$/, '/') + 'index.html';
+            secours = await env.ASSETS.fetch(new Request(new URL(avecIndex, url.origin).toString(), { method: 'GET', headers: request.headers }));
+          }
+          if (secours.ok) break;
         }
-        if (secours.ok) {
+        if (secours && secours.ok) {
           const hs = new Headers(secours.headers);
           hs.set('x-kdmc-secours', 'assets');   /* honnêteté : on DIT que c'est la copie */
           res = new Response(secours.body, { status: 200, headers: hs });

@@ -58,6 +58,7 @@ on:
       - 'coffre-fort/**'
       - 'lingua/**'
       - 'arbre/**'
+      - 'javis/**'
       - 'la-detente/**'
       - 'shops/**'
       - 'tools/**'
